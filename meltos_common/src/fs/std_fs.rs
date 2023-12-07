@@ -41,11 +41,11 @@ mod tests {
     use crate::error::MelResult;
     use crate::fs::{FileData, FsAccessible};
     use crate::fs::std_fs::StdFs;
-    use crate::test_util::{create_tests_dir, unwind};
+    use crate::test_util::unwind;
 
     #[tokio::test]
     async fn read_dir() -> MelResult {
-        unwind(async {
+        unwind("tests/test_std1", async {
             StdFs.create_dir("tests/sample1").await?;
             StdFs.read_dir("tests/sample1").await?;
             Ok(())
@@ -55,27 +55,16 @@ mod tests {
 
 
     #[tokio::test]
-    async fn read_file() -> MelResult {
-        unwind(async move {
-            create_tests_dir()?;
-            let data = StdFs.read_file("./tests/hello.txt").await?;
-            assert_eq!(data.path, "./tests/hello.txt");
-            assert_eq!(data.buf, "hello".as_bytes());
-            Ok(())
-        }).await
-    }
-
-
-    #[tokio::test]
     async fn write_file() -> MelResult {
-        unwind(async move {
+        let path = "tests/test_std2.txt";
+        unwind(path, async move {
             StdFs.write_file(FileData {
-                path: "tests/test".to_string(),
+                path: path.to_string(),
                 buf: "hello world!".as_bytes().to_vec(),
             }).await?;
 
-            let data = StdFs.read_file("./tests/test").await?;
-            assert_eq!(data.path, "./tests/test");
+            let data = StdFs.read_file(path).await?;
+            assert_eq!(data.path, path);
             assert_eq!(data.buf, "hello world!".as_bytes());
             Ok(())
         }).await

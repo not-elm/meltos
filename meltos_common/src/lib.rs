@@ -7,29 +7,33 @@ pub mod fs;
 pub(crate) mod test_util {
     use std::fs;
     use std::future::Future;
+    use std::path::Path;
 
     use futures::FutureExt;
 
     use crate::error::MelResult;
 
-    pub fn create_tests_dir() -> std::io::Result<()> {
+    pub fn create_tests_dir() {
         let _ = fs::create_dir("tests");
-        let _ = fs::write("./tests/hello.txt", "hello");
-        Ok(())
     }
 
 
-    pub async fn unwind(
+    pub async fn unwind<P: AsRef<Path> + Send + Sync>(
+        path: P,
         f: impl Future<Output=MelResult>,
     ) -> MelResult {
-        delete_dir();
+        create_tests_dir();
         let result = std::panic::AssertUnwindSafe(f).catch_unwind().await;
-        delete_dir();
+        delete_path(path);
         result.unwrap().unwrap();
         Ok(())
     }
 
-    pub fn delete_dir() {
-        let _ = fs::remove_dir_all("./tests");
+    pub fn delete_path<P: AsRef<Path> + Send + Sync>(path: P) {
+        if path.as_ref().is_dir() {
+            let _ = fs::remove_dir_all("./tests");
+        } else {
+            let _ = fs::remove_file(path);
+        }
     }
 }
