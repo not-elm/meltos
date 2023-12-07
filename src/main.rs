@@ -4,9 +4,9 @@ fn main() {
 
 
 #[cfg(test)]
-mod tests{
+mod tests {
     #[test]
-    fn sample(){
+    fn sample() {
         assert_eq!(1, 1);
     }
 }
