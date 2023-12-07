@@ -1,0 +1,18 @@
+[package]
+name = "meltos_common"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+flate2 = { version = "1.0.28" }
+tar = "0.4.40"
+thiserror = "1.0.50"
+anyhow = "1.0.75"
+serde = { version = "1.0.193", features = ["derive"] }
+serde_json = "1.0.108"
+async-trait = { workspace = true }
+bincode = "1.3.3"
+serde_bytes = "0.11.12"
+tokio = { workspace = true }
+futures = "0.3.29"
