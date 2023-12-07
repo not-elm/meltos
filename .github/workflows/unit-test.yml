@@ -5,5 +5,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Run Test
-        run: cargo test
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Test
+        run: cargo test --all-features
