@@ -1,6 +1,6 @@
 name: Unit Test
 run-name: ${{ github.actor }} is testing
-on: [push]
+on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -10,4 +10,4 @@ jobs:
       - name: Toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Test
-        run: cargo test --all-features
+        run: cargo test --all-features --all
