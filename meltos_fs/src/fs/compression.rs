@@ -1,7 +1,7 @@
+use meltos_core::error::MelResult;
 use std::path::{Path, PathBuf};
 
 use crate::compression::CompressionBuf;
-use crate::error::MelResult;
 use crate::fs::{FileData, FsAccessible};
 
 pub struct FsCompression<Comp, Fs> {

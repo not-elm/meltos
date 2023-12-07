@@ -1,4 +1,4 @@
-use crate::error::MelResult;
+use meltos_core::error::MelResult;
 
 pub mod gz;
 

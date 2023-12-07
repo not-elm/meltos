@@ -1,7 +1,6 @@
-use std::path::{Path, PathBuf};
-
-use crate::error::MelResult;
 use crate::fs::{FileData, FsAccessible};
+use meltos_core::error::MelResult;
+use std::path::{Path, PathBuf};
 
 pub struct StdFs;
 
@@ -41,10 +40,10 @@ impl FsAccessible for StdFs {
 
 #[cfg(test)]
 mod tests {
-    use crate::error::MelResult;
     use crate::fs::std_fs::StdFs;
     use crate::fs::{FileData, FsAccessible};
     use crate::test_util::unwind;
+    use meltos_core::error::MelResult;
 
     #[tokio::test]
     async fn read_dir() -> MelResult {

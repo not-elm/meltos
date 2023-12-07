@@ -1,10 +1,9 @@
+use flate2::bufread::{GzDecoder, GzEncoder};
 use std::io::Read;
 
-use flate2::bufread::GzEncoder;
-use flate2::read::GzDecoder;
 
 use crate::compression::CompressionBuf;
-use crate::error::MelResult;
+use meltos_core::error::MelResult;
 
 pub struct Gz;
 
@@ -32,6 +31,7 @@ impl CompressionBuf for Gz {
 
 #[cfg(test)]
 mod tests {
+
     use crate::compression::gz::Gz;
     use crate::compression::CompressionBuf;
 
