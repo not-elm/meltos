@@ -31,12 +31,12 @@ impl CompressionBuf for Gz {
 
 
 #[cfg(test)]
-mod tests{
-    use crate::compression::CompressionBuf;
+mod tests {
     use crate::compression::gz::Gz;
+    use crate::compression::CompressionBuf;
 
     #[test]
-    fn ascii(){
+    fn ascii() {
         let buff = b"hello world!";
         let encode = Gz.encode(buff).unwrap();
         let decode = Gz.decode(&encode).unwrap();
@@ -45,8 +45,8 @@ mod tests{
     }
 
 
-     #[test]
-    fn japanese(){
+    #[test]
+    fn japanese() {
         let buff = "日本語".as_bytes();
         let encode = Gz.encode(buff).unwrap();
         let decode = Gz.decode(&encode).unwrap();

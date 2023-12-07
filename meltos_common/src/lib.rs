@@ -1,5 +1,5 @@
-pub mod error;
 pub mod compression;
+pub mod error;
 pub mod fs;
 
 
@@ -20,7 +20,7 @@ pub(crate) mod test_util {
 
     pub async fn unwind<P: AsRef<Path> + Send + Sync>(
         path: P,
-        f: impl Future<Output=MelResult>,
+        f: impl Future<Output = MelResult>,
     ) -> MelResult {
         create_tests_dir();
         let result = std::panic::AssertUnwindSafe(f).catch_unwind().await;

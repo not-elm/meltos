@@ -10,5 +10,3 @@ pub trait CompressionBuf: Send + Sync {
 
     fn file_extension() -> Option<&'static str>;
 }
-
-

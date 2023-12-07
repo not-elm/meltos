@@ -11,24 +11,21 @@ pub struct FsCompression<Comp, Fs> {
 
 
 impl<Comp, Fs> FsCompression<Comp, Fs>
-    where
-        Comp: CompressionBuf,
-        Fs: FsAccessible
+where
+    Comp: CompressionBuf,
+    Fs: FsAccessible,
 {
     pub const fn new(comp: Comp, fs: Fs) -> FsCompression<Comp, Fs> {
-        FsCompression {
-            comp,
-            fs,
-        }
+        FsCompression { comp, fs }
     }
 }
 
 
 #[async_trait::async_trait]
 impl<Comp, Fs> FsAccessible for FsCompression<Comp, Fs>
-    where
-        Comp: CompressionBuf,
-        Fs: FsAccessible
+where
+    Comp: CompressionBuf,
+    Fs: FsAccessible,
 {
     async fn read_file<P: AsRef<Path> + Send>(&self, path: P) -> MelResult<FileData> {
         let file = self.fs.read_file(path).await?;
@@ -44,7 +41,10 @@ impl<Comp, Fs> FsAccessible for FsCompression<Comp, Fs>
         self.fs.write_file(file_data).await
     }
 
-    async fn dir_entry_names<P: AsRef<Path> + Send + Sync>(&self, path: &P) -> MelResult<Vec<PathBuf>> {
+    async fn dir_entry_names<P: AsRef<Path> + Send + Sync>(
+        &self,
+        path: &P,
+    ) -> MelResult<Vec<PathBuf>> {
         self.fs.dir_entry_names(path).await
     }
 

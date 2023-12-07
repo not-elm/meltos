@@ -7,7 +7,7 @@ pub type MelResult<T = ()> = std::result::Result<T, MelError>;
 pub enum MelError {
     #[error(transparent)]
     Io(#[from] std::io::Error),
-    
+
     #[error(transparent)]
-    BinCode(#[from] bincode::Error)
+    BinCode(#[from] bincode::Error),
 }

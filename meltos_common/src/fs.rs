@@ -4,14 +4,17 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::MelResult;
 
-pub mod std_fs;
 pub mod compression;
+pub mod std_fs;
 
 #[async_trait::async_trait]
 pub trait FsAccessible: Send + Sync {
     async fn read_file<P: AsRef<Path> + Send>(&self, path: P) -> MelResult<FileData>;
     async fn write_file(&self, file_data: FileData) -> MelResult;
-    async fn dir_entry_names<P: AsRef<Path> + Send + Sync>(&self, path: &P) -> MelResult<Vec<PathBuf>>;
+    async fn dir_entry_names<P: AsRef<Path> + Send + Sync>(
+        &self,
+        path: &P,
+    ) -> MelResult<Vec<PathBuf>>;
 
     async fn create_dir<P: AsRef<Path> + Send>(&self, path: P) -> MelResult;
 
@@ -75,5 +78,3 @@ pub struct DirData {
 
     pub children: Vec<EntryData>,
 }
-
-

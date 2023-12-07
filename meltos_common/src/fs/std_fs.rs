@@ -22,9 +22,12 @@ impl FsAccessible for StdFs {
     }
 
 
-    async fn dir_entry_names<P: AsRef<Path> + Send + Sync>(&self, path: &P) -> MelResult<Vec<PathBuf>> {
+    async fn dir_entry_names<P: AsRef<Path> + Send + Sync>(
+        &self,
+        path: &P,
+    ) -> MelResult<Vec<PathBuf>> {
         Ok(std::fs::read_dir(path)?
-            .filter_map(|entry| { Some(entry.ok()?.path()) })
+            .filter_map(|entry| Some(entry.ok()?.path()))
             .collect())
     }
 
@@ -39,8 +42,8 @@ impl FsAccessible for StdFs {
 #[cfg(test)]
 mod tests {
     use crate::error::MelResult;
-    use crate::fs::{FileData, FsAccessible};
     use crate::fs::std_fs::StdFs;
+    use crate::fs::{FileData, FsAccessible};
     use crate::test_util::unwind;
 
     #[tokio::test]
@@ -50,7 +53,7 @@ mod tests {
             StdFs.read_dir("tests/sample1").await?;
             Ok(())
         })
-            .await
+        .await
     }
 
 
@@ -58,15 +61,18 @@ mod tests {
     async fn write_file() -> MelResult {
         let path = "tests/test_std2.txt";
         unwind(path, async move {
-            StdFs.write_file(FileData {
-                path: path.to_string(),
-                buf: "hello world!".as_bytes().to_vec(),
-            }).await?;
+            StdFs
+                .write_file(FileData {
+                    path: path.to_string(),
+                    buf: "hello world!".as_bytes().to_vec(),
+                })
+                .await?;
 
             let data = StdFs.read_file(path).await?;
             assert_eq!(data.path, path);
             assert_eq!(data.buf, "hello world!".as_bytes());
             Ok(())
-        }).await
+        })
+        .await
     }
 }
