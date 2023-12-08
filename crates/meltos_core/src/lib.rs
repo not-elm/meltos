@@ -1,7 +1,3 @@
-pub mod error;
-pub mod user;
-
-
 #[macro_export]
 macro_rules! impl_string_new_type {
     ($name: ident) => {
@@ -18,7 +14,7 @@ macro_rules! impl_string_new_type {
         }
 
 
-        impl Deref for $name {
+        impl std::ops::Deref for $name {
             type Target = String;
 
             fn deref(&self) -> &Self::Target {

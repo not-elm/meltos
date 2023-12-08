@@ -1,21 +1,9 @@
-[package]
-name = "meltos"
-version = "0.1.0"
-edition = "2021"
-readme = "README.md"
-repository = "https://github.com/MlUlM/meltos"
 
 [workspace]
 members = [
     "crates/*",
-    "ui/*",
-    "meltos_cli",
-    "meltos_server"
 ]
 
-[dependencies]
-tar = "0.4.40"
-meltos_core = { path = "crates/meltos_core" }
 
 [workspace.dependencies]
 async-trait = "0.1.74"

@@ -3,20 +3,19 @@ use std::io::Read;
 
 
 use crate::compression::CompressionBuf;
-use meltos_core::error::MelResult;
 
 pub struct Gz;
 
 
 impl CompressionBuf for Gz {
-    fn encode(&self, buf: &[u8]) -> MelResult<Vec<u8>> {
+    fn encode(&self, buf: &[u8]) -> crate::error::Result<Vec<u8>> {
         let mut gz = GzEncoder::new(buf, flate2::Compression::default());
         let mut buffer = Vec::new();
         gz.read_to_end(&mut buffer)?;
         Ok(buffer)
     }
 
-    fn decode(&self, buf: &[u8]) -> MelResult<Vec<u8>> {
+    fn decode(&self, buf: &[u8]) -> crate::error::Result<Vec<u8>> {
         let mut gz = GzDecoder::new(buf);
         let mut buffer = Vec::new();
         gz.read_to_end(&mut buffer)?;

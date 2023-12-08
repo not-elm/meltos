@@ -3,7 +3,7 @@ use std::future::Future;
 use std::path::Path;
 
 use futures::FutureExt;
-use meltos_core::error::MelResult;
+use meltos_core::error::crate::error::Result;
 
 pub fn create_tests_dir() {
     let _ = fs::create_dir("tests");
@@ -12,8 +12,8 @@ pub fn create_tests_dir() {
 
 pub async fn unwind<P: AsRef<Path> + Send + Sync>(
     path: P,
-    f: impl Future<Output = MelResult>,
-) -> MelResult {
+    f: impl Future<Output = crate::error::Result>,
+) -> crate::error::Result {
     create_tests_dir();
     let result = std::panic::AssertUnwindSafe(f).catch_unwind().await;
     delete_path(path);
