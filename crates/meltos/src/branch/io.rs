@@ -1,12 +1,22 @@
-use crate::branch::structs::branch_name::BranchName;
+use serde::{Deserialize, Serialize};
 
-#[async_trait::async_trait]
-pub trait LocalBranchIo {
-    async fn branch_names(&self) -> Vec<BranchName>;
-
-
-    async fn checkout(&self, branch_name: &BranchName);
+#[repr(transparent)]
+#[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize)]
+pub struct Blob(Vec<u8>);
 
 
-    async fn commit(&self);
+pub struct BlockHash(String);
+
+
+pub struct BlockName(String);
+
+
+pub struct BlockMeta{
+    pub hash: BlockHash,
+    pub name: BlockName,
+}
+
+
+pub struct Tree{
+
 }
