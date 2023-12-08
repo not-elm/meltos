@@ -7,18 +7,15 @@ repository = "https://github.com/MlUlM/meltos"
 
 [workspace]
 members = [
-    "meltos_branch",
+    "crates/*",
+    "ui/*",
     "meltos_cli",
-    "meltos_core",
-    "meltos_discussion",
-    "meltos_fs",
-    "meltos_room",
     "meltos_server"
 ]
 
 [dependencies]
 tar = "0.4.40"
-meltos_core = { path = "meltos_core" }
+meltos_core = { path = "crates/meltos_core" }
 
 [workspace.dependencies]
 async-trait = "0.1.74"

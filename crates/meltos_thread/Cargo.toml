@@ -1,11 +1,12 @@
 [package]
-name = "meltos_discussion"
+name = "meltos_thread"
 version = "0.1.0"
 edition = "2021"
 
 
 [dependencies]
 uuid = { version = "1.6.1", features = ["v4"] }
+meltos_core = { path = "../meltos_core" }
 serde = { workspacce = true, features = ["derive"] }
 tokio = { workspace = true }
 async-trait = { workspace = true }
