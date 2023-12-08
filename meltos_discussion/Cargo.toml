@@ -7,3 +7,7 @@ edition = "2021"
 [dependencies]
 uuid = { version = "1.6.1", features = ["v4"] }
 serde = { workspacce = true, features = ["derive"] }
+tokio = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+auto-delegate = { workspace = true }

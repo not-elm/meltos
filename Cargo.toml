@@ -20,7 +20,6 @@ members = [
 tar = "0.4.40"
 meltos_core = { path = "meltos_core" }
 
-
 [workspace.dependencies]
 async-trait = "0.1.74"
 tokio = { version = "1.34.0", features = ["full"] }
@@ -29,3 +28,4 @@ serde_json = "1.0.108"
 serde_bytes = "0.11.12"
 thiserror = "1.0.50"
 anyhow = "1.0.75"
+auto-delegate = "0.0.9"
