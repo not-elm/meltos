@@ -3,7 +3,6 @@ use std::future::Future;
 use std::path::Path;
 
 use futures::FutureExt;
-use meltos_core::error::crate::error::Result;
 
 pub fn create_tests_dir() {
     let _ = fs::create_dir("tests");

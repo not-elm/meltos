@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 use std::ops::{Deref, DerefMut};
 
-use meltos_core::impl_string_new_type;
+use meltos_util::impl_string_new_type;
 
 use serde::{Deserialize, Serialize};
 

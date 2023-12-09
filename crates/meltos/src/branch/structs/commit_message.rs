@@ -1,4 +1,4 @@
-use meltos_core::impl_string_new_type;
+use meltos_util::impl_string_new_type;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct CommitMessage(String);

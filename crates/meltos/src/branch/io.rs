@@ -11,12 +11,10 @@ pub struct BlockHash(String);
 pub struct BlockName(String);
 
 
-pub struct BlockMeta{
+pub struct BlockMeta {
     pub hash: BlockHash,
     pub name: BlockName,
 }
 
 
-pub struct Tree{
-
-}
+pub struct Tree {}

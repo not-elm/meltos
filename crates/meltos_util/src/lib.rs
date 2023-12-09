@@ -1,3 +1,12 @@
+pub mod compression;
+pub mod error;
+pub mod serde;
+
+pub mod macros {
+    pub use meltos_macros::*;
+}
+
+
 #[macro_export]
 macro_rules! impl_string_new_type {
     ($name: ident) => {

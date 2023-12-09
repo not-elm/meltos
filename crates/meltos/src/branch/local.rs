@@ -8,5 +8,3 @@ pub trait LocalBranchIo {
 
     async fn fetch_by(&self, branch_name: &BranchName) -> error::Result<BranchName>;
 }
-
-

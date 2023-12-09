@@ -1,7 +1,4 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Diff{
-    
-}
-
+pub struct Diff {}

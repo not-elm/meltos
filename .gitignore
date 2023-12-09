@@ -1,4 +1,4 @@
 /target
 .idea/
 Cargo.lock
-/crates/meltos_core/tests/
+/crates/meltos_util/tests/

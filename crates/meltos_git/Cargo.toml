@@ -1,11 +1,12 @@
 [package]
-name = "meltos_core"
+name = "meltos_git"
 version = "0.1.0"
 edition = "2021"
 
 
 [dependencies]
-
-thiserror = { workspace = true }
+sha1_smol = "1.0.0"
+meltos_util = { path = "../meltos_util" }
 anyhow = { workspace = true }
+thiserror = { worspace = true }
 serde = { workspace = true }

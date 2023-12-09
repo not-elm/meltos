@@ -8,7 +8,7 @@ edition = "2021"
 flate2 = { version = "1.0.28" }
 tar = "0.4.40"
 bincode = "1.3.3"
-meltos_core = { path = "../meltos_core" }
+meltos_util = { path = "../meltos_util" }
 async-trait = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
