@@ -1,15 +1,15 @@
-use async_trait::async_trait;
 use std::collections::HashMap;
 
+use async_trait::async_trait;
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
-use crate::session::{SessionId, SessionIo};
-use crate::shared::SharedMutex;
+use meltos_util::tokio::sync::ArcMutex;
 
+use crate::session::{SessionId, SessionIo};
 
 #[derive(Default, Clone)]
 pub struct MockSessionIo {
-    map: SharedMutex<HashMap<SessionId, RTCSessionDescription>>,
+    map: ArcMutex<HashMap<SessionId, RTCSessionDescription>>,
 }
 
 

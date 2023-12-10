@@ -1,0 +1,11 @@
+[package]
+name = "meltos_client"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+webrtc = "0.9.0"
+meltos_util = { path = "../../crates/meltos_util", features = ["async-trait"] }
+thiserror = { workspace = true }
+anyhow = { workspace = true }

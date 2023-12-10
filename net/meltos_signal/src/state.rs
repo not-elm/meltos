@@ -1,18 +1,13 @@
-use std::collections::HashMap;
-
 use auto_delegate::Delegate;
 use axum::extract::FromRef;
 
-use meltos_util::macros::Deref;
-
-use crate::offer::connect::BroadcastSender;
-use crate::session::{SessionId, SessionIo};
-use crate::shared::SharedMutex;
+use crate::api::webrtc::SocketChannels;
+use crate::session::SessionIo;
 
 #[derive(Default, Clone)]
 pub struct AppState<S>
-where
-    S: SessionIo + Clone,
+    where
+        S: SessionIo + Clone,
 {
     session_io: SessionIoState<S>,
     channels: SocketChannels,
@@ -20,8 +15,8 @@ where
 
 
 impl<S> FromRef<AppState<S>> for SessionIoState<S>
-where
-    S: SessionIo + Clone,
+    where
+        S: SessionIo + Clone,
 {
     fn from_ref(input: &AppState<S>) -> Self {
         input.session_io.clone()
@@ -30,8 +25,8 @@ where
 
 
 impl<S> FromRef<AppState<S>> for SocketChannels
-where
-    S: SessionIo + Clone,
+    where
+        S: SessionIo + Clone,
 {
     fn from_ref(input: &AppState<S>) -> Self {
         input.channels.clone()
@@ -43,6 +38,3 @@ where
 #[to(SessionIo)]
 pub struct SessionIoState<S: SessionIo + Clone>(S);
 
-
-#[derive(Debug, Clone, Deref, Default)]
-pub struct SocketChannels(SharedMutex<HashMap<SessionId, BroadcastSender>>);

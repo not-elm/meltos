@@ -1,24 +1,29 @@
-use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{Query, State, WebSocketUpgrade};
+use axum::extract::ws::{Message, WebSocket};
 use axum::response::Response;
 use futures::stream::{SplitSink, SplitStream};
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
+use meltos_net_core::session::SessionId;
 use meltos_util::error::LogIfError;
 
+use crate::api::webrtc::{BroadcastReceiver, SocketChannels};
 use crate::error;
-use crate::session::SessionId;
-use crate::state::SocketChannels;
 
 #[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Param {
     pub session_id: SessionId,
+    capacity: Option<usize>,
 }
 
 
-pub type BroadcastSender = tokio::sync::broadcast::Sender<Vec<u8>>;
-pub type BroadcastReceiver = tokio::sync::broadcast::Receiver<Vec<u8>>;
+impl Param {
+    pub fn capacity(&self) -> usize {
+        self.capacity.unwrap_or(30)
+            .max(50)
+    }
+}
 
 
 pub async fn connect(
@@ -26,7 +31,7 @@ pub async fn connect(
     Query(param): Query<Param>,
     State(channels): State<SocketChannels>,
 ) -> Response {
-    let (tx, rx) = tokio::sync::broadcast::channel(30);
+    let (tx, rx) = tokio::sync::broadcast::channel(param.capacity());
     channels.lock().await.insert(param.session_id, tx);
     ws.on_upgrade(move |socket| websocket_handle(socket, rx))
 }
