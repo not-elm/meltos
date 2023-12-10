@@ -20,3 +20,4 @@ serde_json = { version = "1.0.108", features = [] }
 tower = "0.4.13"
 sha1_smol = "1.0.0"
 http-body-util = "0.1.0"
+futures = { workspace = true }

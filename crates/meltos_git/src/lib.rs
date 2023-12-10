@@ -1,6 +1,6 @@
 extern crate core;
 
-mod block;
-mod error;
-mod mapping;
-mod stage;
+pub mod block;
+pub mod error;
+pub mod mapping;
+pub mod stage;

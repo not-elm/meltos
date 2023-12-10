@@ -1,13 +1,16 @@
 use std::net::SocketAddr;
 
-use axum::extract::State;
-use axum::routing::post;
 use axum::{Json, Router};
+use axum::extract::State;
+use axum::routing::{get, post};
 use http::StatusCode;
 
-use crate::offer::OfferParam;
-use crate::session::mock::MockSessionIo;
+use meltos_util::tracing;
+use offer::connect;
+
+use crate::offer::init::OfferParam;
 use crate::session::{SessionId, SessionIo};
+use crate::session::mock::MockSessionIo;
 use crate::state::{AppState, SessionIoState};
 
 mod error;
@@ -21,6 +24,7 @@ pub type HttpResult<T> = Result<T, StatusCode>;
 
 #[tokio::main]
 async fn main() -> error::Result {
+    tracing::tracing_init();
     let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
     let tcp = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(tcp, app::<MockSessionIo>()).await?;
@@ -29,11 +33,12 @@ async fn main() -> error::Result {
 
 
 fn app<S>() -> Router
-where
-    S: SessionIo + Clone + Default + 'static,
+    where
+        S: SessionIo + Clone + Default + 'static,
 {
     Router::new()
         .route("/offer", post(offer::<S>))
+        .route("/offer/connect", get(connect::connect))
         .with_state(AppState::<S>::default())
 }
 
@@ -42,8 +47,8 @@ async fn offer<S>(
     State(session_io): State<SessionIoState<S>>,
     Json(param): Json<OfferParam>,
 ) -> HttpResult<String>
-where
-    S: SessionIo + Clone,
+    where
+        S: SessionIo + Clone,
 {
     let session_id = SessionId::from(&param.session_description);
     let session_id_str = session_id.to_string();
@@ -67,10 +72,9 @@ mod tests {
     use tower::ServiceExt;
 
     use crate::app;
-    use crate::offer::OfferParam;
+    use crate::offer::init::OfferParam;
     use crate::session::mock::MockSessionIo;
     use crate::session::SessionId;
-
 
     #[tokio::test]
     async fn offer() {

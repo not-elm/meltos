@@ -1,6 +1,7 @@
 pub mod compression;
 pub mod error;
 pub mod serde;
+pub mod tracing;
 
 pub mod macros {
     pub use meltos_macros::*;

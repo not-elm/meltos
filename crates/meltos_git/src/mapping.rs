@@ -1,9 +1,9 @@
-use crate::block::BlockMeta;
-use crate::stage::Stage;
-use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::hash::Hash;
 
+use serde::{Deserialize, Serialize};
+
+use crate::block::BlockMeta;
 
 #[derive(Eq, PartialEq, Copy, Clone, Deserialize, Serialize, Hash, Debug)]
 pub struct Staged(bool);
