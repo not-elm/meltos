@@ -10,6 +10,9 @@ pub enum Error {
     Io(#[from] std::io::Error),
 
     #[error(transparent)]
+    StdBoxed(#[from] Box<dyn std::error::Error>),
+
+    #[error(transparent)]
     BinCode(#[from] bincode::Error),
 
     #[error("structs not exists id = {0:?}")]

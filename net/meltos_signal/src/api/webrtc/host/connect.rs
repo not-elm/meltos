@@ -1,11 +1,11 @@
-use axum::extract::{Query, State, WebSocketUpgrade};
 use axum::extract::ws::{Message, WebSocket};
+use axum::extract::{Query, State, WebSocketUpgrade};
 use axum::response::Response;
 use futures::stream::{SplitSink, SplitStream};
 use futures::StreamExt;
+use meltos::session::SessionId;
 use serde::{Deserialize, Serialize};
 
-use meltos_net_core::session::SessionId;
 use meltos_util::error::LogIfError;
 
 use crate::api::webrtc::{BroadcastReceiver, SocketChannels};
@@ -20,8 +20,7 @@ pub struct Param {
 
 impl Param {
     pub fn capacity(&self) -> usize {
-        self.capacity.unwrap_or(30)
-            .max(50)
+        self.capacity.unwrap_or(30).max(50)
     }
 }
 

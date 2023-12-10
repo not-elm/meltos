@@ -3,7 +3,7 @@ use axum::response::Response;
 use http::StatusCode;
 use serde::{Deserialize, Serialize};
 
-use meltos_net_core::session::SessionId;
+use meltos::session::SessionId;
 
 use crate::api::webrtc::SocketChannels;
 use crate::HttpResult;

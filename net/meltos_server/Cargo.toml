@@ -1,0 +1,24 @@
+[package]
+name = "meltos_server"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+http-body-util = "0.1.0"
+
+log = "0.4.20"
+meltos_util = { path = "../../crates/meltos_util", features = ["tokio"] }
+tokio = { workspace = true }
+tower = { workspace = true }
+axum = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio-tungstenite = { workspace = true }
+futures = { workspace = true }
+meltos = { path = "../../crates/meltos" }
+anyhow = { workspace = true }
+thiserror = { workspaec = true }
+async-trait = { workspaec = true }
+
+

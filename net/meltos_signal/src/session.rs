@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
-use meltos_net_core::session::SessionId;
+use meltos::session::SessionId;
 
 use crate::error;
 

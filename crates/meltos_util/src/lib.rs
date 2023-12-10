@@ -4,10 +4,10 @@ pub mod serde;
 pub mod tracing;
 
 #[cfg(feature = "tokio")]
-pub mod tokio;
+pub mod sync;
 
 #[cfg(feature = "async-trait")]
-pub mod async_trait{
+pub mod async_trait {
     pub use async_trait::*;
 }
 

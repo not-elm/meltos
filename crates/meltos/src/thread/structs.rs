@@ -16,6 +16,7 @@ pub struct MessageThread {
     pub messages: Messages,
 }
 
+
 impl MessageThread {
     pub fn add_message(&mut self, user_id: UserId, message: MessageText) {
         let no = MessageNo(self.messages.len());

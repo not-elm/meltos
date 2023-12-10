@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 meltos_util = { path = "../../crates/meltos_util", features = ["tokio"] }
+meltos = { path = "../../crates/meltos" }
 tokio = { workspace = true }
 axum = { workspace = true }
 thiserror = { workspace = true }
@@ -15,10 +16,9 @@ serde = { workspace = true }
 async-trait = { workspace = true }
 auto-delegate = { workspace = true }
 http = { version = "1.0.0", features = [] }
+http-body-util = "0.1.0"
 mime = "0.3.17"
 serde_json = { version = "1.0.108", features = [] }
-tower = "0.4.13"
+tower = { workspace = true }
 sha1_smol = "1.0.0"
-http-body-util = "0.1.0"
 futures = { workspace = true }
-meltos_net_core = { path = "../meltos_net_core" }

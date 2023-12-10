@@ -1,10 +1,10 @@
-use serde::{Deserialize, Serialize};
-use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 use meltos_util::macros::Display;
 use meltos_util::serde::AsBinary;
+use serde::{Deserialize, Serialize};
+use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
 #[derive(Eq, PartialEq, Debug, Clone, Hash, Serialize, Deserialize, Display)]
-pub struct SessionId(String);
+pub struct SessionId(pub String);
 
 
 impl From<&RTCSessionDescription> for SessionId {

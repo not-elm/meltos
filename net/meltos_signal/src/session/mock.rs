@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
-use meltos_util::tokio::sync::ArcMutex;
+use meltos_util::sync::arc_mutex::ArcMutex;
 
 use crate::session::{SessionId, SessionIo};
 

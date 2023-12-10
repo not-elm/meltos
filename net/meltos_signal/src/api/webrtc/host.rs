@@ -1,6 +1,6 @@
-mod init;
 mod connect;
+mod init;
 
 
-pub use init::*;
 pub use connect::*;
+pub use init::*;

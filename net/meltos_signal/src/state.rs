@@ -6,8 +6,8 @@ use crate::session::SessionIo;
 
 #[derive(Default, Clone)]
 pub struct AppState<S>
-    where
-        S: SessionIo + Clone,
+where
+    S: SessionIo + Clone,
 {
     session_io: SessionIoState<S>,
     channels: SocketChannels,
@@ -15,8 +15,8 @@ pub struct AppState<S>
 
 
 impl<S> FromRef<AppState<S>> for SessionIoState<S>
-    where
-        S: SessionIo + Clone,
+where
+    S: SessionIo + Clone,
 {
     fn from_ref(input: &AppState<S>) -> Self {
         input.session_io.clone()
@@ -25,8 +25,8 @@ impl<S> FromRef<AppState<S>> for SessionIoState<S>
 
 
 impl<S> FromRef<AppState<S>> for SocketChannels
-    where
-        S: SessionIo + Clone,
+where
+    S: SessionIo + Clone,
 {
     fn from_ref(input: &AppState<S>) -> Self {
         input.channels.clone()
@@ -37,4 +37,3 @@ impl<S> FromRef<AppState<S>> for SocketChannels
 #[derive(Clone, Default, Delegate)]
 #[to(SessionIo)]
 pub struct SessionIoState<S: SessionIo + Clone>(S);
-

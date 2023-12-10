@@ -4,11 +4,11 @@ use http::StatusCode;
 use serde::{Deserialize, Serialize};
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
-use meltos_net_core::session::SessionId;
+use meltos::session::SessionId;
 
-use crate::HttpResult;
 use crate::session::SessionIo;
 use crate::state::SessionIoState;
+use crate::HttpResult;
 
 #[derive(Debug, Deserialize, Default, Serialize)]
 pub struct OfferParam {
@@ -20,8 +20,8 @@ pub async fn init<S>(
     State(session_io): State<SessionIoState<S>>,
     Json(param): Json<OfferParam>,
 ) -> HttpResult<String>
-    where
-        S: SessionIo + Clone,
+where
+    S: SessionIo + Clone,
 {
     let session_id = SessionId::from(&param.session_description);
     let session_id_str = session_id.to_string();
@@ -42,7 +42,7 @@ mod tests {
     use http_body_util::BodyExt;
     use tower::ServiceExt;
 
-    use meltos_net_core::session::SessionId;
+    use meltos::session::SessionId;
 
     use crate::api::webrtc::host::init::OfferParam;
     use crate::api::webrtc::test_util::init_request;
@@ -53,11 +53,7 @@ mod tests {
     async fn offer() {
         let app = app::<MockSessionIo>();
         let offer = OfferParam::default();
-        let response = app
-            .oneshot(init_request(&offer
-            ))
-            .await
-            .unwrap();
+        let response = app.oneshot(init_request(&offer)).await.unwrap();
 
         assert_eq!(response.status(), StatusCode::OK);
         let body = response.into_body().collect().await.unwrap().to_bytes();
@@ -69,5 +65,3 @@ mod tests {
         );
     }
 }
-
-

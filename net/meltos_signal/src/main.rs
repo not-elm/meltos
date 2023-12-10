@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
-use axum::Router;
 use axum::routing::{get, post};
+use axum::Router;
 use http::StatusCode;
 
 use meltos_util::tracing;
@@ -10,8 +10,8 @@ use crate::session::mock::MockSessionIo;
 use crate::session::SessionIo;
 use crate::state::AppState;
 
-mod error;
 mod api;
+mod error;
 mod session;
 mod state;
 
@@ -29,8 +29,8 @@ async fn main() -> error::Result {
 
 
 fn app<S>() -> Router
-    where
-        S: SessionIo + Clone + Default + 'static,
+where
+    S: SessionIo + Clone + Default + 'static,
 {
     Router::new()
         .route("/host/init", post(api::webrtc::host::init::<S>))
@@ -38,5 +38,3 @@ fn app<S>() -> Router
         .route("/user/join", get(api::webrtc::user::join))
         .with_state(AppState::<S>::default())
 }
-
-
