@@ -1,17 +1,15 @@
 use std::net::SocketAddr;
 
-use axum::{Json, Router};
-use axum::extract::State;
 use axum::routing::{get, post};
+use axum::Router;
 use http::StatusCode;
 
 use meltos_util::tracing;
 use offer::connect;
 
-use crate::offer::init::OfferParam;
-use crate::session::{SessionId, SessionIo};
 use crate::session::mock::MockSessionIo;
-use crate::state::{AppState, SessionIoState};
+use crate::session::SessionIo;
+use crate::state::AppState;
 
 mod error;
 mod offer;
@@ -33,32 +31,13 @@ async fn main() -> error::Result {
 
 
 fn app<S>() -> Router
-    where
-        S: SessionIo + Clone + Default + 'static,
+where
+    S: SessionIo + Clone + Default + 'static,
 {
     Router::new()
-        .route("/offer", post(offer::<S>))
+        .route("/offer/init", post(offer::init::init::<S>))
         .route("/offer/connect", get(connect::connect))
         .with_state(AppState::<S>::default())
-}
-
-
-async fn offer<S>(
-    State(session_io): State<SessionIoState<S>>,
-    Json(param): Json<OfferParam>,
-) -> HttpResult<String>
-    where
-        S: SessionIo + Clone,
-{
-    let session_id = SessionId::from(&param.session_description);
-    let session_id_str = session_id.to_string();
-    match session_io
-        .insert(session_id, param.session_description)
-        .await
-    {
-        Ok(()) => Ok(session_id_str),
-        Err(_) => Err(StatusCode::BAD_REQUEST),
-    }
 }
 
 
@@ -84,7 +63,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .method(http::Method::POST)
-                    .uri("/offer")
+                    .uri("/offer/init")
                     .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
                     .body(Body::from(serde_json::to_string(&offer).unwrap()))
                     .unwrap(),
