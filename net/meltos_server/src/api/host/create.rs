@@ -1,17 +1,17 @@
 use axum::extract::State;
 
-use meltos::session::SessionId;
+use meltos::session::RoomId;
 
-use crate::effect::create_effect;
-use crate::HttpResult;
+use crate::room::room_effect;
 use crate::state::Rooms;
+use crate::HttpResult;
 
 pub async fn create(State(rooms): State<Rooms>) -> HttpResult<String> {
-    let session_id = SessionId("session".to_string());
+    let session_id = RoomId("session".to_string());
     rooms
         .lock()
         .await
-        .insert(session_id.clone(), create_effect(30));
+        .insert(session_id.clone(), room_effect(session_id.clone(), 30));
     Ok(session_id.to_string())
 }
 

@@ -3,14 +3,14 @@ use axum::response::Response;
 use http::StatusCode;
 use serde::{Deserialize, Serialize};
 
-use meltos::session::SessionId;
+use meltos::session::RoomId;
 
 use crate::api::webrtc::SocketChannels;
 use crate::HttpResult;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Param {
-    session_id: SessionId,
+    session_id: RoomId,
 }
 
 

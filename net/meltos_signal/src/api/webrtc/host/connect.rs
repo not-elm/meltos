@@ -3,7 +3,7 @@ use axum::extract::{Query, State, WebSocketUpgrade};
 use axum::response::Response;
 use futures::stream::{SplitSink, SplitStream};
 use futures::StreamExt;
-use meltos::session::SessionId;
+use meltos::session::RoomId;
 use serde::{Deserialize, Serialize};
 
 use meltos_util::error::LogIfError;
@@ -13,7 +13,7 @@ use crate::error;
 
 #[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Param {
-    pub session_id: SessionId,
+    pub session_id: RoomId,
     capacity: Option<usize>,
 }
 

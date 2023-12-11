@@ -8,10 +8,9 @@ use crate::api::host;
 use crate::state::AppState;
 
 mod api;
-mod effect;
 mod error;
+mod room;
 mod state;
-mod ws;
 
 
 pub type HttpResult<T> = std::result::Result<T, StatusCode>;

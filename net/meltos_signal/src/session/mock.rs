@@ -5,11 +5,11 @@ use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
 use meltos_util::sync::arc_mutex::ArcMutex;
 
-use crate::session::{SessionId, SessionIo};
+use crate::session::{RoomId, SessionIo};
 
 #[derive(Default, Clone)]
 pub struct MockSessionIo {
-    map: ArcMutex<HashMap<SessionId, RTCSessionDescription>>,
+    map: ArcMutex<HashMap<RoomId, RTCSessionDescription>>,
 }
 
 
@@ -17,7 +17,7 @@ pub struct MockSessionIo {
 impl SessionIo for MockSessionIo {
     async fn insert(
         &self,
-        session_id: SessionId,
+        session_id: RoomId,
         session: RTCSessionDescription,
     ) -> crate::error::Result {
         self.map.lock().await.insert(session_id, session);
@@ -26,7 +26,7 @@ impl SessionIo for MockSessionIo {
 
     async fn read(
         &self,
-        session_id: SessionId,
+        session_id: RoomId,
     ) -> crate::error::Result<Option<RTCSessionDescription>> {
         Ok(self.map.lock().await.get(&session_id).cloned())
     }

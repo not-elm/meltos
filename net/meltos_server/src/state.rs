@@ -1,6 +1,6 @@
-use crate::effect::{ClientOrderTx, ServerOrderTx};
+use crate::room::{ClientCommandReceiver, ServerCommandSender};
 use axum::extract::FromRef;
-use meltos::session::SessionId;
+use meltos::session::RoomId;
 use meltos_util::macros::Deref;
 use meltos_util::sync::arc_mutex::ArcMutex;
 use std::collections::HashMap;
@@ -20,4 +20,4 @@ impl FromRef<AppState> for Rooms {
 
 
 #[derive(Default, Deref, Clone)]
-pub struct Rooms(ArcMutex<HashMap<SessionId, (ServerOrderTx, ClientOrderTx)>>);
+pub struct Rooms(ArcMutex<HashMap<RoomId, (ServerCommandSender, ClientCommandReceiver)>>);

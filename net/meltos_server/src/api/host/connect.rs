@@ -8,22 +8,23 @@ use futures::stream::SplitSink;
 use log::error;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tokio::sync::broadcast::{Receiver, Sender};
+use tokio::sync::broadcast::Receiver;
 
-use meltos::order::client::ClientOrder;
-use meltos::order::ServerOrder;
-use meltos::session::SessionId;
+use meltos::command::client::ClientOrder;
+use meltos::command::server::ServerCommand;
+use meltos::session::RoomId;
 use meltos::user::UserId;
 use meltos_util::error::LogIfError;
 use meltos_util::serde::AsBinary;
 
 use crate::error;
+use crate::room::{ClientCommandReceiver, ServerCommandSender};
+use crate::room::ws::receiver::CommandReceiver;
 use crate::state::Rooms;
-use crate::ws::receiver::WebsocketReceiver;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Param {
-    session_id: SessionId,
+    room_id: RoomId,
     user_id: UserId,
 }
 
@@ -33,29 +34,39 @@ pub async fn connect(
     Query(param): Query<Param>,
     State(rooms): State<Rooms>,
 ) -> Response {
-    if let Some((server_tx, client_tx)) = rooms.lock().await.get(&param.session_id).cloned() {
-        ws.on_upgrade(|socket| async move {
-            let (ws_tx, ws_rx) = socket.split();
-            let h1 = send_client_order(ws_tx, client_tx.subscribe());
-            let h2 = receive_websocket_orders(
-                WebsocketReceiver(ws_rx),
-                server_tx.clone(),
-                param.session_id,
+    if let Some((server_command_sender, client_command_receiver)) =
+        rooms.lock().await.get(&param.room_id).cloned()
+    {
+        ws.on_upgrade(move |socket| {
+            start_websocket(
+                socket,
+                server_command_sender,
+                client_command_receiver,
                 param.user_id,
-            );
-            tokio::select! {
-                r1 = h1 => r1.log_if_error(),
-                r2 = h2 => r2.log_if_error()
-            }
+            )
         })
     } else {
-        error!("{}", error::Error::SessionNotExists(param.session_id.clone()));
-        Response::builder()
-            .status(StatusCode::BAD_REQUEST)
-            .body(Body::from(serde_json::to_string(&json! {{
-                "detail": error::Error::SessionNotExists(param.session_id).to_string()
-            }}).unwrap()))
-            .unwrap()
+        response_not_exists_target_room(param.room_id)
+    }
+}
+
+
+async fn start_websocket(
+    socket: WebSocket,
+    server_command_sender: ServerCommandSender,
+    client_command_receiver: ClientCommandReceiver,
+    user_id: UserId,
+) {
+    let (ws_tx, ws_rx) = socket.split();
+    let h1 = send_client_order(ws_tx, client_command_receiver.subscribe());
+    let h2 = receive_commands(
+        CommandReceiver(ws_rx),
+        server_command_sender.clone(),
+        user_id,
+    );
+    tokio::select! {
+        r1 = h1 => r1.log_if_error(),
+        r2 = h2 => r2.log_if_error()
     }
 }
 
@@ -78,17 +89,33 @@ async fn send_client_order(
 }
 
 
-async fn receive_websocket_orders(
-    mut ws_rx: WebsocketReceiver,
-    server_tx: Sender<ServerOrder>,
-    _session_id: SessionId,
-    _user_id: UserId,
+async fn receive_commands(
+    mut command_receiver: CommandReceiver,
+    server_command_sender: ServerCommandSender,
+    user_id: UserId,
 ) -> error::Result {
-    while let Ok(order) = ws_rx.recv().await {
-        server_tx.send(order)?;
+    while let Ok(command) = command_receiver.recv().await {
+        server_command_sender.send(ServerCommand {
+            from: user_id.clone(),
+            command,
+        })?;
     }
 
     Ok(())
+}
+
+
+fn response_not_exists_target_room(session_id: RoomId) -> Response {
+    error!("{}", error::Error::SessionNotExists(session_id.clone()));
+    Response::builder()
+        .status(StatusCode::BAD_REQUEST)
+        .body(Body::from(
+            serde_json::to_string(&json! {{
+                "detail": error::Error::SessionNotExists(session_id).to_string()
+            }})
+                .unwrap(),
+        ))
+        .unwrap()
 }
 
 

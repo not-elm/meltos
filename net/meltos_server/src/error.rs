@@ -1,11 +1,14 @@
-use meltos::order::ServerOrder;
-use meltos::session::SessionId;
-use meltos::user::UserId;
 use thiserror::Error;
 use tokio::sync::broadcast::error::SendError;
 use tokio::task::JoinError;
+use meltos::command::client::ClientOrder;
 
-pub type Result<T: Send = ()> = std::result::Result<T, Error>;
+use meltos::session::RoomId;
+use meltos::user::UserId;
+
+use meltos::command::server::ServerCommand;
+
+pub type Result<T = ()> = std::result::Result<T, Error>;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -19,18 +22,21 @@ pub enum Error {
     TaskJoin(#[from] JoinError),
 
     #[error(transparent)]
-    Send(#[from] SendError<ServerOrder>),
+    SendServerOrder(#[from] SendError<ServerCommand>),
+
+    #[error(transparent)]
+    SendClientOrder(#[from] SendError<ClientOrder>),
 
     #[error("user_id {0} was already joined in session {1}")]
-    RoomJoin(UserId, SessionId),
+    RoomJoin(UserId, RoomId),
 
     #[error("websocket has been disconnected")]
     Disconnected,
 
     #[error("session not exists: session id = {0}")]
-    SessionNotExists(SessionId),
+    SessionNotExists(RoomId),
 
-    #[error("websocket message invalid order")]
+    #[error("websocket message invalid command")]
     InvalidOrder,
 
     #[error("failed serialize to binary")]

@@ -1,10 +1,9 @@
-mod global;
-
-use crate::order::thread::global::GlobalThreadCommand;
 use serde::{Deserialize, Serialize};
+
+pub mod global;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(tag = "type", rename = "thread")]
-pub enum ThreadCommand {
-    Global(GlobalThreadCommand),
+pub enum ThreadOrder {
+    Global(global::GlobalThreadOrder)
 }

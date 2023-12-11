@@ -4,7 +4,7 @@ use http::StatusCode;
 use serde::{Deserialize, Serialize};
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
-use meltos::session::SessionId;
+use meltos::session::RoomId;
 
 use crate::session::SessionIo;
 use crate::state::SessionIoState;
@@ -23,7 +23,7 @@ pub async fn init<S>(
 where
     S: SessionIo + Clone,
 {
-    let session_id = SessionId::from(&param.session_description);
+    let session_id = RoomId::from(&param.session_description);
     let session_id_str = session_id.to_string();
     match session_io
         .insert(session_id, param.session_description)
@@ -42,7 +42,7 @@ mod tests {
     use http_body_util::BodyExt;
     use tower::ServiceExt;
 
-    use meltos::session::SessionId;
+    use meltos::session::RoomId;
 
     use crate::api::webrtc::host::init::OfferParam;
     use crate::api::webrtc::test_util::init_request;
@@ -59,7 +59,7 @@ mod tests {
         let body = response.into_body().collect().await.unwrap().to_bytes();
         assert_eq!(
             body,
-            SessionId::from(&offer.session_description)
+            RoomId::from(&offer.session_description)
                 .to_string()
                 .as_bytes()
         );

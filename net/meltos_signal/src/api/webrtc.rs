@@ -1,4 +1,4 @@
-use meltos::session::SessionId;
+use meltos::session::RoomId;
 use meltos_util::macros::Deref;
 use meltos_util::sync::arc_mutex::ArcMutex;
 use std::collections::HashMap;
@@ -12,11 +12,11 @@ pub type BroadcastReceiver = tokio::sync::broadcast::Receiver<Vec<u8>>;
 
 
 #[derive(Debug, Clone, Deref, Default)]
-pub struct SocketChannels(ArcMutex<HashMap<SessionId, BroadcastSender>>);
+pub struct SocketChannels(ArcMutex<HashMap<RoomId, BroadcastSender>>);
 
 
 impl SocketChannels {
-    pub async fn broadcast(&self, session_id: &SessionId) -> Option<BroadcastSender> {
+    pub async fn broadcast(&self, session_id: &RoomId) -> Option<BroadcastSender> {
         self.0.lock().await.get(session_id).cloned()
     }
 }
