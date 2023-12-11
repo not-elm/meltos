@@ -1,23 +1,48 @@
-use crate::room::{ClientCommandReceiver, ServerCommandSender};
+use auto_delegate::Delegate;
 use axum::extract::FromRef;
-use meltos::room::RoomId;
-use meltos_util::macros::Deref;
-use meltos_util::sync::arc_mutex::ArcMutex;
-use std::collections::HashMap;
 
+use meltos_backend::user::UserSessionIo;
+
+use crate::room::Rooms;
 
 #[derive(Clone, Default)]
-pub struct AppState {
+pub struct AppState<Session> {
     rooms: Rooms,
+    session: SessionState<Session>,
 }
 
 
-impl FromRef<AppState> for Rooms {
-    fn from_ref(input: &AppState) -> Self {
+impl<Session> AppState<Session>
+    where Session: UserSessionIo + Clone
+{
+    pub fn new(session: Session) -> AppState<Session> {
+        Self {
+            rooms: Rooms::default(),
+            session: SessionState(session),
+        }
+    }
+}
+
+
+#[derive(Delegate, Clone, Default, Debug)]
+#[to(UserSessionIo)]
+pub struct SessionState<Session>(Session);
+
+
+impl<Session> FromRef<AppState<Session>> for Rooms {
+    fn from_ref(input: &AppState<Session>) -> Self {
         input.rooms.clone()
     }
 }
 
 
-#[derive(Default, Deref, Clone, Debug)]
-pub struct Rooms(ArcMutex<HashMap<RoomId, (ServerCommandSender, ClientCommandReceiver)>>);
+impl<Session> FromRef<AppState<Session>> for SessionState<Session>
+    where Session: UserSessionIo + Clone
+{
+    fn from_ref(input: &AppState<Session>) -> Self {
+        input.session.clone()
+    }
+}
+
+
+

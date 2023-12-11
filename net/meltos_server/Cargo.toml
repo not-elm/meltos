@@ -10,6 +10,9 @@ http-body-util = "0.1.0"
 log = "0.4.20"
 meltos_util = { path = "../../crates/meltos_util", features = ["tokio"] }
 meltos = { path = "../../crates/meltos" }
+meltos_backend = { path = "../../crates/meltos_backend" }
+
+auto-delegate = { workspace = true }
 tokio = { workspace = true }
 tokio-tungstenite = { workspace = true }
 tower = { workspace = true }

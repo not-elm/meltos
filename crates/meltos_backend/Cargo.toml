@@ -1,0 +1,13 @@
+[package]
+name = "meltos_backend"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+meltos = { path = "../meltos" }
+meltos_util = { path = "../meltos_util", features = ["tokio"] }
+
+auto-delegate = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
