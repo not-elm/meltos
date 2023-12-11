@@ -6,6 +6,12 @@ use crate::discussion::structs::reply::Reply;
 use crate::discussion::structs::DiscussionMeta;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+pub struct Created {
+    pub meta: DiscussionMeta,
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(rename_all = "snake_case", tag = "type", content = "command")]
 pub enum GlobalCmd {
     Created {

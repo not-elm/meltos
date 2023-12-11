@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 meltos = { path = "../meltos" }
-meltos_util = { path = "../meltos_util", features = ["tokio"] }
+meltos_util = { path = "../meltos_util" }
 
 auto-delegate = { workspace = true }
 async-trait = { workspace = true }

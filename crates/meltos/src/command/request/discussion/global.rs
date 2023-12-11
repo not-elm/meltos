@@ -2,7 +2,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::discussion::structs::id::DiscussionId;
 use crate::discussion::structs::message::{MessageNo, MessageText};
-use crate::user::UserId;
+use crate::room::RoomId;
+use crate::user::{UserId, UserToken};
+
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+pub struct Create {
+    pub room_id: RoomId,
+    pub user_token: UserToken,
+}
+
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(tag = "type", rename = "global", rename_all = "snake_case")]

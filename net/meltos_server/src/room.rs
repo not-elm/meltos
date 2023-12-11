@@ -1,28 +1,49 @@
 use std::collections::HashMap;
 
-use tokio::sync::broadcast::{Receiver, Sender};
+use axum::body::Body;
+use axum::http::StatusCode;
+use axum::response::Response;
+use serde_json::json;
 
-use meltos::command::client::ClientCommand;
+use meltos::discussion::io::global::mock::MockGlobalDiscussionIo;
 use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_util::macros::Deref;
 use meltos_util::sync::arc_mutex::ArcMutex;
 
+use crate::room::executor::discussion::DiscussionCommandExecutor;
+
 mod executor;
-pub mod ws;
 
-
-pub type ClientCommandSender = Sender<ClientCommand>;
-pub type ClientCommandReceiver = Receiver<ClientCommand>;
 
 #[derive(Default, Deref, Clone, Debug)]
-pub struct Rooms(ArcMutex<HashMap<RoomId, Room>>);
+pub struct Rooms(ArcMutex<RoomMap>);
 
 
 impl Rooms {
     pub async fn insert_room(&self, room: Room) {
         let mut rooms = self.0.lock().await;
-        rooms.insert(room.id.clone(), room);
+        rooms.0.insert(room.id.clone(), room);
+    }
+}
+
+
+#[derive(Default, Debug)]
+pub struct RoomMap(HashMap<RoomId, Room>);
+
+impl RoomMap {
+    pub fn room_mut(&mut self, room_id: &RoomId) -> std::result::Result<&mut Room, Response> {
+        self.0.get_mut(room_id).ok_or(
+            Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .body(Body::from(
+                    json!({
+                        "error": format!("room_id {room_id} is not exists")
+                    })
+                        .to_string(),
+                ))
+                .unwrap(),
+        )
     }
 }
 
@@ -31,28 +52,24 @@ impl Rooms {
 pub struct Room {
     pub owner: UserId,
     pub id: RoomId,
-    command_tx: ClientCommandSender,
+    global_discussion_io: MockGlobalDiscussionIo,
 }
 
 
 impl Room {
-    pub fn open(owner: UserId, capacity: usize) -> Self {
-        let (command_tx, _) = tokio::sync::broadcast::channel::<ClientCommand>(capacity);
+    pub fn open(owner: UserId) -> Self {
         Self {
             id: RoomId::default(),
             owner,
-            command_tx,
+            global_discussion_io: MockGlobalDiscussionIo::default(),
         }
     }
 
 
-    #[inline]
-    pub fn command_receiver(&self) -> ClientCommandReceiver {
-        self.command_tx.subscribe()
+    pub fn as_global_discussion_executor(
+        &self,
+        user_id: UserId,
+    ) -> DiscussionCommandExecutor<'_, MockGlobalDiscussionIo> {
+        DiscussionCommandExecutor::new(user_id, &self.global_discussion_io)
     }
 }
-
-
-
-
-

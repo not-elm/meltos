@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 
 pub mod discussion;
+pub mod room;
 
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]

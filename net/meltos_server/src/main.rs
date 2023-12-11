@@ -4,9 +4,9 @@ use std::net::SocketAddr;
 use axum::http::StatusCode;
 use axum::Router;
 use axum::routing::{get, post};
-use meltos_backend::user::mock::MockUserSessionIo;
 
-use meltos_backend::user::UserSessionIo;
+use meltos_backend::user::mock::MockUserSessionIo;
+use meltos_backend::user::SessionIo;
 use meltos_util::tracing::tracing_init;
 
 use crate::state::AppState;
@@ -31,10 +31,15 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
 
 fn app<Session>(session: Session) -> Router
-    where Session: UserSessionIo + Debug + Clone + 'static
+    where
+        Session: SessionIo + Debug + Clone + 'static,
 {
     Router::new()
         .route("/room/open", post(api::room::open::<Session>))
         .route("/room/connect", get(api::room::connect))
+        .route(
+            "/discussion/global/create",
+            post(api::discussion::global::create::<Session>),
+        )
         .with_state(AppState::<Session>::new(session))
 }

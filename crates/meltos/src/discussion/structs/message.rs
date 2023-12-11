@@ -56,18 +56,18 @@ impl_string_new_type!(MessageText);
 
 #[repr(transparent)]
 #[derive(
-Eq,
-PartialEq,
-Copy,
-Clone,
-Ord,
-PartialOrd,
-Debug,
-Hash,
-Default,
-Serialize,
-Deserialize,
-Display,
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Debug,
+    Hash,
+    Default,
+    Serialize,
+    Deserialize,
+    Display,
 )]
 pub struct MessageNo(pub usize);
 

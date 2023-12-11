@@ -4,6 +4,7 @@ use tokio_tungstenite::tungstenite::Message;
 use crate::error;
 
 pub mod discussion;
+pub mod room;
 
 #[derive(Debug, Serialize, Deserialize, Hash, Clone)]
 #[serde(tag = "type", rename_all = "snake_case", content = "command")]

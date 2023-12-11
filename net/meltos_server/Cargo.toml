@@ -8,7 +8,7 @@ edition = "2021"
 http-body-util = "0.1.0"
 
 log = "0.4.20"
-meltos_util = { path = "../../crates/meltos_util", features = ["tokio"] }
+meltos_util = { path = "../../crates/meltos_util" }
 meltos = { path = "../../crates/meltos" }
 meltos_backend = { path = "../../crates/meltos_backend" }
 
@@ -22,7 +22,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 futures = { workspace = true }
 anyhow = { workspace = true }
-thiserror = { workspaec = true }
-async-trait = { workspaec = true }
-reqwest = { workspace = true }
+thiserror = { workspace = true }
+
+
 

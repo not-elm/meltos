@@ -15,10 +15,5 @@ thiserror = { workspace = true }
 anyhow = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-tokio = { workspace = true, optional = true }
-async-trait = { workspace = true, optional = true }
+tokio = { workspace = true }
 
-[features]
-default = []
-tokio = ["dep:tokio"]
-async-trait = ["dep:async-trait"]

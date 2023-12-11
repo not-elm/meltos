@@ -3,7 +3,7 @@ members = [
     "crates/*",
     "net/*"
 ]
-
+resolver = "2"
 
 exclude = [
     "meltos_tui"

@@ -1,3 +1,7 @@
+use axum::body::Body;
+use axum::http::StatusCode;
+use axum::response::Response;
+
 use thiserror::Error;
 use tokio::task::JoinError;
 
@@ -49,6 +53,16 @@ pub enum Error {
 impl From<Error> for String {
     fn from(value: Error) -> Self {
         value.to_string()
+    }
+}
+
+
+impl From<Error> for Response {
+    fn from(value: Error) -> Self {
+        Response::builder()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .body(Body::new(value.to_string()))
+            .unwrap()
     }
 }
 

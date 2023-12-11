@@ -1,16 +1,15 @@
 use async_trait::async_trait;
 use auto_delegate::delegate;
-use meltos::user::{UserToken, UserId};
+use meltos::user::{UserId, UserToken};
 
 use crate::error;
 
 pub mod mock;
 
 
-
 #[async_trait]
 #[delegate]
-pub trait UserSessionIo: Send + Sync {
+pub trait SessionIo: Send + Sync {
     async fn fetch_user_id(&self, session_token: UserToken) -> error::Result<UserId>;
 
 
