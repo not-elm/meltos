@@ -7,5 +7,5 @@ edition = "2021"
 [dependencies]
 ratatui = "0.24.0"
 crossterm = "0.27.0"
-meltos_util = { path = "../meltos_util" }
-meltos = { path = "../meltos" }
+meltos_util = { path = "../crates/meltos_util" }
+meltos = { path = "../crates/meltos" }

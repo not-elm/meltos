@@ -1,9 +1,6 @@
 use thiserror::Error;
-use tokio::sync::broadcast::error::SendError;
 use tokio::task::JoinError;
 
-use meltos::command::client::ClientCommand;
-use meltos::command::server::ServerCommand;
 use meltos::room::RoomId;
 use meltos::user::UserId;
 
@@ -26,11 +23,14 @@ pub enum Error {
     #[error(transparent)]
     TaskJoin(#[from] JoinError),
 
-    #[error(transparent)]
-    SendServerOrder(#[from] SendError<ServerCommand>),
+    #[error("failed sent server command error")]
+    SendServerOrder,
 
-    #[error(transparent)]
-    SendClientOrder(#[from] SendError<ClientCommand>),
+    #[error("failed sent client command error")]
+    SendClientOrder,
+
+    #[error("room_id {0} was already created")]
+    RoomCreate(RoomId),
 
     #[error("user_id {0} was already joined in session {1}")]
     RoomJoin(UserId, RoomId),

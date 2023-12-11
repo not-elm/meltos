@@ -12,12 +12,14 @@ pub struct ReplyDiscussion {
 
 
 impl ReplyDiscussion {
-    pub fn add_message(&mut self, user_id: UserId, message_text: MessageText) {
-        self.messages.push(Reply {
+    pub fn add_message(&mut self, user_id: UserId, message_text: MessageText) -> Reply {
+        let reply = Reply {
             user_id,
             no: MessageNo(self.messages.len()),
             text: message_text,
-        });
+        };
+        self.messages.push(reply.clone());
+        reply
     }
 }
 

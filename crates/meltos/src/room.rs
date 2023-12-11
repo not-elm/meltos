@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
-use meltos_util::macros::Display;
 
-pub mod local;
+use meltos_util::macros::Display;
 
 pub struct Room {
     id: RoomId,

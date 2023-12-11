@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use meltos_util::macros::Display;
+use serde::{Deserialize, Serialize};
 
 #[repr(transparent)]
 #[derive(Eq, PartialEq, Clone, Hash, Debug, Deserialize, Serialize, Display)]

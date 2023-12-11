@@ -14,16 +14,19 @@ pub enum DiscussionCmd {
 mod tests {
     use serde_json::json;
 
-    use crate::command::request::discussion::DiscussionCmd;
     use crate::command::request::discussion::global::GlobalCmd;
+    use crate::command::request::discussion::DiscussionCmd;
 
     #[test]
     fn global_cmd() {
         let lhs = json!(DiscussionCmd::Global(GlobalCmd::Create));
         let object = lhs.as_object().unwrap();
         assert_eq!(object.get("type"), Some(&json!("global")));
-        assert_eq!(object.get("command"), Some(&json!({
-                "type" : "create"
-        })));
+        assert_eq!(
+            object.get("command"),
+            Some(&json!({
+                    "type" : "create"
+            }))
+        );
     }
 }

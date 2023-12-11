@@ -1,21 +1,37 @@
 use axum::body::Body;
 use axum::extract::State;
-use axum::response::{IntoResponse, Response};
+use axum::http::StatusCode;
+use axum::response::Response;
+use serde_json::json;
 use tracing::debug;
+
 use meltos::room::RoomId;
+
+use crate::room::room_effect;
 use crate::state::Rooms;
 
 #[tracing::instrument]
-pub async fn create(State(rooms): State<Rooms>) -> impl IntoResponse {
+pub async fn create(State(rooms): State<Rooms>) -> Response {
     debug!("create room");
     let room_id = RoomId("session".to_string());
-    // rooms
-    //     .lock()
-    //     .await
-    //     .insert(session_id.clone(), room_effect(session_id.clone(), 30));
-    Response::builder()
-        .body(Body::from(room_id.to_string()))
-        .unwrap()
+    match room_effect(rooms, room_id.clone(), 30).await {
+        Ok(()) => {
+            Response::builder()
+                .body(Body::from(room_id.to_string()))
+                .unwrap()
+        }
+        Err(error) => {
+            Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .body(Body::from(
+                    json!({
+                        "description" : error.to_string()
+                    })
+                        .to_string(),
+                ))
+                .unwrap()
+        }
+    }
 }
 
 

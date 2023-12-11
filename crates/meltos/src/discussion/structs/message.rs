@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use meltos_util::impl_string_new_type;
 use meltos_util::macros::Display;
 
-use crate::discussion::structs::reply::ReplyDiscussion;
+use crate::discussion::structs::reply::{Reply, ReplyDiscussion};
 use crate::user::UserId;
 
 #[repr(transparent)]
@@ -36,7 +36,7 @@ pub struct Message {
     pub user_id: UserId,
     pub no: MessageNo,
     pub text: MessageText,
-    pub reply_thread: ReplyDiscussion,
+    pub reply_discussion: ReplyDiscussion,
 }
 
 
@@ -47,13 +47,13 @@ impl Message {
             user_id,
             no,
             text,
-            reply_thread: ReplyDiscussion::default(),
+            reply_discussion: ReplyDiscussion::default(),
         }
     }
 
 
-    pub fn add_reply(&mut self, user_id: UserId, message_text: MessageText) {
-        self.reply_thread.add_message(user_id, message_text);
+    pub fn add_reply(&mut self, user_id: UserId, message_text: MessageText) -> Reply {
+        self.reply_discussion.add_message(user_id, message_text)
     }
 }
 
@@ -66,7 +66,18 @@ impl_string_new_type!(MessageText);
 
 #[repr(transparent)]
 #[derive(
-Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Debug, Hash, Default, Serialize, Deserialize, Display
+    Eq,
+    PartialEq,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Debug,
+    Hash,
+    Default,
+    Serialize,
+    Deserialize,
+    Display,
 )]
 pub struct MessageNo(pub usize);
 

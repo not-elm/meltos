@@ -1,6 +1,7 @@
-use crate::error;
 use crate::discussion::structs::id::DiscussionId;
 use crate::discussion::structs::message::{Message, MessageNo, MessageText, Messages};
+use crate::discussion::structs::reply::Reply;
+use crate::error;
 use crate::user::UserId;
 use serde::{Deserialize, Serialize};
 
@@ -25,20 +26,22 @@ pub struct Discussion {
 
 
 impl Discussion {
-    pub fn new(creator: UserId) -> Self{
-        Self{
+    pub fn new(creator: UserId) -> Self {
+        Self {
             meta: DiscussionMeta {
                 creator,
-                id: DiscussionId::new()
+                id: DiscussionId::new(),
             },
-            messages: Messages::default()
+            messages: Messages::default(),
         }
     }
 
 
-    pub fn add_message(&mut self, user_id: UserId, message: MessageText) {
+    pub fn add_message(&mut self, user_id: UserId, message: MessageText) -> Message {
         let no = MessageNo(self.messages.len());
-        self.messages.push(Message::new(user_id, no, message))
+        let message = Message::new(user_id, no, message);
+        self.messages.push(message.clone());
+        message
     }
 
 
@@ -47,14 +50,12 @@ impl Discussion {
         user_id: UserId,
         no: MessageNo,
         message: MessageText,
-    ) -> error::Result {
+    ) -> error::Result<Reply> {
         let target_message = self
             .messages
             .iter_mut()
             .find(|m| m.no == no)
             .ok_or(error::Error::MessageNoNotExists(no))?;
-        target_message.add_reply(user_id, message);
-
-        Ok(())
+        Ok(target_message.add_reply(user_id, message))
     }
 }

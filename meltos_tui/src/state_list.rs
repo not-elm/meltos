@@ -1,7 +1,6 @@
 use ratatui::widgets::ListState;
 
 
-
 pub struct StatefulList<T> {
     pub state: ListState,
     pub items: Vec<T>,
@@ -49,11 +48,11 @@ impl<T> StatefulList<T> {
 }
 
 
-impl<T> Default  for StatefulList<T>{
+impl<T> Default for StatefulList<T> {
     fn default() -> Self {
-        Self{
+        Self {
             state: ListState::default(),
-            items: Vec::new()
+            items: Vec::new(),
         }
     }
 }

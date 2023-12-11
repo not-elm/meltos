@@ -23,7 +23,7 @@ pub enum GlobalCmd {
     },
 
     Close {
-        discussion_id: DiscussionId
+        discussion_id: DiscussionId,
     },
 }
 
@@ -34,6 +34,9 @@ mod tests {
 
     #[test]
     fn new_thread() {
-        assert_eq!(serde_json::to_string(&GlobalCmd::Create).unwrap(), "{\"type\":\"create\"}");
+        assert_eq!(
+            serde_json::to_string(&GlobalCmd::Create).unwrap(),
+            "{\"type\":\"create\"}"
+        );
     }
 }

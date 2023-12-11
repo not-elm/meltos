@@ -52,8 +52,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     //
     //     let mut buffer = String::new();
     //     io.read_line(&mut buffer).expect("failed read input");
-    //     let command: RunCommands = RunCommands::parse_from(buffer.split(' '));
-    //     println!("{command:?}");
+    //     let command: RunCommands = RunCommands::parse_from(buffer.split('
+    // '));     println!("{command:?}");
     // }
 }
 

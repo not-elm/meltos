@@ -1,9 +1,8 @@
-use std::fmt::{Display, Formatter};
-use serde::{Deserialize, Serialize};
 use crate::error;
+use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 
 pub mod discussion;
-
 
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
@@ -20,7 +19,6 @@ impl Display for RequestCmd {
 }
 
 
-
 impl TryFrom<&str> for RequestCmd {
     type Error = error::Error;
 
@@ -30,25 +28,27 @@ impl TryFrom<&str> for RequestCmd {
 }
 
 
-
 #[cfg(test)]
-mod tests{
-    use serde_json::json;
-    use crate::command::request::RequestCmd;
+mod tests {
     use crate::command::request::discussion::global::GlobalCmd;
     use crate::command::request::discussion::DiscussionCmd;
+    use crate::command::request::RequestCmd;
+    use serde_json::json;
 
     #[test]
-    fn new_global_discussion(){
+    fn new_global_discussion() {
         let cmd = RequestCmd::Discussion(DiscussionCmd::Global(GlobalCmd::Create));
         let json = json!(cmd);
         let m = json.as_object().unwrap();
         assert_eq!(m.get("type"), Some(&json!("discussion")));
-        assert_eq!(m.get("command"), Some(&json!({
-            "type" : "global",
-            "command" : {
-                "type" : "create"
-            }
-        })));
+        assert_eq!(
+            m.get("command"),
+            Some(&json!({
+                "type" : "global",
+                "command" : {
+                    "type" : "create"
+                }
+            }))
+        );
     }
 }

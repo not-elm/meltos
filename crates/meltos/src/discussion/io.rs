@@ -1,6 +1,7 @@
-use crate::discussion::structs::{Discussion, DiscussionMeta};
 use crate::discussion::structs::id::DiscussionId;
-use crate::discussion::structs::message::{MessageNo, MessageText};
+use crate::discussion::structs::message::{Message, MessageNo, MessageText};
+use crate::discussion::structs::reply::Reply;
+use crate::discussion::structs::{Discussion, DiscussionMeta};
 use crate::error;
 use crate::user::UserId;
 
@@ -16,7 +17,7 @@ pub trait DiscussionIo: Send + Sync {
         discussion_id: &DiscussionId,
         user_id: UserId,
         message_text: MessageText,
-    ) -> error::Result;
+    ) -> error::Result<Message>;
 
 
     async fn reply(
@@ -25,7 +26,7 @@ pub trait DiscussionIo: Send + Sync {
         user_id: UserId,
         message_no: MessageNo,
         message_text: MessageText,
-    ) -> error::Result;
+    ) -> error::Result<Reply>;
 
 
     async fn discussion_by(&self, discussion_id: &DiscussionId) -> error::Result<Discussion>;

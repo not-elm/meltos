@@ -4,9 +4,10 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
 
 use crate::discussion::io::DiscussionIo;
-use crate::discussion::structs::{Discussion, DiscussionMeta};
 use crate::discussion::structs::id::DiscussionId;
-use crate::discussion::structs::message::{MessageNo, MessageText};
+use crate::discussion::structs::message::{Message, MessageNo, MessageText};
+use crate::discussion::structs::reply::Reply;
+use crate::discussion::structs::{Discussion, DiscussionMeta};
 use crate::error;
 use crate::user::UserId;
 
@@ -45,12 +46,13 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         discussion_id: &DiscussionId,
         user_id: UserId,
         message_text: MessageText,
-    ) -> error::Result {
+    ) -> error::Result<Message> {
         let mut map = self.lock_thread(discussion_id).await?;
-        map.get_mut(discussion_id)
+        let message = map
+            .get_mut(discussion_id)
             .unwrap()
             .add_message(user_id, message_text);
-        Ok(())
+        Ok(message)
     }
 
 
@@ -60,7 +62,7 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         user_id: UserId,
         message_no: MessageNo,
         message_text: MessageText,
-    ) -> error::Result {
+    ) -> error::Result<Reply> {
         let mut map = self.lock_thread(discussion_id).await?;
         map.get_mut(discussion_id)
             .unwrap()

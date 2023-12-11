@@ -8,7 +8,7 @@ pub mod discussion;
 #[derive(Debug, Serialize, Deserialize, Hash, Clone)]
 #[serde(tag = "type", rename_all = "snake_case", content = "command")]
 pub enum ClientCommand {
-    Discussion(discussion::DiscussionCmd)
+    Discussion(discussion::DiscussionCmd),
 }
 
 
@@ -17,10 +17,8 @@ impl TryFrom<Message> for ClientCommand {
 
     fn try_from(value: Message) -> Result<Self, Self::Error> {
         match value {
-            Message::Text(text) => {
-                Ok(serde_json::from_str(&text)?)
-            }
-            _ => Err(error::Error::SerializeClientCommand)
+            Message::Text(text) => Ok(serde_json::from_str(&text)?),
+            _ => Err(error::Error::SerializeClientCommand),
         }
     }
 }
@@ -28,12 +26,12 @@ impl TryFrom<Message> for ClientCommand {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::json;
     use crate::command::client::ClientCommand;
+    use serde_json::json;
 
-    use crate::command::client::discussion::{DiscussionCmd, global};
-    use crate::discussion::structs::DiscussionMeta;
+    use crate::command::client::discussion::{global, DiscussionCmd};
     use crate::discussion::structs::id::DiscussionId;
+    use crate::discussion::structs::DiscussionMeta;
     use crate::user::UserId;
 
     #[test]
@@ -42,7 +40,7 @@ mod tests {
             meta: DiscussionMeta {
                 id: DiscussionId::new(),
                 creator: UserId::from("user"),
-            }
+            },
         };
         let cmd = DiscussionCmd::Global(cmd);
         let json = json!(ClientCommand::Discussion(cmd.clone()));

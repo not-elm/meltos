@@ -1,10 +1,10 @@
 use axum::body::Body;
-use axum::extract::{Query, State, WebSocketUpgrade};
 use axum::extract::ws::{Message, WebSocket};
+use axum::extract::{Query, State, WebSocketUpgrade};
 use axum::http::StatusCode;
 use axum::response::Response;
-use futures::{SinkExt, StreamExt};
 use futures::stream::SplitSink;
+use futures::{SinkExt, StreamExt};
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -19,8 +19,8 @@ use meltos_util::error::LogIfError;
 use meltos_util::serde::SerializeJson;
 
 use crate::error;
-use crate::room::{ClientCommandReceiver, ServerCommandSender};
 use crate::room::ws::receiver::CommandReceiver;
+use crate::room::{ClientCommandReceiver, ServerCommandSender};
 use crate::state::Rooms;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -80,9 +80,7 @@ async fn send_client_commands(
     while let Ok(client_command) = client_rx.recv().await {
         debug!("send client command {client_command:?}");
 
-        ws_tx
-            .send(Message::Text(client_command.as_json()?))
-            .await?;
+        ws_tx.send(Message::Text(client_command.as_json()?)).await?;
     }
 
     Ok(())
@@ -98,7 +96,7 @@ async fn receive_request_commands(
         server_command_sender.send(ServerCommand {
             from: user_id.clone(),
             command,
-        })?;
+        }).map_err(|_|error::Error::SendServerOrder)?;
     }
 
     Ok(())
@@ -113,7 +111,7 @@ fn response_not_exists_target_room(session_id: RoomId) -> Response {
             serde_json::to_string(&json! {{
                 "detail": error::Error::SessionNotExists(session_id).to_string()
             }})
-                .unwrap(),
+            .unwrap(),
         ))
         .unwrap()
 }
@@ -153,7 +151,7 @@ mod tests {
         let (_socket, _response) = tokio_tungstenite::connect_async(
             "ws://localhost:3000/host/connect?session_id=311&user_id=host",
         )
-            .await
-            .unwrap();
+        .await
+        .unwrap();
     }
 }
