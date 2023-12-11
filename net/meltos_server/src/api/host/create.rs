@@ -1,4 +1,5 @@
 use axum::extract::State;
+use log::info;
 
 use meltos::session::RoomId;
 
@@ -7,6 +8,7 @@ use crate::state::Rooms;
 use crate::HttpResult;
 
 pub async fn create(State(rooms): State<Rooms>) -> HttpResult<String> {
+    info!("create {rooms:?}");
     let session_id = RoomId("session".to_string());
     rooms
         .lock()

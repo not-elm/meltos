@@ -15,9 +15,15 @@ pub enum Error {
     #[error(transparent)]
     BinCode(#[from] bincode::Error),
 
+    #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
+
     #[error("structs not exists id = {0:?}")]
     ThreadNotExists(ThreadId),
 
     #[error("failed reply message no {0:?} is not exists")]
     MessageNoNotExists(MessageNo),
+
+    #[error("websocket message can't serialize to client command")]
+    SerializeClientCommand,
 }

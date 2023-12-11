@@ -7,16 +7,16 @@ use crate::error;
 pub mod receiver;
 
 
-pub trait AsOrder {
+pub trait AsRequestCommand {
     /// Convert to [`ServerOrder`] from `Self`
-    fn as_order(&self) -> error::Result<RequestCommand>;
+    fn as_request_command(&self) -> error::Result<RequestCommand>;
 }
 
 
-impl AsOrder for Message {
-    fn as_order(&self) -> error::Result<RequestCommand> {
+impl AsRequestCommand for Message {
+    fn as_request_command(&self) -> error::Result<RequestCommand> {
         match self {
-            Message::Binary(binary) => Ok(RequestCommand::try_from(binary.as_slice())?),
+            Message::Text(text) => Ok(RequestCommand::try_from(text.as_str())?),
             _ => Err(error::Error::InvalidOrder),
         }
     }

@@ -5,17 +5,17 @@ use axum::http::StatusCode;
 use axum::response::Response;
 use futures::{SinkExt, StreamExt};
 use futures::stream::SplitSink;
-use log::error;
+use log::{error, info};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::broadcast::Receiver;
 
-use meltos::command::client::ClientOrder;
+use meltos::command::client::ClientCommand;
 use meltos::command::server::ServerCommand;
 use meltos::session::RoomId;
 use meltos::user::UserId;
 use meltos_util::error::LogIfError;
-use meltos_util::serde::AsBinary;
+use meltos_util::serde::SerializeJson;
 
 use crate::error;
 use crate::room::{ClientCommandReceiver, ServerCommandSender};
@@ -34,6 +34,7 @@ pub async fn connect(
     Query(param): Query<Param>,
     State(rooms): State<Rooms>,
 ) -> Response {
+    info!("connect {rooms:?}");
     if let Some((server_command_sender, client_command_receiver)) =
         rooms.lock().await.get(&param.room_id).cloned()
     {
@@ -58,8 +59,8 @@ async fn start_websocket(
     user_id: UserId,
 ) {
     let (ws_tx, ws_rx) = socket.split();
-    let h1 = send_client_order(ws_tx, client_command_receiver.subscribe());
-    let h2 = receive_commands(
+    let h1 = send_client_commands(ws_tx, client_command_receiver.subscribe());
+    let h2 = receive_request_commands(
         CommandReceiver(ws_rx),
         server_command_sender.clone(),
         user_id,
@@ -71,17 +72,15 @@ async fn start_websocket(
 }
 
 
-async fn send_client_order(
+async fn send_client_commands(
     mut ws_tx: SplitSink<WebSocket, Message>,
-    mut client_rx: Receiver<ClientOrder>,
+    mut client_rx: Receiver<ClientCommand>,
 ) -> error::Result {
-    while let Ok(order) = client_rx.recv().await {
+    while let Ok(client_command) = client_rx.recv().await {
+        info!("send client {client_command:?}");
+
         ws_tx
-            .send(Message::Binary(
-                order
-                    .as_binary()
-                    .map_err(|_| error::Error::SerializeToBinary)?,
-            ))
+            .send(Message::Text(client_command.as_json()?))
             .await?;
     }
 
@@ -89,7 +88,7 @@ async fn send_client_order(
 }
 
 
-async fn receive_commands(
+async fn receive_request_commands(
     mut command_receiver: CommandReceiver,
     server_command_sender: ServerCommandSender,
     user_id: UserId,

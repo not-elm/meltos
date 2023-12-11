@@ -1,7 +1,7 @@
 use thiserror::Error;
 use tokio::sync::broadcast::error::SendError;
 use tokio::task::JoinError;
-use meltos::command::client::ClientOrder;
+use meltos::command::client::ClientCommand;
 
 use meltos::session::RoomId;
 use meltos::user::UserId;
@@ -12,6 +12,12 @@ pub type Result<T = ()> = std::result::Result<T, Error>;
 
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
+
     #[error(transparent)]
     Meltos(#[from] meltos::error::Error),
 
@@ -25,7 +31,7 @@ pub enum Error {
     SendServerOrder(#[from] SendError<ServerCommand>),
 
     #[error(transparent)]
-    SendClientOrder(#[from] SendError<ClientOrder>),
+    SendClientOrder(#[from] SendError<ClientCommand>),
 
     #[error("user_id {0} was already joined in session {1}")]
     RoomJoin(UserId, RoomId),
@@ -38,9 +44,6 @@ pub enum Error {
 
     #[error("websocket message invalid command")]
     InvalidOrder,
-
-    #[error("failed serialize to binary")]
-    SerializeToBinary,
 }
 
 

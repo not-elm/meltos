@@ -19,5 +19,5 @@ impl FromRef<AppState> for Rooms {
 }
 
 
-#[derive(Default, Deref, Clone)]
+#[derive(Default, Deref, Clone, Debug)]
 pub struct Rooms(ArcMutex<HashMap<RoomId, (ServerCommandSender, ClientCommandReceiver)>>);

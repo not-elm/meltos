@@ -5,7 +5,7 @@ use futures::StreamExt;
 use meltos::command::request::RequestCommand;
 
 use crate::error;
-use crate::room::ws::AsOrder;
+use crate::room::ws::AsRequestCommand;
 
 pub struct CommandReceiver(pub(crate) SplitStream<WebSocket>);
 
@@ -13,6 +13,7 @@ pub struct CommandReceiver(pub(crate) SplitStream<WebSocket>);
 impl CommandReceiver {
     pub async fn recv(&mut self) -> error::Result<RequestCommand> {
         let message = self.0.next().await.ok_or(error::Error::Disconnected)??;
-        message.as_order()
+        println!("{:?}", message.as_request_command());
+        message.as_request_command()
     }
 }
