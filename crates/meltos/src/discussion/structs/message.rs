@@ -1,16 +1,15 @@
-use std::fmt::{Display, Formatter};
 use std::ops::{Deref, DerefMut};
-
-use meltos_util::impl_string_new_type;
 
 use serde::{Deserialize, Serialize};
 
+use meltos_util::impl_string_new_type;
+use meltos_util::macros::Display;
 
-use crate::thread::structs::reply::ReplyThread;
+use crate::discussion::structs::reply::ReplyDiscussion;
 use crate::user::UserId;
 
 #[repr(transparent)]
-#[derive(Clone, Debug, Eq, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Default, Serialize, Deserialize, Hash)]
 pub struct Messages(Vec<Message>);
 
 
@@ -37,7 +36,7 @@ pub struct Message {
     pub user_id: UserId,
     pub no: MessageNo,
     pub text: MessageText,
-    pub reply_thread: ReplyThread,
+    pub reply_thread: ReplyDiscussion,
 }
 
 
@@ -48,7 +47,7 @@ impl Message {
             user_id,
             no,
             text,
-            reply_thread: ReplyThread::default(),
+            reply_thread: ReplyDiscussion::default(),
         }
     }
 
@@ -67,16 +66,9 @@ impl_string_new_type!(MessageText);
 
 #[repr(transparent)]
 #[derive(
-    Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Debug, Hash, Default, Serialize, Deserialize,
+Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Debug, Hash, Default, Serialize, Deserialize, Display
 )]
 pub struct MessageNo(pub usize);
-
-
-impl Display for MessageNo {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{}", self.0))
-    }
-}
 
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]

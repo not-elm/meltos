@@ -16,13 +16,13 @@ meltos merge <remote_branch>
 # ディスカッションIDが返される
 meltos structs new <file_path> <line_no>
 
-meltos structs speak <thread_id> <message>
+meltos structs speak <discussion_id> <message>
 
-meltos structs reply <thread_id> <message_no> <message>
+meltos structs reply <discussion_id> <message_no> <message>
 
 # ブランチ所有者のみ
-meltos structs close <thread_id>
+meltos structs close <discussion_id>
 
 # ディスカッション表示
-meltos structs cat <thread_id>
+meltos structs cat <discussion_id>
 ```

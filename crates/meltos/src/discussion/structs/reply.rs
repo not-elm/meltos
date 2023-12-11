@@ -1,17 +1,17 @@
-use crate::thread::structs::id::ThreadId;
-use crate::thread::structs::message::{MessageNo, MessageText};
+use crate::discussion::structs::id::DiscussionId;
+use crate::discussion::structs::message::{MessageNo, MessageText};
 use crate::user::UserId;
 use serde::{Deserialize, Serialize};
 
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize, Default)]
-pub struct ReplyThread {
-    pub id: ThreadId,
+pub struct ReplyDiscussion {
+    pub id: DiscussionId,
     pub messages: Vec<Reply>,
 }
 
 
-impl ReplyThread {
+impl ReplyDiscussion {
     pub fn add_message(&mut self, user_id: UserId, message_text: MessageText) {
         self.messages.push(Reply {
             user_id,

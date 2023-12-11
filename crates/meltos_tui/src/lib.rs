@@ -3,14 +3,13 @@ use std::time::Duration;
 
 use crossterm::event;
 use crossterm::event::{Event, KeyCode, KeyEventKind};
-
-use meltos::thread::io::global::mock::MockGlobalThreadIo;
+use ratatui::{Frame, Terminal};
 use ratatui::backend::Backend;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{Line, Style, Stylize};
 use ratatui::widgets::{Block, Borders, Tabs};
-use ratatui::{Frame, Terminal};
 
+use meltos::discussion::io::global::mock::MockGlobalDiscussionIo;
 
 use crate::global::GlobalThreadsUi;
 use crate::state::UiState;
@@ -22,14 +21,12 @@ mod state_list;
 #[derive(Default)]
 pub struct App {
     ui_state: UiState,
-    global: GlobalThreadsUi<MockGlobalThreadIo>,
+    global: GlobalThreadsUi<MockGlobalDiscussionIo>,
 }
 
 
 impl App {
     pub async fn run<B: Backend>(&mut self, terminal: &mut Terminal<B>) -> io::Result<()> {
-        self.global.mock().await;
-
         loop {
             if event::poll(Duration::from_millis(60)).is_err() {
                 continue;

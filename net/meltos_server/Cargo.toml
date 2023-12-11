@@ -13,6 +13,7 @@ meltos = { path = "../../crates/meltos" }
 tokio = { workspace = true }
 tokio-tungstenite = { workspace = true }
 tower = { workspace = true }
+tracing = { workspace = true }
 axum = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

@@ -1,10 +1,9 @@
-use meltos::thread::io::ThreadIo;
-use meltos::thread::structs::message::{Message, MessageText, Messages};
-use meltos::thread::structs::MessageThread;
-use meltos::user::UserId;
-use ratatui::widgets::List;
 use ratatui::{prelude::*, widgets::*};
+use ratatui::widgets::List;
 
+use meltos::discussion::io::DiscussionIo;
+use meltos::discussion::structs::Discussion;
+use meltos::discussion::structs::message::{Message, Messages};
 
 use crate::state_list::StatefulList;
 
@@ -19,24 +18,15 @@ pub enum GlobalViewState {
 #[derive(Default)]
 pub struct GlobalThreadsUi<Threads> {
     state: GlobalViewState,
-    list: StatefulList<MessageThread>,
+    list: StatefulList<Discussion>,
     threads: Threads,
 }
 
 
 impl<Threads> GlobalThreadsUi<Threads>
-where
-    Threads: ThreadIo,
+    where
+        Threads: DiscussionIo,
 {
-    pub async fn mock(&mut self) {
-        let id = self.threads.new_thread().await.unwrap();
-        self.threads
-            .speak(&id, UserId::from("user"), MessageText::from("hello"))
-            .await
-            .unwrap();
-        self.list.items = self.threads.thread_all().await.unwrap();
-    }
-
     pub fn render(&mut self, frame: &mut Frame, area: Rect) {
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
@@ -55,9 +45,9 @@ where
                 .map(|m| self.message(m))
                 .collect::<Vec<ListItem<'a>>>(),
         )
-        .block(Block::new().borders(Borders::ALL).title("Threads"))
-        .style(Style::default())
-        .highlight_style(Style::default().bold().on_black())
+            .block(Block::new().borders(Borders::ALL).title("Threads"))
+            .style(Style::default())
+            .highlight_style(Style::default().bold().on_black())
     }
 
 
@@ -92,7 +82,7 @@ where
             .items
             .iter()
             .map(|thread| {
-                ListItem::new(Line::from(thread.id.to_string()))
+                ListItem::new(Line::from(thread.meta.id.to_string()))
                     .style(Style::default().fg(Color::White).bg(Color::Black))
             })
             .collect()

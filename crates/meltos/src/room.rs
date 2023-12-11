@@ -1,3 +1,6 @@
+use serde::{Deserialize, Serialize};
+use meltos_util::macros::Display;
+
 pub mod local;
 
 pub struct Room {
@@ -13,7 +16,7 @@ impl Room {
 }
 
 
-#[derive(Eq, PartialEq, Clone, Hash, Debug)]
+#[derive(Eq, PartialEq, Clone, Hash, Debug, Serialize, Deserialize, Display)]
 pub struct RoomId(pub String);
 
 

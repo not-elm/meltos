@@ -5,14 +5,15 @@ use axum::http::StatusCode;
 use axum::response::Response;
 use futures::{SinkExt, StreamExt};
 use futures::stream::SplitSink;
-use log::{error, info};
+
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::broadcast::Receiver;
+use tracing::{debug, error};
 
 use meltos::command::client::ClientCommand;
 use meltos::command::server::ServerCommand;
-use meltos::session::RoomId;
+use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_util::error::LogIfError;
 use meltos_util::serde::SerializeJson;
@@ -29,12 +30,12 @@ pub struct Param {
 }
 
 
+#[tracing::instrument]
 pub async fn connect(
     ws: WebSocketUpgrade,
     Query(param): Query<Param>,
     State(rooms): State<Rooms>,
 ) -> Response {
-    info!("connect {rooms:?}");
     if let Some((server_command_sender, client_command_receiver)) =
         rooms.lock().await.get(&param.room_id).cloned()
     {
@@ -77,7 +78,7 @@ async fn send_client_commands(
     mut client_rx: Receiver<ClientCommand>,
 ) -> error::Result {
     while let Ok(client_command) = client_rx.recv().await {
-        info!("send client {client_command:?}");
+        debug!("send client command {client_command:?}");
 
         ws_tx
             .send(Message::Text(client_command.as_json()?))

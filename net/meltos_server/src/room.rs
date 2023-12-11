@@ -1,12 +1,12 @@
-use log::info;
+
 use tokio::sync::broadcast::{Receiver, Sender};
 
 use meltos::command::client::ClientCommand;
 use meltos::command::server::ServerCommand;
-use meltos::session::RoomId;
-use meltos::thread::io::global::mock::MockGlobalThreadIo;
+use meltos::discussion::io::global::mock::MockGlobalDiscussionIo;
+use meltos::room::RoomId;
 use meltos_util::error::LogIfError;
-use crate::room::executor::ServerOrderExecutor;
+use crate::room::executor::ServerCommandExecutor;
 
 pub mod ws;
 mod executor;
@@ -39,12 +39,10 @@ async fn spawn_room_effect(
     client_command_sender: Sender<ClientCommand>,
     room_id: RoomId,
 ) -> crate::error::Result {
-    let global_thread_io = MockGlobalThreadIo::default();
-    while let Ok(order) = server_rx.recv().await {
-        let executor = ServerOrderExecutor::new(room_id.clone(), order.from.clone(), &global_thread_io);
-        info!("DDDDDDDD");
-        if let Some(client_command) = executor.execute(order.command).await? {
-            info!("FFFFFFFF");
+    let global_thread_io = MockGlobalDiscussionIo::default();
+    while let Ok(server_command) = server_rx.recv().await {
+        let executor = ServerCommandExecutor::new(room_id.clone(), server_command.from.clone(), &global_thread_io);
+        if let Some(client_command) = executor.execute(server_command.command).await? {
             client_command_sender.send(client_command)?;
         }
     }

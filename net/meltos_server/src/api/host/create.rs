@@ -1,20 +1,21 @@
+use axum::body::Body;
 use axum::extract::State;
-use log::info;
-
-use meltos::session::RoomId;
-
-use crate::room::room_effect;
+use axum::response::{IntoResponse, Response};
+use tracing::debug;
+use meltos::room::RoomId;
 use crate::state::Rooms;
-use crate::HttpResult;
 
-pub async fn create(State(rooms): State<Rooms>) -> HttpResult<String> {
-    info!("create {rooms:?}");
-    let session_id = RoomId("session".to_string());
-    rooms
-        .lock()
-        .await
-        .insert(session_id.clone(), room_effect(session_id.clone(), 30));
-    Ok(session_id.to_string())
+#[tracing::instrument]
+pub async fn create(State(rooms): State<Rooms>) -> impl IntoResponse {
+    debug!("create room");
+    let room_id = RoomId("session".to_string());
+    // rooms
+    //     .lock()
+    //     .await
+    //     .insert(session_id.clone(), room_effect(session_id.clone(), 30));
+    Response::builder()
+        .body(Body::from(room_id.to_string()))
+        .unwrap()
 }
 
 

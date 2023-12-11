@@ -1,12 +1,11 @@
 use thiserror::Error;
 use tokio::sync::broadcast::error::SendError;
 use tokio::task::JoinError;
+
 use meltos::command::client::ClientCommand;
-
-use meltos::session::RoomId;
-use meltos::user::UserId;
-
 use meltos::command::server::ServerCommand;
+use meltos::room::RoomId;
+use meltos::user::UserId;
 
 pub type Result<T = ()> = std::result::Result<T, Error>;
 
