@@ -3,24 +3,14 @@ use std::ops::{Deref, DerefMut};
 use serde::{Deserialize, Serialize};
 
 use meltos_util::impl_string_new_type;
-use meltos_util::macros::Display;
+use meltos_util::macros::{Deref, Display};
 
 use crate::discussion::structs::reply::{Reply, ReplyDiscussion};
 use crate::user::UserId;
 
 #[repr(transparent)]
-#[derive(Clone, Debug, Eq, PartialEq, Default, Serialize, Deserialize, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Default, Serialize, Deserialize, Hash, Deref)]
 pub struct Messages(Vec<Message>);
-
-
-impl Deref for Messages {
-    type Target = Vec<Message>;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
 
 
 impl DerefMut for Messages {

@@ -93,10 +93,12 @@ async fn receive_request_commands(
     user_id: UserId,
 ) -> error::Result {
     while let Ok(command) = command_receiver.recv().await {
-        server_command_sender.send(ServerCommand {
-            from: user_id.clone(),
-            command,
-        }).map_err(|_|error::Error::SendServerOrder)?;
+        server_command_sender
+            .send(ServerCommand {
+                from: user_id.clone(),
+                command,
+            })
+            .map_err(|_| error::Error::SendServerOrder)?;
     }
 
     Ok(())
@@ -138,7 +140,7 @@ mod tests {
         let app = app();
         let request = Request::builder()
             .method(http::Method::POST)
-            .uri("/host/create")
+            .uri("/room/create")
             .body(Body::empty())
             .unwrap();
 
@@ -149,7 +151,7 @@ mod tests {
 
 
         let (_socket, _response) = tokio_tungstenite::connect_async(
-            "ws://localhost:3000/host/connect?session_id=311&user_id=host",
+            "ws://localhost:3000/room/connect?session_id=311&user_id=room",
         )
         .await
         .unwrap();

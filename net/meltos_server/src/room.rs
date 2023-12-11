@@ -18,7 +18,7 @@ pub type ServerCommandSender = Sender<ServerCommand>;
 pub type ClientCommandReceiver = Sender<ClientCommand>;
 
 
-pub async fn room_effect(rooms: Rooms, room_id: RoomId, capacity: usize) -> error::Result {
+pub async fn create_room(rooms: Rooms, room_id: RoomId, capacity: usize) -> error::Result {
     let (server_tx, server_rx) = tokio::sync::broadcast::channel::<ServerCommand>(capacity);
     let (client_command_sender, _) = tokio::sync::broadcast::channel::<ClientCommand>(capacity);
     insert_room(
@@ -72,7 +72,9 @@ async fn spawn_room_effect(
             &global_thread_io,
         );
         if let Some(client_command) = executor.execute(server_command.command).await? {
-            client_command_sender.send(client_command).map_err(|_|error::Error::SendClientOrder)?;
+            client_command_sender
+                .send(client_command)
+                .map_err(|_| error::Error::SendClientOrder)?;
         }
     }
 

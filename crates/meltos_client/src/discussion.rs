@@ -1,0 +1,20 @@
+use crate::error;
+use async_trait::async_trait;
+use meltos::discussion::structs::id::DiscussionId;
+use meltos::discussion::structs::message::Message;
+use meltos::discussion::structs::reply::Reply;
+use meltos::discussion::structs::DiscussionMeta;
+
+#[async_trait]
+pub trait ClientDiscussionIo: Send + Sync {
+    async fn created(&self, discussion_meta: DiscussionMeta) -> error::Result;
+
+
+    async fn spoke(&self, discussion_id: DiscussionId, messages: Message) -> error::Result;
+
+
+    async fn replied(&self, discussion_id: DiscussionId, reply: Reply) -> error::Result;
+
+
+    async fn closed(&self, discussion_id: DiscussionId) -> error::Result;
+}

@@ -3,35 +3,41 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::Response;
 use serde_json::json;
-use tracing::debug;
 
 use meltos::room::RoomId;
 
-use crate::room::room_effect;
+use crate::error::Error;
+use crate::room::create_room;
 use crate::state::Rooms;
 
+
 #[tracing::instrument]
-pub async fn create(State(rooms): State<Rooms>) -> Response {
-    debug!("create room");
+pub async fn open(State(rooms): State<Rooms>) -> Response {
     let room_id = RoomId("session".to_string());
-    match room_effect(rooms, room_id.clone(), 30).await {
-        Ok(()) => {
-            Response::builder()
-                .body(Body::from(room_id.to_string()))
-                .unwrap()
-        }
-        Err(error) => {
-            Response::builder()
-                .status(StatusCode::BAD_REQUEST)
-                .body(Body::from(
-                    json!({
-                        "description" : error.to_string()
-                    })
-                        .to_string(),
-                ))
-                .unwrap()
-        }
+    match create_room(rooms, room_id.clone(), 30).await {
+        Ok(()) => response_success_create_room(room_id),
+        Err(error) => response_error_already_exists_room(error),
     }
+}
+
+
+fn response_success_create_room(room_id: RoomId) -> Response {
+    Response::builder()
+        .body(Body::from(room_id.to_string()))
+        .unwrap()
+}
+
+
+fn response_error_already_exists_room(error: Error) -> Response {
+    Response::builder()
+        .status(StatusCode::BAD_REQUEST)
+        .body(Body::from(
+            json!({
+                "description" : error.to_string()
+            })
+                .to_string(),
+        ))
+        .unwrap()
 }
 
 
@@ -51,7 +57,7 @@ mod tests {
         let app = app();
         let request = Request::builder()
             .method(http::Method::POST)
-            .uri("/host/create")
+            .uri("/room/open")
             .body(Body::empty())
             .unwrap();
 

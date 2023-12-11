@@ -5,7 +5,6 @@ use std::net::SocketAddr;
 
 use meltos_util::tracing::tracing_init;
 
-use crate::api::host;
 use crate::state::AppState;
 
 mod api;
@@ -29,7 +28,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
 fn app() -> Router {
     Router::new()
-        .route("/host/create", post(host::create))
-        .route("/host/connect", get(host::connect))
+        .route("/room/open", post(api::room::open))
+        .route("/room/connect", get(api::room::connect))
         .with_state(AppState::default())
 }
