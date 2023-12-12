@@ -18,39 +18,48 @@ pub struct SessionUser(pub UserId);
 
 #[async_trait]
 impl<Session> FromRequestParts<AppState<Session>> for SessionUser
-    where Session: SessionIo,
-
+where
+    Session: SessionIo,
 {
     type Rejection = Response;
 
-    async fn from_request_parts(parts: &mut Parts, state: &AppState<Session>) -> Result<Self, Self::Rejection> {
-        let session_id = extract_session_id(parts)?;
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState<Session>,
+    ) -> Result<Self, Self::Rejection> {
+        let session_id = extract_session_id_from_cookie(parts)?;
         let user_id = state.session.try_fetch_user_id(session_id).await?;
         Ok(Self(user_id))
     }
 }
 
 
-fn response_un_auth() -> Response {
+fn response_unauthorized() -> Response {
     Response::builder()
         .status(StatusCode::UNAUTHORIZED)
-        .body(Body::from(json!({
-            "error" : "un_auth"
-        }).to_string()))
+        .body(Body::from(
+            json!({
+                "error" : "unauthorized"
+            })
+            .to_string(),
+        ))
         .unwrap()
 }
 
 
-fn extract_session_id(parts: &mut Parts) -> Result<SessionId, Response> {
-    let cookies = parts.headers.get("set-cookie").ok_or(response_un_auth())?
+fn extract_session_id_from_cookie(parts: &mut Parts) -> Result<SessionId, Response> {
+    let cookies = parts
+        .headers
+        .get("set-cookie")
+        .ok_or(response_unauthorized())?
         .to_str()
-        .map_err(|_| response_un_auth())?
+        .map_err(|_| response_unauthorized())?
         .to_string();
     let cookies = Cookie::split_parse(cookies);
     let cookie = cookies
         .filter_map(|cookie| cookie.ok())
         .find(|cookie| cookie.name() == "session_id")
-        .ok_or(response_un_auth())?;
+        .ok_or(response_unauthorized())?;
 
     Ok(SessionId(cookie.value().to_string()))
 }

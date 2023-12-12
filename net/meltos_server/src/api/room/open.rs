@@ -42,12 +42,15 @@ mod tests {
     use meltos_backend::user::mock::MockUserSessionIo;
     use meltos_backend::user::SessionIo;
 
-    use crate::{app, error};
     use crate::api::test_util::{mock_session_id, open_room_request};
+    use crate::{app, error};
 
     #[tokio::test]
     async fn failed_if_not_logged_in() {
-        let app = app(MockUserSessionIo::default(), MockGlobalDiscussionIo::default());
+        let app = app(
+            MockUserSessionIo::default(),
+            MockGlobalDiscussionIo::default(),
+        );
         let response = app
             .oneshot(open_room_request(mock_session_id()))
             .await

@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use auto_delegate::delegate;
-use meltos::user::{UserId, SessionId};
+use meltos::user::{SessionId, UserId};
 
 use crate::error;
 

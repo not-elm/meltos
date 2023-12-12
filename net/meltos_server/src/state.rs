@@ -17,8 +17,8 @@ pub struct AppState<Session> {
 
 
 impl<Session> AppState<Session>
-    where
-        Session: SessionIo + Clone
+where
+    Session: SessionIo + Clone,
 {
     pub fn new(session: Session) -> AppState<Session> {
         Self {
@@ -34,8 +34,8 @@ impl<Session> AppState<Session>
 pub struct SessionState<Session>(Session);
 
 impl<Session> SessionState<Session>
-    where
-        Session: SessionIo,
+where
+    Session: SessionIo,
 {
     pub async fn try_fetch_user_id(
         &self,
@@ -51,8 +51,7 @@ impl<Session> SessionState<Session>
 }
 
 
-impl<Session> FromRef<AppState<Session>> for Rooms
-{
+impl<Session> FromRef<AppState<Session>> for Rooms {
     fn from_ref(input: &AppState<Session>) -> Self {
         input.rooms.clone()
     }
@@ -60,10 +59,10 @@ impl<Session> FromRef<AppState<Session>> for Rooms
 
 
 impl<Session> FromRef<AppState<Session>> for SessionState<Session>
-    where
-        Session: SessionIo + Clone,
+where
+    Session: SessionIo + Clone,
 {
-    fn from_ref(input: &AppState<Session, >) -> Self {
+    fn from_ref(input: &AppState<Session>) -> Self {
         input.session.clone()
     }
 }

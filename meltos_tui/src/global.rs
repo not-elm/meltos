@@ -1,8 +1,8 @@
-use ratatui::{prelude::*, widgets::*};
 use ratatui::widgets::List;
+use ratatui::{prelude::*, widgets::*};
 
-use meltos::discussion::Discussion;
 use meltos::discussion::message::{Message, Messages};
+use meltos::discussion::Discussion;
 use meltos_backend::discussion::DiscussionIo;
 
 use crate::state_list::StatefulList;
@@ -24,8 +24,8 @@ pub struct GlobalThreadsUi<Threads> {
 
 
 impl<Threads> GlobalThreadsUi<Threads>
-    where
-        Threads: DiscussionIo,
+where
+    Threads: DiscussionIo,
 {
     pub fn render(&mut self, frame: &mut Frame, area: Rect) {
         let chunks = Layout::default()
@@ -45,9 +45,9 @@ impl<Threads> GlobalThreadsUi<Threads>
                 .map(|m| self.message(m))
                 .collect::<Vec<ListItem<'a>>>(),
         )
-            .block(Block::new().borders(Borders::ALL).title("Threads"))
-            .style(Style::default())
-            .highlight_style(Style::default().bold().on_black())
+        .block(Block::new().borders(Borders::ALL).title("Threads"))
+        .style(Style::default())
+        .highlight_style(Style::default().bold().on_black())
     }
 
 

@@ -3,11 +3,11 @@ use std::time::Duration;
 
 use crossterm::event;
 use crossterm::event::{Event, KeyCode, KeyEventKind};
-use ratatui::{Frame, Terminal};
 use ratatui::backend::Backend;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{Line, Style, Stylize};
 use ratatui::widgets::{Block, Borders, Tabs};
+use ratatui::{Frame, Terminal};
 
 use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
 

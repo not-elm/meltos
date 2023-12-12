@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use meltos_util::impl_string_new_type;
 use meltos_util::macros::{Deref, Display};
 
-use crate::discussion::reply::{Reply, ReplyDiscussion};
+use crate::discussion::id::DiscussionId;
 use crate::user::UserId;
 
 #[repr(transparent)]
@@ -23,27 +23,22 @@ impl DerefMut for Messages {
 
 #[derive(Eq, PartialEq, Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct Message {
+    pub id: MessageId,
     pub user_id: UserId,
-    pub no: MessageNo,
     pub text: MessageText,
-    pub reply_discussion: ReplyDiscussion,
+    pub reply_discussion: Option<DiscussionId>,
 }
 
 
 impl Message {
     #[inline(always)]
-    pub fn new(user_id: UserId, no: MessageNo, text: MessageText) -> Message {
+    pub fn new(user_id: UserId, text: MessageText) -> Message {
         Message {
             user_id,
-            no,
+            id: MessageId::default(),
             text,
-            reply_discussion: ReplyDiscussion::default(),
+            reply_discussion: None,
         }
-    }
-
-
-    pub fn add_reply(&mut self, user_id: UserId, message_text: MessageText) -> Reply {
-        self.reply_discussion.add_message(user_id, message_text)
     }
 }
 
@@ -56,24 +51,37 @@ impl_string_new_type!(MessageText);
 
 #[repr(transparent)]
 #[derive(
-    Eq,
-    PartialEq,
-    Copy,
-    Clone,
-    Ord,
-    PartialOrd,
-    Debug,
-    Hash,
-    Default,
-    Serialize,
-    Deserialize,
-    Display,
+Eq,
+PartialEq,
+Copy,
+Clone,
+Ord,
+PartialOrd,
+Debug,
+Hash,
+Default,
+Serialize,
+Deserialize,
+Display,
 )]
 pub struct MessageNo(pub usize);
 
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]
-pub enum Want {
-    No(MessageNo),
-    LatestNo,
+#[repr(transparent)]
+#[derive(
+Eq,
+PartialEq,
+Clone,
+Debug,
+Hash,
+Serialize,
+Deserialize,
+Display,
+)]
+pub struct MessageId(pub String);
+
+impl Default for MessageId {
+    fn default() -> Self {
+        Self(uuid::Uuid::new_v4().to_string())
+    }
 }

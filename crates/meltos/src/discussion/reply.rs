@@ -7,16 +7,16 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize, Default)]
 pub struct ReplyDiscussion {
     pub id: DiscussionId,
-    pub messages: Vec<Reply>,
+    pub messages: Vec<ReplyMessage>,
 }
 
 
 impl ReplyDiscussion {
-    pub fn add_message(&mut self, user_id: UserId, message_text: MessageText) -> Reply {
-        let reply = Reply {
+    pub fn add_message(&mut self, user_id: UserId, message_text: MessageText) -> ReplyMessage {
+        let reply = ReplyMessage {
             user_id,
             no: MessageNo(self.messages.len()),
-            text: message_text,
+            message: message_text,
         };
         self.messages.push(reply.clone());
         reply
@@ -25,8 +25,8 @@ impl ReplyDiscussion {
 
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize)]
-pub struct Reply {
+pub struct ReplyMessage {
     pub user_id: UserId,
     pub no: MessageNo,
-    pub text: MessageText,
+    pub message: MessageText,
 }

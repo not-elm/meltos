@@ -1,10 +1,10 @@
 use axum::body::Body;
 use axum::http::StatusCode;
 use axum::response::Response;
-
 use thiserror::Error;
 use tokio::task::JoinError;
 
+use meltos::discussion::id::DiscussionId;
 use meltos::room::RoomId;
 use meltos::user::UserId;
 
@@ -42,6 +42,9 @@ pub enum Error {
     #[error("websocket has been disconnected")]
     Disconnected,
 
+    #[error("discussion id = {0} is not exists")]
+    DiscussionNotExists(DiscussionId),
+
     #[error("session not exists: session id = {0}")]
     SessionNotExists(RoomId),
 
@@ -59,8 +62,13 @@ impl From<Error> for String {
 
 impl From<Error> for Response {
     fn from(value: Error) -> Self {
+        let status_code = match value {
+            Error::DiscussionNotExists(_) => StatusCode::BAD_REQUEST,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+
         Response::builder()
-            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .status(status_code)
             .body(Body::new(value.to_string()))
             .unwrap()
     }

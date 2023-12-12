@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
 use crate::discussion::id::DiscussionId;
-use crate::discussion::message::{Message, MessageNo, Messages, MessageText};
-use crate::discussion::reply::Reply;
+use crate::discussion::message::{Message, MessageNo, MessageText, Messages};
+use crate::discussion::reply::ReplyMessage;
+use serde::{Deserialize, Serialize};
 
 use crate::error;
 use crate::user::UserId;
@@ -50,7 +50,7 @@ impl Discussion {
         user_id: UserId,
         no: MessageNo,
         message: MessageText,
-    ) -> error::Result<Reply> {
+    ) -> error::Result<ReplyMessage> {
         let target_message = self
             .messages
             .iter_mut()

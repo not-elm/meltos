@@ -3,13 +3,13 @@ use std::sync::Arc;
 
 use tokio::sync::{Mutex, MutexGuard};
 
-use meltos::discussion::{Discussion, DiscussionMeta};
+use crate::discussion::DiscussionIo;
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageNo, MessageText};
-use meltos::discussion::reply::Reply;
+use meltos::discussion::reply::ReplyMessage;
+use meltos::discussion::{Discussion, DiscussionMeta};
 use meltos::error;
 use meltos::user::UserId;
-use crate::discussion::DiscussionIo;
 
 #[derive(Debug, Default)]
 pub struct MockGlobalDiscussionIo(Arc<Mutex<HashMap<DiscussionId, Discussion>>>);
@@ -62,7 +62,7 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         user_id: UserId,
         message_no: MessageNo,
         message_text: MessageText,
-    ) -> error::Result<Reply> {
+    ) -> error::Result<ReplyMessage> {
         let mut map = self.lock_thread(discussion_id).await?;
         map.get_mut(discussion_id)
             .unwrap()

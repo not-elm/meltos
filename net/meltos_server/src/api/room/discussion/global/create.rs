@@ -1,24 +1,15 @@
-use std::fmt::Debug;
-
-use meltos_backend::user::SessionIo;
-
-use crate::api::{AsSuccessResponse, HttpResult};
+use crate::api::HttpResult;
 use crate::middleware::room::SessionRoom;
 use crate::middleware::user::SessionUser;
 
 #[tracing::instrument]
-pub async fn create<Session>(
+pub async fn create(
     SessionRoom(room): SessionRoom,
     SessionUser(user_id): SessionUser,
-) -> HttpResult
-    where Session: SessionIo + Debug
-{
-    let created = room
-        .as_global_discussion_executor(user_id)
-        .create()
-        .await?;
+) -> HttpResult {
+    let created = room.global_discussion(user_id, |exe| exe.create()).await?;
 
-    Ok(created.as_success_response())
+    Ok(created)
 }
 
 
@@ -30,13 +21,13 @@ mod tests {
 
     use meltos::command::client::discussion::global::Created;
 
-    use crate::api::test_util::{create_discussion_request, logged_in_app, open_room};
+    use crate::api::test_util::{create_discussion_request, http_open_room, logged_in_app};
     use crate::error;
 
     #[tokio::test]
     async fn return_created_command() -> error::Result {
         let (user_token, mut app) = logged_in_app().await;
-        let room_id = open_room(&mut app, user_token.clone()).await;
+        let room_id = http_open_room(&mut app, user_token.clone()).await;
         let request = create_discussion_request(room_id);
         let response = app.oneshot(request).await.unwrap();
         assert_eq!(response.status(), StatusCode::OK);

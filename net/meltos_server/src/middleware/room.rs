@@ -26,15 +26,21 @@ struct PathParam {
 
 
 impl PathParam {
-    pub async fn new<Session: Send + Sync>(parts: &mut Parts, state: &AppState<Session>) -> Result<Self, Response> {
+    pub async fn new<Session: Send + Sync>(
+        parts: &mut Parts,
+        state: &AppState<Session>,
+    ) -> Result<Self, Response> {
         let param = PathParam::from_request_parts(parts, state)
             .await
             .map_err(|e| {
                 Response::builder()
                     .status(StatusCode::BAD_REQUEST)
-                    .body(Body::from(json!({
-                        "error" : e.to_string()
-                    }).to_string()))
+                    .body(Body::from(
+                        json!({
+                            "error" : e.to_string()
+                        })
+                        .to_string(),
+                    ))
                     .unwrap()
             })?;
         Ok(param)
@@ -44,11 +50,15 @@ impl PathParam {
 
 #[async_trait]
 impl<Session> FromRequestParts<AppState<Session>> for SessionRoom
-    where Session: SessionIo
+where
+    Session: SessionIo,
 {
     type Rejection = Response;
 
-    async fn from_request_parts(parts: &mut Parts, state: &AppState<Session>) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState<Session>,
+    ) -> Result<Self, Self::Rejection> {
         let room_id = PathParam::new(parts, state).await?.room_id;
         let room = state.rooms.lock().await.room(&room_id)?;
         Ok(Self(room))

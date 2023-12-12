@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 
 use crate::error;
-use meltos::user::{UserId, SessionId};
+use meltos::user::{SessionId, UserId};
 use meltos_util::sync::arc_mutex::ArcMutex;
 
 use crate::user::SessionIo;

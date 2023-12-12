@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
+use std::future::Future;
 use std::sync::Arc;
 
 use axum::body::Body;
 use axum::http::StatusCode;
 use axum::response::Response;
+use serde::Serialize;
 use serde_json::json;
 
 use meltos::room::RoomId;
@@ -13,6 +15,8 @@ use meltos_backend::discussion::DiscussionIo;
 use meltos_util::macros::Deref;
 use meltos_util::sync::arc_mutex::ArcMutex;
 
+use crate::api::AsSuccessResponse;
+use crate::error;
 use crate::room::executor::discussion::DiscussionCommandExecutor;
 
 mod executor;
@@ -46,7 +50,7 @@ impl RoomMap {
                     json!({
                         "error": format!("room_id {room_id} is not exists")
                     })
-                        .to_string(),
+                    .to_string(),
                 ))
                 .unwrap(),
         )
@@ -72,7 +76,22 @@ impl Room {
     }
 
 
-    pub fn as_global_discussion_executor(
+    pub async fn global_discussion<'a, F, O, S>(
+        &'a self,
+        user_id: UserId,
+        f: F,
+    ) -> error::Result<Response>
+    where
+        F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
+        O: Future<Output = error::Result<S>>,
+        S: Serialize,
+    {
+        let command = f(self.as_global_discussion_executor(user_id)).await?;
+        Ok(command.as_success_response())
+    }
+
+
+    fn as_global_discussion_executor(
         &self,
         user_id: UserId,
     ) -> DiscussionCommandExecutor<'_, dyn DiscussionIo> {
@@ -83,8 +102,7 @@ impl Room {
 
 impl Debug for Room {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f
-            .debug_struct("Room")
+        f.debug_struct("Room")
             .field("id", &self.id)
             .field("owner", &self.owner)
             .finish()

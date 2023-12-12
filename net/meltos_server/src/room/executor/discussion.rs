@@ -1,5 +1,6 @@
-use meltos::command::client::discussion::global::{Created, Spoke};
-use meltos::command::request::discussion::global::Speak;
+use meltos::command::client::discussion::global::{Closed, Created, Replied, Spoke};
+use meltos::command::request::discussion::global::{Reply, Speak};
+use meltos::discussion::id::DiscussionId;
 use meltos::user::UserId;
 use meltos_backend::discussion::DiscussionIo;
 
@@ -12,8 +13,8 @@ pub struct DiscussionCommandExecutor<'a, Global: ?Sized> {
 
 
 impl<'a, Global> DiscussionCommandExecutor<'a, Global>
-    where
-        Global: DiscussionIo + ?Sized,
+where
+    Global: DiscussionIo + ?Sized,
 {
     #[inline]
     pub const fn new(
@@ -44,39 +45,36 @@ impl<'a, Global> DiscussionCommandExecutor<'a, Global>
             message,
         })
     }
-    //
-    //
-    // #[inline]
-    // async fn reply(
-    //     self,
-    //     discussion_id: DiscussionId,
-    //     user_id: UserId,
-    //     message_no: MessageNo,
-    //     message_text: MessageText,
-    // ) -> error::Result<Option<ClientCommand>> {
-    //     let reply = self
-    //         .global_io
-    //         .reply(&discussion_id, user_id, message_no, message_text)
-    //         .await?;
-    //
-    //     Ok(Some(ClientCommand::Discussion(
-    //         client::discussion::DiscussionCmd::Global(
-    //             client::discussion::global::GlobalCmd::Replied {
-    //                 discussion_id,
-    //                 reply,
-    //             },
-    //         ),
-    //     )))
-    // }
-    //
-    //
-    // #[inline]
-    // async fn close(self, discussion_id: DiscussionId) -> error::Result<Option<ClientCommand>> {
-    //     self.global_io.close(&discussion_id).await?;
-    //     Ok(Some(ClientCommand::Discussion(
-    //         client::discussion::DiscussionCmd::Global(
-    //             client::discussion::global::GlobalCmd::Closed { discussion_id },
-    //         ),
-    //     )))
-    // }
+
+
+    #[inline]
+    pub async fn reply(self, reply: Reply) -> error::Result<Replied> {
+        let discussion_id = reply.discussion_id.clone();
+        let replied_message_no = reply.message_no;
+        let reply_message = self
+            .global_io
+            .reply(
+                &reply.discussion_id,
+                self.user_id,
+                replied_message_no,
+                reply.message,
+            )
+            .await?;
+
+        Ok(Replied {
+            discussion_id,
+            replied_message_no,
+            reply: reply_message,
+        })
+    }
+
+
+    #[inline]
+    pub async fn close(self, discussion_id: DiscussionId) -> error::Result<Closed> {
+        self.global_io
+            .close(&discussion_id)
+            .await
+            .map_err(|_| error::Error::DiscussionNotExists(discussion_id.clone()))?;
+        Ok(Closed { discussion_id })
+    }
 }
