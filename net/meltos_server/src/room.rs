@@ -1,13 +1,15 @@
 use std::collections::HashMap;
+use std::fmt::{Debug, Formatter};
+use std::sync::Arc;
 
 use axum::body::Body;
 use axum::http::StatusCode;
 use axum::response::Response;
 use serde_json::json;
 
-use meltos::discussion::io::global::mock::MockGlobalDiscussionIo;
 use meltos::room::RoomId;
 use meltos::user::UserId;
+use meltos_backend::discussion::DiscussionIo;
 use meltos_util::macros::Deref;
 use meltos_util::sync::arc_mutex::ArcMutex;
 
@@ -16,7 +18,7 @@ use crate::room::executor::discussion::DiscussionCommandExecutor;
 mod executor;
 
 
-#[derive(Default, Deref, Clone, Debug)]
+#[derive(Default, Clone, Debug, Deref)]
 pub struct Rooms(ArcMutex<RoomMap>);
 
 
@@ -32,6 +34,10 @@ impl Rooms {
 pub struct RoomMap(HashMap<RoomId, Room>);
 
 impl RoomMap {
+    pub fn room(&mut self, room_id: &RoomId) -> std::result::Result<Room, Response> {
+        Ok(self.room_mut(room_id)?.clone())
+    }
+
     pub fn room_mut(&mut self, room_id: &RoomId) -> std::result::Result<&mut Room, Response> {
         self.0.get_mut(room_id).ok_or(
             Response::builder()
@@ -48,20 +54,20 @@ impl RoomMap {
 }
 
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct Room {
     pub owner: UserId,
     pub id: RoomId,
-    global_discussion_io: MockGlobalDiscussionIo,
+    discussion: Arc<dyn DiscussionIo>,
 }
 
 
 impl Room {
-    pub fn open(owner: UserId) -> Self {
+    pub fn open<Discussion: DiscussionIo + Default + 'static>(owner: UserId) -> Self {
         Self {
             id: RoomId::default(),
             owner,
-            global_discussion_io: MockGlobalDiscussionIo::default(),
+            discussion: Arc::new(Discussion::default()),
         }
     }
 
@@ -69,7 +75,18 @@ impl Room {
     pub fn as_global_discussion_executor(
         &self,
         user_id: UserId,
-    ) -> DiscussionCommandExecutor<'_, MockGlobalDiscussionIo> {
-        DiscussionCommandExecutor::new(user_id, &self.global_discussion_io)
+    ) -> DiscussionCommandExecutor<'_, dyn DiscussionIo> {
+        DiscussionCommandExecutor::new(user_id, self.discussion.as_ref())
+    }
+}
+
+
+impl Debug for Room {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f
+            .debug_struct("Room")
+            .field("id", &self.id)
+            .field("owner", &self.owner)
+            .finish()
     }
 }

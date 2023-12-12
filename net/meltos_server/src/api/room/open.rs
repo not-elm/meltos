@@ -1,28 +1,22 @@
-use std::fmt::Debug;
-
 use axum::body::Body;
 use axum::extract::State;
 use axum::response::Response;
-use axum::Json;
 
 use meltos::command::client::room::Opened;
-use meltos::command::request::room::Open;
 use meltos::room::RoomId;
-use meltos_backend::user::SessionIo;
+use meltos_backend::discussion::DiscussionIo;
 use meltos_util::serde::SerializeJson;
 
 use crate::api::HttpResult;
+use crate::middleware::user::SessionUser;
 use crate::room::{Room, Rooms};
-use crate::state::SessionState;
 
 #[tracing::instrument]
-pub async fn open<Session: SessionIo + Clone + Debug>(
+pub async fn open<Discussion: DiscussionIo + Default + 'static>(
     State(rooms): State<Rooms>,
-    State(session): State<SessionState<Session>>,
-    Json(param): Json<Open>,
+    SessionUser(user_id): SessionUser,
 ) -> HttpResult {
-    let user_id = session.try_fetch_user_id(param.user_token).await?;
-    let room = Room::open(user_id);
+    let room = Room::open::<Discussion>(user_id);
     let room_id = room.id.clone();
     rooms.insert_room(room).await;
     Ok(response_success_create_room(room_id))
@@ -43,18 +37,19 @@ mod tests {
     use tower::ServiceExt;
 
     use meltos::command::client::room::Opened;
-    use meltos::user::{UserId, UserToken};
+    use meltos::user::UserId;
+    use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
     use meltos_backend::user::SessionIo;
 
-    use crate::api::test_util::open_room_request;
     use crate::{app, error};
+    use crate::api::test_util::{mock_session_id, open_room_request};
 
     #[tokio::test]
     async fn failed_if_not_logged_in() {
-        let app = app(MockUserSessionIo::default());
+        let app = app(MockUserSessionIo::default(), MockGlobalDiscussionIo::default());
         let response = app
-            .oneshot(open_room_request(UserToken("token".to_string())))
+            .oneshot(open_room_request(mock_session_id()))
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
@@ -65,13 +60,13 @@ mod tests {
     async fn success_if_logged_in() -> error::Result {
         let session = MockUserSessionIo::default();
         session
-            .register(UserToken("token".to_string()), UserId::from("user"))
+            .register(mock_session_id(), UserId::from("user"))
             .await
             .unwrap();
 
-        let app = app(session);
+        let app = app(session, MockGlobalDiscussionIo::default());
         let response = app
-            .oneshot(open_room_request(UserToken("token".to_string())))
+            .oneshot(open_room_request(mock_session_id()))
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);

@@ -1,11 +1,27 @@
-use crate::discussion::structs::id::DiscussionId;
-use crate::discussion::structs::message::{Message, MessageNo, MessageText};
-use crate::discussion::structs::reply::Reply;
-use crate::discussion::structs::{Discussion, DiscussionMeta};
-use crate::error;
-use crate::user::UserId;
+use meltos::discussion::{Discussion, DiscussionMeta};
+use meltos::discussion::id::DiscussionId;
+use meltos::discussion::message::{Message, MessageNo, MessageText};
+use meltos::discussion::reply::Reply;
+use meltos::error;
+use meltos::user::UserId;
+
+use crate::discussion::global::mock::MockGlobalDiscussionIo;
 
 pub mod global;
+
+
+#[derive(Default, Debug, Clone, Copy, Hash)]
+pub struct MockDiscussionIoTypes;
+
+impl DiscussionIoTypes for MockDiscussionIoTypes {
+    type Global = MockGlobalDiscussionIo;
+}
+
+
+pub trait DiscussionIoTypes: Default + Send + Sync + 'static {
+    type Global: DiscussionIo;
+}
+
 
 #[async_trait::async_trait]
 pub trait DiscussionIo: Send + Sync {

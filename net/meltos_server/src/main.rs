@@ -5,6 +5,8 @@ use axum::http::StatusCode;
 use axum::Router;
 use axum::routing::{get, post};
 
+use meltos_backend::discussion::DiscussionIo;
+use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
 use meltos_backend::user::mock::MockUserSessionIo;
 use meltos_backend::user::SessionIo;
 use meltos_util::tracing::tracing_init;
@@ -15,6 +17,7 @@ mod api;
 mod error;
 mod room;
 mod state;
+mod middleware;
 
 
 pub type HttpResult<T> = std::result::Result<T, StatusCode>;
@@ -25,21 +28,43 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     let listener = tokio::net::TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 3000))).await?;
 
-    axum::serve(listener, app(MockUserSessionIo::default())).await?;
+    axum::serve(listener, app(MockUserSessionIo::default(), MockGlobalDiscussionIo::default())).await?;
     Ok(())
 }
 
 
-fn app<Session>(session: Session) -> Router
+fn app<Session, Discussion>(session: Session, _: Discussion) -> Router
     where
         Session: SessionIo + Debug + Clone + 'static,
+        Discussion: DiscussionIo + Default + 'static
 {
     Router::new()
-        .route("/room/open", post(api::room::open::<Session>))
+        .route("/room/open", post(api::room::open::<Discussion>))
         .route("/room/connect", get(api::room::connect))
-        .route(
-            "/discussion/global/create",
-            post(api::discussion::global::create::<Session>),
-        )
+        .nest("/room/:room_id", room_operations_router())
         .with_state(AppState::<Session>::new(session))
 }
+
+
+fn room_operations_router<Session>() -> Router<AppState<Session>>
+    where Session: SessionIo + Clone + Debug + 'static
+{
+    Router::new()
+        .nest("/discussion/global", global_discussion_route())
+}
+
+
+fn global_discussion_route<Session>() -> Router<AppState<Session>>
+    where Session: SessionIo + Clone + Debug + 'static
+{
+    Router::new()
+        .route(
+            "/create",
+            post(api::room::discussion::global::create::<Session>),
+        )
+        .route(
+            "/speak",
+            post(api::room::discussion::global::speak),
+        )
+}
+

@@ -3,19 +3,19 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 
 use crate::error;
-use meltos::user::{UserId, UserToken};
+use meltos::user::{UserId, SessionId};
 use meltos_util::sync::arc_mutex::ArcMutex;
 
 use crate::user::SessionIo;
 
 
 #[derive(Debug, Default, Clone)]
-pub struct MockUserSessionIo(ArcMutex<HashMap<UserToken, UserId>>);
+pub struct MockUserSessionIo(ArcMutex<HashMap<SessionId, UserId>>);
 
 
 #[async_trait]
 impl SessionIo for MockUserSessionIo {
-    async fn fetch_user_id(&self, user_token: UserToken) -> crate::error::Result<UserId> {
+    async fn fetch_user_id(&self, user_token: SessionId) -> crate::error::Result<UserId> {
         self.0
             .lock()
             .await
@@ -24,7 +24,7 @@ impl SessionIo for MockUserSessionIo {
             .ok_or(error::Error::UserIdNotExists)
     }
 
-    async fn register(&self, user_token: UserToken, user_id: UserId) -> crate::error::Result {
+    async fn register(&self, user_token: SessionId, user_id: UserId) -> crate::error::Result {
         self.0.lock().await.insert(user_token, user_id);
         Ok(())
     }

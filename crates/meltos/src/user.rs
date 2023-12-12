@@ -11,4 +11,4 @@ impl_string_new_type!(UserId);
 
 #[repr(transparent)]
 #[derive(Eq, PartialEq, Debug, Serialize, Deserialize, Clone, Hash, Display)]
-pub struct UserToken(pub String);
+pub struct SessionId(pub String);

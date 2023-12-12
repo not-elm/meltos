@@ -1,18 +1,19 @@
-use meltos::command::client::discussion::global::Created;
-use meltos::discussion::io::DiscussionIo;
+use meltos::command::client::discussion::global::{Created, Spoke};
+use meltos::command::request::discussion::global::Speak;
 use meltos::user::UserId;
+use meltos_backend::discussion::DiscussionIo;
 
 use crate::error;
 
-pub struct DiscussionCommandExecutor<'a, Global> {
+pub struct DiscussionCommandExecutor<'a, Global: ?Sized> {
     user_id: UserId,
     global_io: &'a Global,
 }
 
 
 impl<'a, Global> DiscussionCommandExecutor<'a, Global>
-where
-    Global: DiscussionIo,
+    where
+        Global: DiscussionIo + ?Sized,
 {
     #[inline]
     pub const fn new(
@@ -31,27 +32,18 @@ where
         })
     }
 
-    //
-    // #[inline]
-    // async fn speak_global_discussion(
-    //     self,
-    //     discussion_id: DiscussionId,
-    //     user_id: UserId,
-    //     message_text: MessageText,
-    // ) -> error::Result<Option<ClientCommand>> {
-    //     let message = self
-    //         .global_io
-    //         .speak(&discussion_id, user_id, message_text)
-    //         .await?;
-    //     Ok(Some(ClientCommand::Discussion(
-    //         client::discussion::DiscussionCmd::Global(
-    //             client::discussion::global::GlobalCmd::Spoke {
-    //                 discussion_id,
-    //                 message,
-    //             },
-    //         ),
-    //     )))
-    // }
+
+    #[inline]
+    pub async fn speak(self, speak: Speak) -> error::Result<Spoke> {
+        let message = self
+            .global_io
+            .speak(&speak.discussion_id, self.user_id, speak.message)
+            .await?;
+        Ok(Spoke {
+            discussion_id: speak.discussion_id,
+            message,
+        })
+    }
     //
     //
     // #[inline]

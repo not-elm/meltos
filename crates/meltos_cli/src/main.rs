@@ -45,13 +45,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
     // let _args = StartupCommands::parse();
     //
-    // let io = io::stdin();
+    // let discussion = discussion::stdin();
     // loop {
     //     print!("[meltos]>");
     //     let _ = stdout().flush();
     //
     //     let mut buffer = String::new();
-    //     io.read_line(&mut buffer).expect("failed read input");
+    //     discussion.read_line(&mut buffer).expect("failed read input");
     //     let command: RunCommands = RunCommands::parse_from(buffer.split('
     // '));     println!("{command:?}");
     // }

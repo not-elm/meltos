@@ -1,13 +1,20 @@
 use serde::{Deserialize, Serialize};
 
-use crate::discussion::structs::id::DiscussionId;
-use crate::discussion::structs::message::Message;
-use crate::discussion::structs::reply::Reply;
-use crate::discussion::structs::DiscussionMeta;
+use crate::discussion::id::DiscussionId;
+use crate::discussion::message::Message;
+use crate::discussion::reply::Reply;
+use crate::discussion::DiscussionMeta;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Created {
     pub meta: DiscussionMeta,
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+pub struct Spoke {
+    pub discussion_id: DiscussionId,
+    pub message: Message,
 }
 
 
@@ -39,8 +46,8 @@ mod tests {
     use serde_json::json;
 
     use crate::command::client::discussion::global::GlobalCmd;
-    use crate::discussion::structs::id::DiscussionId;
-    use crate::discussion::structs::DiscussionMeta;
+    use crate::discussion::id::DiscussionId;
+    use crate::discussion::DiscussionMeta;
     use crate::user::UserId;
 
     #[test]

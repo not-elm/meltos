@@ -1,5 +1,5 @@
-use crate::discussion::structs::id::DiscussionId;
-use crate::discussion::structs::message::MessageNo;
+use crate::discussion::id::DiscussionId;
+use crate::discussion::message::MessageNo;
 use thiserror::Error;
 
 pub type Result<T = ()> = std::result::Result<T, Error>;
@@ -18,7 +18,7 @@ pub enum Error {
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
 
-    #[error("structs not exists id = {0:?}")]
+    #[error("discussion not exists id = {0:?}")]
     ThreadNotExists(DiscussionId),
 
     #[error("failed reply message no {0:?} is not exists")]

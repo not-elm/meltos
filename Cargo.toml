@@ -9,7 +9,6 @@ exclude = [
     "meltos_tui"
 ]
 
-
 [workspace.dependencies]
 auto-delegate = "0.0.9"
 async-trait = "0.1.74"

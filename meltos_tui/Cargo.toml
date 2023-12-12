@@ -9,3 +9,4 @@ ratatui = "0.24.0"
 crossterm = "0.27.0"
 meltos_util = { path = "../crates/meltos_util" }
 meltos = { path = "../crates/meltos" }
+meltos_backend = { path = "../crates/meltos_backend" }

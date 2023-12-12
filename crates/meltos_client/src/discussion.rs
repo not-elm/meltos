@@ -1,9 +1,9 @@
 use crate::error;
 use async_trait::async_trait;
-use meltos::discussion::structs::id::DiscussionId;
-use meltos::discussion::structs::message::Message;
-use meltos::discussion::structs::reply::Reply;
-use meltos::discussion::structs::DiscussionMeta;
+use meltos::discussion::id::DiscussionId;
+use meltos::discussion::message::Message;
+use meltos::discussion::reply::Reply;
+use meltos::discussion::DiscussionMeta;
 
 #[async_trait]
 pub trait ClientDiscussionIo: Send + Sync {

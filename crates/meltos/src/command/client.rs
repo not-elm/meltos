@@ -31,8 +31,8 @@ mod tests {
     use serde_json::json;
 
     use crate::command::client::discussion::{global, DiscussionCmd};
-    use crate::discussion::structs::id::DiscussionId;
-    use crate::discussion::structs::DiscussionMeta;
+    use crate::discussion::id::DiscussionId;
+    use crate::discussion::DiscussionMeta;
     use crate::user::UserId;
 
     #[test]

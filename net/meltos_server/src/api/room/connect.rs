@@ -3,14 +3,14 @@ use axum::response::Response;
 use serde::{Deserialize, Serialize};
 
 use meltos::room::RoomId;
-use meltos::user::UserToken;
+use meltos::user::SessionId;
 
 use crate::room::Rooms;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Param {
     room_id: RoomId,
-    session_token: UserToken,
+    session_token: SessionId,
 }
 
 

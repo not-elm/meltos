@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use meltos_util::impl_string_new_type;
 use meltos_util::macros::{Deref, Display};
 
-use crate::discussion::structs::reply::{Reply, ReplyDiscussion};
+use crate::discussion::reply::{Reply, ReplyDiscussion};
 use crate::user::UserId;
 
 #[repr(transparent)]

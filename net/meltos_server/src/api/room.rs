@@ -3,3 +3,4 @@ pub use open::open;
 
 mod connect;
 mod open;
+pub mod discussion;

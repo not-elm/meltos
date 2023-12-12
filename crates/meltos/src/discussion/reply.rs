@@ -1,5 +1,5 @@
-use crate::discussion::structs::id::DiscussionId;
-use crate::discussion::structs::message::{MessageNo, MessageText};
+use crate::discussion::id::DiscussionId;
+use crate::discussion::message::{MessageNo, MessageText};
 use crate::user::UserId;
 use serde::{Deserialize, Serialize};
 
