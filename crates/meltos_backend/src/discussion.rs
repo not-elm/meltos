@@ -1,6 +1,6 @@
-use meltos::discussion::{Discussion, DiscussionMeta};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
+use meltos::discussion::{Discussion, DiscussionMeta};
 use meltos::error;
 use meltos::user::UserId;
 

@@ -1,12 +1,14 @@
+use serde::{Deserialize, Serialize};
 use std::io;
 use std::marker::PhantomData;
 use std::path::Path;
 
-use crate::OpenIo;
+use crate::io::OpenIo;
 
 pub struct ObjectIo<Open, Io>
-    where Open: OpenIo<Io>,
-          Io: io::Read + io::Write
+where
+    Open: OpenIo<Io>,
+    Io: io::Read + io::Write,
 {
     open: Open,
     _io: PhantomData<Io>,
@@ -14,8 +16,9 @@ pub struct ObjectIo<Open, Io>
 
 
 impl<Open, Io> ObjectIo<Open, Io>
-    where Open: OpenIo<Io>,
-          Io: io::Read + io::Write
+where
+    Open: OpenIo<Io>,
+    Io: io::Read + io::Write,
 {
     #[inline]
     pub const fn new(open: Open) -> ObjectIo<Open, Io> {
@@ -60,22 +63,33 @@ impl Object {
 }
 
 
-#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize)]
 pub struct ObjectHash(pub String);
-
-#[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct ObjectBuf(pub Vec<u8>);
 
 
 #[cfg(test)]
 mod tests {
-    use meltos_util::compression::gz::Gz;
+    use std::io::Write;
 
+    use crate::io::mock::MockOpenIo;
+    use crate::io::OpenIo;
     use crate::object::ObjectIo;
 
     #[test]
-    fn stage() {
-        let io = ObjectIo::new();
-        io.stage("./src/lib.rs").unwrap();
+    fn write_object_file() {
+        let buf = b"hello world!";
+        let open = MockOpenIo::default();
+        open.open("test/hello.txt").unwrap().write_all(buf).unwrap();
+
+        let io = ObjectIo::new(open.clone());
+        io.stage("test/hello.txt").unwrap();
+
+        let hello_buf = open
+            .read_to_end(format!(
+                "./.meltos/objects/{}",
+                meltos_util::hash::hash(buf)
+            ))
+            .unwrap();
+        assert_eq!(hello_buf, buf);
     }
 }

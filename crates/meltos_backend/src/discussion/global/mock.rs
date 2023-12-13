@@ -1,6 +1,6 @@
-use meltos::discussion::{Discussion, DiscussionMeta};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
+use meltos::discussion::{Discussion, DiscussionMeta};
 use meltos::error;
 use meltos::user::UserId;
 use meltos_util::macros::Deref;
@@ -36,7 +36,9 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         let message = Message::new(user_id, text);
 
         let mut discussions = self.discussions.lock().await;
-        let discussion = discussions.get_mut(discussion_id).ok_or(error::Error::DiscussionNotExists(discussion_id.clone()))?;
+        let discussion = discussions
+            .get_mut(discussion_id)
+            .ok_or(error::Error::DiscussionNotExists(discussion_id.clone()))?;
         discussion.messages.push(message.id.clone());
 
         let mut messages = self.messages.lock().await;
@@ -58,7 +60,10 @@ impl DiscussionIo for MockGlobalDiscussionIo {
             discussion.insert(message_id.clone(), vec![]);
         }
 
-        discussion.get_mut(&message_id).unwrap().push(reply.id.clone());
+        discussion
+            .get_mut(&message_id)
+            .unwrap()
+            .push(reply.id.clone());
         Ok(reply)
     }
 
@@ -77,7 +82,9 @@ impl DiscussionIo for MockGlobalDiscussionIo {
 
     async fn close(&self, discussion_id: &DiscussionId) -> error::Result {
         let mut discussions = self.discussions.lock().await;
-        let discussion = discussions.get_mut(discussion_id).ok_or(error::Error::DiscussionNotExists(discussion_id.clone()))?;
+        let discussion = discussions
+            .get_mut(discussion_id)
+            .ok_or(error::Error::DiscussionNotExists(discussion_id.clone()))?;
         let message_ids = discussion.messages.clone();
 
         let mut reply_discussions = self.reply_discussions.lock().await;
@@ -100,8 +107,3 @@ struct Messages(ArcHashMap<MessageId, Message>);
 
 #[derive(Debug, Default, Clone, Deref)]
 struct ReplyDiscussions(ArcHashMap<MessageId, Vec<MessageId>>);
-
-
-
-
-

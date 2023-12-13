@@ -5,26 +5,37 @@ use std::sync::{Arc, Mutex};
 
 use crate::io::OpenIo;
 
-#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Default)]
 pub struct MockOpenIo(Arc<Mutex<HashMap<String, MockIo>>>);
 
 
 impl OpenIo<MockIo> for MockOpenIo {
     fn open<P: AsRef<Path>>(&self, path: P) -> std::io::Result<MockIo> {
-        let io = MockIo::default();
-        self.0.lock().unwrap().insert(path.as_ref().to_str().unwrap().to_string(), MockIo(Arc::clone(&io.0)));
-        Ok(io)
+        let mut map = self.0.lock().unwrap();
+        let key = path.as_ref().to_str().unwrap().to_string();
+        if !map.contains_key(&key) {
+            let io = MockIo::default();
+            map.insert(key.clone(), io);
+        }
+        Ok(MockIo(Arc::clone(&map.get(&key).unwrap().0)))
     }
 }
 
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct MockIo(Arc<Mutex<Vec<u8>>>);
 
 
 impl Read for MockIo {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        buf.write(&self.0.lock().unwrap())
+        let b = self.0.lock().unwrap();
+        buf[0..b.len()].copy_from_slice(b.as_slice());
+        Ok(b.len())
+    }
+
+    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> std::io::Result<usize> {
+        *buf = self.0.lock().unwrap().to_vec();
+        Ok(buf.len())
     }
 }
 
@@ -38,3 +49,21 @@ impl Write for MockIo {
     }
 }
 
+
+#[cfg(test)]
+mod tests {
+    use crate::io::mock::MockOpenIo;
+    use crate::io::OpenIo;
+
+    #[test]
+    fn read() {
+        let buf1 = [0, 1, 2, 3];
+        let buf2 = [5, 6, 7, 8];
+        let io = MockOpenIo::default();
+
+        io.write("buf1", &buf1).unwrap();
+        io.write("buf2", &buf2).unwrap();
+        assert_eq!(io.read_to_end("buf1").unwrap(), buf1.to_vec());
+        assert_eq!(io.read_to_end("buf2").unwrap(), buf2.to_vec());
+    }
+}

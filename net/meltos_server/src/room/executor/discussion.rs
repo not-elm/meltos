@@ -51,11 +51,7 @@ where
     pub async fn reply(self, reply: Reply) -> error::Result<Replied> {
         let reply_message = self
             .global_io
-            .reply(
-                self.user_id,
-                reply.target_id.clone(),
-                reply.text,
-            )
+            .reply(self.user_id, reply.target_id.clone(), reply.text)
             .await?;
 
         Ok(Replied {

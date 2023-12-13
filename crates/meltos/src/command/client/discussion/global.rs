@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::discussion::DiscussionMeta;
 use crate::discussion::id::DiscussionId;
 use crate::discussion::message::{Message, MessageId};
+use crate::discussion::DiscussionMeta;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Created {

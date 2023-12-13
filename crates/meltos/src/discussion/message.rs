@@ -31,8 +31,6 @@ pub struct MessageText(String);
 impl_string_new_type!(MessageText);
 
 
-
 #[repr(transparent)]
 #[derive(Eq, PartialEq, Clone, Debug, Hash, Serialize, Deserialize, Display, Sha1)]
 pub struct MessageId(pub String);
-

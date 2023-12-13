@@ -8,7 +8,6 @@ pub mod id;
 pub mod message;
 
 
-
 #[derive(Debug, Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]
 pub struct DiscussionMeta {
     pub id: DiscussionId,

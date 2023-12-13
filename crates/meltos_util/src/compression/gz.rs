@@ -9,8 +9,6 @@ pub struct Gz;
 
 
 impl CompressionBuf for Gz {
-
-
     fn encode(&self, buf: &[u8]) -> std::io::Result<Vec<u8>> {
         let mut gz = GzEncoder::new(buf, flate2::Compression::default());
         let mut buffer = Vec::new();

@@ -42,7 +42,7 @@ mod tests {
                 message: MessageText::from("Message"),
             },
         )
-            .await;
+        .await;
 
         assert_eq!(&spoke.message.text, &MessageText::from("Message"));
         assert_eq!(&spoke.discussion_id, &created.meta.id);
