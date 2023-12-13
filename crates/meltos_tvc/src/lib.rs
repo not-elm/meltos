@@ -5,6 +5,7 @@ pub mod stage;
 pub mod branch;
 pub mod workspace;
 mod now;
+mod commit;
 
 
 

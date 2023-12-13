@@ -1,6 +1,7 @@
 use std::io;
 
 use serde::{Deserialize, Serialize};
+use meltos_util::macros::Display;
 
 use crate::io::{FilePath, OpenIo, TvcIo};
 
@@ -58,7 +59,7 @@ impl Object {
 }
 
 
-#[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd, Display)]
 pub struct ObjectHash(pub String);
 
 

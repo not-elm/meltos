@@ -140,4 +140,11 @@ impl AsRef<Path> for FilePath {
 }
 
 
+impl AsRef<String> for FilePath {
+    fn as_ref(&self) -> &String {
+        &self.0
+    }
+}
+
+
 

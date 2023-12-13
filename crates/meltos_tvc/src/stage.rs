@@ -4,10 +4,21 @@ use crate::tree::TreeIo;
 
 
 #[derive(Debug, Clone)]
-pub struct StageIo<Open, Io>(TreeIo<Open, Io>)
+pub struct StageIo<Open, Io>(pub(crate) TreeIo<Open, Io>)
 where
     Open: OpenIo<Io>,
     Io: std::io::Write + std::io::Read;
+
+
+impl<Open, Io>  StageIo<Open, Io>
+    where
+        Open: OpenIo<Io>,
+        Io: std::io::Write + std::io::Read
+{
+    pub fn new(open: Open) -> StageIo<Open, Io>{
+        Self(TreeIo::new(FilePath::from("./.meltos/stage"), TvcIo::new(open)))
+    }
+}
 
 
 impl<Open, Io> Deref for StageIo<Open, Io>
@@ -31,6 +42,6 @@ where
     Io: std::io::Write + std::io::Read
 {
     fn default() -> Self {
-        Self(TreeIo::new(FilePath::from("./.meltos/stage"), TvcIo::default()))
+        Self::new(Open::default())
     }
 }

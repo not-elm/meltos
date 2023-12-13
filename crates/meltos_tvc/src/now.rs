@@ -9,6 +9,16 @@ pub struct NowIo<Open, Io>(TreeIo<Open, Io>)
         Io: std::io::Write + std::io::Read;
 
 
+impl<Open, Io>  NowIo<Open, Io>
+    where
+        Open: OpenIo<Io>,
+        Io: std::io::Write + std::io::Read
+{
+    pub fn new(open: Open) -> NowIo<Open, Io>{
+        Self(TreeIo::new(FilePath::from("./.meltos/now"), TvcIo::new(open)))
+    }
+}
+
 impl<Open, Io> Deref for NowIo<Open, Io>
     where
         Open: OpenIo<Io>,
@@ -30,6 +40,6 @@ impl<Open, Io> Default for NowIo<Open, Io>
         Io: std::io::Write + std::io::Read
 {
     fn default() -> Self {
-        Self(TreeIo::new(FilePath::from("./.meltos/now"), TvcIo::default()))
+        Self::new(Open::default())
     }
 }

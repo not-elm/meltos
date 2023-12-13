@@ -72,7 +72,7 @@ impl<Open, Io> TreeIo<Open, Io>
 }
 
 
-#[derive(Serialize, Deserialize, Default, Clone, Deref, DerefMut)]
+#[derive(Serialize, Deserialize, Default, Clone, Deref, DerefMut, Debug, Eq, PartialEq)]
 pub struct Tree(HashMap<FilePath, ObjectHash>);
 
 
