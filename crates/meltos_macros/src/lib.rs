@@ -19,6 +19,12 @@ pub fn derive_deref(token: TokenStream) -> TokenStream {
 }
 
 
+#[proc_macro_derive(DerefMut)]
+pub fn derive_deref_mut(token: TokenStream) -> TokenStream {
+    to_plain_token(deref::deref_mut(token))
+}
+
+
 #[proc_macro_derive(Sha1)]
 pub fn derive_sha1(token: TokenStream) -> TokenStream {
     to_plain_token(sha::sha1(token))

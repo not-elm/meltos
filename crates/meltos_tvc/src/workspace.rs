@@ -18,18 +18,13 @@ impl<Open, Io> WorkspaceIo<Open, Io>
         Open: OpenIo<Io>,
         Io: io::Read + io::Write,
 {
-    pub fn convert_to_objs(&self, path: &str) -> std::io::Result<Vec<Object>> {
+    pub fn convert_to_objs(&self, path: &str) -> std::io::Result<ObjectIter<Open, Io>> {
         let files = self.0.all_file_path(path)?;
-        let mut objs = Vec::with_capacity(files.len());
-        for path in files {
-            objs.push(self.read_to_object(&path)?);
-        }
-        Ok(objs)
-    }
-
-    pub fn read_to_object(&self, path: &str) -> std::io::Result<Object> {
-        let buf = self.0.try_read_to_end(path.as_ref())?;
-        Ok(Object::new(FilePath::from_path(path), Gz.encode(&buf)?, ObjectHash(meltos_util::hash::hash(&buf))))
+        Ok(ObjectIter {
+            files,
+            index: 0,
+            io: &self.0,
+        })
     }
 }
 
@@ -45,27 +40,55 @@ impl<Open, Io> Default for WorkspaceIo<Open, Io>
 }
 
 
+pub struct ObjectIter<'a, Open, Io>
+    where
+        Open: OpenIo<Io>,
+        Io: io::Read + io::Write
+{
+    files: Vec<String>,
+    index: usize,
+    io: &'a TvcIo<Open, Io>,
+}
+
+
+impl<'a, Open, Io> Iterator for ObjectIter<'a, Open, Io>
+    where
+        Open: OpenIo<Io>,
+        Io: io::Read + io::Write
+{
+    type Item = std::io::Result<Object>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index == self.files.len() {
+            None
+        } else {
+            let obj = self.read_to_obj();
+            self.index += 1;
+            Some(obj)
+        }
+    }
+}
+
+
+impl<'a, Open, Io> ObjectIter<'a, Open, Io>
+    where
+        Open: OpenIo<Io>,
+        Io: io::Read + io::Write
+{
+    fn read_to_obj(&self) -> std::io::Result<Object> {
+        let path = self.files.get(self.index).unwrap();
+        let buf = self.io.try_read_to_end(path.as_ref())?;
+        Ok(Object::new(FilePath::from_path(path), Gz.encode(&buf)?, ObjectHash(meltos_util::hash::hash(&buf))))
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
-    use meltos_util::compression::CompressionBuf;
-    use meltos_util::compression::gz::Gz;
-
     use crate::io::{OpenIo, TvcIo};
     use crate::io::mock::MockOpenIo;
     use crate::object::ObjectHash;
     use crate::workspace::WorkspaceIo;
-
-    #[test]
-    fn read_object() {
-        let mock = MockOpenIo::default();
-        let workspace = WorkspaceIo(TvcIo::new(mock.clone()));
-        mock.write("hello/hello.txt", b"hello").unwrap();
-        mock.write("hello/world", b"world").unwrap();
-        let obj1 = workspace.read_to_object("hello/hello.txt").unwrap();
-        assert_eq!(Gz.decode(&obj1.buf).unwrap(), b"hello");
-        let obj2 = workspace.read_to_object("hello/world").unwrap();
-        assert_eq!(Gz.decode(&obj2.buf).unwrap(), b"world");
-    }
 
     #[test]
     fn read_all_objects_in_dir() {
@@ -74,15 +97,18 @@ mod tests {
         mock.write("hello/hello.txt", b"hello").unwrap();
         mock.write("hello/world", b"world").unwrap();
         mock.write("hello/dir/main.sh", b"echo hi ").unwrap();
-        let hashes = workspace.convert_to_objs("hello")
+        let mut hashes = workspace.convert_to_objs("hello")
             .unwrap()
             .into_iter()
-            .map(|obj|obj.hash)
+            .map(|obj| obj.unwrap().hash)
             .collect::<Vec<ObjectHash>>();
-        assert_eq!(hashes, vec![
+        hashes.sort();
+        let mut expect = vec![
             ObjectHash::new(b"hello"),
             ObjectHash::new(b"world"),
             ObjectHash::new(b"echo hi "),
-        ])
+        ];
+        expect.sort();
+        assert_eq!(hashes, expect);
     }
 }

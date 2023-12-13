@@ -58,7 +58,7 @@ impl Object {
 }
 
 
-#[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd)]
 pub struct ObjectHash(pub String);
 
 
@@ -89,7 +89,11 @@ mod tests {
         open.create("test/hello.txt").unwrap().write_all(buf).unwrap();
 
         let io = ObjectIo::new(open.clone());
-        let hello_obj = WorkspaceIo(TvcIo::new(open.clone())).read_to_object("test/hello.txt").unwrap();
+        let workspace = WorkspaceIo(TvcIo::new(open.clone()));
+        let mut objs = workspace
+            .convert_to_objs("test/hello.txt")
+            .unwrap();
+        let hello_obj = objs.next().unwrap().unwrap();
         io.write(&hello_obj).unwrap();
 
         let hello_buf = open
