@@ -1,42 +1,29 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-
-use tokio::sync::{Mutex, MutexGuard};
-
-use crate::discussion::DiscussionIo;
-use meltos::discussion::id::DiscussionId;
-use meltos::discussion::message::{Message, MessageNo, MessageText};
-use meltos::discussion::reply::ReplyMessage;
 use meltos::discussion::{Discussion, DiscussionMeta};
+use meltos::discussion::id::DiscussionId;
+use meltos::discussion::message::{Message, MessageId, MessageText};
+use meltos::discussion::reply::ReplyMessage;
 use meltos::error;
 use meltos::user::UserId;
+use meltos_util::macros::Deref;
+use meltos_util::sync::arc_mutex::ArcHashMap;
+
+use crate::discussion::DiscussionIo;
 
 #[derive(Debug, Default)]
-pub struct MockGlobalDiscussionIo(Arc<Mutex<HashMap<DiscussionId, Discussion>>>);
-
-
-impl MockGlobalDiscussionIo {
-    pub async fn lock_thread(
-        &self,
-        discussion_id: &DiscussionId,
-    ) -> error::Result<MutexGuard<HashMap<DiscussionId, Discussion>>> {
-        let map = self.0.lock().await;
-        if !map.contains_key(discussion_id) {
-            Err(error::Error::ThreadNotExists(discussion_id.clone()))
-        } else {
-            Ok(map)
-        }
-    }
+pub struct MockGlobalDiscussionIo {
+    discussions: Discussions,
+    messages: Messages,
+    reply_discussions: ReplyDiscussions,
 }
 
 
 #[async_trait::async_trait]
 impl DiscussionIo for MockGlobalDiscussionIo {
     async fn new_discussion(&self, creator: UserId) -> error::Result<DiscussionMeta> {
-        let thread = Discussion::new(creator);
-        let mut thread_map = self.0.lock().await;
-        let meta = thread.meta.clone();
-        thread_map.insert(meta.id.clone(), thread);
+        let discussion = Discussion::new(creator);
+        let mut discussions = self.discussions.lock().await;
+        let meta = discussion.meta.clone();
+        discussions.insert(meta.id.clone(), discussion);
         Ok(meta)
     }
 
@@ -47,55 +34,76 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         user_id: UserId,
         message_text: MessageText,
     ) -> error::Result<Message> {
-        let mut map = self.lock_thread(discussion_id).await?;
-        let message = map
-            .get_mut(discussion_id)
-            .unwrap()
-            .add_message(user_id, message_text);
+        let message = Message::new(user_id, message_text);
+
+        let mut discussions = self.discussions.lock().await;
+        let discussion = discussions.get_mut(discussion_id).ok_or(error::Error::DiscussionNotExists(discussion_id.clone()))?;
+        discussion.messages.push(message.id.clone());
+
+        let mut messages = self.messages.lock().await;
+        messages.insert(message.id.clone(), message.clone());
+
         Ok(message)
     }
 
 
     async fn reply(
         &self,
-        discussion_id: &DiscussionId,
         user_id: UserId,
-        message_no: MessageNo,
-        message_text: MessageText,
+        message_id: MessageId,
+        text: MessageText,
     ) -> error::Result<ReplyMessage> {
-        let mut map = self.lock_thread(discussion_id).await?;
-        map.get_mut(discussion_id)
-            .unwrap()
-            .add_reply(user_id, message_no, message_text)
+        let reply = ReplyMessage::new(user_id, text);
+
+        let mut discussion = self.reply_discussions.lock().await;
+        if !discussion.contains_key(&message_id) {
+            discussion.insert(message_id.clone(), vec![]);
+        }
+
+        discussion.get_mut(&message_id).unwrap().push(reply.clone());
+        Ok(reply)
     }
 
 
     async fn discussion_by(&self, discussion_id: &DiscussionId) -> error::Result<Discussion> {
-        let mut map = self.lock_thread(discussion_id).await?;
-        Ok(map.get_mut(discussion_id).unwrap().clone())
+        let mut discussions = self.discussions.lock().await;
+        Ok(discussions.get_mut(discussion_id).unwrap().clone())
     }
 
 
     async fn all_discussions(&self) -> error::Result<Vec<Discussion>> {
-        let map = self.0.lock().await;
-        Ok(map.values().cloned().collect())
+        let discussions = self.discussions.lock().await;
+        Ok(discussions.values().cloned().collect())
     }
 
 
     async fn close(&self, discussion_id: &DiscussionId) -> error::Result {
-        let mut map = self.0.lock().await;
-        let thread = map
-            .get_mut(discussion_id)
-            .ok_or(meltos::error::Error::ThreadNotExists(discussion_id.clone()))?;
-        thread.messages.clear();
+        let mut discussions = self.discussions.lock().await;
+        let discussion = discussions.get_mut(discussion_id).ok_or(error::Error::DiscussionNotExists(discussion_id.clone()))?;
+        let message_ids = discussion.messages.clone();
+
+        let mut reply_discussions = self.reply_discussions.lock().await;
+        for id in message_ids {
+            reply_discussions.remove(&id);
+        }
+
         Ok(())
     }
 }
 
 
-impl Clone for MockGlobalDiscussionIo {
-    #[inline(always)]
-    fn clone(&self) -> Self {
-        Self(Arc::clone(&self.0))
-    }
-}
+#[derive(Debug, Default, Clone, Deref)]
+struct Discussions(ArcHashMap<DiscussionId, Discussion>);
+
+
+#[derive(Debug, Default, Clone, Deref)]
+struct Messages(ArcHashMap<MessageId, Message>);
+
+
+#[derive(Debug, Default, Clone, Deref)]
+struct ReplyDiscussions(ArcHashMap<MessageId, Vec<ReplyMessage>>);
+
+
+
+
+

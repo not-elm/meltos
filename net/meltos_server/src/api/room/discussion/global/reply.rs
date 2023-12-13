@@ -27,7 +27,7 @@ mod tests {
         http_create_discussion, http_open_room, http_reply, http_speak, logged_in_app,
     };
     use meltos::command::request::discussion::global::{Reply, Speak};
-    use meltos::discussion::message::{MessageNo, MessageText};
+    use meltos::discussion::message::{ MessageText};
     use meltos::discussion::reply::ReplyMessage;
     use meltos::user::UserId;
 
@@ -36,7 +36,7 @@ mod tests {
         let (session_id, mut app) = logged_in_app().await;
         let room_id = http_open_room(&mut app, session_id.clone()).await;
         let created = http_create_discussion(&mut app, room_id.clone()).await;
-        http_speak(
+        let spoke = http_speak(
             &mut app,
             &room_id,
             Speak {
@@ -49,20 +49,19 @@ mod tests {
             &mut app,
             &room_id,
             Reply {
-                message: MessageText::from("reply"),
-                message_no: MessageNo::default(),
-                discussion_id: created.meta.id.clone(),
+                message_id: spoke.message.id.clone(),
+                text: MessageText::from("reply"),
             },
         )
         .await;
-        assert_eq!(&replied.discussion_id, &created.meta.id);
-        assert_eq!(replied.replied_message_no, MessageNo::default());
+
+        assert_eq!(&replied.reply_message_id, &spoke.message.id);
         assert_eq!(
-            replied.reply,
+            replied.reply.clone(),
             ReplyMessage {
+                id: replied.reply.id,
                 user_id: UserId::from("user"),
-                no: MessageNo::default(),
-                message: MessageText::from("reply")
+                text: MessageText::from("reply")
             }
         )
     }

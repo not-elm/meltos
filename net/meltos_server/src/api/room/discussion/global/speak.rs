@@ -23,7 +23,7 @@ pub async fn speak(
 #[cfg(test)]
 mod tests {
     use meltos::command::request::discussion::global::Speak;
-    use meltos::discussion::message::{MessageNo, MessageText};
+    use meltos::discussion::message::MessageText;
 
     use crate::api::test_util::{
         http_create_discussion, http_open_room, http_speak, logged_in_app,
@@ -42,9 +42,8 @@ mod tests {
                 message: MessageText::from("Message"),
             },
         )
-        .await;
+            .await;
 
-        assert_eq!(&spoke.message.no, &MessageNo::default());
         assert_eq!(&spoke.message.text, &MessageText::from("Message"));
         assert_eq!(&spoke.discussion_id, &created.meta.id);
     }

@@ -4,6 +4,7 @@ pub mod serde;
 pub mod tracing;
 
 
+pub mod hash;
 pub mod sync;
 
 

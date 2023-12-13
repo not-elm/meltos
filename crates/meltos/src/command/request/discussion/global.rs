@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::discussion::id::DiscussionId;
-use crate::discussion::message::{MessageNo, MessageText};
+use crate::discussion::message::{MessageId, MessageText};
 use crate::room::RoomId;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
@@ -19,9 +19,8 @@ pub struct Speak {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Reply {
-    pub discussion_id: DiscussionId,
-    pub message_no: MessageNo,
-    pub message: MessageText,
+    pub message_id: MessageId,
+    pub text: MessageText,
 }
 
 

@@ -5,9 +5,6 @@ members = [
 ]
 resolver = "2"
 
-exclude = [
-    "meltos_tui"
-]
 
 [workspace.dependencies]
 auto-delegate = "0.0.9"

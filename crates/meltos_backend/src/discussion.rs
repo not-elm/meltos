@@ -1,7 +1,7 @@
-use meltos::discussion::id::DiscussionId;
-use meltos::discussion::message::{Message, MessageNo, MessageText};
-use meltos::discussion::reply::ReplyMessage;
 use meltos::discussion::{Discussion, DiscussionMeta};
+use meltos::discussion::id::DiscussionId;
+use meltos::discussion::message::{Message, MessageId, MessageText};
+use meltos::discussion::reply::ReplyMessage;
 use meltos::error;
 use meltos::user::UserId;
 
@@ -23,9 +23,8 @@ pub trait DiscussionIo: Send + Sync {
 
     async fn reply(
         &self,
-        discussion_id: &DiscussionId,
         user_id: UserId,
-        message_no: MessageNo,
+        message_id: MessageId,
         message_text: MessageText,
     ) -> error::Result<ReplyMessage>;
 

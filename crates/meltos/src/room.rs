@@ -1,14 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use meltos_util::macros::Display;
+use meltos_util::macros::{Display, Sha1};
 
-
-#[derive(Eq, PartialEq, Clone, Hash, Debug, Serialize, Deserialize, Display)]
+#[derive(Eq, PartialEq, Clone, Hash, Debug, Serialize, Deserialize, Display, Sha1)]
 pub struct RoomId(pub String);
 
 
-impl Default for RoomId {
-    fn default() -> Self {
-        RoomId(uuid::Uuid::new_v4().to_string())
-    }
-}

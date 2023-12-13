@@ -49,21 +49,17 @@ where
 
     #[inline]
     pub async fn reply(self, reply: Reply) -> error::Result<Replied> {
-        let discussion_id = reply.discussion_id.clone();
-        let replied_message_no = reply.message_no;
         let reply_message = self
             .global_io
             .reply(
-                &reply.discussion_id,
                 self.user_id,
-                replied_message_no,
-                reply.message,
+                reply.message_id.clone(),
+                reply.text,
             )
             .await?;
 
         Ok(Replied {
-            discussion_id,
-            replied_message_no,
+            reply_message_id: reply.message_id,
             reply: reply_message,
         })
     }

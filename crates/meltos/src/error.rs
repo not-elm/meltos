@@ -1,6 +1,7 @@
-use crate::discussion::id::DiscussionId;
-use crate::discussion::message::MessageNo;
 use thiserror::Error;
+
+use crate::discussion::id::DiscussionId;
+use crate::discussion::message::MessageId;
 
 pub type Result<T = ()> = std::result::Result<T, Error>;
 
@@ -18,11 +19,11 @@ pub enum Error {
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
 
-    #[error("discussion not exists id = {0:?}")]
-    ThreadNotExists(DiscussionId),
+    #[error("discussion not exists id = {0}")]
+    DiscussionNotExists(DiscussionId),
 
-    #[error("failed reply message no {0:?} is not exists")]
-    MessageNoNotExists(MessageNo),
+    #[error("message not exists id = {0}")]
+    MessageNotExists(MessageId),
 
     #[error("websocket message can't serialize to client command")]
     SerializeClientCommand,

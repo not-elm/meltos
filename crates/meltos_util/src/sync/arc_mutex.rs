@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::ops::Deref;
 use std::sync::Arc;
 
 use tokio::sync::{Mutex, MutexGuard};
@@ -31,3 +33,30 @@ unsafe impl<S: Send + Sync> Send for ArcMutex<S> {}
 
 
 unsafe impl<S: Send + Sync> Sync for ArcMutex<S> {}
+
+
+#[derive( Debug, Clone)]
+pub struct ArcHashMap<K, V>(ArcMutex<HashMap<K, V>>)
+    where K: Send + Sync,
+          V: Send + Sync;
+
+impl<K, V> Deref for ArcHashMap<K, V>
+    where K: Send + Sync,
+          V: Send + Sync
+{
+    type Target = ArcMutex<HashMap<K, V>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+
+impl<K, V> Default for ArcHashMap<K, V>
+    where K: Send + Sync,
+          V: Send + Sync
+{
+    fn default() -> ArcHashMap<K, V> {
+        Self(ArcMutex::default())
+    }
+}
