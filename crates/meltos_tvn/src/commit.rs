@@ -1,3 +1,5 @@
+use meltos_util::compression::gz::Gz;
+use meltos_util::compression::CompressionBuf;
 use meltos_util::impl_string_new_type;
 use serde::{Deserialize, Serialize};
 
@@ -33,7 +35,7 @@ where
         let meta = self.create_commit(commit_text.into(), stage)?;
         self.io.write(
             &format!(".meltos/commits/{}", meta.hash),
-            &serde_json::to_vec(&meta.commit)?,
+            &Gz.encode(&serde_json::to_vec(&meta.commit)?)?,
         )?;
         self.io.write(
             &format!(".meltos/branches/{}/HEAD", self.branch_name),
@@ -61,7 +63,7 @@ where
         else {
             return Ok(None);
         };
-        Ok(Some(serde_json::from_slice(&buf)?))
+        Ok(Some(serde_json::from_slice(&Gz.decode(&buf)?)?))
     }
 
     fn create_commit(&self, commit_text: CommitText, stage: Tree) -> std::io::Result<CommitMeta> {

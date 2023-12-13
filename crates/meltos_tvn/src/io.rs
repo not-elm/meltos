@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 
 use meltos_util::impl_string_new_type;
 
-pub mod compression;
 pub mod file;
 pub(crate) mod mock;
 
