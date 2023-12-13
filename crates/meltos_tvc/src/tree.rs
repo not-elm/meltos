@@ -67,6 +67,28 @@ impl<Open, Io> TreeIo<Open, Io>
         self.io.write(&self.file_path, &serde_json::to_vec(&tree)?)?;
         Ok(())
     }
+
+
+    pub fn check_changed_file(
+        &self,
+        target_path: FilePath,
+        object_hash: ObjectHash,
+    ) -> std::io::Result<bool> {
+        let mut tree = self.read_tree()?.unwrap_or_default();
+        if let Some(old_hash) = tree.0.get(&target_path) {
+            if old_hash == &object_hash {
+                Ok(false)
+            } else {
+                tree.0.insert(target_path, object_hash);
+                self.io.write(&self.file_path, &serde_json::to_vec(&tree)?)?;
+                Ok(true)
+            }
+        } else {
+            tree.0.insert(target_path, object_hash);
+            self.io.write(&self.file_path, &serde_json::to_vec(&tree)?)?;
+            Ok(true)
+        }
+    }
 }
 
 

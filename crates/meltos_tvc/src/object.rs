@@ -32,15 +32,12 @@ where
     }
 
 
-    pub fn write(&self, buf: Vec<u8>) -> io::Result<ObjectHash> {
-        let object = Object::new(buf)?;
+    pub fn write(&self, object: &Object) -> io::Result<()> {
         const DIR_PATH: &str = "./.meltos/objects/";
-
         let path: &Path = DIR_PATH.as_ref();
         let path = path.join(&object.hash.0);
         self.0.create(path)?.write_all(&object.buf)?;
-
-        Ok(object.hash)
+        Ok(())
     }
 }
 
@@ -54,11 +51,11 @@ pub struct Object {
 
 
 impl Object {
-    pub fn new(buf: Vec<u8>) -> std::io::Result<Object> {
-        Ok(Self {
+    pub fn new(buf: Vec<u8>) -> Self {
+        Self {
             hash: ObjectHash(meltos_util::hash::hash(&buf)),
             buf,
-        })
+        }
     }
 }
 
@@ -72,8 +69,9 @@ mod tests {
     use std::io::Write;
 
     use crate::io::mock::MockOpenIo;
-    use crate::io::OpenIo;
+    use crate::io::{OpenIo, TvcIo};
     use crate::object::ObjectIo;
+    use crate::workspace::WorkspaceIo;
 
     #[test]
     fn write_object_file() {
@@ -82,8 +80,8 @@ mod tests {
         open.create("test/hello.txt").unwrap().write_all(buf).unwrap();
 
         let io = ObjectIo::new(open.clone());
-        let hello_buf = open.try_read_to_end("test/hello.txt").unwrap();
-        io.write(hello_buf).unwrap();
+        let hello_obj = WorkspaceIo(TvcIo::new(open.clone())).read_to_object("test/hello.txt").unwrap();
+        io.write(&hello_obj).unwrap();
 
         let hello_buf = open
             .try_read_to_end(format!(
