@@ -12,15 +12,18 @@ pub mod compression;
 
 
 pub trait OpenIo<Io: std::io::Read + std::io::Write> {
-    fn open<P: AsRef<Path>>(&self, path: P) -> std::io::Result<Option<Io>>;
+    fn open_file(&self, path: &str) -> std::io::Result<Option<Io>>;
 
 
-    fn create<P: AsRef<Path>>(&self, path: P) -> std::io::Result<Io>;
+    fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>>;
 
 
-    fn read_to_end<P: AsRef<Path>>(&self, path: P) -> std::io::Result<Option<Vec<u8>>> {
+    fn create(&self, path: &str) -> std::io::Result<Io>;
+
+
+    fn read_to_end(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
         let mut buf = Vec::new();
-        match self.open(path)? {
+        match self.open_file(path)? {
             Some(mut io) => {
                 io.read_to_end(&mut buf)?;
                 Ok(Some(buf))
@@ -29,7 +32,7 @@ pub trait OpenIo<Io: std::io::Read + std::io::Write> {
         }
     }
 
-    fn try_read_to_end(&self, path: impl AsRef<Path>) -> std::io::Result<Vec<u8>> {
+    fn try_read_to_end(&self, path: &str) -> std::io::Result<Vec<u8>> {
         self.read_to_end(path)
             .and_then(|buf| {
                 match buf {
@@ -40,7 +43,7 @@ pub trait OpenIo<Io: std::io::Read + std::io::Write> {
     }
 
 
-    fn write<P: AsRef<Path>>(&self, path: P, buf: &[u8]) -> std::io::Result<()> {
+    fn write(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
         self.create(path)?.write_all(buf)
     }
 }
@@ -103,12 +106,16 @@ impl<Open, Io> OpenIo<Io> for TvcIo<Open, Io>
         Io: std::io::Read + std::io::Write,
 {
     #[inline]
-    fn open<P: AsRef<Path>>(&self, path: P) -> std::io::Result<Option<Io>> {
-        self.open.open(path)
+    fn open_file(&self, path: &str) -> std::io::Result<Option<Io>> {
+        self.open.open_file(path)
+    }
+
+    fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>> {
+        self.open.all_file_path(path)
     }
 
     #[inline]
-    fn create<P: AsRef<Path>>(&self, path: P) -> std::io::Result<Io> {
+    fn create(&self, path: &str) -> std::io::Result<Io> {
         self.open.create(path)
     }
 }
@@ -119,8 +126,8 @@ pub struct FilePath(pub String);
 impl_string_new_type!(FilePath);
 
 
-impl FilePath{
-    pub fn from_path(path: impl AsRef<Path>) -> Self{
+impl FilePath {
+    pub fn from_path(path: impl AsRef<Path>) -> Self {
         Self(path.as_ref().to_str().unwrap().to_string())
     }
 }

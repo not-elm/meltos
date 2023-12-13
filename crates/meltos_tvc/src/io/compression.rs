@@ -1,5 +1,4 @@
 use std::io::{Read, Write};
-use std::path::Path;
 
 use meltos_util::compression::CompressionBuf;
 
@@ -18,12 +17,16 @@ impl<Open, Io, Compression> OpenIo<CompressionIo<Io, Compression>> for Compressi
         Io: std::io::Read + std::io::Write,
         Compression: CompressionBuf + Clone
 {
-    fn open<P: AsRef<Path>>(&self, path: P) -> std::io::Result<Option<CompressionIo<Io, Compression>>> {
-        let io = self.0.open(path)?;
+    fn open_file(&self, path: &str) -> std::io::Result<Option<CompressionIo<Io, Compression>>> {
+        let io = self.0.open_file(path)?;
         Ok(io.map(|io| CompressionIo(io, self.1.clone())))
     }
 
-    fn create<P: AsRef<Path>>(&self, path: P) -> std::io::Result<CompressionIo<Io, Compression>> {
+    fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>> {
+        self.0.all_file_path(path)
+    }
+
+    fn create(&self, path: &str) -> std::io::Result<CompressionIo<Io, Compression>> {
         let io = self.0.create(path)?;
         Ok(CompressionIo(io, self.1.clone()))
     }

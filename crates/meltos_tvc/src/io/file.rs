@@ -9,7 +9,7 @@ pub struct FileOpen;
 
 
 impl OpenIo<File> for FileOpen {
-    fn open<P: AsRef<Path>>(&self, path: P) -> std::io::Result<Option<File>> {
+    fn open_file(&self, path: &str) -> std::io::Result<Option<File>> {
         match File::open(path) {
             Ok(file) => Ok(Some(file)),
             Err(error) => {
@@ -22,8 +22,20 @@ impl OpenIo<File> for FileOpen {
         }
     }
 
+    fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>> {
+        if Path::new(path).is_dir(){
+            let mut p = Vec::new();
+            for entry in std::fs::read_dir(path)?{
+                p.extend(self.all_file_path(entry?.path().to_str().unwrap())?);
+            }
+            Ok(p)
+        }else{
+            Ok(vec![path.to_string()])
+        }
+    }
+
     #[inline(always)]
-    fn create<P: AsRef<Path>>(&self, path: P) -> std::io::Result<File> {
+    fn create(&self, path: &str) -> std::io::Result<File> {
         let path: &Path = path.as_ref();
         if path.is_dir() {
             return Err(std::io::Error::other("path type should be file"));

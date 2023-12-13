@@ -40,7 +40,7 @@ impl<Open, Io> BranchIo<Open, Io>
     }
 
     pub fn commit(&self) -> std::io::Result<()> {
-        let Some(stage_tree) = self.stage.read_tree()? else {
+        let Some(_stage_tree) = self.stage.read_tree()? else {
             return Err(std::io::Error::new(ErrorKind::NotFound, "no staged files"));
         };
         self.stage.reset()?;

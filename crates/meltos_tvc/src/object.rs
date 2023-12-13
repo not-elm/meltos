@@ -1,5 +1,4 @@
 use std::io;
-use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
@@ -34,10 +33,7 @@ impl<Open, Io> ObjectIo<Open, Io>
 
 
     pub fn write(&self, object: &Object) -> io::Result<()> {
-        const DIR_PATH: &str = "./.meltos/objects/";
-        let path: &Path = DIR_PATH.as_ref();
-        let path = path.join(&object.hash.0);
-        self.0.create(path)?.write_all(&object.buf)?;
+        self.0.create(&format!("./.meltos/objects/{}", object.hash.0))?.write_all(&object.buf)?;
         Ok(())
     }
 }
@@ -66,6 +62,14 @@ impl Object {
 pub struct ObjectHash(pub String);
 
 
+impl ObjectHash {
+    #[inline]
+    pub fn new(buf: &[u8]) -> Self {
+        Self(meltos_util::hash::hash(buf))
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use std::io::Write;
@@ -89,7 +93,7 @@ mod tests {
         io.write(&hello_obj).unwrap();
 
         let hello_buf = open
-            .try_read_to_end(format!(
+            .try_read_to_end(&format!(
                 "./.meltos/objects/{}",
                 meltos_util::hash::hash(buf)
             ))

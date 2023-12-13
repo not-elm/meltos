@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
-use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use crate::io::OpenIo;
@@ -10,20 +9,28 @@ pub struct MockOpenIo(Arc<Mutex<HashMap<String, MockIo>>>);
 
 
 impl OpenIo<MockIo> for MockOpenIo {
-    fn open<P: AsRef<Path>>(&self, path: P) -> std::io::Result<Option<MockIo>> {
+    fn open_file(&self, path: &str) -> std::io::Result<Option<MockIo>> {
         let map = self.0.lock().unwrap();
-        let key = path.as_ref().to_str().unwrap().to_string();
-        Ok(map.get(&key).cloned())
+        Ok(map.get(path).cloned())
     }
 
-    fn create<P: AsRef<Path>>(&self, path: P) -> std::io::Result<MockIo> {
+
+    fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>> {
+        let map = self.0.lock().unwrap();
+        Ok(map.keys()
+            .filter(|key| key.starts_with(path))
+            .cloned()
+            .collect())
+    }
+
+    fn create(&self, path: &str) -> std::io::Result<MockIo> {
         let mut map = self.0.lock().unwrap();
-        let key = path.as_ref().to_str().unwrap().to_string();
-        if !map.contains_key(&key) {
+
+        if !map.contains_key(path) {
             let io = MockIo::default();
-            map.insert(key.clone(), io);
+            map.insert(path.to_string(), io);
         }
-        Ok(MockIo(Arc::clone(&map.get(&key).unwrap().0)))
+        Ok(MockIo(Arc::clone(&map.get(path).unwrap().0)))
     }
 }
 
