@@ -17,7 +17,7 @@ where
 {
     pub fn new(branch_name: BranchName, open: Open) -> NowIo<Open, Io> {
         Self(TreeIo::new(
-            FilePath::from(format!("./.meltos/branches/{branch_name}/now")),
+            FilePath::from(format!("./.meltos/branches/{branch_name}/NOW")),
             TvnIo::new(open),
         ))
     }
