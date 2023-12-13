@@ -4,7 +4,7 @@ use std::io::Read;
 
 use crate::compression::CompressionBuf;
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash, Default)]
 pub struct Gz;
 
 

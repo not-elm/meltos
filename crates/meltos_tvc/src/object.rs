@@ -1,17 +1,23 @@
 use serde::{Deserialize, Serialize};
 use std::io;
-use std::marker::PhantomData;
 use std::path::Path;
 
-use crate::io::OpenIo;
+use crate::io::{OpenIo, TvcIo};
 
-pub struct ObjectIo<Open, Io>
+#[derive(Debug, Clone)]
+pub struct ObjectIo<Open, Io>(TvcIo<Open, Io>)
 where
     Open: OpenIo<Io>,
+    Io: io::Read + io::Write;
+
+impl<Open, Io> Default for ObjectIo<Open, Io>
+where
+    Open: OpenIo<Io> + Default,
     Io: io::Read + io::Write,
 {
-    open: Open,
-    _io: PhantomData<Io>,
+    fn default() -> Self {
+        Self(TvcIo::default())
+    }
 }
 
 
@@ -22,29 +28,23 @@ where
 {
     #[inline]
     pub const fn new(open: Open) -> ObjectIo<Open, Io> {
-        Self {
-            open,
-            _io: PhantomData,
-        }
+        Self(TvcIo::new(open))
     }
 
 
-    pub fn stage<P: AsRef<Path>>(&self, from: P) -> std::io::Result<()> {
-        let file_buf = self.open.read_to_end(from)?;
-        self.write(file_buf)
-    }
-
-    pub fn write(&self, buf: Vec<u8>) -> io::Result<()> {
+    pub fn write(&self, buf: Vec<u8>) -> io::Result<ObjectHash> {
         let object = Object::new(buf)?;
         const DIR_PATH: &str = "./.meltos/objects/";
 
         let path: &Path = DIR_PATH.as_ref();
         let path = path.join(&object.hash.0);
-        self.open.open(path)?.write_all(&object.buf)?;
+        self.0.create(path)?.write_all(&object.buf)?;
 
-        Ok(())
+        Ok(object.hash)
     }
 }
+
+
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct Object {
@@ -79,13 +79,14 @@ mod tests {
     fn write_object_file() {
         let buf = b"hello world!";
         let open = MockOpenIo::default();
-        open.open("test/hello.txt").unwrap().write_all(buf).unwrap();
+        open.create("test/hello.txt").unwrap().write_all(buf).unwrap();
 
         let io = ObjectIo::new(open.clone());
-        io.stage("test/hello.txt").unwrap();
+        let hello_buf = open.try_read_to_end("test/hello.txt").unwrap();
+        io.write(hello_buf).unwrap();
 
         let hello_buf = open
-            .read_to_end(format!(
+            .try_read_to_end(format!(
                 "./.meltos/objects/{}",
                 meltos_util::hash::hash(buf)
             ))

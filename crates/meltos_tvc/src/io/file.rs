@@ -1,15 +1,29 @@
-use crate::io::OpenIo;
 use std::fs::File;
+use std::io::ErrorKind;
 use std::path::Path;
 
+use crate::io::OpenIo;
 
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct FileOpen;
 
 
 impl OpenIo<File> for FileOpen {
+    fn open<P: AsRef<Path>>(&self, path: P) -> std::io::Result<Option<File>> {
+        match File::open(path) {
+            Ok(file) => Ok(Some(file)),
+            Err(error) => {
+                if error.kind() == ErrorKind::NotFound {
+                    Ok(None)
+                } else {
+                    Err(error)
+                }
+            }
+        }
+    }
+
     #[inline(always)]
-    fn open<P: AsRef<Path>>(&self, path: P) -> std::io::Result<File> {
+    fn create<P: AsRef<Path>>(&self, path: P) -> std::io::Result<File> {
         let path: &Path = path.as_ref();
         if path.is_dir() {
             return Err(std::io::Error::other("path type should be file"));
@@ -18,6 +32,6 @@ impl OpenIo<File> for FileOpen {
             std::fs::create_dir_all(parent)?;
         }
 
-        File::open(path)
+        File::create(path)
     }
 }

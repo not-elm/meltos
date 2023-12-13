@@ -10,7 +10,13 @@ pub struct MockOpenIo(Arc<Mutex<HashMap<String, MockIo>>>);
 
 
 impl OpenIo<MockIo> for MockOpenIo {
-    fn open<P: AsRef<Path>>(&self, path: P) -> std::io::Result<MockIo> {
+    fn open<P: AsRef<Path>>(&self, path: P) -> std::io::Result<Option<MockIo>> {
+        let map = self.0.lock().unwrap();
+        let key = path.as_ref().to_str().unwrap().to_string();
+        Ok(map.get(&key).cloned())
+    }
+
+    fn create<P: AsRef<Path>>(&self, path: P) -> std::io::Result<MockIo> {
         let mut map = self.0.lock().unwrap();
         let key = path.as_ref().to_str().unwrap().to_string();
         if !map.contains_key(&key) {
@@ -22,7 +28,7 @@ impl OpenIo<MockIo> for MockOpenIo {
 }
 
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct MockIo(Arc<Mutex<Vec<u8>>>);
 
 
@@ -63,7 +69,7 @@ mod tests {
 
         io.write("buf1", &buf1).unwrap();
         io.write("buf2", &buf2).unwrap();
-        assert_eq!(io.read_to_end("buf1").unwrap(), buf1.to_vec());
-        assert_eq!(io.read_to_end("buf2").unwrap(), buf2.to_vec());
+        assert_eq!(io.read_to_end("buf1").unwrap().unwrap(), buf1.to_vec());
+        assert_eq!(io.read_to_end("buf2").unwrap().unwrap(), buf2.to_vec());
     }
 }
