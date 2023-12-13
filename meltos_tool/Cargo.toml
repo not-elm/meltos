@@ -9,6 +9,6 @@ meltos = { path = "../crates/meltos" }
 tokio = { workspace = true }
 tokio-tungstenite = { workspace = true }
 reqwest = { version = "0.11.22", features = ["json"] }
-meltos_tvc = { path = "../crates/meltos_tvc" }
+meltos_tvn = { path = "../crates/meltos_tvn" }
 futures = "0.3.29"
 bincode = "1.3.3"

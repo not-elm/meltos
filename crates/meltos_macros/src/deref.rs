@@ -1,9 +1,9 @@
 use proc_macro::TokenStream;
 
-use syn::{Fields, ItemStruct, Type};
+use syn::Fields::Unnamed;
 use syn::__private::quote::quote;
 use syn::__private::TokenStream2;
-use syn::Fields::Unnamed;
+use syn::{Fields, ItemStruct, Type};
 
 pub fn deref(token: TokenStream) -> syn::Result<TokenStream2> {
     let item = syn::parse::<ItemStruct>(token)?;

@@ -9,9 +9,9 @@ use crate::object::ObjectHash;
 
 #[derive(Debug, Clone)]
 pub struct TreeIo<Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Open: OpenIo<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     io: TvcIo<Open, Io>,
     file_path: FilePath,
@@ -19,9 +19,9 @@ pub struct TreeIo<Open, Io>
 
 
 impl<Open, Io> TreeIo<Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Open: OpenIo<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     #[inline]
     pub fn new(file_path: impl Into<FilePath>, io: TvcIo<Open, Io>) -> TreeIo<Open, Io> {
@@ -33,7 +33,8 @@ impl<Open, Io> TreeIo<Open, Io>
 
 
     pub fn write_tree(&self, tree: &Tree) -> std::io::Result<()> {
-        self.io.write(&self.file_path, &serde_json::to_vec(&tree)?)?;
+        self.io
+            .write(&self.file_path, &serde_json::to_vec(&tree)?)?;
         Ok(())
     }
 
@@ -47,7 +48,8 @@ impl<Open, Io> TreeIo<Open, Io>
 
 
     pub fn reset(&self) -> std::io::Result<()> {
-        self.io.write(&self.file_path, &serde_json::to_vec(&Tree::default())?)?;
+        self.io
+            .write(&self.file_path, &serde_json::to_vec(&Tree::default())?)?;
         Ok(())
     }
 
@@ -66,7 +68,8 @@ impl<Open, Io> TreeIo<Open, Io>
     ) -> std::io::Result<()> {
         let mut tree = self.read_tree()?.unwrap_or_default();
         tree.0.insert(target_path, object_hash);
-        self.io.write(&self.file_path, &serde_json::to_vec(&tree)?)?;
+        self.io
+            .write(&self.file_path, &serde_json::to_vec(&tree)?)?;
         Ok(())
     }
 }
@@ -91,8 +94,8 @@ impl Tree {
 mod tests {
     use serde_json::json;
 
-    use crate::io::{FilePath, TvcIo};
     use crate::io::mock::MockOpenIo;
+    use crate::io::{FilePath, TvcIo};
     use crate::object::ObjectHash;
     use crate::tree::{Tree, TreeIo};
 
@@ -108,7 +111,7 @@ mod tests {
             json!({
                 "hello": "world"
             })
-                .to_string()
+            .to_string()
         );
     }
 

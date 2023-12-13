@@ -1,22 +1,22 @@
 use std::io;
 
-use meltos_util::compression::CompressionBuf;
 use meltos_util::compression::gz::Gz;
+use meltos_util::compression::CompressionBuf;
 
 use crate::io::{FilePath, OpenIo, TvcIo};
 use crate::object::{Object, ObjectHash};
 
 #[derive(Debug, Clone)]
 pub struct WorkspaceIo<Open, Io>(pub(crate) TvcIo<Open, Io>)
-    where
-        Open: OpenIo<Io>,
-        Io: io::Read + io::Write;
+where
+    Open: OpenIo<Io>,
+    Io: io::Read + io::Write;
 
 
 impl<Open, Io> WorkspaceIo<Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: io::Read + io::Write,
+where
+    Open: OpenIo<Io>,
+    Io: io::Read + io::Write,
 {
     pub fn convert_to_objs(&self, path: &str) -> std::io::Result<ObjectIter<Open, Io>> {
         let files = self.0.all_file_path(path)?;
@@ -30,9 +30,9 @@ impl<Open, Io> WorkspaceIo<Open, Io>
 
 
 impl<Open, Io> Default for WorkspaceIo<Open, Io>
-    where
-        Open: OpenIo<Io> + Default,
-        Io: io::Read + io::Write,
+where
+    Open: OpenIo<Io> + Default,
+    Io: io::Read + io::Write,
 {
     fn default() -> Self {
         Self(TvcIo::default())
@@ -41,9 +41,9 @@ impl<Open, Io> Default for WorkspaceIo<Open, Io>
 
 
 pub struct ObjectIter<'a, Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: io::Read + io::Write
+where
+    Open: OpenIo<Io>,
+    Io: io::Read + io::Write,
 {
     files: Vec<String>,
     index: usize,
@@ -52,9 +52,9 @@ pub struct ObjectIter<'a, Open, Io>
 
 
 impl<'a, Open, Io> Iterator for ObjectIter<'a, Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: io::Read + io::Write
+where
+    Open: OpenIo<Io>,
+    Io: io::Read + io::Write,
 {
     type Item = std::io::Result<Object>;
 
@@ -71,22 +71,26 @@ impl<'a, Open, Io> Iterator for ObjectIter<'a, Open, Io>
 
 
 impl<'a, Open, Io> ObjectIter<'a, Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: io::Read + io::Write
+where
+    Open: OpenIo<Io>,
+    Io: io::Read + io::Write,
 {
     fn read_to_obj(&self) -> std::io::Result<Object> {
         let path = self.files.get(self.index).unwrap();
         let buf = self.io.try_read_to_end(path.as_ref())?;
-        Ok(Object::new(FilePath::from_path(path), Gz.encode(&buf)?, ObjectHash(meltos_util::hash::hash(&buf))))
+        Ok(Object::new(
+            FilePath::from_path(path),
+            Gz.encode(&buf)?,
+            ObjectHash(meltos_util::hash::hash(&buf)),
+        ))
     }
 }
 
 
 #[cfg(test)]
 mod tests {
-    use crate::io::{OpenIo, TvcIo};
     use crate::io::mock::MockOpenIo;
+    use crate::io::{OpenIo, TvcIo};
     use crate::object::ObjectHash;
     use crate::workspace::WorkspaceIo;
 
@@ -97,7 +101,8 @@ mod tests {
         mock.write("hello/hello.txt", b"hello").unwrap();
         mock.write("hello/world", b"world").unwrap();
         mock.write("hello/dir/main.sh", b"echo hi ").unwrap();
-        let mut hashes = workspace.convert_to_objs("hello")
+        let mut hashes = workspace
+            .convert_to_objs("hello")
             .unwrap()
             .into_iter()
             .map(|obj| obj.unwrap().hash)

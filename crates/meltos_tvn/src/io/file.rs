@@ -23,13 +23,13 @@ impl OpenIo<File> for FileOpen {
     }
 
     fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>> {
-        if Path::new(path).is_dir(){
+        if Path::new(path).is_dir() {
             let mut p = Vec::new();
-            for entry in std::fs::read_dir(path)?{
+            for entry in std::fs::read_dir(path)? {
                 p.extend(self.all_file_path(entry?.path().to_str().unwrap())?);
             }
             Ok(p)
-        }else{
+        } else {
             Ok(vec![path.to_string()])
         }
     }

@@ -5,17 +5,21 @@ use meltos_util::compression::CompressionBuf;
 use crate::io::{OpenIo, TvcIo};
 
 #[derive(Debug)]
-pub struct CompressionOpen<Open, Io, Compression>(pub(crate) TvcIo<Open, Io>, pub(crate) Compression)
-    where
-        Open: OpenIo<Io>,
-        Io: std::io::Read + std::io::Write,
-        Compression: CompressionBuf;
+pub struct CompressionOpen<Open, Io, Compression>(
+    pub(crate) TvcIo<Open, Io>,
+    pub(crate) Compression,
+)
+where
+    Open: OpenIo<Io>,
+    Io: std::io::Read + std::io::Write,
+    Compression: CompressionBuf;
 
-impl<Open, Io, Compression> OpenIo<CompressionIo<Io, Compression>> for CompressionOpen<Open, Io, Compression>
-    where
-        Open: OpenIo<Io>,
-        Io: std::io::Read + std::io::Write,
-        Compression: CompressionBuf + Clone
+impl<Open, Io, Compression> OpenIo<CompressionIo<Io, Compression>>
+    for CompressionOpen<Open, Io, Compression>
+where
+    Open: OpenIo<Io>,
+    Io: std::io::Read + std::io::Write,
+    Compression: CompressionBuf + Clone,
 {
     fn open_file(&self, path: &str) -> std::io::Result<Option<CompressionIo<Io, Compression>>> {
         let io = self.0.open_file(path)?;
@@ -34,10 +38,10 @@ impl<Open, Io, Compression> OpenIo<CompressionIo<Io, Compression>> for Compressi
 
 
 impl<Open, Io, Compression> Clone for CompressionOpen<Open, Io, Compression>
-    where
-        Open: OpenIo<Io> + Clone,
-        Io: std::io::Read + std::io::Write,
-        Compression: CompressionBuf + Clone
+where
+    Open: OpenIo<Io> + Clone,
+    Io: std::io::Read + std::io::Write,
+    Compression: CompressionBuf + Clone,
 {
     fn clone(&self) -> Self {
         Self(self.0.clone(), self.1.clone())
@@ -46,10 +50,10 @@ impl<Open, Io, Compression> Clone for CompressionOpen<Open, Io, Compression>
 
 
 impl<Open, Io, Compression> Default for CompressionOpen<Open, Io, Compression>
-    where
-        Open: OpenIo<Io> + Default,
-        Io: std::io::Read + std::io::Write,
-        Compression: CompressionBuf + Default
+where
+    Open: OpenIo<Io> + Default,
+    Io: std::io::Read + std::io::Write,
+    Compression: CompressionBuf + Default,
 {
     fn default() -> Self {
         Self(TvcIo::default(), Compression::default())
@@ -61,8 +65,9 @@ pub struct CompressionIo<Io, Compression>(Io, Compression);
 
 
 impl<Io, Compression> Read for CompressionIo<Io, Compression>
-    where Io: Read,
-          Compression: CompressionBuf
+where
+    Io: Read,
+    Compression: CompressionBuf,
 {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
@@ -72,8 +77,9 @@ impl<Io, Compression> Read for CompressionIo<Io, Compression>
 
 
 impl<Io, Compression> Write for CompressionIo<Io, Compression>
-    where Io: Write,
-          Compression: CompressionBuf
+where
+    Io: Write,
+    Compression: CompressionBuf,
 {
     #[inline]
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {

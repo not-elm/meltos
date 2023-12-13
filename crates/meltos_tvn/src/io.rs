@@ -6,9 +6,9 @@ use serde::{Deserialize, Serialize};
 
 use meltos_util::impl_string_new_type;
 
+pub mod compression;
 pub mod file;
 pub(crate) mod mock;
-pub mod compression;
 
 
 pub trait OpenIo<Io: std::io::Read + std::io::Write> {
@@ -28,18 +28,17 @@ pub trait OpenIo<Io: std::io::Read + std::io::Write> {
                 io.read_to_end(&mut buf)?;
                 Ok(Some(buf))
             }
-            None => Ok(None)
+            None => Ok(None),
         }
     }
 
     fn try_read_to_end(&self, path: &str) -> std::io::Result<Vec<u8>> {
-        self.read_to_end(path)
-            .and_then(|buf| {
-                match buf {
-                    Some(buf) => Ok(buf),
-                    None => Err(std::io::Error::new(ErrorKind::NotFound, "file not found"))
-                }
-            })
+        self.read_to_end(path).and_then(|buf| {
+            match buf {
+                Some(buf) => Ok(buf),
+                None => Err(std::io::Error::new(ErrorKind::NotFound, "file not found")),
+            }
+        })
     }
 
 
@@ -51,18 +50,18 @@ pub trait OpenIo<Io: std::io::Read + std::io::Write> {
 
 #[derive(Debug)]
 pub struct TvcIo<Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: std::io::Read + std::io::Write,
+where
+    Open: OpenIo<Io>,
+    Io: std::io::Read + std::io::Write,
 {
     open: Open,
     _io: PhantomData<Io>,
 }
 
 impl<Open, Io> TvcIo<Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: std::io::Read + std::io::Write,
+where
+    Open: OpenIo<Io>,
+    Io: std::io::Read + std::io::Write,
 {
     #[inline]
     pub const fn new(open: Open) -> TvcIo<Open, Io> {
@@ -75,9 +74,9 @@ impl<Open, Io> TvcIo<Open, Io>
 
 
 impl<Open, Io> Default for TvcIo<Open, Io>
-    where
-        Open: OpenIo<Io> + Default,
-        Io: std::io::Read + std::io::Write,
+where
+    Open: OpenIo<Io> + Default,
+    Io: std::io::Read + std::io::Write,
 {
     #[inline]
     fn default() -> TvcIo<Open, Io> {
@@ -90,9 +89,9 @@ impl<Open, Io> Default for TvcIo<Open, Io>
 
 
 impl<Open, Io> Clone for TvcIo<Open, Io>
-    where
-        Open: OpenIo<Io> + Clone,
-        Io: std::io::Read + std::io::Write,
+where
+    Open: OpenIo<Io> + Clone,
+    Io: std::io::Read + std::io::Write,
 {
     fn clone(&self) -> Self {
         Self::new(self.open.clone())
@@ -101,9 +100,9 @@ impl<Open, Io> Clone for TvcIo<Open, Io>
 
 
 impl<Open, Io> OpenIo<Io> for TvcIo<Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: std::io::Read + std::io::Write,
+where
+    Open: OpenIo<Io>,
+    Io: std::io::Read + std::io::Write,
 {
     #[inline]
     fn open_file(&self, path: &str) -> std::io::Result<Option<Io>> {
@@ -145,6 +144,3 @@ impl AsRef<String> for FilePath {
         &self.0
     }
 }
-
-
-

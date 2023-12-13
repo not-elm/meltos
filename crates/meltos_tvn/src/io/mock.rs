@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use crate::io::OpenIo;
 
 #[derive(Debug, Clone, Default)]
-pub struct MockOpenIo(Arc<Mutex<HashMap<String, MockIo>>>);
+pub struct MockOpenIo(pub Arc<Mutex<HashMap<String, MockIo>>>);
 
 
 impl OpenIo<MockIo> for MockOpenIo {
@@ -17,7 +17,8 @@ impl OpenIo<MockIo> for MockOpenIo {
 
     fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>> {
         let map = self.0.lock().unwrap();
-        Ok(map.keys()
+        Ok(map
+            .keys()
             .filter(|key| key.starts_with(path))
             .cloned()
             .collect())
@@ -57,8 +58,14 @@ impl Write for MockIo {
         self.0.lock().unwrap().write(buf)
     }
 
+
     fn flush(&mut self) -> std::io::Result<()> {
         self.0.lock().unwrap().flush()
+    }
+
+    fn write_all(&mut self, buf: &[u8]) -> std::io::Result<()> {
+        *self.0.lock().unwrap() = buf.to_vec();
+        Ok(())
     }
 }
 
