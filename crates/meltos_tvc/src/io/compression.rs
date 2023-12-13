@@ -6,7 +6,7 @@ use meltos_util::compression::CompressionBuf;
 use crate::io::{OpenIo, TvcIo};
 
 #[derive(Debug)]
-pub struct CompressionOpen<Open, Io, Compression>(TvcIo<Open, Io>, Compression)
+pub struct CompressionOpen<Open, Io, Compression>(pub(crate) TvcIo<Open, Io>, pub(crate) Compression)
     where
         Open: OpenIo<Io>,
         Io: std::io::Read + std::io::Write,

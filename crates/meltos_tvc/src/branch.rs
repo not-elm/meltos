@@ -1,10 +1,7 @@
 use std::io::ErrorKind;
 use std::path::Path;
 
-use meltos_util::compression::gz::Gz;
-
 use crate::io::{FilePath, OpenIo};
-use crate::io::compression::{CompressionIo, CompressionOpen};
 use crate::object::ObjectIo;
 use crate::stage::StageIo;
 use crate::workspace::WorkspaceIo;
@@ -16,7 +13,7 @@ pub struct BranchIo<Open, Io>
         Io: std::io::Write + std::io::Read
 {
     stage: StageIo<Open, Io>,
-    object: ObjectIo<CompressionOpen<Open, Io, Gz>, CompressionIo<Io, Gz>>,
+    object: ObjectIo<Open, Io>,
     workspace: WorkspaceIo<Open, Io>,
 }
 
@@ -28,16 +25,16 @@ impl<Open, Io> BranchIo<Open, Io>
 {
     pub fn stage(&self, workspace_path: &str) -> std::io::Result<()> {
         let path = Path::new(workspace_path);
-        if path.is_dir(){
-            for entry in path.read_dir()?{
-                let entry_path =  entry?.path();
-                let Some(entry_path) = entry_path.to_str() else{
+        if path.is_dir() {
+            for entry in path.read_dir()? {
+                let entry_path = entry?.path();
+                let Some(entry_path) = entry_path.to_str() else {
                     continue;
                 };
                 self.stage(entry_path)?;
             }
             Ok(())
-        }else{
+        } else {
             self.stage_file(workspace_path)
         }
     }

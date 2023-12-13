@@ -119,6 +119,13 @@ pub struct FilePath(pub String);
 impl_string_new_type!(FilePath);
 
 
+impl FilePath{
+    pub fn from_path(path: impl AsRef<Path>) -> Self{
+        Self(path.as_ref().to_str().unwrap().to_string())
+    }
+}
+
+
 impl AsRef<Path> for FilePath {
     fn as_ref(&self) -> &Path {
         self.0.as_ref()

@@ -1,19 +1,20 @@
-use serde::{Deserialize, Serialize};
 use std::io;
 use std::path::Path;
 
-use crate::io::{OpenIo, TvcIo};
+use serde::{Deserialize, Serialize};
+
+use crate::io::{FilePath, OpenIo, TvcIo};
 
 #[derive(Debug, Clone)]
 pub struct ObjectIo<Open, Io>(TvcIo<Open, Io>)
-where
-    Open: OpenIo<Io>,
-    Io: io::Read + io::Write;
+    where
+        Open: OpenIo<Io>,
+        Io: io::Read + io::Write;
 
 impl<Open, Io> Default for ObjectIo<Open, Io>
-where
-    Open: OpenIo<Io> + Default,
-    Io: io::Read + io::Write,
+    where
+        Open: OpenIo<Io> + Default,
+        Io: io::Read + io::Write,
 {
     fn default() -> Self {
         Self(TvcIo::default())
@@ -22,9 +23,9 @@ where
 
 
 impl<Open, Io> ObjectIo<Open, Io>
-where
-    Open: OpenIo<Io>,
-    Io: io::Read + io::Write,
+    where
+        Open: OpenIo<Io>,
+        Io: io::Read + io::Write,
 {
     #[inline]
     pub const fn new(open: Open) -> ObjectIo<Open, Io> {
@@ -42,18 +43,19 @@ where
 }
 
 
-
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct Object {
+    pub file_path: FilePath,
     pub hash: ObjectHash,
     pub buf: Vec<u8>,
 }
 
 
 impl Object {
-    pub fn new(buf: Vec<u8>) -> Self {
+    pub fn new(file_path: FilePath, buf: Vec<u8>, hash: ObjectHash) -> Self {
         Self {
-            hash: ObjectHash(meltos_util::hash::hash(&buf)),
+            file_path,
+            hash,
             buf,
         }
     }
@@ -68,8 +70,11 @@ pub struct ObjectHash(pub String);
 mod tests {
     use std::io::Write;
 
-    use crate::io::mock::MockOpenIo;
+    use meltos_util::compression::CompressionBuf;
+    use meltos_util::compression::gz::Gz;
+
     use crate::io::{OpenIo, TvcIo};
+    use crate::io::mock::MockOpenIo;
     use crate::object::ObjectIo;
     use crate::workspace::WorkspaceIo;
 
@@ -89,6 +94,6 @@ mod tests {
                 meltos_util::hash::hash(buf)
             ))
             .unwrap();
-        assert_eq!(hello_buf, buf);
+        assert_eq!(hello_buf, Gz.encode(buf).unwrap());
     }
 }
