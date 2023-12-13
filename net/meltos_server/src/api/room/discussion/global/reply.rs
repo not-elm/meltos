@@ -27,8 +27,7 @@ mod tests {
         http_create_discussion, http_open_room, http_reply, http_speak, logged_in_app,
     };
     use meltos::command::request::discussion::global::{Reply, Speak};
-    use meltos::discussion::message::{ MessageText};
-    use meltos::discussion::reply::ReplyMessage;
+    use meltos::discussion::message::{Message, MessageText};
     use meltos::user::UserId;
 
     #[tokio::test]
@@ -49,7 +48,7 @@ mod tests {
             &mut app,
             &room_id,
             Reply {
-                message_id: spoke.message.id.clone(),
+                target_id: spoke.message.id.clone(),
                 text: MessageText::from("reply"),
             },
         )
@@ -58,7 +57,7 @@ mod tests {
         assert_eq!(&replied.reply_message_id, &spoke.message.id);
         assert_eq!(
             replied.reply.clone(),
-            ReplyMessage {
+            Message {
                 id: replied.reply.id,
                 user_id: UserId::from("user"),
                 text: MessageText::from("reply")

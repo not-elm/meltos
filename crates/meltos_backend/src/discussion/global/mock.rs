@@ -1,7 +1,6 @@
 use meltos::discussion::{Discussion, DiscussionMeta};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
-use meltos::discussion::reply::ReplyMessage;
 use meltos::error;
 use meltos::user::UserId;
 use meltos_util::macros::Deref;
@@ -32,9 +31,9 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         &self,
         discussion_id: &DiscussionId,
         user_id: UserId,
-        message_text: MessageText,
+        text: MessageText,
     ) -> error::Result<Message> {
-        let message = Message::new(user_id, message_text);
+        let message = Message::new(user_id, text);
 
         let mut discussions = self.discussions.lock().await;
         let discussion = discussions.get_mut(discussion_id).ok_or(error::Error::DiscussionNotExists(discussion_id.clone()))?;
@@ -52,15 +51,14 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         user_id: UserId,
         message_id: MessageId,
         text: MessageText,
-    ) -> error::Result<ReplyMessage> {
-        let reply = ReplyMessage::new(user_id, text);
-
+    ) -> error::Result<Message> {
+        let reply = Message::new(user_id, text);
         let mut discussion = self.reply_discussions.lock().await;
         if !discussion.contains_key(&message_id) {
             discussion.insert(message_id.clone(), vec![]);
         }
 
-        discussion.get_mut(&message_id).unwrap().push(reply.clone());
+        discussion.get_mut(&message_id).unwrap().push(reply.id.clone());
         Ok(reply)
     }
 
@@ -101,7 +99,7 @@ struct Messages(ArcHashMap<MessageId, Message>);
 
 
 #[derive(Debug, Default, Clone, Deref)]
-struct ReplyDiscussions(ArcHashMap<MessageId, Vec<ReplyMessage>>);
+struct ReplyDiscussions(ArcHashMap<MessageId, Vec<MessageId>>);
 
 
 

@@ -53,13 +53,13 @@ where
             .global_io
             .reply(
                 self.user_id,
-                reply.message_id.clone(),
+                reply.target_id.clone(),
                 reply.text,
             )
             .await?;
 
         Ok(Replied {
-            reply_message_id: reply.message_id,
+            reply_message_id: reply.target_id,
             reply: reply_message,
         })
     }

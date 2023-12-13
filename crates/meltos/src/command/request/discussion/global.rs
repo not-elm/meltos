@@ -19,7 +19,7 @@ pub struct Speak {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Reply {
-    pub message_id: MessageId,
+    pub target_id: MessageId,
     pub text: MessageText,
 }
 

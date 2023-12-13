@@ -1,7 +1,6 @@
 use meltos::discussion::{Discussion, DiscussionMeta};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
-use meltos::discussion::reply::ReplyMessage;
 use meltos::error;
 use meltos::user::UserId;
 
@@ -17,7 +16,7 @@ pub trait DiscussionIo: Send + Sync {
         &self,
         discussion_id: &DiscussionId,
         user_id: UserId,
-        message_text: MessageText,
+        text: MessageText,
     ) -> error::Result<Message>;
 
 
@@ -25,8 +24,8 @@ pub trait DiscussionIo: Send + Sync {
         &self,
         user_id: UserId,
         message_id: MessageId,
-        message_text: MessageText,
-    ) -> error::Result<ReplyMessage>;
+        text: MessageText,
+    ) -> error::Result<Message>;
 
 
     async fn discussion_by(&self, discussion_id: &DiscussionId) -> error::Result<Discussion>;
