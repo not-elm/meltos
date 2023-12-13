@@ -4,5 +4,5 @@ use meltos_tvn::io::file::FileOpen;
 fn main() {
     let io = BranchIo::new_main(FileOpen);
     io.stage("./branch").unwrap();
-    io.commit().unwrap();
+    io.commit("hello!").unwrap();
 }

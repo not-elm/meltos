@@ -2,7 +2,7 @@ use std::io::ErrorKind;
 
 use meltos_util::impl_string_new_type;
 
-use crate::commit::CommitIo;
+use crate::commit::{CommitIo, CommitText};
 use crate::io::{OpenIo, TvcIo};
 use crate::now::NowIo;
 use crate::object::{Object, ObjectIo};
@@ -74,13 +74,13 @@ where
         Ok(())
     }
 
-    pub fn commit(&self) -> std::io::Result<()> {
+    pub fn commit(&self, commit_text: impl Into<CommitText>) -> std::io::Result<()> {
         let Some(stage_tree) = self.stage.read_tree()? else {
             return Err(std::io::Error::new(ErrorKind::NotFound, "no staged files"));
         };
         self.stage.reset()?;
         self.now.write_tree(&stage_tree)?;
-        self.commit.commit(stage_tree)?;
+        self.commit.commit(commit_text, stage_tree)?;
         Ok(())
     }
 

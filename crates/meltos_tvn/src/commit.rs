@@ -1,3 +1,4 @@
+use meltos_util::impl_string_new_type;
 use serde::{Deserialize, Serialize};
 
 use crate::branch::BranchName;
@@ -28,8 +29,8 @@ where
         }
     }
 
-    pub fn commit(&self, stage: Tree) -> std::io::Result<()> {
-        let meta = self.create_commit(stage)?;
+    pub fn commit(&self, commit_text: impl Into<CommitText>, stage: Tree) -> std::io::Result<()> {
+        let meta = self.create_commit(commit_text.into(), stage)?;
         self.io.write(
             &format!(".meltos/commits/{}", meta.hash),
             &serde_json::to_vec(&meta.commit)?,
@@ -63,11 +64,12 @@ where
         Ok(Some(serde_json::from_slice(&buf)?))
     }
 
-    fn create_commit(&self, stage: Tree) -> std::io::Result<CommitMeta> {
+    fn create_commit(&self, commit_text: CommitText, stage: Tree) -> std::io::Result<CommitMeta> {
         let head_commit = self.head_commit_hash()?;
         let commit = Commit {
             parent: head_commit,
             stage,
+            text: commit_text,
         };
         Ok(CommitMeta::new(commit))
     }
@@ -94,14 +96,20 @@ impl CommitMeta {
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Commit {
     pub parent: Option<ObjectHash>,
+    pub text: CommitText,
     pub stage: Tree,
 }
+
+
+#[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize)]
+pub struct CommitText(pub String);
+impl_string_new_type!(CommitText);
 
 
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::commit::{Commit, CommitIo};
+    use crate::commit::{Commit, CommitIo, CommitText};
     use crate::io::mock::MockOpenIo;
     use crate::io::FilePath;
     use crate::object::ObjectHash;
@@ -114,7 +122,7 @@ mod tests {
 
         let mock = MockOpenIo::default();
         let io = CommitIo::new(BranchName::main(), mock.clone());
-        io.commit(stage_tree.clone()).unwrap();
+        io.commit("commit", stage_tree.clone()).unwrap();
         let head = io.head_commit_hash().unwrap().unwrap();
         let commit = io.read_commit(&head).unwrap();
         assert_eq!(
@@ -122,6 +130,7 @@ mod tests {
             Some(Commit {
                 parent: None,
                 stage: stage_tree,
+                text: CommitText::from("commit")
             })
         );
     }
@@ -134,11 +143,11 @@ mod tests {
 
         let mock = MockOpenIo::default();
         let io = CommitIo::new(BranchName::main(), mock.clone());
-        io.commit(stage_tree.clone()).unwrap();
+        io.commit("commit1", stage_tree.clone()).unwrap();
         let first_commit = io.head_commit_hash().unwrap().unwrap();
         let mut stage_tree2 = Tree::default();
         stage_tree2.insert(FilePath::from("commit2"), ObjectHash::new(b"commit2"));
-        io.commit(stage_tree2.clone()).unwrap();
+        io.commit("commit2", stage_tree2.clone()).unwrap();
 
         let second_commit = io.head_commit_hash().unwrap().unwrap();
         let commit = io.read_commit(&second_commit).unwrap();
@@ -147,6 +156,7 @@ mod tests {
             Some(Commit {
                 parent: Some(first_commit),
                 stage: stage_tree2,
+                text: CommitText::from("commit2")
             })
         );
     }
