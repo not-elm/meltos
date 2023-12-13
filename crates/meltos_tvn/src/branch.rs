@@ -3,7 +3,7 @@ use std::io::ErrorKind;
 use meltos_util::impl_string_new_type;
 
 use crate::commit::{CommitIo, CommitText};
-use crate::io::{OpenIo, TvcIo};
+use crate::io::{OpenIo, TvnIo};
 use crate::now::NowIo;
 use crate::object::{Object, ObjectIo};
 use crate::stage::StageIo;
@@ -50,7 +50,7 @@ where
         Self {
             object: ObjectIo::new(open.clone()),
             stage: StageIo::new(open.clone()),
-            workspace: WorkspaceIo(TvcIo::new(open.clone())),
+            workspace: WorkspaceIo(TvnIo::new(open.clone())),
             now: NowIo::new(branch_name.clone(), open.clone()),
             commit: CommitIo::new(branch_name, open),
         }

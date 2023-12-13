@@ -3,11 +3,11 @@ use std::io;
 use meltos_util::compression::gz::Gz;
 use meltos_util::compression::CompressionBuf;
 
-use crate::io::{FilePath, OpenIo, TvcIo};
+use crate::io::{FilePath, OpenIo, TvnIo};
 use crate::object::{Object, ObjectHash};
 
 #[derive(Debug, Clone)]
-pub struct WorkspaceIo<Open, Io>(pub(crate) TvcIo<Open, Io>)
+pub struct WorkspaceIo<Open, Io>(pub(crate) TvnIo<Open, Io>)
 where
     Open: OpenIo<Io>,
     Io: io::Read + io::Write;
@@ -35,7 +35,7 @@ where
     Io: io::Read + io::Write,
 {
     fn default() -> Self {
-        Self(TvcIo::default())
+        Self(TvnIo::default())
     }
 }
 
@@ -47,7 +47,7 @@ where
 {
     files: Vec<String>,
     index: usize,
-    io: &'a TvcIo<Open, Io>,
+    io: &'a TvnIo<Open, Io>,
 }
 
 
@@ -90,14 +90,14 @@ where
 #[cfg(test)]
 mod tests {
     use crate::io::mock::MockOpenIo;
-    use crate::io::{OpenIo, TvcIo};
+    use crate::io::{OpenIo, TvnIo};
     use crate::object::ObjectHash;
     use crate::workspace::WorkspaceIo;
 
     #[test]
     fn read_all_objects_in_dir() {
         let mock = MockOpenIo::default();
-        let workspace = WorkspaceIo(TvcIo::new(mock.clone()));
+        let workspace = WorkspaceIo(TvnIo::new(mock.clone()));
         mock.write("hello/hello.txt", b"hello").unwrap();
         mock.write("hello/world", b"world").unwrap();
         mock.write("hello/dir/main.sh", b"echo hi ").unwrap();

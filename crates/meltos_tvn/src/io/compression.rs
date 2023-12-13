@@ -2,11 +2,11 @@ use std::io::{Read, Write};
 
 use meltos_util::compression::CompressionBuf;
 
-use crate::io::{OpenIo, TvcIo};
+use crate::io::{OpenIo, TvnIo};
 
 #[derive(Debug)]
 pub struct CompressionOpen<Open, Io, Compression>(
-    pub(crate) TvcIo<Open, Io>,
+    pub(crate) TvnIo<Open, Io>,
     pub(crate) Compression,
 )
 where
@@ -56,7 +56,7 @@ where
     Compression: CompressionBuf + Default,
 {
     fn default() -> Self {
-        Self(TvcIo::default(), Compression::default())
+        Self(TvnIo::default(), Compression::default())
     }
 }
 

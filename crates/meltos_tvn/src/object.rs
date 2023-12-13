@@ -3,10 +3,10 @@ use std::io;
 use meltos_util::macros::Display;
 use serde::{Deserialize, Serialize};
 
-use crate::io::{FilePath, OpenIo, TvcIo};
+use crate::io::{FilePath, OpenIo, TvnIo};
 
 #[derive(Debug, Clone)]
-pub struct ObjectIo<Open, Io>(TvcIo<Open, Io>)
+pub struct ObjectIo<Open, Io>(TvnIo<Open, Io>)
 where
     Open: OpenIo<Io>,
     Io: io::Read + io::Write;
@@ -17,7 +17,7 @@ where
     Io: io::Read + io::Write,
 {
     fn default() -> Self {
-        Self(TvcIo::default())
+        Self(TvnIo::default())
     }
 }
 
@@ -29,7 +29,7 @@ where
 {
     #[inline]
     pub const fn new(open: Open) -> ObjectIo<Open, Io> {
-        Self(TvcIo::new(open))
+        Self(TvnIo::new(open))
     }
 
 
@@ -82,7 +82,7 @@ mod tests {
     use meltos_util::compression::CompressionBuf;
 
     use crate::io::mock::MockOpenIo;
-    use crate::io::{OpenIo, TvcIo};
+    use crate::io::{OpenIo, TvnIo};
     use crate::object::ObjectIo;
     use crate::workspace::WorkspaceIo;
 
@@ -96,7 +96,7 @@ mod tests {
             .unwrap();
 
         let io = ObjectIo::new(open.clone());
-        let workspace = WorkspaceIo(TvcIo::new(open.clone()));
+        let workspace = WorkspaceIo(TvnIo::new(open.clone()));
         let mut objs = workspace.convert_to_objs("test/hello.txt").unwrap();
         let hello_obj = objs.next().unwrap().unwrap();
         io.write(&hello_obj).unwrap();

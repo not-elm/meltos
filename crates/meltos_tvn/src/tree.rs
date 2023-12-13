@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use meltos_util::macros::{Deref, DerefMut};
 
-use crate::io::{FilePath, OpenIo, TvcIo};
+use crate::io::{FilePath, OpenIo, TvnIo};
 use crate::object::ObjectHash;
 
 #[derive(Debug, Clone)]
@@ -13,7 +13,7 @@ where
     Open: OpenIo<Io>,
     Io: std::io::Write + std::io::Read,
 {
-    io: TvcIo<Open, Io>,
+    io: TvnIo<Open, Io>,
     file_path: FilePath,
 }
 
@@ -24,7 +24,7 @@ where
     Io: std::io::Write + std::io::Read,
 {
     #[inline]
-    pub fn new(file_path: impl Into<FilePath>, io: TvcIo<Open, Io>) -> TreeIo<Open, Io> {
+    pub fn new(file_path: impl Into<FilePath>, io: TvnIo<Open, Io>) -> TreeIo<Open, Io> {
         Self {
             io,
             file_path: file_path.into(),
@@ -95,7 +95,7 @@ mod tests {
     use serde_json::json;
 
     use crate::io::mock::MockOpenIo;
-    use crate::io::{FilePath, TvcIo};
+    use crate::io::{FilePath, TvnIo};
     use crate::object::ObjectHash;
     use crate::tree::{Tree, TreeIo};
 
@@ -118,14 +118,14 @@ mod tests {
 
     #[test]
     fn none_if_none_wrote() {
-        let io = TreeIo::new("stage", TvcIo::new(MockOpenIo::default()));
+        let io = TreeIo::new("stage", TvnIo::new(MockOpenIo::default()));
         let hash = io.read_object_hash(&FilePath::from("hello")).unwrap();
         assert!(hash.is_none());
     }
 
     #[test]
     fn some_hash_if_wrote() {
-        let io = TreeIo::new("stage", TvcIo::new(MockOpenIo::default()));
+        let io = TreeIo::new("stage", TvnIo::new(MockOpenIo::default()));
         let path = FilePath::from("hello");
         io.write_object_hash(path.clone(), ObjectHash("hash".to_string()))
             .unwrap();

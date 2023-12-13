@@ -2,7 +2,7 @@ use meltos_util::impl_string_new_type;
 use serde::{Deserialize, Serialize};
 
 use crate::branch::BranchName;
-use crate::io::{OpenIo, TvcIo};
+use crate::io::{OpenIo, TvnIo};
 use crate::object::ObjectHash;
 use crate::tree::Tree;
 
@@ -12,7 +12,7 @@ where
     Open: OpenIo<Io>,
     Io: std::io::Write + std::io::Read,
 {
-    io: TvcIo<Open, Io>,
+    io: TvnIo<Open, Io>,
     branch_name: BranchName,
 }
 
@@ -25,7 +25,7 @@ where
     pub fn new(branch_name: BranchName, open: Open) -> CommitIo<Open, Io> {
         Self {
             branch_name,
-            io: TvcIo::new(open),
+            io: TvnIo::new(open),
         }
     }
 

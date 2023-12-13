@@ -1,5 +1,5 @@
 use crate::branch::BranchName;
-use crate::io::{FilePath, OpenIo, TvcIo};
+use crate::io::{FilePath, OpenIo, TvnIo};
 use crate::tree::TreeIo;
 use std::ops::Deref;
 
@@ -18,7 +18,7 @@ where
     pub fn new(branch_name: BranchName, open: Open) -> NowIo<Open, Io> {
         Self(TreeIo::new(
             FilePath::from(format!("./.meltos/{branch_name}/now")),
-            TvcIo::new(open),
+            TvnIo::new(open),
         ))
     }
 }

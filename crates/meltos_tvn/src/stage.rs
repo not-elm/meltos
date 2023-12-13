@@ -1,4 +1,4 @@
-use crate::io::{FilePath, OpenIo, TvcIo};
+use crate::io::{FilePath, OpenIo, TvnIo};
 use crate::tree::TreeIo;
 use std::ops::Deref;
 
@@ -18,7 +18,7 @@ where
     pub fn new(open: Open) -> StageIo<Open, Io> {
         Self(TreeIo::new(
             FilePath::from("./.meltos/stage"),
-            TvcIo::new(open),
+            TvnIo::new(open),
         ))
     }
 }

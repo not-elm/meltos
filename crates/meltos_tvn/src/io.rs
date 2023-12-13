@@ -49,7 +49,7 @@ pub trait OpenIo<Io: std::io::Read + std::io::Write> {
 
 
 #[derive(Debug)]
-pub struct TvcIo<Open, Io>
+pub struct TvnIo<Open, Io>
 where
     Open: OpenIo<Io>,
     Io: std::io::Read + std::io::Write,
@@ -58,13 +58,13 @@ where
     _io: PhantomData<Io>,
 }
 
-impl<Open, Io> TvcIo<Open, Io>
+impl<Open, Io> TvnIo<Open, Io>
 where
     Open: OpenIo<Io>,
     Io: std::io::Read + std::io::Write,
 {
     #[inline]
-    pub const fn new(open: Open) -> TvcIo<Open, Io> {
+    pub const fn new(open: Open) -> TvnIo<Open, Io> {
         Self {
             open,
             _io: PhantomData,
@@ -73,13 +73,13 @@ where
 }
 
 
-impl<Open, Io> Default for TvcIo<Open, Io>
+impl<Open, Io> Default for TvnIo<Open, Io>
 where
     Open: OpenIo<Io> + Default,
     Io: std::io::Read + std::io::Write,
 {
     #[inline]
-    fn default() -> TvcIo<Open, Io> {
+    fn default() -> TvnIo<Open, Io> {
         Self {
             open: Open::default(),
             _io: PhantomData,
@@ -88,7 +88,7 @@ where
 }
 
 
-impl<Open, Io> Clone for TvcIo<Open, Io>
+impl<Open, Io> Clone for TvnIo<Open, Io>
 where
     Open: OpenIo<Io> + Clone,
     Io: std::io::Read + std::io::Write,
@@ -99,7 +99,7 @@ where
 }
 
 
-impl<Open, Io> OpenIo<Io> for TvcIo<Open, Io>
+impl<Open, Io> OpenIo<Io> for TvnIo<Open, Io>
 where
     Open: OpenIo<Io>,
     Io: std::io::Read + std::io::Write,
