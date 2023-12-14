@@ -3,6 +3,7 @@ use std::io::ErrorKind;
 use meltos_util::impl_string_new_type;
 
 use crate::commit::{CommitIo, CommitText};
+use crate::error;
 use crate::io::{OpenIo, TvnIo};
 use crate::now::NowIo;
 use crate::object::{ObjectIo, ObjectMeta};
@@ -28,6 +29,7 @@ pub struct BranchIo<Open, Io>
         Open: OpenIo<Io>,
         Io: std::io::Write + std::io::Read,
 {
+    branch_name: BranchName,
     stage: StageIo<Open, Io>,
     object: ObjectIo<Open, Io>,
     workspace: WorkspaceIo<Open, Io>,
@@ -52,7 +54,8 @@ impl<Open, Io> BranchIo<Open, Io>
             stage: StageIo::new(open.clone()),
             workspace: WorkspaceIo(TvnIo::new(open.clone())),
             now: NowIo::new(branch_name.clone(), open.clone()),
-            commit: CommitIo::new(branch_name, open),
+            commit: CommitIo::new(branch_name.clone(), open),
+            branch_name,
         }
     }
 }
@@ -63,14 +66,18 @@ impl<Open, Io> BranchIo<Open, Io>
         Open: OpenIo<Io>,
         Io: std::io::Write + std::io::Read,
 {
-    pub fn init(&self) -> std::io::Result<()> {
+    pub fn init(&self) -> error::Result {
+        if self.now.exists()? {
+            return Err(error::Error::BranchAlreadyInitialized(self.branch_name.clone()));
+        }
         let mut now_tree = Tree::default();
         for meta in self.workspace.convert_to_objs(".")? {
             let meta = meta?;
             self.object.write(&meta.obj)?;
             now_tree.insert(meta.file_path, meta.obj.hash);
         }
-        self.stage.write_tree(&now_tree)
+        self.now.write_tree(&now_tree)?;
+        Ok(())
     }
 
 
@@ -143,6 +150,15 @@ mod tests {
         assert!(&mock.read_to_end(&format!(".meltos/objects/{}", ObjectHash::new(b"bdadasjlgd"))).is_ok());
         assert!(&mock.read_to_end(&format!(".meltos/objects/{}", ObjectHash::new(b"test"))).is_ok());
         assert!(&mock.read_to_end(".meltos/branches/main/NOW").is_ok());
+    }
+
+
+    #[test]
+    fn failed_init_if_has_been_initialized() {
+        let mock = MockOpenIo::default();
+        let branch = BranchIo::new_main(mock.clone());
+        branch.init().unwrap();
+        assert!(branch.init().is_err());
     }
 
     #[test]

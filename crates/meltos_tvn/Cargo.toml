@@ -10,3 +10,4 @@ meltos_util = { path = "../meltos_util" }
 auto-delegate = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+thiserror = { workspace = true }
