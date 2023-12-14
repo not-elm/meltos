@@ -2,12 +2,12 @@ use std::fs::File;
 use std::io::ErrorKind;
 use std::path::Path;
 
-use crate::io::OpenIo;
+use crate::file_system::FileSystem;
 
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct FileOpen;
+pub struct StdFileSystem;
 
-impl OpenIo<File> for FileOpen {
+impl FileSystem<File> for StdFileSystem {
     fn open_file(&self, path: &str) -> std::io::Result<Option<File>> {
         match File::open(path) {
             Ok(file) => Ok(Some(file)),

@@ -9,7 +9,7 @@ use meltos_util::impl_string_new_type;
 pub mod file;
 pub(crate) mod mock;
 
-pub trait OpenIo<Io: std::io::Read + std::io::Write> {
+pub trait FileSystem<Io: std::io::Read + std::io::Write> {
     fn open_file(&self, path: &str) -> std::io::Result<Option<Io>>;
 
     fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>>;
@@ -38,81 +38,81 @@ pub trait OpenIo<Io: std::io::Read + std::io::Write> {
         })
     }
 
-    fn write(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
+    fn write_all(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
         self.create(path)?.write_all(buf)
     }
 }
 
 #[derive(Debug)]
-pub struct TvnIo<Open, Io>
-where
-    Open: OpenIo<Io>,
-    Io: std::io::Read + std::io::Write,
+pub struct FsIo<Fs, Io>
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Read + std::io::Write,
 {
-    open: Open,
+    fs: Fs,
     _io: PhantomData<Io>,
 }
 
-impl<Open, Io> TvnIo<Open, Io>
-where
-    Open: OpenIo<Io>,
-    Io: std::io::Read + std::io::Write,
+impl<Fs, Io> FsIo<Fs, Io>
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Read + std::io::Write,
 {
     #[inline]
-    pub const fn new(open: Open) -> TvnIo<Open, Io> {
+    pub const fn new(fs: Fs) -> FsIo<Fs, Io> {
         Self {
-            open,
+            fs,
             _io: PhantomData,
         }
     }
 }
 
-impl<Open, Io> Default for TvnIo<Open, Io>
-where
-    Open: OpenIo<Io> + Default,
-    Io: std::io::Read + std::io::Write,
+impl<Fs, Io> Default for FsIo<Fs, Io>
+    where
+        Fs: FileSystem<Io> + Default,
+        Io: std::io::Read + std::io::Write,
 {
     #[inline]
-    fn default() -> TvnIo<Open, Io> {
+    fn default() -> FsIo<Fs, Io> {
         Self {
-            open: Open::default(),
+            fs: Fs::default(),
             _io: PhantomData,
         }
     }
 }
 
-impl<Open, Io> Clone for TvnIo<Open, Io>
-where
-    Open: OpenIo<Io> + Clone,
-    Io: std::io::Read + std::io::Write,
+impl<Fs, Io> Clone for FsIo<Fs, Io>
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Read + std::io::Write,
 {
     fn clone(&self) -> Self {
-        Self::new(self.open.clone())
+        Self::new(self.fs.clone())
     }
 }
 
-impl<Open, Io> OpenIo<Io> for TvnIo<Open, Io>
-where
-    Open: OpenIo<Io>,
-    Io: std::io::Read + std::io::Write,
+impl<Fs, Io> FileSystem<Io> for FsIo<Fs, Io>
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Read + std::io::Write,
 {
     #[inline]
     fn open_file(&self, path: &str) -> std::io::Result<Option<Io>> {
-        self.open.open_file(path)
+        self.fs.open_file(path)
     }
 
     fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>> {
-        self.open.all_file_path(path)
+        self.fs.all_file_path(path)
     }
 
     #[inline]
     fn create(&self, path: &str) -> std::io::Result<Io> {
-        self.open.create(path)
+        self.fs.create(path)
     }
 
     #[inline]
     fn delete(&self, path: &str) -> std::io::Result<()> {
-        self.open.delete(path)
+        self.fs.delete(path)
     }
 }
 

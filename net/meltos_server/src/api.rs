@@ -14,8 +14,8 @@ pub trait AsSuccessResponse {
 }
 
 impl<D> AsSuccessResponse for D
-where
-    D: Serialize,
+    where
+        D: Serialize,
 {
     fn as_success_response(&self) -> Response {
         Response::builder()
@@ -26,11 +26,11 @@ where
 
 #[cfg(test)]
 mod test_util {
+    use axum::{async_trait, http, Router};
     use axum::body::Body;
     use axum::extract::Request;
     use axum::http::header;
     use axum::response::Response;
-    use axum::{async_trait, http, Router};
     use http_body_util::BodyExt;
     use serde::de::DeserializeOwned;
     use tower::{Service, ServiceExt};
@@ -83,8 +83,8 @@ mod test_util {
         SessionId("session_id".to_string())
     }
 
-    pub async fn http_open_room(app: &mut Router, user_token: SessionId) -> RoomId {
-        http_call::<Opened>(app, open_room_request(user_token))
+    pub async fn http_Fs_room(app: &mut Router, user_token: SessionId) -> RoomId {
+        http_call::<Opened>(app, Fs_room_request(user_token))
             .await
             .room_id
     }
@@ -108,7 +108,7 @@ mod test_util {
                 .body(Body::from(reply.as_json()))
                 .unwrap(),
         )
-        .await
+            .await
     }
 
     pub async fn http_discussion_close(
@@ -127,10 +127,10 @@ mod test_util {
                 .body(Body::empty())
                 .unwrap(),
         )
-        .await
+            .await
     }
 
-    pub fn open_room_request(session_id: SessionId) -> Request {
+    pub fn Fs_room_request(session_id: SessionId) -> Request {
         Request::builder()
             .method(http::Method::POST)
             .header("set-cookie", format!("session_id={session_id}"))

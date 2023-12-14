@@ -1,33 +1,33 @@
 use crate::branch::BranchName;
 use crate::error;
-use crate::io::{OpenIo, TvnIo};
+use crate::file_system::{FileSystem, FsIo};
 use crate::object::ObjectHash;
 
 #[derive(Debug, Clone)]
-pub struct NowIo<Open, Io>
-where
-    Open: OpenIo<Io>,
-    Io: std::io::Write + std::io::Read,
+pub struct TraceIo<Fs, Io>
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
-    io: TvnIo<Open, Io>,
+    io: FsIo<Fs, Io>,
     file_path: String,
 }
 
-impl<Open, Io> NowIo<Open, Io>
-where
-    Open: OpenIo<Io>,
-    Io: std::io::Write + std::io::Read,
+impl<Fs, Io> TraceIo<Fs, Io>
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
-    pub fn new(branch_name: BranchName, open: Open) -> NowIo<Open, Io> {
+    pub fn new(branch_name: BranchName, fs: Fs) -> TraceIo<Fs, Io> {
         Self {
-            file_path: format!("./.meltos/branches/{}/NOW", branch_name),
-            io: TvnIo::new(open),
+            file_path: format!("./.meltos/branches/{}/TRACE", branch_name),
+            io: FsIo::new(fs),
         }
     }
 
     #[inline]
     pub fn write_hash(&self, hash: &ObjectHash) -> error::Result {
-        self.io.write(&self.file_path, &hash.serialize_to_buf())?;
+        self.io.write_all(&self.file_path, &hash.serialize_to_buf())?;
         Ok(())
     }
 

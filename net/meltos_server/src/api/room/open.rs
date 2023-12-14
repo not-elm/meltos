@@ -28,7 +28,7 @@ fn response_success_create_room(room_id: RoomId) -> Response {
             Opened {
                 room_id,
             }
-            .as_json(),
+                .as_json(),
         ))
         .unwrap()
 }
@@ -45,8 +45,8 @@ mod tests {
     use meltos_backend::user::mock::MockUserSessionIo;
     use meltos_backend::user::SessionIo;
 
-    use crate::api::test_util::{mock_session_id, open_room_request};
     use crate::{app, error};
+    use crate::api::test_util::{mock_session_id, Fs_room_request};
 
     #[tokio::test]
     async fn failed_if_not_logged_in() {
@@ -55,7 +55,7 @@ mod tests {
             MockGlobalDiscussionIo::default(),
         );
         let response = app
-            .oneshot(open_room_request(mock_session_id()))
+            .oneshot(Fs_room_request(mock_session_id()))
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
@@ -71,7 +71,7 @@ mod tests {
 
         let app = app(session, MockGlobalDiscussionIo::default());
         let response = app
-            .oneshot(open_room_request(mock_session_id()))
+            .oneshot(Fs_room_request(mock_session_id()))
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);

@@ -1,5 +1,6 @@
-use crate::room::RoomId;
 use serde::{Deserialize, Serialize};
+
+use crate::room::RoomId;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Opened {

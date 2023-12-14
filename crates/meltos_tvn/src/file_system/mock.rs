@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 
-use crate::io::OpenIo;
+use crate::file_system::FileSystem;
 
 #[derive(Debug, Clone, Default)]
-pub struct MockOpenIo(pub Arc<Mutex<HashMap<String, MockIo>>>);
+pub struct MockFileSystem(pub Arc<Mutex<HashMap<String, MockIo>>>);
 
-impl OpenIo<MockIo> for MockOpenIo {
+impl FileSystem<MockIo> for MockFileSystem {
     fn open_file(&self, path: &str) -> std::io::Result<Option<MockIo>> {
         let map = self.0.lock().unwrap();
         Ok(map.get(path).cloned())
@@ -71,18 +71,18 @@ impl Write for MockIo {
 
 #[cfg(test)]
 mod tests {
-    use crate::io::mock::MockOpenIo;
-    use crate::io::OpenIo;
+    use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
 
     #[test]
     fn read() {
         let buf1 = [0, 1, 2, 3];
         let buf2 = [5, 6, 7, 8];
-        let io = MockOpenIo::default();
+        let mock = MockFileSystem::default();
 
-        io.write("buf1", &buf1).unwrap();
-        io.write("buf2", &buf2).unwrap();
-        assert_eq!(io.read_to_end("buf1").unwrap().unwrap(), buf1.to_vec());
-        assert_eq!(io.read_to_end("buf2").unwrap().unwrap(), buf2.to_vec());
+        mock.write_all("buf1", &buf1).unwrap();
+        mock.write_all("buf2", &buf2).unwrap();
+        assert_eq!(mock.read_to_end("buf1").unwrap().unwrap(), buf1.to_vec());
+        assert_eq!(mock.read_to_end("buf2").unwrap().unwrap(), buf2.to_vec());
     }
 }

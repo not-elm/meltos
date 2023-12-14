@@ -1,62 +1,58 @@
+use crate::atomic::work_branch::WorkBranchIo;
 use crate::branch::{BranchIo, BranchName};
-use crate::io::{OpenIo, TvnIo};
-use crate::work_branch::WorkBranchIo;
+use crate::file_system::{FileSystem, FsIo};
 
 pub mod branch;
-pub mod commit;
 pub mod error;
-pub mod io;
-pub mod now;
+pub mod file_system;
+pub mod atomic;
 pub mod object;
-pub mod stage;
-pub mod tree;
-pub mod work_branch;
-pub mod workspace;
+pub mod operation;
 
-pub struct RepositoryIo<Open, Io>
-where
-    Open: OpenIo<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+pub struct RepositoryIo<Fs, Io>
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Write + std::io::Read,
 {
-    branch: BranchIo<Open, Io>,
-    work_branch: WorkBranchIo<Open, Io>,
-    open: Open,
+    branch: BranchIo<Fs, Io>,
+    work_branch: WorkBranchIo<Fs, Io>,
+    fs: Fs,
 }
 
-impl<Open, Io> RepositoryIo<Open, Io>
-where
-    Open: OpenIo<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+impl<Fs, Io> RepositoryIo<Fs, Io>
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Write + std::io::Read,
 {
-    pub fn init(open: Open) -> error::Result<RepositoryIo<Open, Io>> {
-        if !open.all_file_path(".meltos")?.is_empty() {
+    pub fn init(fs: Fs) -> error::Result<RepositoryIo<Fs, Io>> {
+        if !fs.all_file_path(".meltos")?.is_empty() {
             return Err(error::Error::RepositoryAlreadyInitialized);
         }
 
-        let branch = BranchIo::new_main(open.clone());
+        let branch = BranchIo::new_main(fs.clone());
         branch.init()?;
 
-        let work_branch = WorkBranchIo(TvnIo::new(open.clone()));
+        let work_branch = WorkBranchIo(FsIo::new(fs.clone()));
         work_branch.write(&BranchName::main())?;
 
         Ok(RepositoryIo {
             branch,
             work_branch,
-            open,
+            fs,
         })
     }
 
-    pub fn open(open: Open) -> error::Result<RepositoryIo<Open, Io>> {
-        let work_branch = WorkBranchIo(TvnIo::new(open.clone()));
+    pub fn open(fs: Fs) -> error::Result<RepositoryIo<Fs, Io>> {
+        let work_branch = WorkBranchIo(FsIo::new(fs.clone()));
         let work_branch_name = work_branch.read()?;
 
-        let branch = BranchIo::new(work_branch_name, open.clone());
+        let branch = BranchIo::new(work_branch_name, fs.clone());
         branch.unpack_project()?;
 
         Ok(Self {
             work_branch,
             branch,
-            open,
+            fs,
         })
     }
 }
@@ -64,34 +60,35 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::io::mock::MockOpenIo;
-    use crate::io::OpenIo;
+    use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::RepositoryIo;
 
     #[test]
     fn create_work_after_initialized() {
-        let mock = MockOpenIo::default();
+        let mock = MockFileSystem::default();
         let io = RepositoryIo::init(mock.clone()).unwrap();
         assert_eq!(io.work_branch.read().unwrap(), BranchName::main());
     }
 
     #[test]
     fn error_if_already_initialized() {
-        let mock = MockOpenIo::default();
+        let mock = MockFileSystem::default();
         RepositoryIo::init(mock.clone()).unwrap();
         assert!(RepositoryIo::init(mock.clone()).is_err());
     }
 
     #[test]
     fn unpack_workspace_files() {
-        let mock = MockOpenIo::default();
+        let mock = MockFileSystem::default();
         let p1 = "./hello.txt";
         let p2 = "./src/sample";
-        mock.write(p1, b"hello").unwrap();
-        mock.write(p2, b"sample").unwrap();
+        mock.write_all(p1, b"hello").unwrap();
+        mock.write_all(p2, b"sample").unwrap();
 
         let io = RepositoryIo::init(mock.clone()).unwrap();
-        io.branch.stage(".").unwrap();
+        // file_system.branch.stage(".").unwrap();
+        todo!();
         io.branch.commit("commit").unwrap();
         mock.delete(p1).unwrap();
         mock.delete(p2).unwrap();

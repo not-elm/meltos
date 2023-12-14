@@ -21,17 +21,18 @@ pub async fn reply(
 
 #[cfg(test)]
 mod tests {
-    use crate::api::test_util::{
-        http_create_discussion, http_open_room, http_reply, http_speak, logged_in_app,
-    };
     use meltos::command::request::discussion::global::{Reply, Speak};
     use meltos::discussion::message::{Message, MessageText};
     use meltos::user::UserId;
 
+    use crate::api::test_util::{
+        http_create_discussion, http_Fs_room, http_reply, http_speak, logged_in_app,
+    };
+
     #[tokio::test]
     async fn return_replied_command() {
         let (session_id, mut app) = logged_in_app().await;
-        let room_id = http_open_room(&mut app, session_id.clone()).await;
+        let room_id = http_Fs_room(&mut app, session_id.clone()).await;
         let created = http_create_discussion(&mut app, room_id.clone()).await;
         let spoke = http_speak(
             &mut app,
@@ -41,7 +42,7 @@ mod tests {
                 message: MessageText::from("message"),
             },
         )
-        .await;
+            .await;
         let replied = http_reply(
             &mut app,
             &room_id,
@@ -50,7 +51,7 @@ mod tests {
                 text: MessageText::from("reply"),
             },
         )
-        .await;
+            .await;
 
         assert_eq!(&replied.reply_message_id, &spoke.message.id);
         assert_eq!(
@@ -58,7 +59,7 @@ mod tests {
             Message {
                 id: replied.reply.id,
                 user_id: UserId::from("user"),
-                text: MessageText::from("reply")
+                text: MessageText::from("reply"),
             }
         )
     }
