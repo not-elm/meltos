@@ -1,4 +1,5 @@
 use std::io;
+
 use crate::file_system::{FilePath, FileSystem, FsIo};
 use crate::object::ObjectMeta;
 
@@ -79,9 +80,9 @@ impl<'a, Fs, Io> ObjectIter<'a, Fs, Io>
 
 #[cfg(test)]
 mod tests {
-    use crate::atomic::workspace::WorkspaceIo;
     use crate::file_system::{FileSystem, FsIo};
     use crate::file_system::mock::MockFileSystem;
+    use crate::io::atomic::workspace::WorkspaceIo;
     use crate::object::ObjectHash;
 
     #[test]

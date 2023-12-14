@@ -1,11 +1,11 @@
-use crate::atomic::head::HeadIo;
-use crate::atomic::object::ObjectIo;
-use crate::atomic::staging::StagingIo;
-use crate::atomic::trace::TraceIo;
-use crate::atomic::workspace::WorkspaceIo;
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
+use crate::io::atomic::head::HeadIo;
+use crate::io::atomic::object::ObjectIo;
+use crate::io::atomic::staging::StagingIo;
+use crate::io::atomic::trace::TraceIo;
+use crate::io::atomic::workspace::WorkspaceIo;
 use crate::object::ObjectMeta;
 use crate::object::tree::Tree;
 

@@ -1,4 +1,5 @@
 use std::io;
+
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
 use crate::object::{CompressedBuf, Object, ObjectHash};
@@ -70,10 +71,10 @@ mod tests {
     use meltos_util::compression::CompressionBuf;
     use meltos_util::compression::gz::Gz;
 
-    use crate::atomic::object::ObjectIo;
-    use crate::atomic::workspace::WorkspaceIo;
     use crate::file_system::{FileSystem, FsIo};
     use crate::file_system::mock::MockFileSystem;
+    use crate::io::atomic::object::ObjectIo;
+    use crate::io::atomic::workspace::WorkspaceIo;
     use crate::object::Object;
 
     #[test]

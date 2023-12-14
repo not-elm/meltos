@@ -1,13 +1,13 @@
-use crate::atomic::work_branch::WorkBranchIo;
 use crate::branch::{BranchIo, BranchName};
 use crate::file_system::{FileSystem, FsIo};
+use crate::io::atomic::work_branch::WorkBranchIo;
 
 pub mod branch;
 pub mod error;
 pub mod file_system;
-pub mod atomic;
 pub mod object;
 pub mod operation;
+mod io;
 
 pub struct RepositoryIo<Fs, Io>
     where

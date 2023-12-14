@@ -58,8 +58,8 @@ impl_string_new_type!(CommitText);
 
 #[cfg(test)]
 mod tests {
-    // use crate::atomic::commit::{Commit, CommitText, HeadIo};
-    // use crate::atomic::object::ObjectHash;
+    // use crate::io::atomic::commit::{Commit, CommitText, HeadIo};
+    // use crate::io::atomic::object::ObjectHash;
     // use crate::branch::BranchName;
     // use crate::file_system::FilePath;
     // use crate::file_system::mock::MockFsIo;

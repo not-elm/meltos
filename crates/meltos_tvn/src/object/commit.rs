@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
-use crate::atomic::head::CommitText;
+
+use crate::io::atomic::head::CommitText;
 use crate::object::ObjectHash;
 
 #[derive(Debug, Clone, Eq, PartialEq)]

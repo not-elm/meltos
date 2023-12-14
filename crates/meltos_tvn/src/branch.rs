@@ -1,14 +1,14 @@
 use serde::{Deserialize, Serialize};
 
 use meltos_util::impl_string_new_type;
-use crate::atomic::head::{CommitText, HeadIo};
-use crate::atomic::object::ObjectIo;
-use crate::atomic::staging::StagingIo;
-use crate::atomic::trace::TraceIo;
-use crate::atomic::workspace::WorkspaceIo;
-use crate::error;
 
+use crate::error;
 use crate::file_system::{FileSystem, FsIo};
+use crate::io::atomic::head::{CommitText, HeadIo};
+use crate::io::atomic::object::ObjectIo;
+use crate::io::atomic::staging::StagingIo;
+use crate::io::atomic::trace::TraceIo;
+use crate::io::atomic::workspace::WorkspaceIo;
 use crate::object::tree::Tree;
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
@@ -130,7 +130,7 @@ impl<Fs, Io> BranchIo<Fs, Io>
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchIo;
-    use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
     use crate::object::ObjectHash;
 
@@ -179,7 +179,7 @@ mod tests {
         //     stage.get(&FilePath::from_path("./src/test.rs")),
         //     Some(&ObjectHash::new(b"test"))
         // );
-         todo!();
+        todo!();
     }
 
     #[test]

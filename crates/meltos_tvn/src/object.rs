@@ -9,6 +9,7 @@ use crate::file_system::FilePath;
 
 pub mod tree;
 pub mod commit;
+mod local_commits;
 
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
