@@ -5,7 +5,7 @@ use meltos_util::impl_string_new_type;
 use crate::commit::{CommitIo, CommitText};
 use crate::io::{OpenIo, TvnIo};
 use crate::now::NowIo;
-use crate::object::{Object, ObjectIo};
+use crate::object::{ObjectIo, ObjectMeta};
 use crate::stage::StageIo;
 use crate::tree::Tree;
 use crate::workspace::WorkspaceIo;
@@ -24,9 +24,9 @@ impl BranchName {
 
 #[derive(Debug, Clone)]
 pub struct BranchIo<Open, Io>
-where
-    Open: OpenIo<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Open: OpenIo<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     stage: StageIo<Open, Io>,
     object: ObjectIo<Open, Io>,
@@ -37,9 +37,9 @@ where
 
 
 impl<Open, Io> BranchIo<Open, Io>
-where
-    Open: OpenIo<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    where
+        Open: OpenIo<Io> + Clone,
+        Io: std::io::Write + std::io::Read,
 {
     #[inline]
     pub fn new_main(open: Open) -> BranchIo<Open, Io> {
@@ -59,14 +59,35 @@ where
 
 
 impl<Open, Io> BranchIo<Open, Io>
-where
-    Open: OpenIo<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Open: OpenIo<Io>,
+        Io: std::io::Write + std::io::Read,
 {
+    pub fn init(&self) -> std::io::Result<()> {
+        let mut now_tree = Tree::default();
+        for meta in self.workspace.convert_to_objs(".")? {
+            let meta = meta?;
+            self.object.write(&meta.obj)?;
+            now_tree.insert(meta.file_path, meta.obj.hash);
+        }
+        self.stage.write_tree(&now_tree)
+    }
+
+
+    pub fn unpack_project(&self) -> std::io::Result<()> {
+        let Some(now_tree) = self.now.read_tree()? else {
+            return Ok(());
+        };
+        for (path, hash) in now_tree.iter() {
+            let obj = self.object.try_read(hash)?;
+            self.workspace.unpack(path, &obj.buf)?;
+        }
+        Ok(())
+    }
+
     pub fn stage(&self, workspace_path: &str) -> std::io::Result<()> {
         let mut stage_tree = self.stage.read_tree()?.unwrap_or_default();
         let now_tree = self.now.read_tree().ok().and_then(|now| now);
-
         for obj in self.workspace.convert_to_objs(workspace_path)? {
             self.stage_file(&mut stage_tree, &now_tree, obj?)?;
         }
@@ -84,19 +105,20 @@ where
         Ok(())
     }
 
+
     fn stage_file(
         &self,
         stage: &mut Tree,
         now: &Option<Tree>,
-        object: Object,
+        meta: ObjectMeta,
     ) -> std::io::Result<()> {
-        if stage.changed_hash(&object.file_path, &object.hash)
+        if stage.changed_hash(&meta.file_path, meta.hash())
             || now
-                .as_ref()
-                .is_some_and(|now| now.changed_hash(&object.file_path, &object.hash))
+            .as_ref()
+            .is_some_and(|now| now.changed_hash(&meta.file_path, meta.hash()))
         {
-            self.object.write(&object)?;
-            stage.insert(object.file_path, object.hash);
+            self.object.write(&meta.obj)?;
+            stage.insert(meta.file_path, meta.obj.hash);
         }
         Ok(())
     }
@@ -106,9 +128,22 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchIo;
-    use crate::io::mock::MockOpenIo;
     use crate::io::{FilePath, OpenIo};
+    use crate::io::mock::MockOpenIo;
     use crate::object::ObjectHash;
+
+    #[test]
+    fn init() {
+        let mock = MockOpenIo::default();
+        mock.write("./src/main.rs", b"bdadasjlgd").unwrap();
+        mock.write("./test.rs", b"test").unwrap();
+        let branch = BranchIo::new_main(mock.clone());
+        branch.init().unwrap();
+
+        assert!(&mock.read_to_end(&format!(".meltos/objects/{}", ObjectHash::new(b"bdadasjlgd"))).is_ok());
+        assert!(&mock.read_to_end(&format!(".meltos/objects/{}", ObjectHash::new(b"test"))).is_ok());
+        assert!(&mock.read_to_end(".meltos/branches/main/NOW").is_ok());
+    }
 
     #[test]
     fn create_stage_file_after_staged() {
