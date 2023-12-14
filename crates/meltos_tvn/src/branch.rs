@@ -1,4 +1,4 @@
-use std::io::ErrorKind;
+use serde::{Deserialize, Serialize};
 
 use meltos_util::impl_string_new_type;
 
@@ -11,7 +11,7 @@ use crate::stage::StageIo;
 use crate::tree::Tree;
 use crate::workspace::WorkspaceIo;
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BranchName(pub String);
 impl_string_new_type!(BranchName);
 
@@ -25,9 +25,9 @@ impl BranchName {
 
 #[derive(Debug, Clone)]
 pub struct BranchIo<Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Open: OpenIo<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     branch_name: BranchName,
     stage: StageIo<Open, Io>,
@@ -39,9 +39,9 @@ pub struct BranchIo<Open, Io>
 
 
 impl<Open, Io> BranchIo<Open, Io>
-    where
-        Open: OpenIo<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Open: OpenIo<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     #[inline]
     pub fn new_main(open: Open) -> BranchIo<Open, Io> {
@@ -62,13 +62,15 @@ impl<Open, Io> BranchIo<Open, Io>
 
 
 impl<Open, Io> BranchIo<Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Open: OpenIo<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn init(&self) -> error::Result {
         if self.now.exists()? {
-            return Err(error::Error::BranchAlreadyInitialized(self.branch_name.clone()));
+            return Err(error::Error::BranchAlreadyInitialized(
+                self.branch_name.clone(),
+            ));
         }
         let mut now_tree = Tree::default();
         for meta in self.workspace.convert_to_objs(".")? {
@@ -76,25 +78,28 @@ impl<Open, Io> BranchIo<Open, Io>
             self.object.write(&meta.obj)?;
             now_tree.insert(meta.file_path, meta.obj.hash);
         }
-        self.now.write_tree(&now_tree)?;
+
+        let now_obj = now_tree.as_obj()?;
+        self.now.write_hash(&now_obj.hash)?;
+        self.object.write(&now_obj)?;
         Ok(())
     }
 
 
-    pub fn unpack_project(&self) -> std::io::Result<()> {
-        let Some(now_tree) = self.now.read_tree()? else {
+    pub fn unpack_project(&self) -> error::Result {
+        let Some(now_tree) = self.read_now_tree()? else {
             return Ok(());
         };
         for (path, hash) in now_tree.iter() {
-            let obj = self.object.try_read(hash)?;
+            let obj = self.object.try_read_obj(hash)?;
             self.workspace.unpack(path, &obj.buf)?;
         }
         Ok(())
     }
 
-    pub fn stage(&self, workspace_path: &str) -> std::io::Result<()> {
+    pub fn stage(&self, workspace_path: &str) -> error::Result {
         let mut stage_tree = self.stage.read_tree()?.unwrap_or_default();
-        let now_tree = self.now.read_tree().ok().and_then(|now| now);
+        let now_tree = self.read_now_tree()?;
         for obj in self.workspace.convert_to_objs(workspace_path)? {
             self.stage_file(&mut stage_tree, &now_tree, obj?)?;
         }
@@ -102,27 +107,38 @@ impl<Open, Io> BranchIo<Open, Io>
         Ok(())
     }
 
-    pub fn commit(&self, commit_text: impl Into<CommitText>) -> std::io::Result<()> {
+    pub fn commit(&self, commit_text: impl Into<CommitText>) -> error::Result {
         let Some(stage_tree) = self.stage.read_tree()? else {
-            return Err(std::io::Error::new(ErrorKind::NotFound, "no staged files"));
+            return Err(error::Error::NotfoundStages);
         };
         self.stage.reset()?;
-        self.now.write_tree(&stage_tree)?;
+        self.update_now_tree(&stage_tree)?;
         self.commit.commit(commit_text, stage_tree)?;
         Ok(())
     }
 
 
-    fn stage_file(
-        &self,
-        stage: &mut Tree,
-        now: &Option<Tree>,
-        meta: ObjectMeta,
-    ) -> std::io::Result<()> {
+    fn update_now_tree(&self, stage_tree: &Tree) -> error::Result {
+        let stage_obj = stage_tree.as_obj()?;
+        self.now.write_hash(&stage_obj.hash)?;
+        self.object.write(&stage_obj)?;
+        Ok(())
+    }
+
+
+    fn read_now_tree(&self) -> error::Result<Option<Tree>> {
+        let Some(now_obj_hash) = self.now.read_hash()? else {
+            return Ok(None);
+        };
+        Ok(Some(self.object.read_to_tree(&now_obj_hash)?))
+    }
+
+
+    fn stage_file(&self, stage: &mut Tree, now: &Option<Tree>, meta: ObjectMeta) -> error::Result {
         if stage.changed_hash(&meta.file_path, meta.hash())
             || now
-            .as_ref()
-            .is_some_and(|now| now.changed_hash(&meta.file_path, meta.hash()))
+                .as_ref()
+                .is_some_and(|now| now.changed_hash(&meta.file_path, meta.hash()))
         {
             self.object.write(&meta.obj)?;
             stage.insert(meta.file_path, meta.obj.hash);
@@ -135,8 +151,8 @@ impl<Open, Io> BranchIo<Open, Io>
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchIo;
-    use crate::io::{FilePath, OpenIo};
     use crate::io::mock::MockOpenIo;
+    use crate::io::{FilePath, OpenIo};
     use crate::object::ObjectHash;
 
     #[test]
@@ -147,8 +163,15 @@ mod tests {
         let branch = BranchIo::new_main(mock.clone());
         branch.init().unwrap();
 
-        assert!(&mock.read_to_end(&format!(".meltos/objects/{}", ObjectHash::new(b"bdadasjlgd"))).is_ok());
-        assert!(&mock.read_to_end(&format!(".meltos/objects/{}", ObjectHash::new(b"test"))).is_ok());
+        assert!(&mock
+            .read_to_end(&format!(
+                ".meltos/objects/{}",
+                ObjectHash::new(b"bdadasjlgd")
+            ))
+            .is_ok());
+        assert!(&mock
+            .read_to_end(&format!(".meltos/objects/{}", ObjectHash::new(b"test")))
+            .is_ok());
         assert!(&mock.read_to_end(".meltos/branches/main/NOW").is_ok());
     }
 

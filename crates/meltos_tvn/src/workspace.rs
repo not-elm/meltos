@@ -5,15 +5,15 @@ use crate::object::ObjectMeta;
 
 #[derive(Debug, Clone)]
 pub struct WorkspaceIo<Open, Io>(pub(crate) TvnIo<Open, Io>)
-    where
-        Open: OpenIo<Io>,
-        Io: io::Read + io::Write;
+where
+    Open: OpenIo<Io>,
+    Io: io::Read + io::Write;
 
 
 impl<Open, Io> WorkspaceIo<Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: io::Read + io::Write,
+where
+    Open: OpenIo<Io>,
+    Io: io::Read + io::Write,
 {
     pub fn convert_to_objs(&self, path: &str) -> std::io::Result<ObjectIter<Open, Io>> {
         let files = self.0.all_file_path(path)?;
@@ -31,9 +31,9 @@ impl<Open, Io> WorkspaceIo<Open, Io>
 
 
 impl<Open, Io> Default for WorkspaceIo<Open, Io>
-    where
-        Open: OpenIo<Io> + Default,
-        Io: io::Read + io::Write,
+where
+    Open: OpenIo<Io> + Default,
+    Io: io::Read + io::Write,
 {
     fn default() -> Self {
         Self(TvnIo::default())
@@ -42,9 +42,9 @@ impl<Open, Io> Default for WorkspaceIo<Open, Io>
 
 
 pub struct ObjectIter<'a, Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: io::Read + io::Write,
+where
+    Open: OpenIo<Io>,
+    Io: io::Read + io::Write,
 {
     files: Vec<String>,
     index: usize,
@@ -53,9 +53,9 @@ pub struct ObjectIter<'a, Open, Io>
 
 
 impl<'a, Open, Io> Iterator for ObjectIter<'a, Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: io::Read + io::Write,
+where
+    Open: OpenIo<Io>,
+    Io: io::Read + io::Write,
 {
     type Item = std::io::Result<ObjectMeta>;
 
@@ -72,25 +72,22 @@ impl<'a, Open, Io> Iterator for ObjectIter<'a, Open, Io>
 
 
 impl<'a, Open, Io> ObjectIter<'a, Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: io::Read + io::Write,
+where
+    Open: OpenIo<Io>,
+    Io: io::Read + io::Write,
 {
     fn read_to_obj(&self) -> std::io::Result<ObjectMeta> {
         let path = self.files.get(self.index).unwrap();
         let buf = self.io.try_read_to_end(path.as_ref())?;
-        ObjectMeta::new(
-            FilePath::from_path(path),
-            buf,
-        )
+        ObjectMeta::new(FilePath::from_path(path), buf)
     }
 }
 
 
 #[cfg(test)]
 mod tests {
-    use crate::io::{OpenIo, TvnIo};
     use crate::io::mock::MockOpenIo;
+    use crate::io::{OpenIo, TvnIo};
     use crate::object::ObjectHash;
     use crate::workspace::WorkspaceIo;
 

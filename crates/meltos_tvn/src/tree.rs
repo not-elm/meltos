@@ -2,10 +2,11 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::error;
 use meltos_util::macros::{Deref, DerefMut};
 
 use crate::io::{FilePath, OpenIo, TvnIo};
-use crate::object::ObjectHash;
+use crate::object::{Object, ObjectHash};
 
 #[derive(Debug, Clone)]
 pub struct TreeIo<Open, Io>
@@ -86,6 +87,13 @@ impl Tree {
         } else {
             true
         }
+    }
+
+
+    #[inline]
+    pub fn as_obj(&self) -> error::Result<Object> {
+        let buf = serde_json::to_vec(self)?;
+        Ok(Object::compress(buf)?)
     }
 }
 

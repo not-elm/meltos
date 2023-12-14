@@ -1,24 +1,27 @@
 use std::io;
 use std::io::ErrorKind;
 
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-use meltos_util::compression::CompressionBuf;
+use crate::error;
 use meltos_util::compression::gz::Gz;
+use meltos_util::compression::CompressionBuf;
 use meltos_util::macros::{Deref, Display};
 
 use crate::io::{FilePath, OpenIo, TvnIo};
+use crate::tree::Tree;
 
 #[derive(Debug, Clone)]
 pub struct ObjectIo<Open, Io>(TvnIo<Open, Io>)
-    where
-        Open: OpenIo<Io>,
-        Io: io::Read + io::Write;
+where
+    Open: OpenIo<Io>,
+    Io: io::Read + io::Write;
 
 impl<Open, Io> Default for ObjectIo<Open, Io>
-    where
-        Open: OpenIo<Io> + Default,
-        Io: io::Read + io::Write,
+where
+    Open: OpenIo<Io> + Default,
+    Io: io::Read + io::Write,
 {
     fn default() -> Self {
         Self(TvnIo::default())
@@ -27,9 +30,9 @@ impl<Open, Io> Default for ObjectIo<Open, Io>
 
 
 impl<Open, Io> ObjectIo<Open, Io>
-    where
-        Open: OpenIo<Io>,
-        Io: io::Read + io::Write,
+where
+    Open: OpenIo<Io>,
+    Io: io::Read + io::Write,
 {
     #[inline]
     pub const fn new(open: Open) -> ObjectIo<Open, Io> {
@@ -37,16 +40,27 @@ impl<Open, Io> ObjectIo<Open, Io>
     }
 
 
-    pub fn try_read(&self, object_hash: &ObjectHash) -> io::Result<Object> {
-        self.read(object_hash).and_then(|obj| match obj {
-            Some(obj) => Ok(obj),
-            None => Err(std::io::Error::new(ErrorKind::NotFound, format!("not found object: hash={object_hash}")))
+    pub fn read_to_tree(&self, object_hash: &ObjectHash) -> error::Result<Tree> {
+        let obj = self.try_read_obj(object_hash)?;
+        obj.deserialize()
+    }
+
+
+    pub fn try_read_obj(&self, object_hash: &ObjectHash) -> error::Result<Object> {
+        self.read_obj(object_hash).and_then(|obj| {
+            match obj {
+                Some(obj) => Ok(obj),
+                None => Err(error::Error::NotfoundObj(object_hash.clone())),
+            }
         })
     }
 
 
-    pub fn read(&self, object_hash: &ObjectHash) -> io::Result<Option<Object>> {
-        let Some(buf) = self.0.read_to_end(&format!("./.meltos/objects/{}", object_hash))? else {
+    pub fn read_obj(&self, object_hash: &ObjectHash) -> error::Result<Option<Object>> {
+        let Some(buf) = self
+            .0
+            .read_to_end(&format!("./.meltos/objects/{}", object_hash))?
+        else {
             return Ok(None);
         };
 
@@ -73,9 +87,9 @@ pub struct ObjectMeta {
 impl From<(FilePath, Object)> for ObjectMeta {
     #[inline(always)]
     fn from(value: (FilePath, Object)) -> Self {
-        Self{
+        Self {
             file_path: value.0,
-            obj: value.1
+            obj: value.1,
         }
     }
 }
@@ -118,6 +132,12 @@ pub struct Object {
 
 
 impl Object {
+    #[inline]
+    pub fn deserialize<D: DeserializeOwned>(&self) -> error::Result<D> {
+        Ok(serde_json::from_slice(&self.buf)?)
+    }
+
+
     pub fn compress(buf: Vec<u8>) -> std::io::Result<Self> {
         Ok(Self {
             hash: ObjectHash::new(&buf),
@@ -143,6 +163,16 @@ pub struct ObjectHash(pub String);
 
 impl ObjectHash {
     #[inline]
+    pub fn serialize_to_buf(&self) -> Vec<u8> {
+        serde_json::to_vec(self).unwrap()
+    }
+
+    #[inline]
+    pub fn from_serialized_buf(buf: &[u8]) -> error::Result<Self> {
+        Ok(Self(serde_json::from_slice(buf)?))
+    }
+
+    #[inline]
     pub fn new(buf: &[u8]) -> Self {
         Self(meltos_util::hash::hash(buf))
     }
@@ -158,11 +188,11 @@ pub struct CompressedBuf(pub Vec<u8>);
 mod tests {
     use std::io::Write;
 
-    use meltos_util::compression::CompressionBuf;
     use meltos_util::compression::gz::Gz;
+    use meltos_util::compression::CompressionBuf;
 
-    use crate::io::{OpenIo, TvnIo};
     use crate::io::mock::MockOpenIo;
+    use crate::io::{OpenIo, TvnIo};
     use crate::object::{Object, ObjectIo};
     use crate::workspace::WorkspaceIo;
 
@@ -197,6 +227,6 @@ mod tests {
         let io = ObjectIo::new(mock.clone());
         let obj = Object::compress(b"hello world!".to_vec()).unwrap();
         io.write(&obj).unwrap();
-        assert_eq!(io.read(&obj.hash).unwrap(), Some(obj));
+        assert_eq!(io.read_obj(&obj.hash).unwrap(), Some(obj));
     }
 }
