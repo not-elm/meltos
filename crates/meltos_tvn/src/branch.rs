@@ -4,7 +4,7 @@ use meltos_util::impl_string_new_type;
 
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
-use crate::io::atomic::head::{CommitText, HeadIo};
+use crate::io::atomic::head::{HeadIo};
 use crate::io::atomic::object::ObjectIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::atomic::trace::TraceIo;
@@ -93,31 +93,8 @@ impl<Fs, Io> BranchIo<Fs, Io>
         Ok(())
     }
 
-    pub fn commit(&self, commit_text: impl Into<CommitText>) -> error::Result {
-        let Some(stage_tree) = self.stage.read_tree()? else {
-            return Err(error::Error::NotfoundStages);
-        };
-        self.stage.reset()?;
-        let stage_obj = stage_tree.as_obj()?;
-        self.update_now(stage_tree)?;
+   
 
-        self.object.write(&stage_obj)?;
-        // let commit = self.commit.create_commit(commit_text, stage_obj.hash)?;
-// self.object.write(&commit.commit.)
-        todo!();
-        // self.commit.write_head(commit.hash)?;
-        Ok(())
-    }
-
-    fn update_now(&self, stage_tree: Tree) -> error::Result {
-        let mut now_tree = self.read_now_tree()?.unwrap_or_default();
-        now_tree.replace_by(stage_tree);
-
-        let now_obj = now_tree.as_obj()?;
-        self.now.write_hash(&now_obj.hash)?;
-        self.object.write(&now_obj)?;
-        Ok(())
-    }
 
     fn read_now_tree(&self) -> error::Result<Option<Tree>> {
         let Some(now_obj_hash) = self.now.read_hash()? else {
@@ -164,11 +141,11 @@ mod tests {
 
     #[test]
     fn create_stage_file_after_staged() {
-        let mock = MockFileSystem::default();
-        mock.write_all("./src/main.rs", b"fn main(){println(\"hello\")}")
-            .unwrap();
-        mock.write_all("./src/test.rs", b"test").unwrap();
-        let branch = BranchIo::new_main(mock);
+        // let mock = MockFileSystem::default();
+        // mock.write_all("./src/main.rs", b"fn main(){println(\"hello\")}")
+        //     .unwrap();
+        // mock.write_all("./src/test.rs", b"test").unwrap();
+        // let branch = BranchIo::new_main(mock);
         // branch.stage("./src").unwrap();
         // let stage = branch.stage.read_tree().unwrap().unwrap();
         // assert_eq!(
@@ -184,11 +161,11 @@ mod tests {
 
     #[test]
     fn create_objs_after_staged() {
-        let mock = MockFileSystem::default();
-        mock.write_all("./src/main.rs", b"fn main(){println(\"hello\")}")
-            .unwrap();
-        mock.write_all("./src/test.rs", b"test").unwrap();
-        let branch = BranchIo::new_main(mock.clone());
+        // let mock = MockFileSystem::default();
+        // mock.write_all("./src/main.rs", b"fn main(){println(\"hello\")}")
+        //     .unwrap();
+        // mock.write_all("./src/test.rs", b"test").unwrap();
+        // let branch = BranchIo::new_main(mock.clone());
         // branch.stage("./src").unwrap();
         // let hash1 = ObjectHash::new(b"fn main(){println(\"hello\")}");
         // let hash2 = ObjectHash::new(b"test");

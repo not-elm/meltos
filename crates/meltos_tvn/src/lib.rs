@@ -6,8 +6,7 @@ pub mod branch;
 pub mod error;
 pub mod file_system;
 pub mod object;
-pub mod operation;
-mod io;
+pub mod io;
 
 pub struct RepositoryIo<Fs, Io>
     where
@@ -89,12 +88,12 @@ mod tests {
         let io = RepositoryIo::init(mock.clone()).unwrap();
         // file_system.branch.stage(".").unwrap();
         todo!();
-        io.branch.commit("commit").unwrap();
-        mock.delete(p1).unwrap();
-        mock.delete(p2).unwrap();
-
-        RepositoryIo::open(mock.clone()).unwrap();
-        assert_eq!(mock.try_read_to_end(p1).unwrap(), b"hello");
-        assert_eq!(mock.try_read_to_end(p2).unwrap(), b"sample");
+        // io.branch.commit("commit").unwrap();
+        // mock.delete(p1).unwrap();
+        // mock.delete(p2).unwrap();
+        //
+        // RepositoryIo::open(mock.clone()).unwrap();
+        // assert_eq!(mock.try_read_to_end(p1).unwrap(), b"hello");
+        // assert_eq!(mock.try_read_to_end(p2).unwrap(), b"sample");
     }
 }

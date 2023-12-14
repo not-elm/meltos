@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use meltos_util::impl_string_new_type;
 use crate::branch::BranchName;
+use crate::error;
 
 use crate::file_system::{FileSystem, FsIo};
 use crate::object::ObjectHash;
@@ -39,7 +40,7 @@ impl<Fs, Io> HeadIo<Fs, Io>
         Ok(())
     }
 
-    pub fn head_commit_hash(&self) -> std::io::Result<Option<ObjectHash>> {
+    pub fn head_commit_hash(&self) -> error::Result<Option<ObjectHash>> {
         let Some(buf) = self
             .io
             .read_to_end(&format!(".meltos/branches/{}/HEAD", self.branch_name))?
@@ -47,7 +48,7 @@ impl<Fs, Io> HeadIo<Fs, Io>
                 return Ok(None);
             };
 
-        Ok(Some(ObjectHash(String::from_utf8(buf).unwrap())))
+        Ok(Some(ObjectHash::from_serialized_buf(&buf)?))
     }
 }
 

@@ -14,6 +14,12 @@ impl<Fs, Io> WorkspaceIo<Fs, Io>
         Fs: FileSystem<Io>,
         Io: io::Read + io::Write,
 {
+    #[inline]
+    pub fn new(fs: Fs) -> WorkspaceIo<Fs, Io>{
+        Self(FsIo::new(fs))
+    }
+    
+    
     pub fn convert_to_objs(&self, path: &str) -> std::io::Result<ObjectIter<Fs, Io>> {
         let files = self.0.all_file_path(path)?;
         Ok(ObjectIter {

@@ -1,15 +1,23 @@
 use std::io;
-use serde::de::DeserializeOwned;
+
 use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
+
 use meltos_util::compression::CompressionBuf;
 use meltos_util::compression::gz::Gz;
 use meltos_util::macros::{Deref, Display};
+
 use crate::error;
 use crate::file_system::FilePath;
 
 pub mod tree;
 pub mod commit;
 mod local_commits;
+
+
+pub trait AsObject {
+    fn as_obj(&self) -> error::Result<Object>;
+}
 
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
