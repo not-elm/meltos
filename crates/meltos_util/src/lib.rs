@@ -3,15 +3,12 @@ pub mod error;
 pub mod serde;
 pub mod tracing;
 
-
 pub mod hash;
 pub mod sync;
-
 
 pub mod macros {
     pub use meltos_macros::*;
 }
-
 
 #[macro_export]
 macro_rules! impl_string_new_type {
@@ -28,7 +25,6 @@ macro_rules! impl_string_new_type {
             }
         }
 
-
         impl std::ops::Deref for $name {
             type Target = String;
 
@@ -36,7 +32,6 @@ macro_rules! impl_string_new_type {
                 &self.0
             }
         }
-
 
         impl<'a> From<&'a str> for $name {
             fn from(value: &'a str) -> Self {

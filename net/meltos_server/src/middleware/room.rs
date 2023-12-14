@@ -17,13 +17,11 @@ use crate::state::AppState;
 #[derive(Debug)]
 pub struct SessionRoom(pub Room);
 
-
 #[derive(TypedPath, Deserialize, Serialize)]
 #[typed_path("/room/:room_id")]
 struct PathParam {
     pub room_id: RoomId,
 }
-
 
 impl PathParam {
     pub async fn new<Session: Send + Sync>(
@@ -46,7 +44,6 @@ impl PathParam {
         Ok(param)
     }
 }
-
 
 #[async_trait]
 impl<Session> FromRequestParts<AppState<Session>> for SessionRoom

@@ -8,10 +8,8 @@ use meltos_util::sync::arc_mutex::ArcMutex;
 
 use crate::user::SessionIo;
 
-
 #[derive(Debug, Default, Clone)]
 pub struct MockUserSessionIo(ArcMutex<HashMap<SessionId, UserId>>);
-
 
 #[async_trait]
 impl SessionIo for MockUserSessionIo {

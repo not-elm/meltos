@@ -9,7 +9,6 @@ where
     Open: OpenIo<Io>,
     Io: io::Read + io::Write;
 
-
 impl<Open, Io> WorkspaceIo<Open, Io>
 where
     Open: OpenIo<Io>,
@@ -29,7 +28,6 @@ where
     }
 }
 
-
 impl<Open, Io> Default for WorkspaceIo<Open, Io>
 where
     Open: OpenIo<Io> + Default,
@@ -40,7 +38,6 @@ where
     }
 }
 
-
 pub struct ObjectIter<'a, Open, Io>
 where
     Open: OpenIo<Io>,
@@ -50,7 +47,6 @@ where
     index: usize,
     io: &'a TvnIo<Open, Io>,
 }
-
 
 impl<'a, Open, Io> Iterator for ObjectIter<'a, Open, Io>
 where
@@ -70,7 +66,6 @@ where
     }
 }
 
-
 impl<'a, Open, Io> ObjectIter<'a, Open, Io>
 where
     Open: OpenIo<Io>,
@@ -82,7 +77,6 @@ where
         ObjectMeta::new(FilePath::from_path(path), buf)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

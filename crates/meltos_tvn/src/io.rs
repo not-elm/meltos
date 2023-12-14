@@ -9,19 +9,14 @@ use meltos_util::impl_string_new_type;
 pub mod file;
 pub(crate) mod mock;
 
-
 pub trait OpenIo<Io: std::io::Read + std::io::Write> {
     fn open_file(&self, path: &str) -> std::io::Result<Option<Io>>;
 
-
     fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>>;
-
 
     fn create(&self, path: &str) -> std::io::Result<Io>;
 
-
     fn delete(&self, path: &str) -> std::io::Result<()>;
-
 
     fn read_to_end(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
         let mut buf = Vec::new();
@@ -43,12 +38,10 @@ pub trait OpenIo<Io: std::io::Read + std::io::Write> {
         })
     }
 
-
     fn write(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
         self.create(path)?.write_all(buf)
     }
 }
-
 
 #[derive(Debug)]
 pub struct TvnIo<Open, Io>
@@ -74,7 +67,6 @@ where
     }
 }
 
-
 impl<Open, Io> Default for TvnIo<Open, Io>
 where
     Open: OpenIo<Io> + Default,
@@ -89,7 +81,6 @@ where
     }
 }
 
-
 impl<Open, Io> Clone for TvnIo<Open, Io>
 where
     Open: OpenIo<Io> + Clone,
@@ -99,7 +90,6 @@ where
         Self::new(self.open.clone())
     }
 }
-
 
 impl<Open, Io> OpenIo<Io> for TvnIo<Open, Io>
 where
@@ -126,11 +116,9 @@ where
     }
 }
 
-
 #[derive(Eq, PartialEq, Debug, Clone, Hash, Serialize, Deserialize)]
 pub struct FilePath(pub String);
 impl_string_new_type!(FilePath);
-
 
 impl FilePath {
     pub fn from_path(path: impl AsRef<Path>) -> Self {
@@ -138,13 +126,11 @@ impl FilePath {
     }
 }
 
-
 impl AsRef<Path> for FilePath {
     fn as_ref(&self) -> &Path {
         self.0.as_ref()
     }
 }
-
 
 impl AsRef<String> for FilePath {
     fn as_ref(&self) -> &String {

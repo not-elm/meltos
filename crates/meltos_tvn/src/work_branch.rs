@@ -19,7 +19,6 @@ where
     }
 }
 
-
 impl<Open, Io> WorkBranchIo<Open, Io>
 where
     Open: OpenIo<Io>,

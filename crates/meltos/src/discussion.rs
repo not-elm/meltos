@@ -7,20 +7,17 @@ use crate::user::UserId;
 pub mod id;
 pub mod message;
 
-
 #[derive(Debug, Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]
 pub struct DiscussionMeta {
     pub id: DiscussionId,
     pub creator: UserId,
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]
 pub struct Discussion {
     pub meta: DiscussionMeta,
     pub messages: Vec<MessageId>,
 }
-
 
 impl Discussion {
     pub fn new(creator: UserId) -> Self {

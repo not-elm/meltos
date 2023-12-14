@@ -7,7 +7,6 @@ use crate::io::OpenIo;
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct FileOpen;
 
-
 impl OpenIo<File> for FileOpen {
     fn open_file(&self, path: &str) -> std::io::Result<Option<File>> {
         match File::open(path) {

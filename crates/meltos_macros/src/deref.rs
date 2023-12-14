@@ -23,7 +23,6 @@ pub fn deref(token: TokenStream) -> syn::Result<TokenStream2> {
     })
 }
 
-
 pub fn deref_mut(token: TokenStream) -> syn::Result<TokenStream2> {
     let item = syn::parse::<ItemStruct>(token)?;
     let ident = &item.ident;
@@ -37,7 +36,6 @@ pub fn deref_mut(token: TokenStream) -> syn::Result<TokenStream2> {
         }
     })
 }
-
 
 fn parse_new_type_ty(fields: Fields) -> Option<Type> {
     if let Unnamed(un_named) = fields {

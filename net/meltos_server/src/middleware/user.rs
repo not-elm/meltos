@@ -15,7 +15,6 @@ use crate::state::AppState;
 #[derive(Eq, PartialEq, Clone, Hash, Debug)]
 pub struct SessionUser(pub UserId);
 
-
 #[async_trait]
 impl<Session> FromRequestParts<AppState<Session>> for SessionUser
 where
@@ -33,7 +32,6 @@ where
     }
 }
 
-
 fn response_unauthorized() -> Response {
     Response::builder()
         .status(StatusCode::UNAUTHORIZED)
@@ -45,7 +43,6 @@ fn response_unauthorized() -> Response {
         ))
         .unwrap()
 }
-
 
 fn extract_session_id_from_cookie(parts: &mut Parts) -> Result<SessionId, Response> {
     let cookies = parts

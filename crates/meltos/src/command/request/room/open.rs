@@ -7,10 +7,11 @@ pub struct Open {
     pub user_token: SessionId,
 }
 
-
 impl Open {
     #[inline]
     pub const fn new(user_token: SessionId) -> Self {
-        Self { user_token }
+        Self {
+            user_token,
+        }
     }
 }

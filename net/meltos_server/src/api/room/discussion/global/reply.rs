@@ -6,7 +6,6 @@ use crate::api::HttpResult;
 use crate::middleware::room::SessionRoom;
 use crate::middleware::user::SessionUser;
 
-
 #[tracing::instrument]
 pub async fn reply(
     SessionRoom(room): SessionRoom,
@@ -19,7 +18,6 @@ pub async fn reply(
 
     Ok(replied)
 }
-
 
 #[cfg(test)]
 mod tests {

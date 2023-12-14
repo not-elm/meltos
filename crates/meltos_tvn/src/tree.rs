@@ -18,7 +18,6 @@ where
     file_path: FilePath,
 }
 
-
 impl<Open, Io> TreeIo<Open, Io>
 where
     Open: OpenIo<Io>,
@@ -31,7 +30,6 @@ where
             file_path: file_path.into(),
         }
     }
-
 
     pub fn write_tree(&self, tree: &Tree) -> std::io::Result<()> {
         self.io
@@ -47,13 +45,11 @@ where
         Ok(serde_json::from_slice::<Tree>(&json).ok())
     }
 
-
     pub fn reset(&self) -> std::io::Result<()> {
         self.io
             .write(&self.file_path, &serde_json::to_vec(&Tree::default())?)?;
         Ok(())
     }
-
 
     pub fn read_object_hash(&self, file_path: &FilePath) -> std::io::Result<Option<ObjectHash>> {
         let Some(tree) = self.read_tree()? else {
@@ -75,10 +71,8 @@ where
     }
 }
 
-
 #[derive(Serialize, Deserialize, Default, Clone, Deref, DerefMut, Debug, Eq, PartialEq)]
 pub struct Tree(HashMap<FilePath, ObjectHash>);
-
 
 impl Tree {
     pub fn changed_hash(&self, path: &FilePath, hash: &ObjectHash) -> bool {
@@ -89,14 +83,12 @@ impl Tree {
         }
     }
 
-
     #[inline]
     pub fn as_obj(&self) -> error::Result<Object> {
         let buf = serde_json::to_vec(self)?;
         Ok(Object::compress(buf)?)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -122,7 +114,6 @@ mod tests {
             .to_string()
         );
     }
-
 
     #[test]
     fn none_if_none_wrote() {

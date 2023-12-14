@@ -12,7 +12,6 @@ pub struct Param {
     discussion_id: DiscussionId,
 }
 
-
 #[tracing::instrument]
 pub async fn close(
     SessionRoom(room): SessionRoom,
@@ -24,7 +23,6 @@ pub async fn close(
         .await?;
     Ok(closed)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -57,7 +55,6 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     }
-
 
     #[tokio::test]
     async fn failed_no_exists_discussion() {

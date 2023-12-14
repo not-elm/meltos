@@ -11,7 +11,6 @@ pub struct DiscussionCommandExecutor<'a, Global: ?Sized> {
     global_io: &'a Global,
 }
 
-
 impl<'a, Global> DiscussionCommandExecutor<'a, Global>
 where
     Global: DiscussionIo + ?Sized,
@@ -21,9 +20,11 @@ where
         user_id: UserId,
         global_io: &'a Global,
     ) -> DiscussionCommandExecutor<'a, Global> {
-        Self { user_id, global_io }
+        Self {
+            user_id,
+            global_io,
+        }
     }
-
 
     #[inline]
     pub async fn create(self) -> error::Result<Created> {
@@ -32,7 +33,6 @@ where
             meta: discussion_meta,
         })
     }
-
 
     #[inline]
     pub async fn speak(self, speak: Speak) -> error::Result<Spoke> {
@@ -45,7 +45,6 @@ where
             message,
         })
     }
-
 
     #[inline]
     pub async fn reply(self, reply: Reply) -> error::Result<Replied> {
@@ -60,13 +59,14 @@ where
         })
     }
 
-
     #[inline]
     pub async fn close(self, discussion_id: DiscussionId) -> error::Result<Closed> {
         self.global_io
             .close(&discussion_id)
             .await
             .map_err(|_| error::Error::DiscussionNotExists(discussion_id.clone()))?;
-        Ok(Closed { discussion_id })
+        Ok(Closed {
+            discussion_id,
+        })
     }
 }

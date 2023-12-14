@@ -2,13 +2,11 @@ use crate::io::{FilePath, OpenIo, TvnIo};
 use crate::tree::TreeIo;
 use std::ops::Deref;
 
-
 #[derive(Debug, Clone)]
 pub struct StageIo<Open, Io>(pub(crate) TreeIo<Open, Io>)
 where
     Open: OpenIo<Io>,
     Io: std::io::Write + std::io::Read;
-
 
 impl<Open, Io> StageIo<Open, Io>
 where
@@ -23,7 +21,6 @@ where
     }
 }
 
-
 impl<Open, Io> Deref for StageIo<Open, Io>
 where
     Open: OpenIo<Io>,
@@ -36,7 +33,6 @@ where
         &self.0
     }
 }
-
 
 impl<Open, Io> Default for StageIo<Open, Io>
 where

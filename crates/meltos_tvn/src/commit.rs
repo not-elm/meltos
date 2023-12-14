@@ -18,7 +18,6 @@ where
     branch_name: BranchName,
 }
 
-
 impl<Open, Io> CommitIo<Open, Io>
 where
     Open: OpenIo<Io>,
@@ -55,7 +54,6 @@ where
         Ok(Some(ObjectHash(String::from_utf8(buf).unwrap())))
     }
 
-
     pub fn read_commit(&self, commit_hash: &ObjectHash) -> std::io::Result<Option<Commit>> {
         let Some(buf) = self
             .io
@@ -77,13 +75,11 @@ where
     }
 }
 
-
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct CommitMeta {
     pub hash: ObjectHash,
     pub commit: Commit,
 }
-
 
 impl CommitMeta {
     pub fn new(commit: Commit) -> Self {
@@ -94,7 +90,6 @@ impl CommitMeta {
     }
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Commit {
     pub parent: Option<ObjectHash>,
@@ -102,11 +97,9 @@ pub struct Commit {
     pub stage: Tree,
 }
 
-
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize)]
 pub struct CommitText(pub String);
 impl_string_new_type!(CommitText);
-
 
 #[cfg(test)]
 mod tests {
@@ -136,7 +129,6 @@ mod tests {
             })
         );
     }
-
 
     #[test]
     fn attach_parent() {

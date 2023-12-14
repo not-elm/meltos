@@ -7,14 +7,11 @@ use meltos_util::serde::SerializeJson;
 pub mod login;
 pub mod room;
 
-
 type HttpResult = std::result::Result<Response, Response>;
-
 
 pub trait AsSuccessResponse {
     fn as_success_response(&self) -> Response;
 }
-
 
 impl<D> AsSuccessResponse for D
 where
@@ -26,7 +23,6 @@ where
             .unwrap()
     }
 }
-
 
 #[cfg(test)]
 mod test_util {
@@ -57,7 +53,6 @@ mod test_util {
         async fn into_json(self) -> String;
     }
 
-
     #[async_trait]
     impl ResponseConvertable for Response {
         async fn into_json(self) -> String {
@@ -71,7 +66,6 @@ mod test_util {
             String::from_utf8(bytes).unwrap()
         }
     }
-
 
     pub async fn logged_in_app() -> (SessionId, Router) {
         let session = MockUserSessionIo::default();
@@ -89,13 +83,11 @@ mod test_util {
         SessionId("session_id".to_string())
     }
 
-
     pub async fn http_open_room(app: &mut Router, user_token: SessionId) -> RoomId {
         http_call::<Opened>(app, open_room_request(user_token))
             .await
             .room_id
     }
-
 
     pub async fn http_create_discussion(app: &mut Router, room_id: RoomId) -> Created {
         http_call(app, create_discussion_request(room_id)).await
@@ -104,7 +96,6 @@ mod test_util {
     pub async fn http_speak(app: &mut Router, room_id: &RoomId, speak: Speak) -> Spoke {
         http_call(app, speak_request(speak, room_id)).await
     }
-
 
     pub async fn http_reply(app: &mut Router, room_id: &RoomId, reply: Reply) -> Replied {
         http_call(
@@ -139,7 +130,6 @@ mod test_util {
         .await
     }
 
-
     pub fn open_room_request(session_id: SessionId) -> Request {
         Request::builder()
             .method(http::Method::POST)
@@ -148,7 +138,6 @@ mod test_util {
             .body(Body::empty())
             .unwrap()
     }
-
 
     pub fn create_discussion_request(room_id: RoomId) -> axum::http::Request<Body> {
         tokio_tungstenite::tungstenite::handshake::client::Request::builder()
@@ -162,7 +151,6 @@ mod test_util {
             .unwrap()
     }
 
-
     pub fn speak_request(speak: Speak, room_id: &RoomId) -> axum::http::Request<Body> {
         Request::builder()
             .uri(format!("/room/{}/discussion/global/speak", room_id))
@@ -172,7 +160,6 @@ mod test_util {
             .body(Body::new(speak.as_json()))
             .unwrap()
     }
-
 
     pub async fn http_call<D: DeserializeOwned>(app: &mut Router, request: Request) -> D {
         let response = ServiceExt::<axum::extract::Request<Body>>::ready(app)
@@ -184,7 +171,6 @@ mod test_util {
 
         convert_body_json::<D>(response).await
     }
-
 
     async fn convert_body_json<D: DeserializeOwned>(response: Response) -> D {
         let b = response.into_body().collect().await.unwrap().to_bytes();

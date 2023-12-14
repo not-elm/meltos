@@ -13,7 +13,6 @@ pub mod tree;
 pub mod work_branch;
 pub mod workspace;
 
-
 pub struct RepositoryIo<Open, Io>
 where
     Open: OpenIo<Io> + Clone,
@@ -23,7 +22,6 @@ where
     work_branch: WorkBranchIo<Open, Io>,
     open: Open,
 }
-
 
 impl<Open, Io> RepositoryIo<Open, Io>
 where
@@ -48,7 +46,6 @@ where
         })
     }
 
-
     pub fn open(open: Open) -> error::Result<RepositoryIo<Open, Io>> {
         let work_branch = WorkBranchIo(TvnIo::new(open.clone()));
         let work_branch_name = work_branch.read()?;
@@ -64,7 +61,6 @@ where
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
@@ -78,7 +74,6 @@ mod tests {
         let io = RepositoryIo::init(mock.clone()).unwrap();
         assert_eq!(io.work_branch.read().unwrap(), BranchName::main());
     }
-
 
     #[test]
     fn error_if_already_initialized() {

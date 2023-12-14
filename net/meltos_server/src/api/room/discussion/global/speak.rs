@@ -19,7 +19,6 @@ pub async fn speak(
     Ok(spoke)
 }
 
-
 #[cfg(test)]
 mod tests {
     use meltos::command::request::discussion::global::Speak;

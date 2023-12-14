@@ -9,20 +9,17 @@ pub struct Create {
     pub room_id: RoomId,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Speak {
     pub discussion_id: DiscussionId,
     pub message: MessageText,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Reply {
     pub target_id: MessageId,
     pub text: MessageText,
 }
-
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Close {

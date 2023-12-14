@@ -22,7 +22,6 @@ impl BranchName {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub struct BranchIo<Open, Io>
 where
@@ -30,13 +29,12 @@ where
     Io: std::io::Write + std::io::Read,
 {
     pub(crate) now: NowIo<Open, Io>,
-    branch_name: BranchName,
     stage: StageIo<Open, Io>,
     object: ObjectIo<Open, Io>,
     workspace: WorkspaceIo<Open, Io>,
     commit: CommitIo<Open, Io>,
+    branch_name: BranchName,
 }
-
 
 impl<Open, Io> BranchIo<Open, Io>
 where
@@ -59,7 +57,6 @@ where
         }
     }
 }
-
 
 impl<Open, Io> BranchIo<Open, Io>
 where
@@ -84,7 +81,6 @@ where
         self.object.write(&now_obj)?;
         Ok(())
     }
-
 
     pub fn unpack_project(&self) -> error::Result {
         let Some(now_tree) = self.read_now_tree()? else {
@@ -117,7 +113,6 @@ where
         Ok(())
     }
 
-
     fn update_now_tree(&self, stage_tree: &Tree) -> error::Result {
         let stage_obj = stage_tree.as_obj()?;
         self.now.write_hash(&stage_obj.hash)?;
@@ -125,14 +120,12 @@ where
         Ok(())
     }
 
-
     fn read_now_tree(&self) -> error::Result<Option<Tree>> {
         let Some(now_obj_hash) = self.now.read_hash()? else {
             return Ok(None);
         };
         Ok(Some(self.object.read_to_tree(&now_obj_hash)?))
     }
-
 
     fn stage_file(&self, stage: &mut Tree, now: &Option<Tree>, meta: ObjectMeta) -> error::Result {
         if stage.changed_hash(&meta.file_path, meta.hash())
@@ -146,7 +139,6 @@ where
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -175,7 +167,6 @@ mod tests {
         assert!(&mock.read_to_end(".meltos/branches/main/NOW").is_ok());
     }
 
-
     #[test]
     fn failed_init_if_has_been_initialized() {
         let mock = MockOpenIo::default();
@@ -202,7 +193,6 @@ mod tests {
             Some(&ObjectHash::new(b"test"))
         );
     }
-
 
     #[test]
     fn create_objs_after_staged() {

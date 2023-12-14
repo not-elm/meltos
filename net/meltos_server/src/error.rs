@@ -52,13 +52,11 @@ pub enum Error {
     InvalidOrder,
 }
 
-
 impl From<Error> for String {
     fn from(value: Error) -> Self {
         value.to_string()
     }
 }
-
 
 impl From<Error> for Response {
     fn from(value: Error) -> Self {
@@ -73,6 +71,5 @@ impl From<Error> for Response {
             .unwrap()
     }
 }
-
 
 unsafe impl Send for Error {}

@@ -15,7 +15,6 @@ pub struct MockGlobalDiscussionIo {
     reply_discussions: ReplyDiscussions,
 }
 
-
 #[async_trait::async_trait]
 impl DiscussionIo for MockGlobalDiscussionIo {
     async fn new_discussion(&self, creator: UserId) -> error::Result<DiscussionMeta> {
@@ -25,7 +24,6 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         discussions.insert(meta.id.clone(), discussion);
         Ok(meta)
     }
-
 
     async fn speak(
         &self,
@@ -47,7 +45,6 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         Ok(message)
     }
 
-
     async fn reply(
         &self,
         user_id: UserId,
@@ -67,18 +64,15 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         Ok(reply)
     }
 
-
     async fn discussion_by(&self, discussion_id: &DiscussionId) -> error::Result<Discussion> {
         let mut discussions = self.discussions.lock().await;
         Ok(discussions.get_mut(discussion_id).unwrap().clone())
     }
 
-
     async fn all_discussions(&self) -> error::Result<Vec<Discussion>> {
         let discussions = self.discussions.lock().await;
         Ok(discussions.values().cloned().collect())
     }
-
 
     async fn close(&self, discussion_id: &DiscussionId) -> error::Result {
         let mut discussions = self.discussions.lock().await;
@@ -96,14 +90,11 @@ impl DiscussionIo for MockGlobalDiscussionIo {
     }
 }
 
-
 #[derive(Debug, Default, Clone, Deref)]
 struct Discussions(ArcHashMap<DiscussionId, Discussion>);
 
-
 #[derive(Debug, Default, Clone, Deref)]
 struct Messages(ArcHashMap<MessageId, Message>);
-
 
 #[derive(Debug, Default, Clone, Deref)]
 struct ReplyDiscussions(ArcHashMap<MessageId, Vec<MessageId>>);

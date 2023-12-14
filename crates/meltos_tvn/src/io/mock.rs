@@ -7,13 +7,11 @@ use crate::io::OpenIo;
 #[derive(Debug, Clone, Default)]
 pub struct MockOpenIo(pub Arc<Mutex<HashMap<String, MockIo>>>);
 
-
 impl OpenIo<MockIo> for MockOpenIo {
     fn open_file(&self, path: &str) -> std::io::Result<Option<MockIo>> {
         let map = self.0.lock().unwrap();
         Ok(map.get(path).cloned())
     }
-
 
     fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>> {
         let map = self.0.lock().unwrap();
@@ -40,10 +38,8 @@ impl OpenIo<MockIo> for MockOpenIo {
     }
 }
 
-
 #[derive(Default, Debug, Clone)]
 pub struct MockIo(Arc<Mutex<Vec<u8>>>);
-
 
 impl Read for MockIo {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
@@ -63,7 +59,6 @@ impl Write for MockIo {
         self.0.lock().unwrap().write(buf)
     }
 
-
     fn flush(&mut self) -> std::io::Result<()> {
         self.0.lock().unwrap().flush()
     }
@@ -73,7 +68,6 @@ impl Write for MockIo {
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {

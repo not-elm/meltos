@@ -22,13 +22,16 @@ pub async fn open<Discussion: DiscussionIo + Default + 'static>(
     Ok(response_success_create_room(room_id))
 }
 
-
 fn response_success_create_room(room_id: RoomId) -> Response {
     Response::builder()
-        .body(Body::from(Opened { room_id }.as_json()))
+        .body(Body::from(
+            Opened {
+                room_id,
+            }
+            .as_json(),
+        ))
         .unwrap()
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -57,7 +60,6 @@ mod tests {
             .unwrap();
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     }
-
 
     #[tokio::test]
     async fn success_if_logged_in() -> error::Result {

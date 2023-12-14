@@ -27,7 +27,6 @@ where
     }
 }
 
-
 impl<Open, Io> ObjectIo<Open, Io>
 where
     Open: OpenIo<Io>,
@@ -38,12 +37,10 @@ where
         Self(TvnIo::new(open))
     }
 
-
     pub fn read_to_tree(&self, object_hash: &ObjectHash) -> error::Result<Tree> {
         let obj = self.try_read_obj(object_hash)?;
         obj.deserialize()
     }
-
 
     pub fn try_read_obj(&self, object_hash: &ObjectHash) -> error::Result<Object> {
         self.read_obj(object_hash).and_then(|obj| {
@@ -53,7 +50,6 @@ where
             }
         })
     }
-
 
     pub fn read_obj(&self, object_hash: &ObjectHash) -> error::Result<Option<Object>> {
         let Some(buf) = self
@@ -66,7 +62,6 @@ where
         Ok(Some(Object::expand(CompressedBuf(buf))?))
     }
 
-
     pub fn write(&self, obj: &Object) -> io::Result<()> {
         self.0
             .create(&format!("./.meltos/objects/{}", &obj.hash))?
@@ -75,13 +70,11 @@ where
     }
 }
 
-
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct ObjectMeta {
     pub file_path: FilePath,
     pub obj: Object,
 }
-
 
 impl From<(FilePath, Object)> for ObjectMeta {
     #[inline(always)]
@@ -93,7 +86,6 @@ impl From<(FilePath, Object)> for ObjectMeta {
     }
 }
 
-
 impl ObjectMeta {
     pub fn new(file_path: FilePath, buf: Vec<u8>) -> std::io::Result<Self> {
         Ok(Self {
@@ -102,25 +94,21 @@ impl ObjectMeta {
         })
     }
 
-
     #[inline]
     pub const fn hash(&self) -> &ObjectHash {
         &self.obj.hash
     }
-
 
     #[inline]
     pub const fn compressed_buf(&self) -> &CompressedBuf {
         &self.obj.compressed_buf
     }
 
-
     #[inline]
     pub fn buf(&self) -> &[u8] {
         &self.obj.buf
     }
 }
-
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct Object {
@@ -129,13 +117,11 @@ pub struct Object {
     pub buf: Vec<u8>,
 }
 
-
 impl Object {
     #[inline]
     pub fn deserialize<D: DeserializeOwned>(&self) -> error::Result<D> {
         Ok(serde_json::from_slice(&self.buf)?)
     }
-
 
     pub fn compress(buf: Vec<u8>) -> std::io::Result<Self> {
         Ok(Self {
@@ -159,7 +145,6 @@ impl Object {
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd, Display)]
 pub struct ObjectHash(pub String);
 
-
 impl ObjectHash {
     #[inline]
     pub fn serialize_to_buf(&self) -> Vec<u8> {
@@ -177,11 +162,9 @@ impl ObjectHash {
     }
 }
 
-
 #[repr(transparent)]
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd, Deref)]
 pub struct CompressedBuf(pub Vec<u8>);
-
 
 #[cfg(test)]
 mod tests {
@@ -218,7 +201,6 @@ mod tests {
             .unwrap();
         assert_eq!(hello_buf, Gz.encode(buf).unwrap());
     }
-
 
     #[test]
     fn read_obj() {

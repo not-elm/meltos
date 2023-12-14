@@ -13,7 +13,6 @@ pub struct Param {
     session_token: SessionId,
 }
 
-
 #[tracing::instrument]
 pub async fn connect(
     ws: WebSocketUpgrade,
@@ -37,7 +36,6 @@ pub async fn connect(
     //     response_not_exists_target_room(param.room_id)
     // }
 }
-
 
 // async fn _start_websocket(socket: WebSocket, client_command_receiver: ClientCommandReceiver) {
 //     let (mut ws_tx, _) = socket.split();

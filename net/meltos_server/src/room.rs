@@ -21,10 +21,8 @@ use crate::room::executor::discussion::DiscussionCommandExecutor;
 
 mod executor;
 
-
 #[derive(Default, Clone, Debug, Deref)]
 pub struct Rooms(ArcMutex<RoomMap>);
-
 
 impl Rooms {
     pub async fn insert_room(&self, room: Room) {
@@ -32,7 +30,6 @@ impl Rooms {
         rooms.0.insert(room.id.clone(), room);
     }
 }
-
 
 #[derive(Default, Debug)]
 pub struct RoomMap(HashMap<RoomId, Room>);
@@ -57,14 +54,12 @@ impl RoomMap {
     }
 }
 
-
 #[derive(Clone)]
 pub struct Room {
     pub owner: UserId,
     pub id: RoomId,
     discussion: Arc<dyn DiscussionIo>,
 }
-
 
 impl Room {
     pub fn open<Discussion: DiscussionIo + Default + 'static>(owner: UserId) -> Self {
@@ -74,7 +69,6 @@ impl Room {
             discussion: Arc::new(Discussion::default()),
         }
     }
-
 
     pub async fn global_discussion<'a, F, O, S>(
         &'a self,
@@ -90,7 +84,6 @@ impl Room {
         Ok(command.as_success_response())
     }
 
-
     fn as_global_discussion_executor(
         &self,
         user_id: UserId,
@@ -98,7 +91,6 @@ impl Room {
         DiscussionCommandExecutor::new(user_id, self.discussion.as_ref())
     }
 }
-
 
 impl Debug for Room {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

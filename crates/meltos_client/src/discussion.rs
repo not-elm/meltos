@@ -8,12 +8,9 @@ use meltos::discussion::DiscussionMeta;
 pub trait ClientDiscussionIo: Send + Sync {
     async fn created(&self, discussion_meta: DiscussionMeta) -> error::Result;
 
-
     async fn spoke(&self, discussion_id: DiscussionId, messages: Message) -> error::Result;
 
-
     async fn replied(&self, discussion_id: DiscussionId, reply: Message) -> error::Result;
-
 
     async fn closed(&self, discussion_id: DiscussionId) -> error::Result;
 }

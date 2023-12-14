@@ -19,7 +19,6 @@ mod middleware;
 mod room;
 mod state;
 
-
 pub type HttpResult<T> = std::result::Result<T, StatusCode>;
 
 #[tokio::main]
@@ -39,7 +38,6 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-
 fn app<Session, Discussion>(session: Session, _: Discussion) -> Router
 where
     Session: SessionIo + Debug + Clone + 'static,
@@ -52,14 +50,12 @@ where
         .with_state(AppState::<Session>::new(session))
 }
 
-
 fn room_operations_router<Session>() -> Router<AppState<Session>>
 where
     Session: SessionIo + Clone + Debug + 'static,
 {
     Router::new().nest("/discussion/global", global_discussion_route())
 }
-
 
 fn global_discussion_route<Session>() -> Router<AppState<Session>>
 where

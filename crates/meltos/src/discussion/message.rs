@@ -12,7 +12,6 @@ pub struct Message {
     pub text: MessageText,
 }
 
-
 impl Message {
     #[inline(always)]
     pub fn new(user_id: UserId, text: MessageText) -> Message {
@@ -24,12 +23,10 @@ impl Message {
     }
 }
 
-
 #[repr(transparent)]
 #[derive(Eq, PartialEq, Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct MessageText(String);
 impl_string_new_type!(MessageText);
-
 
 #[repr(transparent)]
 #[derive(Eq, PartialEq, Clone, Debug, Hash, Serialize, Deserialize, Display, Sha1)]

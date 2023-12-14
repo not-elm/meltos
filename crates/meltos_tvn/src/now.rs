@@ -13,7 +13,6 @@ where
     file_path: String,
 }
 
-
 impl<Open, Io> NowIo<Open, Io>
 where
     Open: OpenIo<Io>,
@@ -26,13 +25,11 @@ where
         }
     }
 
-
     #[inline]
     pub fn write_hash(&self, hash: &ObjectHash) -> error::Result {
         self.io.write(&self.file_path, &hash.serialize_to_buf())?;
         Ok(())
     }
-
 
     #[inline]
     pub fn read_hash(&self) -> error::Result<Option<ObjectHash>> {
@@ -41,7 +38,6 @@ where
         };
         Ok(Some(ObjectHash::from_serialized_buf(&buf)?))
     }
-
 
     #[inline]
     pub fn exists(&self) -> error::Result<bool> {

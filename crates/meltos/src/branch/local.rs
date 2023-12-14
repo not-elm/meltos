@@ -5,6 +5,5 @@ use crate::error;
 pub trait LocalBranchIo {
     async fn branch_names(&self) -> error::Result<Vec<BranchName>>;
 
-
     async fn fetch_by(&self, branch_name: &BranchName) -> error::Result<BranchName>;
 }

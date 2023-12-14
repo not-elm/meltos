@@ -15,7 +15,6 @@ pub struct AppState<Session> {
     pub(crate) session: SessionState<Session>,
 }
 
-
 impl<Session> AppState<Session>
 where
     Session: SessionIo + Clone,
@@ -27,7 +26,6 @@ where
         }
     }
 }
-
 
 #[derive(Delegate, Clone, Default, Debug)]
 #[to(UserSessionIo)]
@@ -50,13 +48,11 @@ where
     }
 }
 
-
 impl<Session> FromRef<AppState<Session>> for Rooms {
     fn from_ref(input: &AppState<Session>) -> Self {
         input.rooms.clone()
     }
 }
-
 
 impl<Session> FromRef<AppState<Session>> for SessionState<Session>
 where

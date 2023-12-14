@@ -1,12 +1,10 @@
 use flate2::bufread::{GzDecoder, GzEncoder};
 use std::io::Read;
 
-
 use crate::compression::CompressionBuf;
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug, Hash, Default)]
 pub struct Gz;
-
 
 impl CompressionBuf for Gz {
     fn encode(&self, buf: &[u8]) -> std::io::Result<Vec<u8>> {
@@ -28,7 +26,6 @@ impl CompressionBuf for Gz {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
 
@@ -43,7 +40,6 @@ mod tests {
 
         assert_eq!(decode, buff);
     }
-
 
     #[test]
     fn japanese() {

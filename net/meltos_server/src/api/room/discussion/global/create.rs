@@ -12,7 +12,6 @@ pub async fn create(
     Ok(created)
 }
 
-
 #[cfg(test)]
 mod tests {
     use axum::http::StatusCode;

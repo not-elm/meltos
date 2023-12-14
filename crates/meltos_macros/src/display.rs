@@ -4,13 +4,11 @@ use syn::ItemStruct;
 use syn::__private::quote::quote;
 use syn::__private::TokenStream2;
 
-
 pub fn display(token: TokenStream) -> TokenStream {
     impl_display(token)
         .unwrap_or_else(|e| e.into_compile_error())
         .into()
 }
-
 
 fn impl_display(token: TokenStream) -> syn::Result<TokenStream2> {
     let item = syn::parse::<ItemStruct>(token)?;

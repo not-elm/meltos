@@ -1,6 +1,5 @@
 pub mod gz;
 
-
 pub trait CompressionBuf: Send + Sync {
     fn encode(&self, buf: &[u8]) -> std::io::Result<Vec<u8>>;
 
