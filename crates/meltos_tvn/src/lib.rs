@@ -21,6 +21,7 @@ where
 {
     branch: BranchIo<Open, Io>,
     work_branch: WorkBranchIo<Open, Io>,
+    open: Open,
 }
 
 
@@ -30,27 +31,36 @@ where
     Io: std::io::Write + std::io::Read,
 {
     pub fn init(open: Open) -> error::Result<RepositoryIo<Open, Io>> {
-        if !open.all_file_path(".")?.is_empty() {
+        if !open.all_file_path(".meltos")?.is_empty() {
             return Err(error::Error::RepositoryAlreadyInitialized);
         }
 
         let branch = BranchIo::new_main(open.clone());
         branch.init()?;
 
-        let work_branch = WorkBranchIo(TvnIo::new(open));
+        let work_branch = WorkBranchIo(TvnIo::new(open.clone()));
         work_branch.write(&BranchName::main())?;
 
         Ok(RepositoryIo {
             branch,
             work_branch,
+            open,
         })
     }
 
 
-    pub fn new_branch(&self, from: &BranchName, to: &BranchName) -> error::Result {
-        self.work_branch.write(to)?;
+    pub fn open(open: Open) -> error::Result<RepositoryIo<Open, Io>> {
+        let work_branch = WorkBranchIo(TvnIo::new(open.clone()));
+        let work_branch_name = work_branch.read()?;
 
-        Ok(())
+        let branch = BranchIo::new(work_branch_name, open.clone());
+        branch.unpack_project()?;
+
+        Ok(Self {
+            work_branch,
+            branch,
+            open,
+        })
     }
 }
 
@@ -59,6 +69,7 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::io::mock::MockOpenIo;
+    use crate::io::OpenIo;
     use crate::RepositoryIo;
 
     #[test]
@@ -74,5 +85,24 @@ mod tests {
         let mock = MockOpenIo::default();
         RepositoryIo::init(mock.clone()).unwrap();
         assert!(RepositoryIo::init(mock.clone()).is_err());
+    }
+
+    #[test]
+    fn unpack_workspace_files() {
+        let mock = MockOpenIo::default();
+        let p1 = "./hello.txt";
+        let p2 = "./src/sample";
+        mock.write(p1, b"hello").unwrap();
+        mock.write(p2, b"sample").unwrap();
+
+        let io = RepositoryIo::init(mock.clone()).unwrap();
+        io.branch.stage(".").unwrap();
+        io.branch.commit("commit").unwrap();
+        mock.delete(p1).unwrap();
+        mock.delete(p2).unwrap();
+
+        RepositoryIo::open(mock.clone()).unwrap();
+        assert_eq!(mock.try_read_to_end(p1).unwrap(), b"hello");
+        assert_eq!(mock.try_read_to_end(p2).unwrap(), b"sample");
     }
 }

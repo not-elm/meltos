@@ -33,6 +33,11 @@ impl OpenIo<MockIo> for MockOpenIo {
         }
         Ok(MockIo(Arc::clone(&map.get(path).unwrap().0)))
     }
+
+    fn delete(&self, path: &str) -> std::io::Result<()> {
+        self.0.lock().unwrap().remove(path);
+        Ok(())
+    }
 }
 
 

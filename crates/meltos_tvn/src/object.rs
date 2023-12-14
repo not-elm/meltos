@@ -1,14 +1,13 @@
 use std::io;
-use std::io::ErrorKind;
 
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-use crate::error;
 use meltos_util::compression::gz::Gz;
 use meltos_util::compression::CompressionBuf;
 use meltos_util::macros::{Deref, Display};
 
+use crate::error;
 use crate::io::{FilePath, OpenIo, TvnIo};
 use crate::tree::Tree;
 

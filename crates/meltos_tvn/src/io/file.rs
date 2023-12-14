@@ -46,4 +46,13 @@ impl OpenIo<File> for FileOpen {
 
         File::create(path)
     }
+
+    fn delete(&self, path: &str) -> std::io::Result<()> {
+        let path: &Path = path.as_ref();
+        if path.is_dir() {
+            std::fs::remove_dir_all(path)
+        } else {
+            std::fs::remove_file(path)
+        }
+    }
 }

@@ -20,6 +20,9 @@ pub trait OpenIo<Io: std::io::Read + std::io::Write> {
     fn create(&self, path: &str) -> std::io::Result<Io>;
 
 
+    fn delete(&self, path: &str) -> std::io::Result<()>;
+
+
     fn read_to_end(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
         let mut buf = Vec::new();
         match self.open_file(path)? {
@@ -115,6 +118,11 @@ where
     #[inline]
     fn create(&self, path: &str) -> std::io::Result<Io> {
         self.open.create(path)
+    }
+
+    #[inline]
+    fn delete(&self, path: &str) -> std::io::Result<()> {
+        self.open.delete(path)
     }
 }
 

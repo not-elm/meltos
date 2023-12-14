@@ -29,11 +29,11 @@ where
     Open: OpenIo<Io>,
     Io: std::io::Write + std::io::Read,
 {
+    pub(crate) now: NowIo<Open, Io>,
     branch_name: BranchName,
     stage: StageIo<Open, Io>,
     object: ObjectIo<Open, Io>,
     workspace: WorkspaceIo<Open, Io>,
-    now: NowIo<Open, Io>,
     commit: CommitIo<Open, Io>,
 }
 
