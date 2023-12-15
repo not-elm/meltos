@@ -1,4 +1,4 @@
 pub mod atomic;
-mod trace_tree;
-mod commit;
-mod stage;
+pub mod trace_tree;
+pub mod commit;
+pub mod stage;
