@@ -5,10 +5,10 @@ use crate::io::atomic::object::ObjectIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::atomic::workspace::WorkspaceIo;
 use crate::io::trace_tree::TraceTreeIo;
-use crate::object::ObjectMeta;
+use crate::object::ObjMeta;
 use crate::object::tree::TreeObj;
 
-pub struct StageIo<Fs, Io>
+pub struct Stage<Fs, Io>
     where
         Fs: FileSystem<Io>,
         Io: std::io::Write + std::io::Read,
@@ -20,13 +20,13 @@ pub struct StageIo<Fs, Io>
 }
 
 
-impl<Fs, Io> StageIo<Fs, Io>
+impl<Fs, Io> Stage<Fs, Io>
     where
         Fs: FileSystem<Io> + Clone,
         Io: std::io::Write + std::io::Read
 {
     #[inline]
-    pub fn new(branch_name: BranchName, fs: Fs) -> StageIo<Fs, Io> {
+    pub fn new(branch_name: BranchName, fs: Fs) -> Stage<Fs, Io> {
         Self {
             staging: StagingIo::new(fs.clone()),
             workspace: WorkspaceIo::new(fs.clone()),
@@ -37,13 +37,13 @@ impl<Fs, Io> StageIo<Fs, Io>
 }
 
 
-impl<Fs, Io> StageIo<Fs, Io>
+impl<Fs, Io> Stage<Fs, Io>
     where
         Fs: FileSystem<Io>,
         Io: std::io::Write + std::io::Read,
 {
     pub fn stage(&self, workspace_path: &str) -> error::Result {
-        let mut stage_tree = self.staging.read_tree()?.unwrap_or_default();
+        let mut stage_tree = self.staging.read()?.unwrap_or_default();
         let trace_tree = self.trace_tree.read_trace_tree()?;
         for obj in self.workspace.convert_to_objs(workspace_path)? {
             self.stage_file(&mut stage_tree, &trace_tree, obj?)?;
@@ -52,7 +52,7 @@ impl<Fs, Io> StageIo<Fs, Io>
         Ok(())
     }
 
-    fn stage_file(&self, stage: &mut TreeObj, now: &Option<TreeObj>, meta: ObjectMeta) -> error::Result {
+    fn stage_file(&self, stage: &mut TreeObj, now: &Option<TreeObj>, meta: ObjMeta) -> error::Result {
         if stage.changed_hash(&meta.file_path, meta.hash())
             || now
             .as_ref()
@@ -72,13 +72,13 @@ mod tests {
     use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjectIo;
-    use crate::io::stage::StageIo;
+    use crate::operation::stage::Stage;
     use crate::object::ObjHash;
 
     #[test]
     fn create_obj_file_after_staged() {
         let mock = MockFileSystem::default();
-        let stage = StageIo::new(BranchName::main(), mock.clone());
+        let stage = Stage::new(BranchName::main(), mock.clone());
         mock.write_all(&FilePath::from_path("./hello"), b"hello").unwrap();
         mock.write_all(&FilePath::from_path("./src/main.rs"), "dasds日本語".as_bytes()).unwrap();
         stage.stage(".").unwrap();

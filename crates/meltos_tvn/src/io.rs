@@ -1,5 +1,3 @@
 pub mod atomic;
 pub mod trace_tree;
-pub mod commit;
-pub mod stage;
-pub mod init;
+pub mod commit_obj;

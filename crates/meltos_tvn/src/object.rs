@@ -15,18 +15,18 @@ pub mod commit;
 pub mod local_commits;
 
 
-pub trait AsObject {
+pub trait AsObj {
     fn as_obj(&self) -> error::Result<Obj>;
 }
 
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct ObjectMeta {
+pub struct ObjMeta {
     pub file_path: FilePath,
     pub obj: Obj,
 }
 
-impl From<(FilePath, Obj)> for ObjectMeta {
+impl From<(FilePath, Obj)> for ObjMeta {
     #[inline(always)]
     fn from(value: (FilePath, Obj)) -> Self {
         Self {
@@ -36,7 +36,7 @@ impl From<(FilePath, Obj)> for ObjectMeta {
     }
 }
 
-impl ObjectMeta {
+impl ObjMeta {
     pub fn new(file_path: FilePath, buf: Vec<u8>) -> io::Result<Self> {
         Ok(Self {
             file_path,

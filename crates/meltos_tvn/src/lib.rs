@@ -7,6 +7,7 @@ pub mod error;
 pub mod file_system;
 pub mod object;
 pub mod io;
+pub mod operation;
 
 pub struct RepositoryIo<Fs, Io>
     where

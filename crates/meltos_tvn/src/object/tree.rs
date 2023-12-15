@@ -37,7 +37,7 @@ impl<Fs, Io> TreeIo<Fs, Io>
         Ok(())
     }
 
-    pub fn read_tree(&self) -> std::io::Result<Option<TreeObj>> {
+    pub fn read(&self) -> std::io::Result<Option<TreeObj>> {
         let Some(json) = self.io.read_to_end(&self.file_path)? else {
             return Ok(None);
         };
@@ -52,7 +52,7 @@ impl<Fs, Io> TreeIo<Fs, Io>
     }
 
     pub fn read_object_hash(&self, file_path: &FilePath) -> std::io::Result<Option<ObjHash>> {
-        let Some(tree) = self.read_tree()? else {
+        let Some(tree) = self.read()? else {
             return Ok(None);
         };
         Ok(tree.0.get(file_path).cloned())
@@ -63,7 +63,7 @@ impl<Fs, Io> TreeIo<Fs, Io>
         target_path: FilePath,
         object_hash: ObjHash,
     ) -> std::io::Result<()> {
-        let mut tree = self.read_tree()?.unwrap_or_default();
+        let mut tree = self.read()?.unwrap_or_default();
         tree.0.insert(target_path, object_hash);
         self.io
             .write_all(&self.file_path, &serde_json::to_vec(&tree)?)?;

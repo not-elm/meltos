@@ -64,8 +64,8 @@ mod tests {
     use crate::branch::BranchName;
     use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
-    use crate::io::init::Init;
     use crate::object::ObjHash;
+    use crate::operation::init::Init;
 
     #[test]
     fn init() {

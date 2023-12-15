@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error;
 use crate::io::atomic::head::CommitText;
-use crate::object::{AsObject, Obj, ObjHash};
+use crate::object::{AsObj, Obj, ObjHash};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct CommitObj {
@@ -12,7 +12,7 @@ pub struct CommitObj {
 }
 
 
-impl AsObject for CommitObj {
+impl AsObj for CommitObj {
     #[inline]
     fn as_obj(&self) -> error::Result<Obj> {
         Ok(Obj::compress(serde_json::to_vec(self)?)?)

@@ -5,15 +5,16 @@ use crate::io::atomic::head::{CommitText, HeadIo};
 use crate::io::atomic::local_commits::LocalCommitsIo;
 use crate::io::atomic::object::ObjectIo;
 use crate::io::atomic::staging::StagingIo;
+use crate::io::commit_obj::CommitObjIo;
 use crate::io::trace_tree::TraceTreeIo;
-use crate::object::{AsObject, ObjHash};
-use crate::object::commit::CommitObj;
+use crate::object::{AsObj, ObjHash};
 
-pub struct CommitIo<Fs, Io>
+pub struct Commit<Fs, Io>
     where
-        Fs: FileSystem<Io> + Clone,
+        Fs: FileSystem<Io>,
         Io: std::io::Write + std::io::Read,
 {
+    commit_obj: CommitObjIo<Fs, Io>,
     head: HeadIo<Fs, Io>,
     object: ObjectIo<Fs, Io>,
     staging: StagingIo<Fs, Io>,
@@ -21,61 +22,44 @@ pub struct CommitIo<Fs, Io>
     local_commits: LocalCommitsIo<Fs, Io>,
 }
 
-
-impl<Fs, Io> CommitIo<Fs, Io>
+impl<Fs, Io> Commit<Fs, Io>
     where
         Fs: FileSystem<Io> + Clone,
         Io: std::io::Write + std::io::Read
 {
-    pub fn new(branch_name: BranchName, fs: Fs) -> CommitIo<Fs, Io> {
-        CommitIo {
+    pub fn new(branch_name: BranchName, fs: Fs) -> Commit<Fs, Io> {
+        Self {
+            commit_obj: CommitObjIo::new(branch_name.clone(), fs.clone()),
             head: HeadIo::new(branch_name.clone(), fs.clone()),
-            staging: StagingIo::new(fs.clone()),
             object: ObjectIo::new(fs.clone()),
+            staging: StagingIo::new(fs.clone()),
             trace_tree: TraceTreeIo::new(branch_name.clone(), fs.clone()),
             local_commits: LocalCommitsIo::new(branch_name, fs),
         }
     }
+}
 
 
+impl<Fs, Io> Commit<Fs, Io>
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read
+{
     pub fn commit(&self, commit_text: impl Into<CommitText>) -> error::Result<ObjHash> {
-        let Some(stage_tree) = self.staging.read_tree()? else {
+        let Some(stage_tree) = self.staging.read()? else {
             return Err(error::Error::NotfoundStages);
         };
         self.staging.reset()?;
         let stage_obj = stage_tree.as_obj()?;
-        self.trace_tree.write_trace_tree(stage_tree)?;
+        self.trace_tree.write(stage_tree)?;
         self.object.write(&stage_obj)?;
 
-        let commit = self.create_commit(commit_text, stage_obj.hash)?;
+        let commit = self.commit_obj.create(commit_text, stage_obj.hash)?;
         let commit_obj = commit.as_obj()?;
         self.object.write(&commit_obj)?;
-        self.head.write_head(commit_obj.hash.clone())?;
+        self.head.write(commit_obj.hash.clone())?;
         self.local_commits.append(commit_obj.hash.clone())?;
         Ok(commit_obj.hash.clone())
-    }
-
-
-    pub fn read(&self) -> error::Result<Option<CommitObj>> {
-        let Some(hash) = self.head.head_commit_hash()?
-            else {
-                return Ok(None);
-            };
-        let commit_obj = self.object.try_read_obj(&hash)?;
-        Ok(Some(CommitObj::try_from(commit_obj)?))
-    }
-
-    fn create_commit(
-        &self,
-        commit_text: impl Into<CommitText>,
-        staging_hash: ObjHash,
-    ) -> error::Result<CommitObj> {
-        let head_commit = self.head.head_commit_hash()?;
-        Ok(CommitObj {
-            parent: head_commit,
-            text: commit_text.into(),
-            stage: staging_hash,
-        })
     }
 }
 
@@ -90,18 +74,17 @@ mod tests {
     use crate::io::atomic::local_commits::LocalCommitsIo;
     use crate::io::atomic::object::ObjectIo;
     use crate::io::atomic::staging::StagingIo;
-    use crate::io::commit::CommitIo;
-    use crate::io::stage::StageIo;
     use crate::object::commit::CommitObj;
     use crate::object::local_commits::LocalCommitsObj;
     use crate::object::ObjHash;
     use crate::object::tree::TreeObj;
+    use crate::operation::commit::Commit;
+    use crate::operation::stage::Stage;
 
     #[test]
     fn failed_if_never_staged() {
         let mock = MockFileSystem::default();
-        let commit = CommitIo::new(BranchName::main(), mock);
-
+        let commit = Commit::new(BranchName::main(), mock);
         match commit.commit("") {
             Err(error::Error::NotfoundStages) => {}
             _ => panic!("expect return error::Error::NotfoundStages bad none")
@@ -112,13 +95,13 @@ mod tests {
     #[test]
     fn reset_staging_after_committed() {
         let mock = MockFileSystem::default();
-        let stage = StageIo::new(BranchName::main(), mock.clone());
-        let commit = CommitIo::new(BranchName::main(), mock.clone());
+        let stage = Stage::new(BranchName::main(), mock.clone());
+        let commit = Commit::new(BranchName::main(), mock.clone());
         let staging = StagingIo::new(mock.clone());
         mock.write_all("./hello", b"hello").unwrap();
         stage.stage(".").unwrap();
         commit.commit("test").unwrap();
-        let staging_tree = staging.read_tree().unwrap().unwrap();
+        let staging_tree = staging.read().unwrap().unwrap();
 
         assert_eq!(staging_tree.len(), 0);
     }
@@ -127,8 +110,8 @@ mod tests {
     #[test]
     fn update_head_commit_hash() {
         let mock = MockFileSystem::default();
-        let stage = StageIo::new(BranchName::main(), mock.clone());
-        let commit = CommitIo::new(BranchName::main(), mock.clone());
+        let stage = Stage::new(BranchName::main(), mock.clone());
+        let commit = Commit::new(BranchName::main(), mock.clone());
         mock.write_all("./hello", b"hello").unwrap();
         stage.stage(".").unwrap();
         commit.commit("test").unwrap();
@@ -149,8 +132,8 @@ mod tests {
     #[test]
     fn append_to_local_commit() {
         let mock = MockFileSystem::default();
-        let stage = StageIo::new(BranchName::main(), mock.clone());
-        let commit = CommitIo::new(BranchName::main(), mock.clone());
+        let stage = Stage::new(BranchName::main(), mock.clone());
+        let commit = Commit::new(BranchName::main(), mock.clone());
         let local_commits = LocalCommitsIo::new(BranchName::main(), mock.clone());
         mock.write_all("./hello", b"hello").unwrap();
         stage.stage(".").unwrap();
@@ -164,8 +147,8 @@ mod tests {
     #[test]
     fn exists_2_local_commits() {
         let mock = MockFileSystem::default();
-        let stage = StageIo::new(BranchName::main(), mock.clone());
-        let commit = CommitIo::new(BranchName::main(), mock.clone());
+        let stage = Stage::new(BranchName::main(), mock.clone());
+        let commit = Commit::new(BranchName::main(), mock.clone());
         let local_commits = LocalCommitsIo::new(BranchName::main(), mock.clone());
         mock.write_all("./hello", b"hello").unwrap();
         stage.stage(".").unwrap();

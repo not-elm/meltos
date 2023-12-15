@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::file_system::{FilePath, FileSystem, FsIo};
-use crate::object::ObjectMeta;
+use crate::object::ObjMeta;
 
 #[derive(Debug, Clone)]
 pub struct WorkspaceIo<Fs, Io>(pub(crate) FsIo<Fs, Io>)
@@ -59,7 +59,7 @@ impl<'a, Fs, Io> Iterator for ObjectIter<'a, Fs, Io>
         Fs: FileSystem<Io>,
         Io: io::Read + io::Write,
 {
-    type Item = std::io::Result<ObjectMeta>;
+    type Item = std::io::Result<ObjMeta>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index == self.files.len() {
@@ -77,10 +77,10 @@ impl<'a, Fs, Io> ObjectIter<'a, Fs, Io>
         Fs: FileSystem<Io>,
         Io: io::Read + io::Write,
 {
-    fn read_to_obj(&self) -> std::io::Result<ObjectMeta> {
+    fn read_to_obj(&self) -> std::io::Result<ObjMeta> {
         let path = self.files.get(self.index).unwrap();
         let buf = self.io.try_read_to_end(path.as_ref())?;
-        ObjectMeta::new(FilePath::from_path(path), buf)
+        ObjMeta::new(FilePath::from_path(path), buf)
     }
 }
 

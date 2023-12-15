@@ -29,7 +29,7 @@ impl<Fs, Io> HeadIo<Fs, Io>
         }
     }
 
-    pub fn write_head(
+    pub fn write(
         &self,
         commit_hash: ObjHash,
     ) -> std::io::Result<()> {

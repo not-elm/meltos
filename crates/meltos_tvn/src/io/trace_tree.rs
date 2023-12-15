@@ -33,7 +33,7 @@ impl<Fs, Io> TraceTreeIo<Fs, Io>
         Fs: FileSystem<Io>,
         Io: std::io::Write + std::io::Read,
 {
-    pub fn write_trace_tree(&self, staging: TreeObj) -> error::Result {
+    pub fn write(&self, staging: TreeObj) -> error::Result {
         let mut trace_tree = self
             .read_trace_tree()?
             .unwrap_or_default();
@@ -88,7 +88,7 @@ mod tests {
         let mut staging = TreeObj::default();
         staging.insert(FilePath::from_path("./src/hello"), ObjHash::new(b"hello"));
 
-        io.write_trace_tree(staging.clone()).unwrap();
+        io.write(staging.clone()).unwrap();
         let red = io.read_trace_tree().unwrap().unwrap();
         assert_eq!(red, staging);
     }
