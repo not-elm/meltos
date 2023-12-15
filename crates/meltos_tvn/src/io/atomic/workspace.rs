@@ -89,7 +89,7 @@ mod tests {
     use crate::file_system::{FileSystem, FsIo};
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::workspace::WorkspaceIo;
-    use crate::object::ObjectHash;
+    use crate::object::ObjHash;
 
     #[test]
     fn read_all_objects_in_dir() {
@@ -102,12 +102,12 @@ mod tests {
             .convert_to_objs("hello")
             .unwrap()
             .map(|obj| obj.unwrap().hash().clone())
-            .collect::<Vec<ObjectHash>>();
+            .collect::<Vec<ObjHash>>();
         hashes.sort();
         let mut expect = vec![
-            ObjectHash::new(b"hello"),
-            ObjectHash::new(b"world"),
-            ObjectHash::new(b"echo hi "),
+            ObjHash::new(b"hello"),
+            ObjHash::new(b"world"),
+            ObjHash::new(b"echo hi "),
         ];
         expect.sort();
         assert_eq!(hashes, expect);

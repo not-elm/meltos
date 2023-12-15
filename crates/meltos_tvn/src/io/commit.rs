@@ -6,8 +6,8 @@ use crate::io::atomic::local_commits::LocalCommitsIo;
 use crate::io::atomic::object::ObjectIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::trace_tree::TraceTreeIo;
-use crate::object::{AsObject, ObjectHash};
-use crate::object::commit::Commit;
+use crate::object::{AsObject, ObjHash};
+use crate::object::commit::CommitObj;
 
 pub struct CommitIo<Fs, Io>
     where
@@ -38,7 +38,7 @@ impl<Fs, Io> CommitIo<Fs, Io>
     }
 
 
-    pub fn commit(&self, commit_text: impl Into<CommitText>) -> error::Result<ObjectHash> {
+    pub fn commit(&self, commit_text: impl Into<CommitText>) -> error::Result<ObjHash> {
         let Some(stage_tree) = self.staging.read_tree()? else {
             return Err(error::Error::NotfoundStages);
         };
@@ -56,22 +56,22 @@ impl<Fs, Io> CommitIo<Fs, Io>
     }
 
 
-    pub fn read(&self) -> error::Result<Option<Commit>> {
+    pub fn read(&self) -> error::Result<Option<CommitObj>> {
         let Some(hash) = self.head.head_commit_hash()?
             else {
                 return Ok(None);
             };
         let commit_obj = self.object.try_read_obj(&hash)?;
-        Ok(Some(Commit::try_from(commit_obj)?))
+        Ok(Some(CommitObj::try_from(commit_obj)?))
     }
 
     fn create_commit(
         &self,
         commit_text: impl Into<CommitText>,
-        staging_hash: ObjectHash,
-    ) -> error::Result<Commit> {
+        staging_hash: ObjHash,
+    ) -> error::Result<CommitObj> {
         let head_commit = self.head.head_commit_hash()?;
-        Ok(Commit {
+        Ok(CommitObj {
             parent: head_commit,
             text: commit_text.into(),
             stage: staging_hash,
@@ -92,10 +92,10 @@ mod tests {
     use crate::io::atomic::staging::StagingIo;
     use crate::io::commit::CommitIo;
     use crate::io::stage::StageIo;
-    use crate::object::commit::Commit;
-    use crate::object::local_commits::LocalCommits;
-    use crate::object::ObjectHash;
-    use crate::object::tree::Tree;
+    use crate::object::commit::CommitObj;
+    use crate::object::local_commits::LocalCommitsObj;
+    use crate::object::ObjHash;
+    use crate::object::tree::TreeObj;
 
     #[test]
     fn failed_if_never_staged() {
@@ -137,9 +137,9 @@ mod tests {
         let head_hash = head.head_commit_hash().unwrap().unwrap();
         let commit = ObjectIo::new(mock).read_to_commit(&head_hash).unwrap();
 
-        let mut tree = Tree::default();
-        tree.insert(FilePath::from_path("./hello"), ObjectHash::new(b"hello"));
-        assert_eq!(commit, Commit {
+        let mut tree = TreeObj::default();
+        tree.insert(FilePath::from_path("./hello"), ObjHash::new(b"hello"));
+        assert_eq!(commit, CommitObj {
             parent: None,
             text: CommitText::from("test"),
             stage: tree.as_obj().unwrap().hash,
@@ -157,7 +157,7 @@ mod tests {
         let commit_hash = commit.commit("test").unwrap();
 
         let local = local_commits.read().unwrap().unwrap();
-        assert_eq!(local, LocalCommits(vec![commit_hash]))
+        assert_eq!(local, LocalCommitsObj(vec![commit_hash]))
     }
 
 
@@ -176,6 +176,6 @@ mod tests {
         let commit_hash2 = commit.commit("2").unwrap();
 
         let local = local_commits.read().unwrap().unwrap();
-        assert_eq!(local, LocalCommits(vec![commit_hash1, commit_hash2]))
+        assert_eq!(local, LocalCommitsObj(vec![commit_hash1, commit_hash2]))
     }
 }

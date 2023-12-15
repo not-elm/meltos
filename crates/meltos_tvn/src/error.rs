@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 use crate::branch::BranchName;
-use crate::object::ObjectHash;
+use crate::object::ObjHash;
 
 pub type Result<T = ()> = std::result::Result<T, Error>;
 
@@ -14,7 +14,7 @@ pub enum Error {
     BranchAlreadyInitialized(BranchName),
 
     #[error("not found object: hash={0}")]
-    NotfoundObj(ObjectHash),
+    NotfoundObj(ObjHash),
 
     #[error("not found stages")]
     NotfoundStages,

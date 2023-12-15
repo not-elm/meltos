@@ -5,7 +5,7 @@ use crate::branch::BranchName;
 use crate::error;
 
 use crate::file_system::{FileSystem, FsIo};
-use crate::object::ObjectHash;
+use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct HeadIo<Fs, Io>
@@ -31,7 +31,7 @@ impl<Fs, Io> HeadIo<Fs, Io>
 
     pub fn write_head(
         &self,
-        commit_hash: ObjectHash,
+        commit_hash: ObjHash,
     ) -> std::io::Result<()> {
         self.io.write_all(
             &format!(".meltos/branches/{}/HEAD", self.branch_name),
@@ -40,7 +40,7 @@ impl<Fs, Io> HeadIo<Fs, Io>
         Ok(())
     }
 
-    pub fn head_commit_hash(&self) -> error::Result<Option<ObjectHash>> {
+    pub fn head_commit_hash(&self) -> error::Result<Option<ObjHash>> {
         let Some(buf) = self
             .io
             .read_to_end(&format!(".meltos/branches/{}/HEAD", self.branch_name))?
@@ -48,7 +48,7 @@ impl<Fs, Io> HeadIo<Fs, Io>
                 return Ok(None);
             };
 
-        Ok(Some(ObjectHash::from_serialized_buf(&buf)?))
+        Ok(Some(ObjHash::from_serialized_buf(&buf)?))
     }
 }
 

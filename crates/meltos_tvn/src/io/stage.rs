@@ -6,7 +6,7 @@ use crate::io::atomic::staging::StagingIo;
 use crate::io::atomic::workspace::WorkspaceIo;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::object::ObjectMeta;
-use crate::object::tree::Tree;
+use crate::object::tree::TreeObj;
 
 pub struct StageIo<Fs, Io>
     where
@@ -52,7 +52,7 @@ impl<Fs, Io> StageIo<Fs, Io>
         Ok(())
     }
 
-    fn stage_file(&self, stage: &mut Tree, now: &Option<Tree>, meta: ObjectMeta) -> error::Result {
+    fn stage_file(&self, stage: &mut TreeObj, now: &Option<TreeObj>, meta: ObjectMeta) -> error::Result {
         if stage.changed_hash(&meta.file_path, meta.hash())
             || now
             .as_ref()
@@ -73,7 +73,7 @@ mod tests {
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjectIo;
     use crate::io::stage::StageIo;
-    use crate::object::ObjectHash;
+    use crate::object::ObjHash;
 
     #[test]
     fn create_obj_file_after_staged() {
@@ -84,11 +84,11 @@ mod tests {
         stage.stage(".").unwrap();
 
         let obj = ObjectIo::new(mock);
-        let obj1 = obj.read_obj(&ObjectHash::new(b"hello")).unwrap()
+        let obj1 = obj.read_obj(&ObjHash::new(b"hello")).unwrap()
             .unwrap();
         assert_eq!(obj1.buf, b"hello");
 
-        let obj2 = obj.read_obj(&ObjectHash::new("dasds日本語".as_bytes())).unwrap().unwrap();
+        let obj2 = obj.read_obj(&ObjHash::new("dasds日本語".as_bytes())).unwrap().unwrap();
         assert_eq!(obj2.buf, "dasds日本語".as_bytes());
     }
 }

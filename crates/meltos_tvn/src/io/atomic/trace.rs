@@ -1,7 +1,7 @@
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
-use crate::object::ObjectHash;
+use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct TraceIo<Fs, Io>
@@ -26,17 +26,17 @@ impl<Fs, Io> TraceIo<Fs, Io>
     }
 
     #[inline]
-    pub fn write_hash(&self, hash: &ObjectHash) -> error::Result {
+    pub fn write(&self, hash: &ObjHash) -> error::Result {
         self.io.write_all(&self.file_path, &hash.serialize_to_buf())?;
         Ok(())
     }
 
     #[inline]
-    pub fn read_hash(&self) -> error::Result<Option<ObjectHash>> {
+    pub fn read_hash(&self) -> error::Result<Option<ObjHash>> {
         let Some(buf) = self.io.read_to_end(&self.file_path)? else {
             return Ok(None);
         };
-        Ok(Some(ObjectHash::from_serialized_buf(&buf)?))
+        Ok(Some(ObjHash::from_serialized_buf(&buf)?))
     }
 
     #[inline]

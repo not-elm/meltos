@@ -6,7 +6,7 @@ use meltos_util::macros::{Deref, DerefMut};
 
 use crate::error;
 use crate::file_system::{FilePath, FileSystem, FsIo};
-use crate::object::{Object, ObjectHash};
+use crate::object::{Obj, ObjHash};
 
 #[derive(Debug, Clone)]
 pub struct TreeIo<Fs, Io>
@@ -31,27 +31,27 @@ impl<Fs, Io> TreeIo<Fs, Io>
         }
     }
 
-    pub fn write_tree(&self, tree: &Tree) -> std::io::Result<()> {
+    pub fn write_tree(&self, tree: &TreeObj) -> std::io::Result<()> {
         self.io
             .write_all(&self.file_path, &serde_json::to_vec(&tree)?)?;
         Ok(())
     }
 
-    pub fn read_tree(&self) -> std::io::Result<Option<Tree>> {
+    pub fn read_tree(&self) -> std::io::Result<Option<TreeObj>> {
         let Some(json) = self.io.read_to_end(&self.file_path)? else {
             return Ok(None);
         };
 
-        Ok(serde_json::from_slice::<Tree>(&json).ok())
+        Ok(serde_json::from_slice::<TreeObj>(&json).ok())
     }
 
     pub fn reset(&self) -> std::io::Result<()> {
         self.io
-            .write_all(&self.file_path, &serde_json::to_vec(&Tree::default())?)?;
+            .write_all(&self.file_path, &serde_json::to_vec(&TreeObj::default())?)?;
         Ok(())
     }
 
-    pub fn read_object_hash(&self, file_path: &FilePath) -> std::io::Result<Option<ObjectHash>> {
+    pub fn read_object_hash(&self, file_path: &FilePath) -> std::io::Result<Option<ObjHash>> {
         let Some(tree) = self.read_tree()? else {
             return Ok(None);
         };
@@ -61,7 +61,7 @@ impl<Fs, Io> TreeIo<Fs, Io>
     pub fn write_object_hash(
         &self,
         target_path: FilePath,
-        object_hash: ObjectHash,
+        object_hash: ObjHash,
     ) -> std::io::Result<()> {
         let mut tree = self.read_tree()?.unwrap_or_default();
         tree.0.insert(target_path, object_hash);
@@ -73,10 +73,10 @@ impl<Fs, Io> TreeIo<Fs, Io>
 
 
 #[derive(Serialize, Deserialize, Default, Clone, Deref, DerefMut, Debug, Eq, PartialEq)]
-pub struct Tree(HashMap<FilePath, ObjectHash>);
+pub struct TreeObj(HashMap<FilePath, ObjHash>);
 
-impl Tree {
-    pub fn changed_hash(&self, path: &FilePath, hash: &ObjectHash) -> bool {
+impl TreeObj {
+    pub fn changed_hash(&self, path: &FilePath, hash: &ObjHash) -> bool {
         if let Some(old_hash) = self.0.get(path) {
             old_hash != hash
         } else {
@@ -85,13 +85,13 @@ impl Tree {
     }
 
     #[inline]
-    pub fn as_obj(&self) -> error::Result<Object> {
+    pub fn as_obj(&self) -> error::Result<Obj> {
         let buf = serde_json::to_vec(self)?;
-        Ok(Object::compress(buf)?)
+        Ok(Obj::compress(buf)?)
     }
 
 
-    pub fn replace_by(&mut self, tree: Tree) {
+    pub fn replace_by(&mut self, tree: TreeObj) {
         for (file_path, hash) in tree.0.into_iter() {
             self.0.insert(file_path, hash);
         }
@@ -103,15 +103,15 @@ mod tests {
     use serde_json::json;
 
     use crate::file_system::FilePath;
-    use crate::object::ObjectHash;
-    use crate::object::tree::Tree;
+    use crate::object::ObjHash;
+    use crate::object::tree::TreeObj;
 
     #[test]
     fn stage_json() {
-        let mut stage = Tree::default();
+        let mut stage = TreeObj::default();
         stage
             .0
-            .insert(FilePath::from("hello"), ObjectHash("world".to_string()));
+            .insert(FilePath::from("hello"), ObjHash("world".to_string()));
         let json = serde_json::to_string(&stage).unwrap();
         assert_eq!(
             json,

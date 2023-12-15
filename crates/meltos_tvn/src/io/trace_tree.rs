@@ -3,7 +3,7 @@ use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::atomic::object::ObjectIo;
 use crate::io::atomic::trace::TraceIo;
-use crate::object::tree::Tree;
+use crate::object::tree::TreeObj;
 
 pub struct TraceTreeIo<Fs, Io>
     where
@@ -33,19 +33,19 @@ impl<Fs, Io> TraceTreeIo<Fs, Io>
         Fs: FileSystem<Io>,
         Io: std::io::Write + std::io::Read,
 {
-    pub fn write_trace_tree(&self, staging: Tree) -> error::Result {
+    pub fn write_trace_tree(&self, staging: TreeObj) -> error::Result {
         let mut trace_tree = self
             .read_trace_tree()?
             .unwrap_or_default();
         trace_tree.replace_by(staging);
         let trace_obj = trace_tree.as_obj()?;
-        self.trace.write_hash(&trace_obj.hash)?;
+        self.trace.write(&trace_obj.hash)?;
         self.object.write(&trace_obj)?;
         Ok(())
     }
 
 
-    pub fn read_trace_tree(&self) -> error::Result<Option<Tree>> {
+    pub fn read_trace_tree(&self) -> error::Result<Option<TreeObj>> {
         let Some(trace_hash) = self.trace.read_hash()?
             else {
                 return Ok(None);
@@ -63,15 +63,15 @@ mod tests {
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjectIo;
     use crate::io::trace_tree::TraceTreeIo;
-    use crate::object::ObjectHash;
-    use crate::object::tree::Tree;
+    use crate::object::ObjHash;
+    use crate::object::tree::TreeObj;
 
     #[test]
     fn success_read_trace_tree() {
         let mock = MockFileSystem::default();
         let io = TraceTreeIo::new(BranchName::main(), mock.clone());
-        let mut tree = Tree::default();
-        tree.insert(FilePath::from("me/hello"), ObjectHash::new(b"hello"));
+        let mut tree = TreeObj::default();
+        tree.insert(FilePath::from("me/hello"), ObjHash::new(b"hello"));
         let obj = ObjectIo::new(mock.clone());
         obj.write(&tree.as_obj().unwrap()).unwrap();
 
@@ -85,8 +85,8 @@ mod tests {
     fn read_tree_after_wrote() {
         let mock = MockFileSystem::default();
         let io = TraceTreeIo::new(BranchName::main(), mock);
-        let mut staging = Tree::default();
-        staging.insert(FilePath::from_path("./src/hello"), ObjectHash::new(b"hello"));
+        let mut staging = TreeObj::default();
+        staging.insert(FilePath::from_path("./src/hello"), ObjHash::new(b"hello"));
 
         io.write_trace_tree(staging.clone()).unwrap();
         let red = io.read_trace_tree().unwrap().unwrap();

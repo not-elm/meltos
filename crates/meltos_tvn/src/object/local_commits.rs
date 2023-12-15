@@ -1,16 +1,16 @@
 use meltos_util::macros::{Deref, DerefMut};
-use crate::object::ObjectHash;
+use crate::object::ObjHash;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Deref, DerefMut, Default)]
-pub struct LocalCommits(pub Vec<ObjectHash>);
+pub struct LocalCommitsObj(pub Vec<ObjHash>);
 
 
-impl LocalCommits {
+impl LocalCommitsObj {
     pub fn new(buf: Vec<u8>) -> Self {
         Self(String::from_utf8(buf)
             .unwrap()
             .split('\0')
-            .map(|hash| ObjectHash(hash.to_string()))
+            .map(|hash| ObjHash(hash.to_string()))
             .collect())
     }
 
@@ -31,16 +31,16 @@ impl LocalCommits {
 
 #[cfg(test)]
 mod tests{
-    use crate::object::local_commits::LocalCommits;
-    use crate::object::ObjectHash;
+    use crate::object::local_commits::LocalCommitsObj;
+    use crate::object::ObjHash;
 
     #[test]
     fn serialize_and_deserialize(){
-        let hash = ObjectHash::new(b"hello");
-        let hash2 = ObjectHash::new(b"world");
-        let local = LocalCommits(vec![hash.clone(), hash2.clone()]);
+        let hash = ObjHash::new(b"hello");
+        let hash2 = ObjHash::new(b"world");
+        let local = LocalCommitsObj(vec![hash.clone(), hash2.clone()]);
 
         let buf = local.to_buf();
-        assert_eq!(local, LocalCommits::new(buf));
+        assert_eq!(local, LocalCommitsObj::new(buf));
     }
 }

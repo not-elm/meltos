@@ -2,9 +2,9 @@ use std::io;
 
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
-use crate::object::{CompressedBuf, Object, ObjectHash};
-use crate::object::commit::Commit;
-use crate::object::tree::Tree;
+use crate::object::{CompressedBuf, Obj, ObjHash};
+use crate::object::commit::CommitObj;
+use crate::object::tree::TreeObj;
 
 #[derive(Debug, Clone)]
 pub struct ObjectIo<Fs, Io>(FsIo<Fs, Io>)
@@ -33,18 +33,18 @@ impl<Fs, Io> ObjectIo<Fs, Io>
     }
 
 
-    pub fn read_to_commit(&self, object_hash: &ObjectHash) -> error::Result<Commit>{
+    pub fn read_to_commit(&self, object_hash: &ObjHash) -> error::Result<CommitObj>{
         let obj = self.try_read_obj(object_hash)?;
-        Commit::try_from(obj)
+        CommitObj::try_from(obj)
     }
 
 
-    pub fn read_to_tree(&self, object_hash: &ObjectHash) -> error::Result<Tree> {
+    pub fn read_to_tree(&self, object_hash: &ObjHash) -> error::Result<TreeObj> {
         let obj = self.try_read_obj(object_hash)?;
         obj.deserialize()
     }
 
-    pub fn try_read_obj(&self, object_hash: &ObjectHash) -> error::Result<Object> {
+    pub fn try_read_obj(&self, object_hash: &ObjHash) -> error::Result<Obj> {
         self.read_obj(object_hash).and_then(|obj| {
             match obj {
                 Some(obj) => Ok(obj),
@@ -53,7 +53,7 @@ impl<Fs, Io> ObjectIo<Fs, Io>
         })
     }
 
-    pub fn read_obj(&self, object_hash: &ObjectHash) -> error::Result<Option<Object>> {
+    pub fn read_obj(&self, object_hash: &ObjHash) -> error::Result<Option<Obj>> {
         let Some(buf) = self
             .0
             .read_to_end(&format!("./.meltos/objects/{}", object_hash))?
@@ -61,10 +61,10 @@ impl<Fs, Io> ObjectIo<Fs, Io>
                 return Ok(None);
             };
 
-        Ok(Some(Object::expand(CompressedBuf(buf))?))
+        Ok(Some(Obj::expand(CompressedBuf(buf))?))
     }
 
-    pub fn write(&self, obj: &Object) -> io::Result<()> {
+    pub fn write(&self, obj: &Obj) -> io::Result<()> {
         self.0
             .create(&format!("./.meltos/objects/{}", &obj.hash))?
             .write_all(&obj.compressed_buf)?;
@@ -83,7 +83,7 @@ mod tests {
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjectIo;
     use crate::io::atomic::workspace::WorkspaceIo;
-    use crate::object::Object;
+    use crate::object::Obj;
 
     #[test]
     fn write_object_file() {
@@ -113,7 +113,7 @@ mod tests {
     fn read_obj() {
         let mock = MockFileSystem::default();
         let io = ObjectIo::new(mock.clone());
-        let obj = Object::compress(b"hello world!".to_vec()).unwrap();
+        let obj = Obj::compress(b"hello world!".to_vec()).unwrap();
         io.write(&obj).unwrap();
         assert_eq!(io.read_obj(&obj.hash).unwrap(), Some(obj));
     }

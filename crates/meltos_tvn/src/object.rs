@@ -16,19 +16,19 @@ pub mod local_commits;
 
 
 pub trait AsObject {
-    fn as_obj(&self) -> error::Result<Object>;
+    fn as_obj(&self) -> error::Result<Obj>;
 }
 
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct ObjectMeta {
     pub file_path: FilePath,
-    pub obj: Object,
+    pub obj: Obj,
 }
 
-impl From<(FilePath, Object)> for ObjectMeta {
+impl From<(FilePath, Obj)> for ObjectMeta {
     #[inline(always)]
-    fn from(value: (FilePath, Object)) -> Self {
+    fn from(value: (FilePath, Obj)) -> Self {
         Self {
             file_path: value.0,
             obj: value.1,
@@ -40,12 +40,12 @@ impl ObjectMeta {
     pub fn new(file_path: FilePath, buf: Vec<u8>) -> io::Result<Self> {
         Ok(Self {
             file_path,
-            obj: Object::compress(buf)?,
+            obj: Obj::compress(buf)?,
         })
     }
 
     #[inline]
-    pub const fn hash(&self) -> &ObjectHash {
+    pub const fn hash(&self) -> &ObjHash {
         &self.obj.hash
     }
 
@@ -61,13 +61,13 @@ impl ObjectMeta {
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct Object {
-    pub hash: ObjectHash,
+pub struct Obj {
+    pub hash: ObjHash,
     pub compressed_buf: CompressedBuf,
     pub buf: Vec<u8>,
 }
 
-impl Object {
+impl Obj {
     #[inline]
     pub fn deserialize<D: DeserializeOwned>(&self) -> error::Result<D> {
         Ok(serde_json::from_slice(&self.buf)?)
@@ -75,7 +75,7 @@ impl Object {
 
     pub fn compress(buf: Vec<u8>) -> io::Result<Self> {
         Ok(Self {
-            hash: ObjectHash::new(&buf),
+            hash: ObjHash::new(&buf),
             compressed_buf: CompressedBuf(Gz.encode(&buf)?),
             buf,
         })
@@ -84,7 +84,7 @@ impl Object {
     pub fn expand(compressed_buf: CompressedBuf) -> io::Result<Self> {
         let buf = Gz.decode(&compressed_buf)?;
         Ok(Self {
-            hash: ObjectHash::new(&buf),
+            hash: ObjHash::new(&buf),
             buf,
             compressed_buf,
         })
@@ -92,18 +92,18 @@ impl Object {
 }
 
 
-impl AsRef<Object> for Object {
+impl AsRef<Obj> for Obj {
     #[inline]
-    fn as_ref(&self) -> &Object {
+    fn as_ref(&self) -> &Obj {
         self
     }
 }
 
 #[repr(transparent)]
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd, Display)]
-pub struct ObjectHash(pub String);
+pub struct ObjHash(pub String);
 
-impl ObjectHash {
+impl ObjHash {
     #[inline]
     pub fn serialize_to_buf(&self) -> Vec<u8> {
         serde_json::to_vec(self).unwrap()
