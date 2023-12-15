@@ -1,7 +1,7 @@
 use meltos_util::macros::{Deref, DerefMut};
 use crate::object::ObjectHash;
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Deref, DerefMut)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Deref, DerefMut, Default)]
 pub struct LocalCommits(pub Vec<ObjectHash>);
 
 

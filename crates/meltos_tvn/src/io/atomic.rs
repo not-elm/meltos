@@ -6,3 +6,4 @@ pub mod object;
 pub mod staging;
 pub mod work_branch;
 pub mod workspace;
+pub mod local_commits;

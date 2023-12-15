@@ -12,7 +12,7 @@ use crate::file_system::FilePath;
 
 pub mod tree;
 pub mod commit;
-mod local_commits;
+pub mod local_commits;
 
 
 pub trait AsObject {
