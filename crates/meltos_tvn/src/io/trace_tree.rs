@@ -1,7 +1,7 @@
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
-use crate::io::atomic::object::ObjectIo;
+use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
 use crate::object::tree::TreeObj;
 
@@ -11,7 +11,7 @@ pub struct TraceTreeIo<Fs, Io>
         Io: std::io::Write + std::io::Read,
 {
     trace: TraceIo<Fs, Io>,
-    object: ObjectIo<Fs, Io>,
+    object: ObjIo<Fs, Io>,
 }
 
 
@@ -23,7 +23,7 @@ impl<Fs, Io> TraceTreeIo<Fs, Io>
     pub fn new(branch_name: BranchName, fs: Fs) -> TraceTreeIo<Fs, Io> {
         Self {
             trace: TraceIo::new(branch_name, fs.clone()),
-            object: ObjectIo::new(fs),
+            object: ObjIo::new(fs),
         }
     }
 }
@@ -35,7 +35,7 @@ impl<Fs, Io> TraceTreeIo<Fs, Io>
 {
     pub fn write(&self, staging: TreeObj) -> error::Result {
         let mut trace_tree = self
-            .read_trace_tree()?
+            .read()?
             .unwrap_or_default();
         trace_tree.replace_by(staging);
         let trace_obj = trace_tree.as_obj()?;
@@ -45,7 +45,7 @@ impl<Fs, Io> TraceTreeIo<Fs, Io>
     }
 
 
-    pub fn read_trace_tree(&self) -> error::Result<Option<TreeObj>> {
+    pub fn read(&self) -> error::Result<Option<TreeObj>> {
         let Some(trace_hash) = self.trace.read_hash()?
             else {
                 return Ok(None);
@@ -61,7 +61,7 @@ mod tests {
     use crate::branch::BranchName;
     use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
-    use crate::io::atomic::object::ObjectIo;
+    use crate::io::atomic::object::ObjIo;
     use crate::io::trace_tree::TraceTreeIo;
     use crate::object::ObjHash;
     use crate::object::tree::TreeObj;
@@ -72,11 +72,11 @@ mod tests {
         let io = TraceTreeIo::new(BranchName::main(), mock.clone());
         let mut tree = TreeObj::default();
         tree.insert(FilePath::from("me/hello"), ObjHash::new(b"hello"));
-        let obj = ObjectIo::new(mock.clone());
+        let obj = ObjIo::new(mock.clone());
         obj.write(&tree.as_obj().unwrap()).unwrap();
 
         mock.write_all("./.meltos/branches/main/TRACE", &tree.as_obj().unwrap().hash.serialize_to_buf()).unwrap();
-        let trace_tree = io.read_trace_tree();
+        let trace_tree = io.read();
         assert!(trace_tree.is_ok_and(|tree| tree.is_some()));
     }
 
@@ -89,7 +89,7 @@ mod tests {
         staging.insert(FilePath::from_path("./src/hello"), ObjHash::new(b"hello"));
 
         io.write(staging.clone()).unwrap();
-        let red = io.read_trace_tree().unwrap().unwrap();
+        let red = io.read().unwrap().unwrap();
         assert_eq!(red, staging);
     }
 }

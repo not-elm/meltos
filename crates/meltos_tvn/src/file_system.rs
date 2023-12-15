@@ -116,6 +116,8 @@ impl<Fs, Io> FileSystem<Io> for FsIo<Fs, Io>
     }
 }
 
+
+#[repr(transparent)]
 #[derive(Eq, PartialEq, Debug, Clone, Hash, Serialize, Deserialize)]
 pub struct FilePath(pub String);
 impl_string_new_type!(FilePath);

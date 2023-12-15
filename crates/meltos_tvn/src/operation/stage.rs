@@ -1,7 +1,7 @@
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
-use crate::io::atomic::object::ObjectIo;
+use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::atomic::workspace::WorkspaceIo;
 use crate::io::trace_tree::TraceTreeIo;
@@ -15,7 +15,7 @@ pub struct Stage<Fs, Io>
 {
     trace_tree: TraceTreeIo<Fs, Io>,
     staging: StagingIo<Fs, Io>,
-    object: ObjectIo<Fs, Io>,
+    object: ObjIo<Fs, Io>,
     workspace: WorkspaceIo<Fs, Io>,
 }
 
@@ -31,7 +31,7 @@ impl<Fs, Io> Stage<Fs, Io>
             staging: StagingIo::new(fs.clone()),
             workspace: WorkspaceIo::new(fs.clone()),
             trace_tree: TraceTreeIo::new(branch_name, fs.clone()),
-            object: ObjectIo::new(fs),
+            object: ObjIo::new(fs),
         }
     }
 }
@@ -42,9 +42,9 @@ impl<Fs, Io> Stage<Fs, Io>
         Fs: FileSystem<Io>,
         Io: std::io::Write + std::io::Read,
 {
-    pub fn stage(&self, workspace_path: &str) -> error::Result {
+    pub fn execute(&self, workspace_path: &str) -> error::Result {
         let mut stage_tree = self.staging.read()?.unwrap_or_default();
-        let trace_tree = self.trace_tree.read_trace_tree()?;
+        let trace_tree = self.trace_tree.read()?;
         for obj in self.workspace.convert_to_objs(workspace_path)? {
             self.stage_file(&mut stage_tree, &trace_tree, obj?)?;
         }
@@ -71,9 +71,9 @@ mod tests {
     use crate::branch::BranchName;
     use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
-    use crate::io::atomic::object::ObjectIo;
-    use crate::operation::stage::Stage;
+    use crate::io::atomic::object::ObjIo;
     use crate::object::ObjHash;
+    use crate::operation::stage::Stage;
 
     #[test]
     fn create_obj_file_after_staged() {
@@ -81,9 +81,9 @@ mod tests {
         let stage = Stage::new(BranchName::main(), mock.clone());
         mock.write_all(&FilePath::from_path("./hello"), b"hello").unwrap();
         mock.write_all(&FilePath::from_path("./src/main.rs"), "dasds日本語".as_bytes()).unwrap();
-        stage.stage(".").unwrap();
+        stage.execute(".").unwrap();
 
-        let obj = ObjectIo::new(mock);
+        let obj = ObjIo::new(mock);
         let obj1 = obj.read_obj(&ObjHash::new(b"hello")).unwrap()
             .unwrap();
         assert_eq!(obj1.buf, b"hello");

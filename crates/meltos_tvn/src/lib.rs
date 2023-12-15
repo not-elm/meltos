@@ -24,24 +24,6 @@ impl<Fs, Io> RepositoryIo<Fs, Io>
         Fs: FileSystem<Io> + Clone,
         Io: std::io::Write + std::io::Read,
 {
-    // pub fn init(fs: Fs) -> error::Result<RepositoryIo<Fs, Io>> {
-    //     if !fs.all_file_path(".meltos")?.is_empty() {
-    //         return Err(error::Error::RepositoryAlreadyInitialized);
-    //     }
-    //
-    //     let branch = BranchIo::new_main(fs.clone());
-    //     branch.init()?;
-    //
-    //     let work_branch = WorkBranchIo(FsIo::new(fs.clone()));
-    //     work_branch.write(&BranchName::main())?;
-    //
-    //     Ok(RepositoryIo {
-    //         branch,
-    //         work_branch,
-    //         fs,
-    //     })
-    // }
-
     pub fn open(fs: Fs) -> error::Result<RepositoryIo<Fs, Io>> {
         let work_branch = WorkBranchIo(FsIo::new(fs.clone()));
         let work_branch_name = work_branch.read()?;
@@ -64,19 +46,7 @@ mod tests {
     // use crate::file_system::mock::MockFileSystem;
     // use crate::RepositoryIo;
     //
-    // #[test]
-    // fn create_work_after_initialized() {
-    //     let mock = MockFileSystem::default();
-    //     let io = RepositoryIo::init(mock.clone()).unwrap();
-    //     assert_eq!(io.work_branch.read().unwrap(), BranchName::main());
-    // }
-    //
-    // #[test]
-    // fn error_if_already_initialized() {
-    //     let mock = MockFileSystem::default();
-    //     RepositoryIo::init(mock.clone()).unwrap();
-    //     assert!(RepositoryIo::init(mock.clone()).is_err());
-    // }
+
     //
     // #[test]
     // fn unpack_workspace_files() {

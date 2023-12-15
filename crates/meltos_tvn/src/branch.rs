@@ -5,7 +5,7 @@ use meltos_util::impl_string_new_type;
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
 use crate::io::atomic::head::{HeadIo};
-use crate::io::atomic::object::ObjectIo;
+use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::atomic::trace::TraceIo;
 use crate::io::atomic::workspace::WorkspaceIo;
@@ -30,7 +30,7 @@ pub struct BranchIo<Fs, Io>
 {
     pub(crate) now: TraceIo<Fs, Io>,
     stage: StagingIo<Fs, Io>,
-    object: ObjectIo<Fs, Io>,
+    object: ObjIo<Fs, Io>,
     workspace: WorkspaceIo<Fs, Io>,
     commit: HeadIo<Fs, Io>,
     branch_name: BranchName,
@@ -48,7 +48,7 @@ impl<Fs, Io> BranchIo<Fs, Io>
 
     pub fn new(branch_name: BranchName, fs: Fs) -> BranchIo<Fs, Io> {
         Self {
-            object: ObjectIo::new(fs.clone()),
+            object: ObjIo::new(fs.clone()),
             stage: StagingIo::new(fs.clone()),
             workspace: WorkspaceIo(FsIo::new(fs.clone())),
             now: TraceIo::new(branch_name.clone(), fs.clone()),

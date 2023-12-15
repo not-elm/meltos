@@ -7,12 +7,12 @@ use crate::object::commit::CommitObj;
 use crate::object::tree::TreeObj;
 
 #[derive(Debug, Clone)]
-pub struct ObjectIo<Fs, Io>(FsIo<Fs, Io>)
+pub struct ObjIo<Fs, Io>(FsIo<Fs, Io>)
     where
         Fs: FileSystem<Io>,
         Io: io::Read + io::Write;
 
-impl<Fs, Io> Default for ObjectIo<Fs, Io>
+impl<Fs, Io> Default for ObjIo<Fs, Io>
     where
         Fs: FileSystem<Io> + Default,
         Io: io::Read + io::Write,
@@ -22,18 +22,18 @@ impl<Fs, Io> Default for ObjectIo<Fs, Io>
     }
 }
 
-impl<Fs, Io> ObjectIo<Fs, Io>
+impl<Fs, Io> ObjIo<Fs, Io>
     where
         Fs: FileSystem<Io>,
         Io: io::Read + io::Write,
 {
     #[inline]
-    pub const fn new(fs: Fs) -> ObjectIo<Fs, Io> {
+    pub const fn new(fs: Fs) -> ObjIo<Fs, Io> {
         Self(FsIo::new(fs))
     }
 
 
-    pub fn read_to_commit(&self, object_hash: &ObjHash) -> error::Result<CommitObj>{
+    pub fn read_to_commit(&self, object_hash: &ObjHash) -> error::Result<CommitObj> {
         let obj = self.try_read_obj(object_hash)?;
         CommitObj::try_from(obj)
     }
@@ -54,6 +54,16 @@ impl<Fs, Io> ObjectIo<Fs, Io>
     }
 
     pub fn read_obj(&self, object_hash: &ObjHash) -> error::Result<Option<Obj>> {
+        let Some(buf) = self.read(object_hash)?
+            else {
+                return Ok(None);
+            };
+
+        Ok(Some(Obj::expand(buf)?))
+    }
+
+
+    pub fn read(&self, object_hash: &ObjHash) -> error::Result<Option<CompressedBuf>> {
         let Some(buf) = self
             .0
             .read_to_end(&format!("./.meltos/objects/{}", object_hash))?
@@ -61,7 +71,7 @@ impl<Fs, Io> ObjectIo<Fs, Io>
                 return Ok(None);
             };
 
-        Ok(Some(Obj::expand(CompressedBuf(buf))?))
+        Ok(Some(CompressedBuf(buf)))
     }
 
     pub fn write(&self, obj: &Obj) -> io::Result<()> {
@@ -81,7 +91,7 @@ mod tests {
 
     use crate::file_system::{FileSystem, FsIo};
     use crate::file_system::mock::MockFileSystem;
-    use crate::io::atomic::object::ObjectIo;
+    use crate::io::atomic::object::ObjIo;
     use crate::io::atomic::workspace::WorkspaceIo;
     use crate::object::Obj;
 
@@ -94,7 +104,7 @@ mod tests {
             .write_all(buf)
             .unwrap();
 
-        let io = ObjectIo::new(mock.clone());
+        let io = ObjIo::new(mock.clone());
         let workspace = WorkspaceIo(FsIo::new(mock.clone()));
         let mut objs = workspace.convert_to_objs("test/hello.txt").unwrap();
         let meta = objs.next().unwrap().unwrap();
@@ -112,7 +122,7 @@ mod tests {
     #[test]
     fn read_obj() {
         let mock = MockFileSystem::default();
-        let io = ObjectIo::new(mock.clone());
+        let io = ObjIo::new(mock.clone());
         let obj = Obj::compress(b"hello world!".to_vec()).unwrap();
         io.write(&obj).unwrap();
         assert_eq!(io.read_obj(&obj.hash).unwrap(), Some(obj));

@@ -13,11 +13,20 @@ pub enum Error {
     #[error("branch {0} has been already initialized")]
     BranchAlreadyInitialized(BranchName),
 
+    #[error("obj hash is empty")]
+    ObjHashIsEmpty,
+
     #[error("not found object: hash={0}")]
     NotfoundObj(ObjHash),
 
     #[error("not found stages")]
     NotfoundStages,
+
+    #[error("not found local commits")]
+    NotfoundLocalCommits,
+
+    #[error("not found head")]
+    NotfoundHead,
 
     #[error(transparent)]
     Io(#[from] std::io::Error),

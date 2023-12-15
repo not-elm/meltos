@@ -82,7 +82,7 @@ impl Obj {
     }
 
     pub fn expand(compressed_buf: CompressedBuf) -> io::Result<Self> {
-        let buf = Gz.decode(&compressed_buf)?;
+        let buf = Gz.decode(&compressed_buf.0)?;
         Ok(Self {
             hash: ObjHash::new(&buf),
             buf,
@@ -111,7 +111,12 @@ impl ObjHash {
 
     #[inline]
     pub fn from_serialized_buf(buf: &[u8]) -> error::Result<Self> {
-        Ok(Self(serde_json::from_slice(buf)?))
+        let hash = serde_json::from_slice::<ObjHash>(buf)?;
+        if hash.0.is_empty() {
+            Err(error::Error::ObjHashIsEmpty)
+        } else {
+            Ok(hash)
+        }
     }
 
     #[inline]

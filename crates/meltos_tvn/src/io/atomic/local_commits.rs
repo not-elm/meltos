@@ -30,11 +30,16 @@ impl<Fs, Io> LocalCommitsIo<Fs, Io>
         }
     }
 
+    pub fn write(&self, local_commits: &LocalCommitsObj) -> error::Result {
+        self.fs.write_all(&self.file_path, &local_commits.to_buf())?;
+        Ok(())
+    }
+    
+
     pub fn append(&self, commit_hash: ObjHash) -> error::Result {
         let mut local_commits = self.read()?.unwrap_or_default();
         local_commits.push(commit_hash);
-        self.fs.write_all(&self.file_path, &local_commits.to_buf())?;
-        Ok(())
+        self.write(&local_commits)
     }
 
 

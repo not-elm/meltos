@@ -21,7 +21,10 @@ impl<Fs, Io> WorkspaceIo<Fs, Io>
     
     
     pub fn convert_to_objs(&self, path: &str) -> std::io::Result<ObjectIter<Fs, Io>> {
-        let files = self.0.all_file_path(path)?;
+        let files = self.0.all_file_path(path)?
+            .into_iter()
+            .filter(|path|!path.starts_with("./.meltos") && !path.starts_with(".meltos"))
+            .collect();
         Ok(ObjectIter {
             files,
             index: 0,

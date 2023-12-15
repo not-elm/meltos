@@ -1,6 +1,8 @@
 use meltos_util::macros::{Deref, DerefMut};
 use crate::object::ObjHash;
 
+
+#[repr(transparent)]
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Deref, DerefMut, Default)]
 pub struct LocalCommitsObj(pub Vec<ObjHash>);
 
@@ -10,6 +12,7 @@ impl LocalCommitsObj {
         Self(String::from_utf8(buf)
             .unwrap()
             .split('\0')
+            .filter(|hash|!hash.is_empty())
             .map(|hash| ObjHash(hash.to_string()))
             .collect())
     }

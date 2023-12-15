@@ -65,15 +65,15 @@ impl<Fs, Io> TreeIo<Fs, Io>
     ) -> std::io::Result<()> {
         let mut tree = self.read()?.unwrap_or_default();
         tree.0.insert(target_path, object_hash);
-        self.io
-            .write_all(&self.file_path, &serde_json::to_vec(&tree)?)?;
+        self.io.write_all(&self.file_path, &serde_json::to_vec(&tree)?)?;
         Ok(())
     }
 }
 
 
+#[repr(transparent)]
 #[derive(Serialize, Deserialize, Default, Clone, Deref, DerefMut, Debug, Eq, PartialEq)]
-pub struct TreeObj(HashMap<FilePath, ObjHash>);
+pub struct TreeObj(pub HashMap<FilePath, ObjHash>);
 
 impl TreeObj {
     pub fn changed_hash(&self, path: &FilePath, hash: &ObjHash) -> bool {

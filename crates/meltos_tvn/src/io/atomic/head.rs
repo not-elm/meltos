@@ -40,7 +40,7 @@ impl<Fs, Io> HeadIo<Fs, Io>
         Ok(())
     }
 
-    pub fn head_commit_hash(&self) -> error::Result<Option<ObjHash>> {
+    pub fn read(&self) -> error::Result<Option<ObjHash>> {
         let Some(buf) = self
             .io
             .read_to_end(&format!(".meltos/branches/{}/HEAD", self.branch_name))?

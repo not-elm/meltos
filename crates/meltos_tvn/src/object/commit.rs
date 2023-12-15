@@ -6,9 +6,9 @@ use crate::object::{AsObj, Obj, ObjHash};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct CommitObj {
-    pub parent: Option<ObjHash>,
+    pub parents: Vec<ObjHash>,
     pub text: CommitText,
-    pub stage: ObjHash,
+    pub committed_objs_tree: ObjHash,
 }
 
 

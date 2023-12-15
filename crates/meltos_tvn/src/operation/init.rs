@@ -1,7 +1,7 @@
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
-use crate::io::atomic::object::ObjectIo;
+use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
 use crate::io::atomic::workspace::WorkspaceIo;
 use crate::object::tree::TreeObj;
@@ -14,7 +14,7 @@ pub struct Init<Fs, Io>
     branch_name: BranchName,
     workspace: WorkspaceIo<Fs, Io>,
     trace: TraceIo<Fs, Io>,
-    object: ObjectIo<Fs, Io>,
+    object: ObjIo<Fs, Io>,
 }
 
 
@@ -27,7 +27,7 @@ impl<Fs, Io> Init<Fs, Io>
         Self {
             workspace: WorkspaceIo::new(fs.clone()),
             trace: TraceIo::new(branch_name.clone(), fs.clone()),
-            object: ObjectIo::new(fs.clone()),
+            object: ObjIo::new(fs.clone()),
             branch_name,
         }
     }
@@ -39,7 +39,7 @@ impl<Fs, Io> Init<Fs, Io>
         Fs: FileSystem<Io>,
         Io: std::io::Write + std::io::Read
 {
-    pub fn init(&self) -> error::Result {
+    pub fn execute(&self) -> error::Result {
         if self.trace.exists()? {
             return Err(error::Error::BranchAlreadyInitialized(
                 self.branch_name.clone(),
@@ -72,8 +72,8 @@ mod tests {
         let mock = MockFileSystem::default();
         mock.write_all("./src/main.rs", b"bdadasjlgd").unwrap();
         mock.write_all("./test.rs", b"test").unwrap();
-        let io = Init::new(BranchName::main(), mock.clone());
-        io.init().unwrap();
+        let init = Init::new(BranchName::main(), mock.clone());
+        init.execute().unwrap();
 
         assert!(&mock
             .read_to_end(&format!(
@@ -90,8 +90,8 @@ mod tests {
     #[test]
     fn failed_init_if_has_been_initialized() {
         let mock = MockFileSystem::default();
-        let branch = Init::new(BranchName::main(), mock.clone());
-        branch.init().unwrap();
-        assert!(branch.init().is_err());
+        let init = Init::new(BranchName::main(), mock.clone());
+        init.execute().unwrap();
+        assert!(init.execute().is_err());
     }
 }
