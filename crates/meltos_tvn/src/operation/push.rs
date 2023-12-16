@@ -11,6 +11,8 @@ use crate::object::{CompressedBuf, ObjHash};
 use crate::object::tree::TreeObj;
 use crate::remote_client::CommitSendable;
 
+
+#[derive(Debug, Clone)]
 pub struct Push<Fs, Io>
     where
         Fs: FileSystem<Io>,

@@ -11,6 +11,7 @@ use crate::object::commit::CommitObj;
 use crate::object::local_commits::LocalCommitsObj;
 use crate::object::ObjHash;
 
+#[derive(Debug, Clone)]
 pub struct CommitObjIo<Fs, Io>
     where
         Fs: FileSystem<Io>,

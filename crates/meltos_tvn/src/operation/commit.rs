@@ -9,6 +9,7 @@ use crate::io::commit_obj::CommitObjIo;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::object::{AsObj, ObjHash};
 
+#[derive(Debug, Clone)]
 pub struct Commit<Fs, Io>
     where
         Fs: FileSystem<Io>,

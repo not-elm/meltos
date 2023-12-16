@@ -5,6 +5,8 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
 use crate::object::tree::TreeObj;
 
+
+#[derive(Debug, Clone)]
 pub struct TraceTreeIo<Fs, Io>
     where
         Fs: FileSystem<Io>,

@@ -39,6 +39,12 @@ pub trait FileSystem<Io: std::io::Read + std::io::Write> {
         }
     }
 
+    fn project_already_initialized(&self) -> std::io::Result<bool> {
+        let files = self.all_file_path("./.meltos")?;
+        Ok(!files.is_empty())
+    }
+
+
     fn write(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
         self.create(path)?.write_all(buf)
     }

@@ -6,6 +6,7 @@ use crate::io::atomic::trace::TraceIo;
 use crate::io::atomic::workspace::WorkspaceIo;
 use crate::object::tree::TreeObj;
 
+#[derive(Debug, Clone)]
 pub struct Init<Fs, Io>
     where
         Fs: FileSystem<Io>,
@@ -27,7 +28,7 @@ impl<Fs, Io> Init<Fs, Io>
         Self {
             workspace: WorkspaceIo::new(fs.clone()),
             trace: TraceIo::new(branch_name.clone(), fs.clone()),
-            object: ObjIo::new(fs.clone()),
+            object: ObjIo::new(fs),
             branch_name,
         }
     }
@@ -40,11 +41,21 @@ impl<Fs, Io> Init<Fs, Io>
         Io: std::io::Write + std::io::Read
 {
     pub fn execute(&self) -> error::Result {
-        if self.trace.exists()? {
-            return Err(error::Error::BranchAlreadyInitialized(
+        self.check_branch_not_initialized()?;
+        self.zip_from_workspace()
+    }
+
+    fn check_branch_not_initialized(&self) -> error::Result {
+        if self.trace.read_hash()?.is_some() {
+            Err(error::Error::BranchAlreadyInitialized(
                 self.branch_name.clone(),
-            ));
+            ))
+        } else {
+            Ok(())
         }
+    }
+
+    fn zip_from_workspace(&self) -> error::Result {
         let mut trace_tree = TreeObj::default();
         for meta in self.workspace.convert_to_objs(".")? {
             let meta = meta?;

@@ -8,6 +8,8 @@ use crate::io::trace_tree::TraceTreeIo;
 use crate::object::ObjMeta;
 use crate::object::tree::TreeObj;
 
+
+#[derive(Debug, Clone)]
 pub struct Stage<Fs, Io>
     where
         Fs: FileSystem<Io>,
