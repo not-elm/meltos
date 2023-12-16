@@ -1,11 +1,9 @@
-use serde::{Deserialize, Serialize};
-
 use meltos_util::impl_string_new_type;
+
 use crate::branch::BranchName;
 use crate::error;
-
 use crate::file_system::{FileSystem, FsIo};
-use crate::object::ObjHash;
+use crate::object::{Decodable, Encodable, ObjHash};
 
 #[derive(Debug, Clone)]
 pub struct HeadIo<Fs, Io>
@@ -35,7 +33,7 @@ impl<Fs, Io> HeadIo<Fs, Io>
     ) -> std::io::Result<()> {
         self.io.write(
             &format!(".meltos/branches/{}/HEAD", self.branch_name),
-            &commit_hash.serialize_to_buf(),
+            &commit_hash.encode().unwrap(),
         )?;
         Ok(())
     }
@@ -48,66 +46,27 @@ impl<Fs, Io> HeadIo<Fs, Io>
                 return Ok(None);
             };
 
-        Ok(Some(ObjHash::from_serialized_buf(&buf)?))
+        Ok(Some(ObjHash::decode(&buf)?))
     }
 }
 
 
-#[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct CommitText(pub String);
 impl_string_new_type!(CommitText);
 
-#[cfg(test)]
-mod tests {
-    // use crate::io::atomic::commit::{Commit, CommitText, HeadIo};
-    // use crate::io::atomic::object::ObjectHash;
-    // use crate::branch::BranchName;
-    // use crate::file_system::FilePath;
-    // use crate::file_system::mock::MockFsIo;
-    // use crate::tree::Tree;
-    //
-    // #[test]
-    // fn create_head_and_commit_obj() {
-    //     let mut stage_tree = Tree::default();
-    //     stage_tree.insert(FilePath::from("hello"), ObjectHash::new(b"hello"));
-    //     let obj = stage_tree.as_obj().unwrap();
-    //     let mock = MockFsIo::default();
-    //     let file_system = HeadIo::new(BranchName::main(), mock.clone());
-    //     file_system.write_head(obj.hash.clone()).unwrap();
-    //     let head = file_system.head_commit_hash().unwrap().unwrap();
-    //     let commit = file_system.read_commit(&head).unwrap();
-    //     assert_eq!(
-    //         commit,
-    //         Some(Commit {
-    //             parent: None,
-    //             stage: obj.hash,
-    //             text: CommitText::from("commit"),
-    //         })
-    //     );
-    // }
-    //
-    // #[test]
-    // fn attach_parent() {
-    //     let mut stage_tree = Tree::default();
-    //     stage_tree.insert(FilePath::from("hello"), ObjectHash::new(b"hello"));
-    //
-    //     let mock = MockFsIo::default();
-    //     let file_system = HeadIo::new(BranchName::main(), mock.clone());
-    //     file_system.write_head("commit1", ObjectHash::new(b"hello1")).unwrap();
-    //     let first_commit = file_system.head_commit_hash().unwrap().unwrap();
-    //     let mut stage_tree2 = Tree::default();
-    //     stage_tree2.insert(FilePath::from("commit2"), ObjectHash::new(b"commit2"));
-    //     file_system.write_head("commit2", ObjectHash::new(b"hello2")).unwrap();
-    //
-    //     let second_commit = file_system.head_commit_hash().unwrap().unwrap();
-    //     let commit = file_system.read_commit(&second_commit).unwrap();
-    //     assert_eq!(
-    //         commit,
-    //         Some(Commit {
-    //             parent: Some(first_commit),
-    //             stage: ObjectHash::new(b"hello2"),
-    //             text: CommitText::from("commit2"),
-    //         })
-    //     );
-    // }
+impl Encodable for CommitText {
+    #[inline]
+    fn encode(&self) -> error::Result<Vec<u8>> {
+        Ok(self.0.as_bytes().to_vec())
+    }
 }
+
+
+impl Decodable for CommitText {
+    fn decode(buf: &[u8]) -> error::Result<Self> {
+        Ok(Self(String::from_utf8(buf.to_vec()).unwrap()))
+    }
+}
+
+

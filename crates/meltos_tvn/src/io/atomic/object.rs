@@ -2,7 +2,7 @@ use std::io;
 
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
-use crate::object::{CompressedBuf, ObjMeta, ObjHash};
+use crate::object::{CompressedBuf, ObjMeta, ObjHash, Decodable};
 use crate::object::commit::CommitObj;
 use crate::object::tree::TreeObj;
 
@@ -40,8 +40,8 @@ impl<Fs, Io> ObjIo<Fs, Io>
 
 
     pub fn read_to_tree(&self, object_hash: &ObjHash) -> error::Result<TreeObj> {
-        let obj = self.try_read_obj(object_hash)?;
-        obj.deserialize()
+        let meta = self.try_read_obj(object_hash)?;
+        TreeObj::decode(&meta.buf)
     }
 
     pub fn try_read_obj(&self, object_hash: &ObjHash) -> error::Result<ObjMeta> {

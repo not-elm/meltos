@@ -1,5 +1,3 @@
-use serde::{Deserialize, Serialize};
-
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
@@ -10,7 +8,6 @@ use crate::io::trace_tree::TraceTreeIo;
 use crate::object::{CompressedBuf, ObjHash};
 use crate::object::tree::TreeObj;
 use crate::remote_client::CommitSendable;
-
 
 #[derive(Debug, Clone)]
 pub struct Push<Fs, Io>
@@ -89,7 +86,7 @@ impl<Fs, Io> Push<Fs, Io>
 }
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct PushParam {
     pub compressed_objs: Vec<CompressedBuf>,
     pub trace: Option<TreeObj>,
@@ -100,6 +97,7 @@ pub struct PushParam {
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
+    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::commit_obj::CommitObjIo;
@@ -140,8 +138,8 @@ mod tests {
         let commit_obj = CommitObjIo::new(branch.clone(), mock.clone());
         let stage = Stage::new(branch.clone(), mock.clone());
         let commit = Commit::new(branch.clone(), mock.clone());
-        let push = Push::new(branch, mock);
-
+        let push = Push::new(branch, mock.clone());
+        mock.write("./.hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
         push.execute(&MockRemoteClient::default()).await.unwrap();

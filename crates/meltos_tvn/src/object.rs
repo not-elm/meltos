@@ -29,6 +29,16 @@ pub trait AsMeta {
 }
 
 
+pub trait Encodable {
+    fn encode(&self) -> error::Result<Vec<u8>>;
+}
+
+
+pub trait Decodable: Sized {
+    fn decode(buf: &[u8]) -> error::Result<Self>;
+}
+
+
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct ObjMetaPath {
     pub file_path: FilePath,
@@ -74,6 +84,7 @@ impl ObjMeta {
         Ok(serde_json::from_slice(&self.buf)?)
     }
 
+
     pub fn compress(buf: Vec<u8>) -> io::Result<Self> {
         Ok(Self {
             hash: ObjHash::new(&buf),
@@ -117,31 +128,34 @@ impl AsMeta for Obj {
 }
 
 #[repr(transparent)]
-#[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd, Display)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash, Ord, PartialOrd, Display)]
 pub struct ObjHash(pub String);
 
 
 impl ObjHash {
     #[inline]
-    pub fn serialize_to_buf(&self) -> Vec<u8> {
-        serde_json::to_vec(self).unwrap()
-    }
-
-    #[inline]
-    pub fn from_serialized_buf(buf: &[u8]) -> error::Result<Self> {
-        let hash = serde_json::from_slice::<ObjHash>(buf)?;
-        if hash.0.is_empty() {
-            Err(error::Error::ObjHashIsEmpty)
-        } else {
-            Ok(hash)
-        }
-    }
-
-    #[inline]
     pub fn new(buf: &[u8]) -> Self {
         Self(meltos_util::hash::hash(buf))
     }
 }
+
+
+impl Encodable for ObjHash {
+    #[inline]
+    fn encode(&self) -> error::Result<Vec<u8>> {
+        Ok(self.0.as_bytes().to_vec())
+    }
+}
+
+
+impl Decodable for ObjHash {
+    #[inline]
+    fn decode(buf: &[u8]) -> error::Result<Self> {
+        let hash = String::from_utf8(buf.to_vec()).map_err(|_| error::Error::ObjHashBufferIsInvalid)?;
+        Ok(Self(hash))
+    }
+}
+
 
 #[repr(transparent)]
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd, Deref)]

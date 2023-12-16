@@ -1,3 +1,7 @@
+use std::num::ParseIntError;
+use std::str::Utf8Error;
+use std::string::FromUtf8Error;
+
 use thiserror::Error;
 
 use crate::branch::BranchName;
@@ -15,6 +19,12 @@ pub enum Error {
 
     #[error("obj hash is empty")]
     ObjHashIsEmpty,
+
+    #[error("obj hash buffer is invalid")]
+    ObjHashBufferIsInvalid,
+
+    #[error("commit obj buffer is invalid")]
+    CommitObjBufferIsInValid,
 
     #[error("not found object: hash={0}")]
     NotfoundObj(ObjHash),
@@ -36,4 +46,13 @@ pub enum Error {
 
     #[error(transparent)]
     Serde(#[from] serde_json::Error),
+
+    #[error(transparent)]
+    Utf8(#[from] Utf8Error),
+
+    #[error(transparent)]
+    FromUtf8(#[from] FromUtf8Error),
+
+    #[error(transparent)]
+    ParseInt(#[from] ParseIntError),
 }

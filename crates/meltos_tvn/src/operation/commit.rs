@@ -77,7 +77,7 @@ mod tests {
     use crate::io::atomic::staging::StagingIo;
     use crate::object::commit::CommitObj;
     use crate::object::local_commits::LocalCommitsObj;
-    use crate::object::ObjHash;
+    use crate::object::{AsMeta, ObjHash};
     use crate::object::tree::TreeObj;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
@@ -126,7 +126,7 @@ mod tests {
         assert_eq!(commit, CommitObj {
             parents: vec![],
             text: CommitText::from("test"),
-            committed_objs_tree: tree.as_obj().unwrap().hash,
+            committed_objs_tree: tree.as_meta().unwrap().hash,
         });
     }
 

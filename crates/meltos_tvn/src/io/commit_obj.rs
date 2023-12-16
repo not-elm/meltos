@@ -49,8 +49,10 @@ impl<Fs, Io> CommitObjIo<Fs, Io>
             else {
                 return Ok(vec![]);
             };
+
         let mut commit_objs = Vec::with_capacity(local_hashes.len());
         for hash in local_hashes {
+            println!("size = {}", hash.0.len());
             commit_objs.push(self.object.read_to_commit(&hash)?);
         }
         Ok(commit_objs)

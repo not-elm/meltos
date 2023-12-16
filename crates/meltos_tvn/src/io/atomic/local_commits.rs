@@ -4,7 +4,7 @@ use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
 use crate::object::local_commits::LocalCommitsObj;
-use crate::object::ObjHash;
+use crate::object::{Decodable, Encodable, ObjHash};
 
 #[derive(Debug, Clone)]
 pub struct LocalCommitsIo<Fs, Io>
@@ -31,7 +31,7 @@ impl<Fs, Io> LocalCommitsIo<Fs, Io>
     }
 
     pub fn write(&self, local_commits: &LocalCommitsObj) -> error::Result {
-        self.fs.write(&self.file_path, &local_commits.to_buf())?;
+        self.fs.write(&self.file_path, &local_commits.encode()?)?;
         Ok(())
     }
     
@@ -49,7 +49,7 @@ impl<Fs, Io> LocalCommitsIo<Fs, Io>
                 return Ok(None);
             };
 
-        Ok(Some(LocalCommitsObj::new(buf)))
+        Ok(Some(LocalCommitsObj::decode(&buf)?))
     }
 }
 

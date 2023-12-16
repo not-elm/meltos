@@ -66,7 +66,7 @@ mod tests {
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::trace_tree::TraceTreeIo;
-    use crate::object::ObjHash;
+    use crate::object::{AsMeta, Encodable, ObjHash};
     use crate::object::tree::TreeObj;
 
     #[test]
@@ -76,9 +76,9 @@ mod tests {
         let mut tree = TreeObj::default();
         tree.insert(FilePath::from("me/hello"), ObjHash::new(b"hello"));
         let obj = ObjIo::new(mock.clone());
-        obj.write(&tree.as_obj().unwrap()).unwrap();
+        obj.write(&tree.as_meta().unwrap()).unwrap();
 
-        mock.write("./.meltos/branches/main/TRACE", &tree.as_obj().unwrap().hash.serialize_to_buf()).unwrap();
+        mock.write("./.meltos/branches/main/TRACE", &tree.as_meta().unwrap().hash.encode().unwrap()).unwrap();
         let trace_tree = io.read();
         assert!(trace_tree.is_ok_and(|tree| tree.is_some()));
     }
