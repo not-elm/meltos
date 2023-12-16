@@ -3,7 +3,7 @@ use std::io;
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
 use crate::object::{CompressedBuf, ObjMeta, ObjHash, Decodable};
-use crate::object::commit::CommitObj;
+use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::tree::TreeObj;
 
 #[derive(Debug, Clone)]
@@ -33,8 +33,8 @@ impl<Fs, Io> ObjIo<Fs, Io>
     }
 
 
-    pub fn read_to_commit(&self, object_hash: &ObjHash) -> error::Result<CommitObj> {
-        let obj = self.try_read_obj(object_hash)?;
+    pub fn read_to_commit(&self, object_hash: &CommitHash) -> error::Result<CommitObj> {
+        let obj = self.try_read_obj(&object_hash.0)?;
         CommitObj::try_from(obj)
     }
 

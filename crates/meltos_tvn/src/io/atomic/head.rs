@@ -1,9 +1,11 @@
+
 use meltos_util::impl_string_new_type;
 
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
 use crate::object::{Decodable, Encodable, ObjHash};
+use crate::object::commit::CommitHash;
 
 #[derive(Debug, Clone)]
 pub struct HeadIo<Fs, Io>
@@ -29,7 +31,7 @@ impl<Fs, Io> HeadIo<Fs, Io>
 
     pub fn write(
         &self,
-        commit_hash: ObjHash,
+        commit_hash: CommitHash,
     ) -> std::io::Result<()> {
         self.io.write(
             &format!(".meltos/branches/{}/HEAD", self.branch_name),
@@ -38,15 +40,10 @@ impl<Fs, Io> HeadIo<Fs, Io>
         Ok(())
     }
 
-    pub fn read(&self) -> error::Result<Option<ObjHash>> {
-        let Some(buf) = self
-            .io
-            .read(&format!(".meltos/branches/{}/HEAD", self.branch_name))?
-            else {
-                return Ok(None);
-            };
-
-        Ok(Some(ObjHash::decode(&buf)?))
+    pub fn read(&self) -> error::Result<CommitHash> {
+        let buf = self.io.try_read(&format!(".meltos/branches/{}/HEAD", self.branch_name))
+            .map_err(|_|error::Error::NotfoundHead)?;
+        Ok(CommitHash(ObjHash::decode(&buf)?))
     }
 }
 

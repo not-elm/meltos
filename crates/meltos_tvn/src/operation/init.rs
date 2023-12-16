@@ -1,11 +1,8 @@
 use crate::branch::BranchName;
 use crate::error;
-use crate::file_system::FileSystem;
-use crate::io::atomic::object::ObjIo;
-use crate::io::atomic::trace::TraceIo;
-use crate::io::atomic::workspace::WorkspaceIo;
-use crate::object::AsMeta;
-use crate::object::tree::TreeObj;
+use crate::file_system::{FileSystem, FsIo};
+use crate::object::commit::CommitHash;
+use crate::operation::commit::Commit;
 
 #[derive(Debug, Clone)]
 pub struct Init<Fs, Io>
@@ -13,10 +10,8 @@ pub struct Init<Fs, Io>
         Fs: FileSystem<Io>,
         Io: std::io::Write + std::io::Read
 {
-    branch_name: BranchName,
-    workspace: WorkspaceIo<Fs, Io>,
-    trace: TraceIo<Fs, Io>,
-    object: ObjIo<Fs, Io>,
+    commit: Commit<Fs, Io>,
+    fs: FsIo<Fs, Io>,
 }
 
 
@@ -27,10 +22,9 @@ impl<Fs, Io> Init<Fs, Io>
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> Init<Fs, Io> {
         Self {
-            workspace: WorkspaceIo::new(fs.clone()),
-            trace: TraceIo::new(branch_name.clone(), fs.clone()),
-            object: ObjIo::new(fs),
-            branch_name,
+            commit: Commit::new(branch_name.clone(), fs.clone()),
+            fs: FsIo::new(fs.clone()),
+
         }
     }
 }
@@ -43,33 +37,25 @@ impl<Fs, Io> Init<Fs, Io>
 {
     /// Initialize the project.
     ///
-    /// * create the `zero` head.
-    pub fn execute(&self) -> error::Result {
+    ///
+    ///
+    /// * create the `HEAD FILE`.
+    /// * create `null commit`
+    /// * create `head file` and write `null commit hash`
+    /// * create `trace file` named `null commit hash`.
+    /// * create `local commits file` and append `null commit hash`.
+    pub fn execute(&self) -> error::Result<CommitHash> {
         self.check_branch_not_initialized()?;
-        self.zip_from_workspace()
+        self.commit.execute_null_commit()
     }
+
 
     fn check_branch_not_initialized(&self) -> error::Result {
-        if self.trace.read_hash()?.is_some() {
-            Err(error::Error::BranchAlreadyInitialized(
-                self.branch_name.clone(),
-            ))
-        } else {
+        if self.fs.all_file_path("./.meltos")?.is_empty() {
             Ok(())
+        } else {
+            Err(error::Error::RepositoryAlreadyInitialized)
         }
-    }
-
-    fn zip_from_workspace(&self) -> error::Result {
-        let mut trace_tree = TreeObj::default();
-        for meta in self.workspace.convert_to_objs(".")? {
-            let meta = meta?;
-            self.object.write(&meta.obj)?;
-            trace_tree.insert(meta.file_path, meta.obj.hash);
-        }
-        let trace_obj = trace_tree.as_meta()?;
-        self.trace.write(&trace_obj.hash)?;
-        self.object.write(&trace_obj)?;
-        Ok(())
     }
 }
 
@@ -79,27 +65,19 @@ mod tests {
     use crate::branch::BranchName;
     use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
-    use crate::object::ObjHash;
+    use crate::io::atomic::head::HeadIo;
+    use crate::object::{AsMeta, Encodable};
+    use crate::object::commit::CommitHash;
+    use crate::object::tree::TreeObj;
+    use crate::operation::commit::Commit;
+    use crate::operation::init;
     use crate::operation::init::Init;
 
     #[test]
     fn init() {
         let mock = MockFileSystem::default();
-        mock.write("./src/main.rs", b"bdadasjlgd").unwrap();
-        mock.write("./test.rs", b"test").unwrap();
         let init = Init::new(BranchName::main(), mock.clone());
         init.execute().unwrap();
-
-        assert!(&mock
-            .read(&format!(
-                ".meltos/objects/{}",
-                ObjHash::new(b"bdadasjlgd")
-            ))
-            .is_ok());
-        assert!(&mock
-            .read(&format!(".meltos/objects/{}", ObjHash::new(b"test")))
-            .is_ok());
-        assert!(&mock.read(".meltos/branches/main/NOW").is_ok());
     }
 
     #[test]
@@ -108,5 +86,39 @@ mod tests {
         let init = Init::new(BranchName::main(), mock.clone());
         init.execute().unwrap();
         assert!(init.execute().is_err());
+    }
+
+
+    #[test]
+    fn created_head_file() {
+        let mock = MockFileSystem::default();
+        let branch = BranchName::main();
+        let init = init::Init::new(branch.clone(), mock.clone());
+
+        init.execute().unwrap();
+        let head_commit_hash = read_head_commit_hash(mock.clone());
+        let commit = Commit::new(BranchName::main(), mock.clone());
+        let null_commit = commit.create_null_commit(TreeObj::default().as_meta().unwrap());
+        assert_eq!(head_commit_hash, CommitHash(null_commit.as_meta().unwrap().hash));
+    }
+
+
+    #[test]
+    fn created_trace_file_named_null_commit_hash() {
+        let mock = MockFileSystem::default();
+        let branch = BranchName::main();
+        let init = init::Init::new(branch.clone(), mock.clone());
+
+        init.execute().unwrap();
+
+        let head_commit_hash = read_head_commit_hash(mock.clone());
+        let trace_tree_hash = mock.read(&format!("./.meltos/traces/{head_commit_hash}")).unwrap();
+        assert_eq!(trace_tree_hash, Some(TreeObj::default().as_meta().unwrap().hash.encode().unwrap()));
+    }
+
+
+    fn read_head_commit_hash(mock: MockFileSystem) -> CommitHash {
+        let head = HeadIo::new(BranchName::main(), mock);
+        head.read().unwrap()
     }
 }

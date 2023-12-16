@@ -1,13 +1,30 @@
 use std::collections::VecDeque;
 use std::str::FromStr;
 
+use auto_delegate::Delegate;
+
+use meltos_util::macros::{Deref, Display};
+
 use crate::error;
 use crate::io::atomic::head::CommitText;
 use crate::object::{AsMeta, Decodable, Encodable, ObjHash, ObjMeta};
 
+#[repr(transparent)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Display, Delegate, Deref, Hash)]
+#[to(Encodable)]
+pub struct CommitHash(pub ObjHash);
+
+impl Decodable for CommitHash {
+    #[inline]
+    fn decode(buf: &[u8]) -> error::Result<Self> {
+        Ok(Self(ObjHash::decode(buf)?))
+    }
+}
+
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct CommitObj {
-    pub parents: Vec<ObjHash>,
+    pub parents: Vec<CommitHash>,
     pub text: CommitText,
     pub committed_objs_tree: ObjHash,
 }
@@ -69,12 +86,12 @@ impl Decodable for CommitObj {
     }
 }
 
-fn decode_parents(buf: &mut VecDeque<&[u8]>) -> error::Result<Vec<ObjHash>> {
+fn decode_parents(buf: &mut VecDeque<&[u8]>) -> error::Result<Vec<CommitHash>> {
     let count_buf = std::str::from_utf8(buf.pop_front().unwrap())?;
     let parents_count = usize::from_str(count_buf)?;
     let mut parents = Vec::with_capacity(parents_count);
     for _ in 0..parents_count {
-        parents.push(ObjHash::decode(buf.pop_front().unwrap())?);
+        parents.push(CommitHash::decode(buf.pop_front().unwrap())?);
     }
 
     Ok(parents)
@@ -85,12 +102,12 @@ fn decode_parents(buf: &mut VecDeque<&[u8]>) -> error::Result<Vec<ObjHash>> {
 mod tests {
     use crate::io::atomic::head::CommitText;
     use crate::object::{Decodable, Encodable, ObjHash};
-    use crate::object::commit::{CommitObj, HEAD};
+    use crate::object::commit::{CommitHash, CommitObj, HEAD};
 
     #[test]
     fn serialize() {
-        let hash1 = ObjHash::new(b"hello");
-        let hash2 = ObjHash::new(b"world!");
+        let hash1 = CommitHash(ObjHash::new(b"hello"));
+        let hash2 = CommitHash(ObjHash::new(b"world!"));
         let parents = vec![hash1.clone(), hash2.clone()];
         let commit_text = CommitText::from("commit");
         let tree = ObjHash::new(b"hash");
@@ -110,8 +127,8 @@ mod tests {
 
     #[test]
     fn decode() {
-        let hash1 = ObjHash::new(b"hello");
-        let hash2 = ObjHash::new(b"world!");
+        let hash1 = CommitHash(ObjHash::new(b"hello"));
+        let hash2 = CommitHash(ObjHash::new(b"world!"));
         let parents = vec![hash1.clone(), hash2.clone()];
         let commit_text = CommitText::from("commit");
         let tree = ObjHash::new(b"hash");

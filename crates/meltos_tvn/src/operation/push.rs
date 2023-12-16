@@ -5,7 +5,8 @@ use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::commit_obj::CommitObjIo;
 use crate::io::trace_tree::TraceTreeIo;
-use crate::object::{CompressedBuf, ObjHash};
+use crate::object::commit::CommitHash;
+use crate::object::CompressedBuf;
 use crate::object::tree::TreeObj;
 use crate::remote_client::CommitSendable;
 
@@ -30,7 +31,7 @@ impl<Fs, Io> Push<Fs, Io>
     pub fn new(branch_name: BranchName, fs: Fs) -> Push<Fs, Io> {
         Self {
             commit_obj: CommitObjIo::new(branch_name.clone(), fs.clone()),
-            trace_tree: TraceTreeIo::new(branch_name.clone(), fs.clone()),
+            trace_tree: TraceTreeIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
             head: HeadIo::new(branch_name, fs),
         }
@@ -59,11 +60,10 @@ impl<Fs, Io> Push<Fs, Io>
 
 
     fn create_push_param(&self) -> error::Result<PushParam> {
-        let Some(head) = self.head.read()? else {
-            return Err(error::Error::NotfoundHead);
-        };
+        let head = self.head.read()?;
         let compressed_objs = self.read_objs_associated_commits(head.clone())?;
-        let trace = self.trace_tree.read()?;
+        let head = self.head.read()?;
+        let trace = self.trace_tree.read(&head)?;
         Ok(PushParam {
             compressed_objs,
             head,
@@ -72,7 +72,7 @@ impl<Fs, Io> Push<Fs, Io>
     }
 
 
-    fn read_objs_associated_commits(&self, head: ObjHash) -> error::Result<Vec<CompressedBuf>> {
+    fn read_objs_associated_commits(&self, head: CommitHash) -> error::Result<Vec<CompressedBuf>> {
         let obj_hashes = self.commit_obj.read_obj_hashes_associate_with(head)?;
         let mut obj_bufs = Vec::with_capacity(obj_hashes.len());
         for hash in obj_hashes {
@@ -89,8 +89,8 @@ impl<Fs, Io> Push<Fs, Io>
 #[derive(Debug, Clone)]
 pub struct PushParam {
     pub compressed_objs: Vec<CompressedBuf>,
-    pub trace: Option<TreeObj>,
-    pub head: ObjHash,
+    pub trace: TreeObj,
+    pub head: CommitHash,
 }
 
 #[cfg(test)]
@@ -106,6 +106,7 @@ mod tests {
     use crate::operation::push::Push;
     use crate::operation::stage::Stage;
     use crate::remote_client::mock::MockRemoteClient;
+    use crate::tests::init_main_branch;
 
     #[tokio::test]
     async fn failed_if_no_commit() {
@@ -120,6 +121,7 @@ mod tests {
     #[tokio::test]
     async fn success_if_committed() {
         let mock = MockFileSystem::default();
+        init_main_branch(mock.clone());
         let branch = BranchName::main();
         let stage = Stage::new(branch.clone(), mock.clone());
         let commit = Commit::new(branch.clone(), mock.clone());
@@ -134,6 +136,7 @@ mod tests {
     #[tokio::test]
     async fn local_commits_is_cleared_if_succeed() {
         let mock = MockFileSystem::default();
+        init_main_branch(mock.clone());
         let branch = BranchName::main();
         let commit_obj = CommitObjIo::new(branch.clone(), mock.clone());
         let stage = Stage::new(branch.clone(), mock.clone());
@@ -151,6 +154,7 @@ mod tests {
     #[tokio::test]
     async fn push_param() {
         let mock = MockFileSystem::default();
+        init_main_branch(mock.clone());
         let branch = BranchName::main();
         let stage = Stage::new(branch.clone(), mock.clone());
         let commit = Commit::new(branch.clone(), mock.clone());
@@ -161,9 +165,10 @@ mod tests {
         let remote = MockRemoteClient::default();
         push.execute(&remote).await.unwrap();
         let param = remote.push_param.lock().await.clone().unwrap();
-        let trace_tree = TraceTreeIo::new(branch.clone(), mock.clone());
+        let trace_tree = TraceTreeIo::new(mock.clone());
         let head = HeadIo::new(branch, mock);
-        assert_eq!(&param.head, &head.read().unwrap().unwrap());
-        assert_eq!(&param.trace, &trace_tree.read().unwrap());
+        assert_eq!(&param.head, &head.read().unwrap());
+        let head = head.read().unwrap();
+        assert_eq!(&param.trace, &trace_tree.read(&head).unwrap());
     }
 }

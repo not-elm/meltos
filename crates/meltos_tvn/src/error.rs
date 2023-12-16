@@ -5,6 +5,7 @@ use std::string::FromUtf8Error;
 use thiserror::Error;
 
 use crate::branch::BranchName;
+use crate::object::commit::CommitHash;
 use crate::object::ObjHash;
 
 pub type Result<T = ()> = std::result::Result<T, Error>;
@@ -32,8 +33,8 @@ pub enum Error {
     #[error("not found stages")]
     NotfoundStages,
 
-    #[error("not found trace")]
-    NotfoundTrace,
+    #[error("not found trace: commit hash={0}")]
+    NotfoundTrace(CommitHash),
 
     #[error("not found local commits")]
     NotfoundLocalCommits,

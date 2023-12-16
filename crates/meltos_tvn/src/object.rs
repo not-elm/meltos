@@ -29,6 +29,7 @@ pub trait AsMeta {
 }
 
 
+#[delegate]
 pub trait Encodable {
     fn encode(&self) -> error::Result<Vec<u8>>;
 }

@@ -24,7 +24,10 @@ impl<Fs, Io> NewBranch<Fs, Io>
         Io: std::io::Write + std::io::Read
 {
 
-    pub fn execute(&self, from: BranchName, to: BranchName) -> error::Result{
+    ///
+    ///
+    /// * copy `HEAD FILE` from old branch
+    pub fn execute(&self, _from: BranchName, _to: BranchName) -> error::Result{
         todo!()
     }
 }
