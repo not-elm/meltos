@@ -1,5 +1,6 @@
 use std::io;
 
+use auto_delegate::delegate;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 
@@ -9,38 +10,37 @@ use meltos_util::macros::{Deref, Display};
 
 use crate::error;
 use crate::file_system::FilePath;
+use crate::object::commit::CommitObj;
+use crate::object::delete::DeleteObj;
+use crate::object::file::FileObj;
+use crate::object::local_commits::LocalCommitsObj;
+use crate::object::tree::TreeObj;
 
 pub mod tree;
 pub mod commit;
 pub mod local_commits;
+mod file;
+mod delete;
 
 
-pub trait AsObj {
-    fn as_obj(&self) -> error::Result<Obj>;
+#[delegate]
+pub trait AsMeta {
+    fn as_meta(&self) -> error::Result<ObjMeta>;
 }
 
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct ObjMeta {
+pub struct ObjMetaPath {
     pub file_path: FilePath,
-    pub obj: Obj,
+    pub obj: ObjMeta,
 }
 
-impl From<(FilePath, Obj)> for ObjMeta {
-    #[inline(always)]
-    fn from(value: (FilePath, Obj)) -> Self {
-        Self {
-            file_path: value.0,
-            obj: value.1,
-        }
-    }
-}
 
-impl ObjMeta {
+impl ObjMetaPath {
     pub fn new(file_path: FilePath, buf: Vec<u8>) -> io::Result<Self> {
         Ok(Self {
             file_path,
-            obj: Obj::compress(buf)?,
+            obj: ObjMeta::compress(buf)?,
         })
     }
 
@@ -61,13 +61,14 @@ impl ObjMeta {
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct Obj {
+pub struct ObjMeta {
     pub hash: ObjHash,
     pub compressed_buf: CompressedBuf,
     pub buf: Vec<u8>,
 }
 
-impl Obj {
+
+impl ObjMeta {
     #[inline]
     pub fn deserialize<D: DeserializeOwned>(&self) -> error::Result<D> {
         Ok(serde_json::from_slice(&self.buf)?)
@@ -92,16 +93,33 @@ impl Obj {
 }
 
 
-impl AsRef<Obj> for Obj {
+#[derive(Debug, Clone)]
+pub enum Obj {
+    File(FileObj),
+    Tree(TreeObj),
+    Delete(DeleteObj),
+    Commit(CommitObj),
+    LocalCommits(LocalCommitsObj),
+}
+
+
+impl AsMeta for Obj {
     #[inline]
-    fn as_ref(&self) -> &Obj {
-        self
+    fn as_meta(&self) -> error::Result<ObjMeta> {
+        match self {
+            Self::File(file) => file.as_meta(),
+            Self::Tree(tree) => tree.as_meta(),
+            Self::Delete(delete) => delete.as_meta(),
+            Self::Commit(commit) => commit.as_meta(),
+            Self::LocalCommits(local_commits) => local_commits.as_meta()
+        }
     }
 }
 
 #[repr(transparent)]
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd, Display)]
 pub struct ObjHash(pub String);
+
 
 impl ObjHash {
     #[inline]

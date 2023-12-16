@@ -2,7 +2,7 @@ use std::io;
 
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
-use crate::object::{CompressedBuf, Obj, ObjHash};
+use crate::object::{CompressedBuf, ObjMeta, ObjHash};
 use crate::object::commit::CommitObj;
 use crate::object::tree::TreeObj;
 
@@ -44,7 +44,7 @@ impl<Fs, Io> ObjIo<Fs, Io>
         obj.deserialize()
     }
 
-    pub fn try_read_obj(&self, object_hash: &ObjHash) -> error::Result<Obj> {
+    pub fn try_read_obj(&self, object_hash: &ObjHash) -> error::Result<ObjMeta> {
         self.read_obj(object_hash).and_then(|obj| {
             match obj {
                 Some(obj) => Ok(obj),
@@ -53,13 +53,13 @@ impl<Fs, Io> ObjIo<Fs, Io>
         })
     }
 
-    pub fn read_obj(&self, object_hash: &ObjHash) -> error::Result<Option<Obj>> {
+    pub fn read_obj(&self, object_hash: &ObjHash) -> error::Result<Option<ObjMeta>> {
         let Some(buf) = self.read(object_hash)?
             else {
                 return Ok(None);
             };
 
-        Ok(Some(Obj::expand(buf)?))
+        Ok(Some(ObjMeta::expand(buf)?))
     }
 
 
@@ -74,7 +74,7 @@ impl<Fs, Io> ObjIo<Fs, Io>
         Ok(Some(CompressedBuf(buf)))
     }
 
-    pub fn write(&self, obj: &Obj) -> io::Result<()> {
+    pub fn write(&self, obj: &ObjMeta) -> io::Result<()> {
         self.0
             .create(&format!("./.meltos/objects/{}", &obj.hash))?
             .write_all(&obj.compressed_buf)?;
@@ -93,7 +93,7 @@ mod tests {
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::atomic::workspace::WorkspaceIo;
-    use crate::object::Obj;
+    use crate::object::ObjMeta;
 
     #[test]
     fn write_object_file() {
@@ -123,7 +123,7 @@ mod tests {
     fn read_obj() {
         let mock = MockFileSystem::default();
         let io = ObjIo::new(mock.clone());
-        let obj = Obj::compress(b"hello world!".to_vec()).unwrap();
+        let obj = ObjMeta::compress(b"hello world!".to_vec()).unwrap();
         io.write(&obj).unwrap();
         assert_eq!(io.read_obj(&obj.hash).unwrap(), Some(obj));
     }

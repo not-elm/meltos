@@ -3,6 +3,7 @@ use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
+use crate::object::AsMeta;
 use crate::object::tree::TreeObj;
 
 
@@ -40,7 +41,7 @@ impl<Fs, Io> TraceTreeIo<Fs, Io>
             .read()?
             .unwrap_or_default();
         trace_tree.replace_by(staging);
-        let trace_obj = trace_tree.as_obj()?;
+        let trace_obj = trace_tree.as_meta()?;
         self.trace.write(&trace_obj.hash)?;
         self.object.write(&trace_obj)?;
         Ok(())

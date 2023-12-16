@@ -4,6 +4,7 @@ use crate::file_system::FileSystem;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
 use crate::io::atomic::workspace::WorkspaceIo;
+use crate::object::AsMeta;
 use crate::object::tree::TreeObj;
 
 #[derive(Debug, Clone)]
@@ -40,6 +41,9 @@ impl<Fs, Io> Init<Fs, Io>
         Fs: FileSystem<Io>,
         Io: std::io::Write + std::io::Read
 {
+    /// Initialize the project.
+    ///
+    /// * create the `zero` head.
     pub fn execute(&self) -> error::Result {
         self.check_branch_not_initialized()?;
         self.zip_from_workspace()
@@ -62,7 +66,7 @@ impl<Fs, Io> Init<Fs, Io>
             self.object.write(&meta.obj)?;
             trace_tree.insert(meta.file_path, meta.obj.hash);
         }
-        let trace_obj = trace_tree.as_obj()?;
+        let trace_obj = trace_tree.as_meta()?;
         self.trace.write(&trace_obj.hash)?;
         self.object.write(&trace_obj)?;
         Ok(())

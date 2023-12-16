@@ -7,7 +7,7 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::commit_obj::CommitObjIo;
 use crate::io::trace_tree::TraceTreeIo;
-use crate::object::{AsObj, ObjHash};
+use crate::object::{AsMeta, ObjHash};
 
 #[derive(Debug, Clone)]
 pub struct Commit<Fs, Io>
@@ -51,12 +51,12 @@ impl<Fs, Io> Commit<Fs, Io>
             return Err(error::Error::NotfoundStages);
         };
         self.staging.reset()?;
-        let stage_obj = stage_tree.as_obj()?;
+        let stage_obj = stage_tree.as_meta()?;
         self.trace_tree.write(stage_tree)?;
         self.object.write(&stage_obj)?;
 
         let commit = self.commit_obj.create(commit_text, stage_obj.hash)?;
-        let commit_obj = commit.as_obj()?;
+        let commit_obj = commit.as_meta()?;
         self.object.write(&commit_obj)?;
         self.head.write(commit_obj.hash.clone())?;
         self.local_commits.append(commit_obj.hash.clone())?;

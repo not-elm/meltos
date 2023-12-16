@@ -5,7 +5,7 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::atomic::workspace::WorkspaceIo;
 use crate::io::trace_tree::TraceTreeIo;
-use crate::object::ObjMeta;
+use crate::object::ObjMetaPath;
 use crate::object::tree::TreeObj;
 
 
@@ -54,7 +54,7 @@ impl<Fs, Io> Stage<Fs, Io>
         Ok(())
     }
 
-    fn stage_file(&self, stage: &mut TreeObj, now: &Option<TreeObj>, meta: ObjMeta) -> error::Result {
+    fn stage_file(&self, stage: &mut TreeObj, now: &Option<TreeObj>, meta: ObjMetaPath) -> error::Result {
         if stage.changed_hash(&meta.file_path, meta.hash())
             || now
             .as_ref()

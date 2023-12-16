@@ -6,7 +6,7 @@ use meltos_util::macros::{Deref, DerefMut};
 
 use crate::error;
 use crate::file_system::{FilePath, FileSystem, FsIo};
-use crate::object::{Obj, ObjHash};
+use crate::object::{AsMeta, ObjHash, ObjMeta};
 
 #[derive(Debug, Clone)]
 pub struct TreeIo<Fs, Io>
@@ -84,12 +84,6 @@ impl TreeObj {
         }
     }
 
-    #[inline]
-    pub fn as_obj(&self) -> error::Result<Obj> {
-        let buf = serde_json::to_vec(self)?;
-        Ok(Obj::compress(buf)?)
-    }
-
 
     pub fn replace_by(&mut self, tree: TreeObj) {
         for (file_path, hash) in tree.0.into_iter() {
@@ -97,6 +91,15 @@ impl TreeObj {
         }
     }
 }
+
+
+impl AsMeta for TreeObj {
+    fn as_meta(&self) -> error::Result<ObjMeta> {
+        let buf = serde_json::to_vec(self)?;
+        Ok(ObjMeta::compress(buf)?)
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
