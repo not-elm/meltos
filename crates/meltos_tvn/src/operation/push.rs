@@ -125,8 +125,9 @@ mod tests {
         let branch = BranchName::main();
         let stage = Stage::new(branch.clone(), mock.clone());
         let commit = Commit::new(branch.clone(), mock.clone());
-        let push = Push::new(branch, mock);
+        let push = Push::new(branch, mock.clone());
 
+        mock.write("./hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
         assert!(push.execute(&MockRemoteClient::default()).await.is_ok());
@@ -160,6 +161,7 @@ mod tests {
         let commit = Commit::new(branch.clone(), mock.clone());
         let push = Push::new(branch.clone(), mock.clone());
 
+        mock.write("./hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
         let remote = MockRemoteClient::default();

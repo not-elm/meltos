@@ -54,11 +54,16 @@ impl<Fs, Io> Stage<Fs, Io>
         let mut stage_tree = self.staging.read()?.unwrap_or_default();
         let head = self.head.read()?;
         let trace_tree = self.trace_tree.read(&head)?;
+        let mut changed = false;
         for result in self.workspace.convert_to_objs(workspace_path)? {
             let (file_path, file_obj) = result?;
-            self.stage_file(&mut stage_tree, &trace_tree, file_path, file_obj)?;
+            self.stage_file(&mut stage_tree, &mut changed, &trace_tree, file_path, file_obj)?;
         }
-        self.add_delete_objs_into_staging(&trace_tree, &mut stage_tree, workspace_path)?;
+        self.add_delete_objs_into_staging(&mut stage_tree, &mut changed, &trace_tree, workspace_path)?;
+        if !changed {
+            return Err(error::Error::ChangedFileNotExits);
+        }
+
         self.staging.write_tree(&stage_tree)?;
         Ok(())
     }
@@ -67,12 +72,18 @@ impl<Fs, Io> Stage<Fs, Io>
     fn stage_file(
         &self,
         stage: &mut TreeObj,
+        changed: &mut bool,
         trace: &TreeObj,
         file_path: FilePath,
         file_obj: FileObj,
     ) -> error::Result {
         let obj = file_obj.as_meta()?;
-        if stage.changed_hash(&file_path, &obj.hash) || trace.changed_hash(&file_path, &obj.hash) {
+        if !trace.changed_hash(&file_path, &obj.hash) {
+            return Ok(());
+        }
+
+        if stage.changed_hash(&file_path, &obj.hash) {
+            *changed = true;
             self.object.write(&obj)?;
             stage.insert(file_path, obj.hash);
         }
@@ -82,10 +93,12 @@ impl<Fs, Io> Stage<Fs, Io>
 
     fn add_delete_objs_into_staging(
         &self,
-        trace_tree: &TreeObj,
         staging: &mut TreeObj,
-        work_space_path: &str) -> error::Result{
-        for (path, hash) in self.scan_deleted_files(trace_tree, work_space_path)?{
+        changed: &mut bool,
+        trace_tree: &TreeObj,
+        work_space_path: &str) -> error::Result {
+        for (path, hash) in self.scan_deleted_files(trace_tree, work_space_path)? {
+            *changed = true;
             let delete_obj = DeleteObj(hash).as_meta()?;
             self.object.write(&delete_obj)?;
             staging.insert(path, delete_obj.hash);
@@ -115,6 +128,7 @@ impl<Fs, Io> Stage<Fs, Io>
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
+    use crate::error;
     use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
@@ -122,6 +136,7 @@ mod tests {
     use crate::object::delete::DeleteObj;
     use crate::object::file::FileObj;
     use crate::operation::commit::Commit;
+    use crate::operation::stage;
     use crate::operation::stage::Stage;
     use crate::tests::init_main_branch;
 
@@ -177,5 +192,22 @@ mod tests {
             .unwrap()
             .buf;
         assert_eq!(buf, delete_hello.buf);
+    }
+
+
+    #[test]
+    fn no_moved_if_not_changed_file() {
+        let mock = MockFileSystem::default();
+        init_main_branch(mock.clone());
+
+        let stage = stage::Stage::new(BranchName::main(), mock.clone());
+
+        mock.write("./hello.txt", b"hello").unwrap();
+        stage.execute(".").unwrap();
+
+        match stage.execute(".") {
+            Err(error::Error::ChangedFileNotExits) => {}
+            _ => panic!("expected the [error::Error::ChangedFileNotExits] bad was.")
+        }
     }
 }

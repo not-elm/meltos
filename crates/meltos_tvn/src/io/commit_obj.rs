@@ -162,11 +162,13 @@ mod tests {
         let branch = BranchName::main();
         let stage = Stage::new(branch.clone(), mock.clone());
         let commit = Commit::new(branch.clone(), mock.clone());
-        let commit_obj = CommitObjIo::new(branch, mock);
+        let commit_obj = CommitObjIo::new(branch, mock.clone());
 
+        mock.write("./hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
 
+        mock.write("./hello.txt", b"hello2").unwrap();
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
 

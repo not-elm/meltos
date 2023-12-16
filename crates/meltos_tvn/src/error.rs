@@ -33,6 +33,9 @@ pub enum Error {
     #[error("not found stages")]
     NotfoundStages,
 
+    #[error("changed file does not exists")]
+    ChangedFileNotExits,
+
     #[error("not found trace: commit hash={0}")]
     NotfoundTrace(CommitHash),
 
