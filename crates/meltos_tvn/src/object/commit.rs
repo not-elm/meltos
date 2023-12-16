@@ -101,8 +101,8 @@ fn decode_parents(buf: &mut VecDeque<&[u8]>) -> error::Result<Vec<CommitHash>> {
 #[cfg(test)]
 mod tests {
     use crate::io::atomic::head::CommitText;
-    use crate::object::{Decodable, Encodable, ObjHash};
     use crate::object::commit::{CommitHash, CommitObj, HEAD};
+    use crate::object::{Decodable, Encodable, ObjHash};
 
     #[test]
     fn serialize() {

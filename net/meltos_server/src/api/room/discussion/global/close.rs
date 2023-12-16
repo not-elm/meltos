@@ -33,7 +33,7 @@ mod tests {
     use tower::ServiceExt;
 
     use crate::api::test_util::{
-        http_create_discussion, http_discussion_close, http_Fs_room, logged_in_app,
+        http_Fs_room, http_create_discussion, http_discussion_close, logged_in_app,
     };
 
     #[tokio::test]

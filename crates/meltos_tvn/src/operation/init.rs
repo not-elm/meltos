@@ -6,9 +6,9 @@ use crate::operation::commit::Commit;
 
 #[derive(Debug, Clone)]
 pub struct Init<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     commit: Commit<Fs, Io>,
     fs: FsIo<Fs, Io>,
@@ -16,24 +16,23 @@ pub struct Init<Fs, Io>
 
 
 impl<Fs, Io> Init<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> Init<Fs, Io> {
         Self {
             commit: Commit::new(branch_name.clone(), fs.clone()),
             fs: FsIo::new(fs.clone()),
-
         }
     }
 }
 
 
 impl<Fs, Io> Init<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     /// Initialize the project.
     ///
@@ -63,12 +62,12 @@ impl<Fs, Io> Init<Fs, Io>
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::head::HeadIo;
-    use crate::object::{AsMeta, Encodable};
     use crate::object::commit::CommitHash;
     use crate::object::tree::TreeObj;
+    use crate::object::{AsMeta, Encodable};
     use crate::operation::commit::Commit;
     use crate::operation::init;
     use crate::operation::init::Init;
@@ -99,7 +98,10 @@ mod tests {
         let head_commit_hash = read_head_commit_hash(mock.clone());
         let commit = Commit::new(BranchName::main(), mock.clone());
         let null_commit = commit.create_null_commit(TreeObj::default().as_meta().unwrap());
-        assert_eq!(head_commit_hash, CommitHash(null_commit.as_meta().unwrap().hash));
+        assert_eq!(
+            head_commit_hash,
+            CommitHash(null_commit.as_meta().unwrap().hash)
+        );
     }
 
 
@@ -112,8 +114,13 @@ mod tests {
         init.execute().unwrap();
 
         let head_commit_hash = read_head_commit_hash(mock.clone());
-        let trace_tree_hash = mock.read(&format!("./.meltos/traces/{head_commit_hash}")).unwrap();
-        assert_eq!(trace_tree_hash, Some(TreeObj::default().as_meta().unwrap().hash.encode().unwrap()));
+        let trace_tree_hash = mock
+            .read(&format!("./.meltos/traces/{head_commit_hash}"))
+            .unwrap();
+        assert_eq!(
+            trace_tree_hash,
+            Some(TreeObj::default().as_meta().unwrap().hash.encode().unwrap())
+        );
     }
 
 

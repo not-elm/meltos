@@ -10,7 +10,6 @@ use crate::operation;
 pub struct InitArgs;
 
 
-
 #[async_trait]
 impl CommandExecutable for InitArgs {
     async fn execute(self) -> crate::error::Result {
@@ -20,5 +19,3 @@ impl CommandExecutable for InitArgs {
         Ok(())
     }
 }
-
-

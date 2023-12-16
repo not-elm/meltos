@@ -14,8 +14,8 @@ pub trait AsSuccessResponse {
 }
 
 impl<D> AsSuccessResponse for D
-    where
-        D: Serialize,
+where
+    D: Serialize,
 {
     fn as_success_response(&self) -> Response {
         Response::builder()
@@ -26,11 +26,11 @@ impl<D> AsSuccessResponse for D
 
 #[cfg(test)]
 mod test_util {
-    use axum::{async_trait, http, Router};
     use axum::body::Body;
     use axum::extract::Request;
     use axum::http::header;
     use axum::response::Response;
+    use axum::{async_trait, http, Router};
     use http_body_util::BodyExt;
     use serde::de::DeserializeOwned;
     use tower::{Service, ServiceExt};
@@ -108,7 +108,7 @@ mod test_util {
                 .body(Body::from(reply.as_json()))
                 .unwrap(),
         )
-            .await
+        .await
     }
 
     pub async fn http_discussion_close(
@@ -127,7 +127,7 @@ mod test_util {
                 .body(Body::empty())
                 .unwrap(),
         )
-            .await
+        .await
     }
 
     pub fn Fs_room_request(session_id: SessionId) -> Request {

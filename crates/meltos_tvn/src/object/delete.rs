@@ -1,4 +1,3 @@
-
 use crate::error;
 
 use crate::object::{AsMeta, Decodable, Encodable, ObjHash, ObjMeta};
@@ -36,8 +35,8 @@ impl Decodable for DeleteObj {
 
 #[cfg(test)]
 mod tests {
-    use crate::object::{Decodable, Encodable, ObjHash};
     use crate::object::delete::DeleteObj;
+    use crate::object::{Decodable, Encodable, ObjHash};
 
     #[test]
     fn encode() {

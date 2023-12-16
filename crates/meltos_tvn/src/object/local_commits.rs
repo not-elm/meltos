@@ -3,8 +3,8 @@ use std::str::FromStr;
 
 use meltos_util::macros::{Deref, DerefMut};
 
-use crate::object::{AsMeta, Decodable, Encodable, ObjMeta};
 use crate::object::commit::CommitHash;
+use crate::object::{AsMeta, Decodable, Encodable, ObjMeta};
 
 #[repr(transparent)]
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Deref, DerefMut, Default)]
@@ -25,13 +25,13 @@ impl Encodable for LocalCommitsObj {
     fn encode(&self) -> crate::error::Result<Vec<u8>> {
         let mut buf = HEADER.to_vec();
         buf.extend(format!("{}\0", self.0.len()).as_bytes());
-        buf.extend(self
-            .0
-            .iter()
-            .map(|hash| hash.to_string())
-            .collect::<Vec<String>>()
-            .join("\0")
-            .as_bytes()
+        buf.extend(
+            self.0
+                .iter()
+                .map(|hash| hash.to_string())
+                .collect::<Vec<String>>()
+                .join("\0")
+                .as_bytes(),
         );
         Ok(buf)
     }
@@ -57,9 +57,9 @@ impl Decodable for LocalCommitsObj {
 
 #[cfg(test)]
 mod tests {
-    use crate::object::{Decodable, Encodable, ObjHash};
     use crate::object::commit::CommitHash;
     use crate::object::local_commits::LocalCommitsObj;
+    use crate::object::{Decodable, Encodable, ObjHash};
 
     #[test]
     fn encode() {

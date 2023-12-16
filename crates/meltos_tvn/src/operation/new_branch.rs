@@ -6,9 +6,9 @@ use crate::io::atomic::work_branch::WorkingIo;
 
 #[derive(Debug, Clone)]
 pub struct NewBranch<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     working: WorkingIo<Fs, Io>,
     fs: FsIo<Fs, Io>,
@@ -16,9 +16,9 @@ pub struct NewBranch<Fs, Io>
 
 
 impl<Fs, Io> NewBranch<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(fs: Fs) -> NewBranch<Fs, Io> {
         Self {
@@ -57,7 +57,9 @@ mod tests {
 
         let new_branch = NewBranch::new(mock.clone());
         let working = WorkingIo::new(mock);
-        new_branch.execute(BranchName::main(), BranchName::from("second")).unwrap();
+        new_branch
+            .execute(BranchName::main(), BranchName::from("second"))
+            .unwrap();
         let branch_name = working.read().unwrap();
         assert_eq!(branch_name, BranchName::from("second"));
     }
@@ -69,7 +71,9 @@ mod tests {
 
         let new_branch = NewBranch::new(mock.clone());
         let head = HeadIo::new(BranchName::from("second"), mock);
-        new_branch.execute(BranchName::main(), BranchName::from("second")).unwrap();
+        new_branch
+            .execute(BranchName::main(), BranchName::from("second"))
+            .unwrap();
 
         let head = head.read().unwrap();
         assert_eq!(head, null_commit_hash);

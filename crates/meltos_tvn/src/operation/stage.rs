@@ -1,12 +1,14 @@
 use crate::branch::BranchName;
 use crate::error;
-use crate::file_system::FileSystem;
+use crate::file_system::{FilePath, FileSystem, FsIo};
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::atomic::workspace::WorkspaceIo;
 use crate::io::trace_tree::TraceTreeIo;
-use crate::object::ObjMetaPath;
+use crate::object::{AsMeta, ObjHash};
+use crate::object::delete::DeleteObj;
+use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
 
 #[derive(Debug, Clone)]
@@ -20,13 +22,14 @@ pub struct Stage<Fs, Io>
     object: ObjIo<Fs, Io>,
     head: HeadIo<Fs, Io>,
     workspace: WorkspaceIo<Fs, Io>,
+    fs: FsIo<Fs, Io>,
 }
 
 
 impl<Fs, Io> Stage<Fs, Io>
     where
         Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read
+        Io: std::io::Write + std::io::Read,
 {
     #[inline]
     pub fn new(branch_name: BranchName, fs: Fs) -> Stage<Fs, Io> {
@@ -35,7 +38,8 @@ impl<Fs, Io> Stage<Fs, Io>
             workspace: WorkspaceIo::new(fs.clone()),
             trace_tree: TraceTreeIo::new(fs.clone()),
             head: HeadIo::new(branch_name, fs.clone()),
-            object: ObjIo::new(fs),
+            object: ObjIo::new(fs.clone()),
+            fs: FsIo::new(fs),
         }
     }
 }
@@ -50,21 +54,60 @@ impl<Fs, Io> Stage<Fs, Io>
         let mut stage_tree = self.staging.read()?.unwrap_or_default();
         let head = self.head.read()?;
         let trace_tree = self.trace_tree.read(&head)?;
-        for obj in self.workspace.convert_to_objs(workspace_path)? {
-            self.stage_file(&mut stage_tree, &trace_tree, obj?)?;
+        for result in self.workspace.convert_to_objs(workspace_path)? {
+            let (file_path, file_obj) = result?;
+            self.stage_file(&mut stage_tree, &trace_tree, file_path, file_obj)?;
         }
+        self.add_delete_objs_into_staging(&trace_tree, &mut stage_tree, workspace_path)?;
         self.staging.write_tree(&stage_tree)?;
         Ok(())
     }
 
-    fn stage_file(&self, stage: &mut TreeObj, trace: &TreeObj, meta: ObjMetaPath) -> error::Result {
-        if stage.changed_hash(&meta.file_path, meta.hash())
-            || trace.changed_hash(&meta.file_path, meta.hash())
-        {
-            self.object.write(&meta.obj)?;
-            stage.insert(meta.file_path, meta.obj.hash);
+
+    fn stage_file(
+        &self,
+        stage: &mut TreeObj,
+        trace: &TreeObj,
+        file_path: FilePath,
+        file_obj: FileObj,
+    ) -> error::Result {
+        let obj = file_obj.as_meta()?;
+        if stage.changed_hash(&file_path, &obj.hash) || trace.changed_hash(&file_path, &obj.hash) {
+            self.object.write(&obj)?;
+            stage.insert(file_path, obj.hash);
         }
         Ok(())
+    }
+
+
+    fn add_delete_objs_into_staging(
+        &self,
+        trace_tree: &TreeObj,
+        staging: &mut TreeObj,
+        work_space_path: &str) -> error::Result{
+        for (path, hash) in self.scan_deleted_files(trace_tree, work_space_path)?{
+            let delete_obj = DeleteObj(hash).as_meta()?;
+            self.object.write(&delete_obj)?;
+            staging.insert(path, delete_obj.hash);
+        }
+        Ok(())
+    }
+    fn scan_deleted_files(
+        &self,
+        trace_tree: &TreeObj,
+        workspace_path: &str,
+    ) -> error::Result<Vec<(FilePath, ObjHash)>> {
+        let work_space_files = self.fs.all_file_path(workspace_path)?;
+        Ok(trace_tree
+            .iter()
+            .filter_map(|(path, hash)| {
+                if work_space_files.contains(&path.0) {
+                    None
+                } else {
+                    Some((path.clone(), hash.clone()))
+                }
+            })
+            .collect())
     }
 }
 
@@ -75,9 +118,11 @@ mod tests {
     use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
-    use crate::object::ObjHash;
+    use crate::object::{AsMeta, ObjHash};
+    use crate::object::delete::DeleteObj;
+    use crate::object::file::FileObj;
+    use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
-
     use crate::tests::init_main_branch;
 
     #[test]
@@ -85,16 +130,52 @@ mod tests {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
         let stage = Stage::new(BranchName::main(), mock.clone());
-        mock.write(&FilePath::from_path("./hello"), b"hello").unwrap();
-        mock.write(&FilePath::from_path("./src/main.rs"), "dasds日本語".as_bytes()).unwrap();
+        mock.write(&FilePath::from_path("./hello"), b"hello")
+            .unwrap();
+        mock.write(
+            &FilePath::from_path("./src/main.rs"),
+            "dasds日本語".as_bytes(),
+        )
+            .unwrap();
         stage.execute(".").unwrap();
 
         let obj = ObjIo::new(mock);
-        let obj1 = obj.read_obj(&ObjHash::new(b"hello")).unwrap()
-            .unwrap();
+        let obj1 = obj.read_obj(&ObjHash::new(b"hello")).unwrap().unwrap();
         assert_eq!(obj1.buf, b"hello");
 
-        let obj2 = obj.read_obj(&ObjHash::new("dasds日本語".as_bytes())).unwrap().unwrap();
+        let obj2 = obj
+            .read_obj(&ObjHash::new("dasds日本語".as_bytes()))
+            .unwrap()
+            .unwrap();
         assert_eq!(obj2.buf, "dasds日本語".as_bytes());
+    }
+
+
+    #[test]
+    fn create_delete_obj() {
+        let mock = MockFileSystem::default();
+        init_main_branch(mock.clone());
+
+        let stage = Stage::new(BranchName::main(), mock.clone());
+        let commit = Commit::new(BranchName::main(), mock.clone());
+
+        mock.write("./hello.txt", b"hello").unwrap();
+        stage.execute("./hello.txt").unwrap();
+        commit.execute("add hello.txt").unwrap();
+
+        mock.delete("./hello.txt").unwrap();
+        stage.execute("./hello.txt").unwrap();
+        commit.execute("delete hello.txt").unwrap();
+
+        let hello_hash = FileObj(b"hello".to_vec()).as_meta().unwrap().hash;
+        let delete_hello = DeleteObj(hello_hash).as_meta().unwrap();
+        let delete_hello_hash = delete_hello.hash;
+
+        let buf = ObjIo::new(mock)
+            .read_obj(&delete_hello_hash)
+            .unwrap()
+            .unwrap()
+            .buf;
+        assert_eq!(buf, delete_hello.buf);
     }
 }

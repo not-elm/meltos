@@ -2,15 +2,15 @@ use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
-use crate::object::AsMeta;
 use crate::object::commit::CommitHash;
 use crate::object::tree::TreeObj;
+use crate::object::AsMeta;
 
 #[derive(Debug, Clone)]
 pub struct TraceTreeIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     trace: TraceIo<Fs, Io>,
     object: ObjIo<Fs, Io>,
@@ -18,9 +18,9 @@ pub struct TraceTreeIo<Fs, Io>
 
 
 impl<Fs, Io> TraceTreeIo<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(fs: Fs) -> TraceTreeIo<Fs, Io> {
         Self {
@@ -31,11 +31,11 @@ impl<Fs, Io> TraceTreeIo<Fs, Io>
 }
 
 impl<Fs, Io> TraceTreeIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
-    pub fn write(&self, trace_tree: &TreeObj, commit_hash: &CommitHash) -> error::Result{
+    pub fn write(&self, trace_tree: &TreeObj, commit_hash: &CommitHash) -> error::Result {
         let trace_obj = trace_tree.as_meta()?;
         self.trace.write(commit_hash, &trace_obj.hash)?;
         self.object.write(&trace_obj)?;
@@ -54,12 +54,12 @@ impl<Fs, Io> TraceTreeIo<Fs, Io>
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::{FilePath, FileSystem};
     use crate::io::trace_tree::TraceTreeIo;
-    use crate::object::{AsMeta, Encodable, ObjHash};
     use crate::object::commit::CommitHash;
     use crate::object::tree::TreeObj;
+    use crate::object::{AsMeta, Encodable, ObjHash};
     use crate::operation::init;
 
     #[test]
@@ -74,7 +74,11 @@ mod tests {
 
         let commit_hash = CommitHash(ObjHash::new(b"commit"));
         trace_tree.write(&tree, &commit_hash).unwrap();
-        mock.write(&format!("./.meltos/branches/traces/{commit_hash}"), &tree.as_meta().unwrap().hash.encode().unwrap()).unwrap();
+        mock.write(
+            &format!("./.meltos/branches/traces/{commit_hash}"),
+            &tree.as_meta().unwrap().hash.encode().unwrap(),
+        )
+        .unwrap();
         trace_tree.read(&commit_hash).unwrap();
     }
 
@@ -91,5 +95,3 @@ mod tests {
         assert_eq!(tree_obj, staging);
     }
 }
-
-

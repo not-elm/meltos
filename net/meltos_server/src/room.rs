@@ -47,7 +47,7 @@ impl RoomMap {
                     json!({
                         "error": format!("room_id {room_id} is not exists")
                     })
-                        .to_string(),
+                    .to_string(),
                 ))
                 .unwrap(),
         )
@@ -75,10 +75,10 @@ impl Room {
         user_id: UserId,
         f: F,
     ) -> error::Result<Response>
-        where
-            F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
-            O: Future<Output=error::Result<S>>,
-            S: Serialize,
+    where
+        F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
+        O: Future<Output = error::Result<S>>,
+        S: Serialize,
     {
         let command = f(self.as_global_discussion_executor(user_id)).await?;
         Ok(command.as_success_response())

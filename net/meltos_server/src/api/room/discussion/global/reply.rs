@@ -26,7 +26,7 @@ mod tests {
     use meltos::user::UserId;
 
     use crate::api::test_util::{
-        http_create_discussion, http_Fs_room, http_reply, http_speak, logged_in_app,
+        http_Fs_room, http_create_discussion, http_reply, http_speak, logged_in_app,
     };
 
     #[tokio::test]
@@ -42,7 +42,7 @@ mod tests {
                 message: MessageText::from("message"),
             },
         )
-            .await;
+        .await;
         let replied = http_reply(
             &mut app,
             &room_id,
@@ -51,7 +51,7 @@ mod tests {
                 text: MessageText::from("reply"),
             },
         )
-            .await;
+        .await;
 
         assert_eq!(&replied.reply_message_id, &spoke.message.id);
         assert_eq!(

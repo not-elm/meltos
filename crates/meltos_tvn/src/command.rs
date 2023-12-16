@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use auto_delegate::Delegate;
-use clap::{Parser, Subcommand};
+use clap::Parser;
 
 use crate::command::commit::CommitArgs;
 use crate::command::init::InitArgs;
@@ -8,10 +8,10 @@ use crate::command::push::PushArgs;
 use crate::command::stage::StageArgs;
 use crate::error;
 
-pub mod init;
-pub mod stage;
 pub mod commit;
+pub mod init;
 pub mod push;
+pub mod stage;
 
 #[async_trait]
 #[auto_delegate::delegate]

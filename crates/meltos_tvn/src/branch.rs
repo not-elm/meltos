@@ -17,8 +17,9 @@ impl BranchName {
 
 
     pub fn working<Fs, Io>(fs: Fs) -> std::io::Result<Self>
-        where Fs: FileSystem<Io>,
-              Io: std::io::Read + std::io::Write
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Read + std::io::Write,
     {
         WorkingIo::new(fs).read()
     }

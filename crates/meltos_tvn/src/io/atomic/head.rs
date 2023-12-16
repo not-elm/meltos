@@ -1,26 +1,25 @@
-
 use meltos_util::impl_string_new_type;
 
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
-use crate::object::{Decodable, Encodable, ObjHash};
 use crate::object::commit::CommitHash;
+use crate::object::{Decodable, Encodable, ObjHash};
 
 #[derive(Debug, Clone)]
 pub struct HeadIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     io: FsIo<Fs, Io>,
     branch_name: BranchName,
 }
 
 impl<Fs, Io> HeadIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> HeadIo<Fs, Io> {
         Self {
@@ -29,10 +28,7 @@ impl<Fs, Io> HeadIo<Fs, Io>
         }
     }
 
-    pub fn write(
-        &self,
-        commit_hash: CommitHash,
-    ) -> std::io::Result<()> {
+    pub fn write(&self, commit_hash: CommitHash) -> std::io::Result<()> {
         self.io.write(
             &format!(".meltos/branches/{}/HEAD", self.branch_name),
             &commit_hash.encode().unwrap(),
@@ -41,8 +37,10 @@ impl<Fs, Io> HeadIo<Fs, Io>
     }
 
     pub fn read(&self) -> error::Result<CommitHash> {
-        let buf = self.io.try_read(&format!(".meltos/branches/{}/HEAD", self.branch_name))
-            .map_err(|_|error::Error::NotfoundHead)?;
+        let buf = self
+            .io
+            .try_read(&format!(".meltos/branches/{}/HEAD", self.branch_name))
+            .map_err(|_| error::Error::NotfoundHead)?;
         Ok(CommitHash(ObjHash::decode(&buf)?))
     }
 }
@@ -65,5 +63,3 @@ impl Decodable for CommitText {
         Ok(Self(String::from_utf8(buf.to_vec()).unwrap()))
     }
 }
-
-

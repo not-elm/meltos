@@ -24,9 +24,7 @@ mod tests {
     use meltos::command::request::discussion::global::Speak;
     use meltos::discussion::message::MessageText;
 
-    use crate::api::test_util::{
-        http_create_discussion, http_Fs_room, http_speak, logged_in_app,
-    };
+    use crate::api::test_util::{http_Fs_room, http_create_discussion, http_speak, logged_in_app};
 
     #[tokio::test]
     async fn return_spoke() {
@@ -41,7 +39,7 @@ mod tests {
                 message: MessageText::from("Message"),
             },
         )
-            .await;
+        .await;
 
         assert_eq!(&spoke.message.text, &MessageText::from("Message"));
         assert_eq!(&spoke.discussion_id, &created.meta.id);

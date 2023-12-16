@@ -1,6 +1,6 @@
+use crate::branch::BranchName;
 use async_trait::async_trait;
 use clap::Args;
-use crate::branch::BranchName;
 
 use crate::command::CommandExecutable;
 use crate::file_system::file::StdFileSystem;

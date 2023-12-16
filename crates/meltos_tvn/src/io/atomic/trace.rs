@@ -1,22 +1,21 @@
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
-use crate::object::{Decodable, Encodable, ObjHash};
 use crate::object::commit::CommitHash;
+use crate::object::{Decodable, Encodable, ObjHash};
 
 #[derive(Debug, Clone)]
 pub struct TraceIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     io: FsIo<Fs, Io>,
-
 }
 
 impl<Fs, Io> TraceIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(fs: Fs) -> TraceIo<Fs, Io> {
         Self {

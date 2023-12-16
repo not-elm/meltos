@@ -7,19 +7,19 @@ use crate::operation::init::Init;
 use crate::operation::push::Push;
 use crate::operation::stage::Stage;
 
-pub mod init;
-pub mod stage;
 pub mod commit;
-pub mod push;
-pub mod unzip;
+pub mod init;
 pub mod new_branch;
+pub mod push;
+pub mod stage;
+pub mod unzip;
 
 
 #[derive(Debug, Clone)]
 pub struct Operations<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     pub init: Init<Fs, Io>,
     pub stage: Stage<Fs, Io>,
@@ -29,9 +29,9 @@ pub struct Operations<Fs, Io>
 
 
 impl<Fs, Io> Operations<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     #[inline]
     pub fn new_main(fs: Fs) -> Operations<Fs, Io> {
@@ -53,4 +53,3 @@ impl<Fs, Io> Operations<Fs, Io>
         }
     }
 }
-

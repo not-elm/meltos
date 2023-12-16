@@ -52,18 +52,18 @@ pub trait FileSystem<Io: std::io::Read + std::io::Write> {
 
 #[derive(Debug)]
 pub struct FsIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Read + std::io::Write,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Read + std::io::Write,
 {
     fs: Fs,
     _io: PhantomData<Io>,
 }
 
 impl<Fs, Io> FsIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Read + std::io::Write,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Read + std::io::Write,
 {
     #[inline]
     pub const fn new(fs: Fs) -> FsIo<Fs, Io> {
@@ -75,9 +75,9 @@ impl<Fs, Io> FsIo<Fs, Io>
 }
 
 impl<Fs, Io> Default for FsIo<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Default,
-        Io: std::io::Read + std::io::Write,
+where
+    Fs: FileSystem<Io> + Default,
+    Io: std::io::Read + std::io::Write,
 {
     #[inline]
     fn default() -> FsIo<Fs, Io> {
@@ -89,9 +89,9 @@ impl<Fs, Io> Default for FsIo<Fs, Io>
 }
 
 impl<Fs, Io> Clone for FsIo<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Read + std::io::Write,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Read + std::io::Write,
 {
     fn clone(&self) -> Self {
         Self::new(self.fs.clone())
@@ -99,9 +99,9 @@ impl<Fs, Io> Clone for FsIo<Fs, Io>
 }
 
 impl<Fs, Io> FileSystem<Io> for FsIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Read + std::io::Write,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Read + std::io::Write,
 {
     #[inline]
     fn open_file(&self, path: &str) -> std::io::Result<Option<Io>> {

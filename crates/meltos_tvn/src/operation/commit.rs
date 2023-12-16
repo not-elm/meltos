@@ -7,15 +7,15 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::commit_obj::CommitObjIo;
 use crate::io::trace_tree::TraceTreeIo;
-use crate::object::{AsMeta, ObjMeta};
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::tree::TreeObj;
+use crate::object::{AsMeta, ObjMeta};
 
 #[derive(Debug, Clone)]
 pub struct Commit<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     commit_obj: CommitObjIo<Fs, Io>,
     head: HeadIo<Fs, Io>,
@@ -26,9 +26,9 @@ pub struct Commit<Fs, Io>
 }
 
 impl<Fs, Io> Commit<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> Commit<Fs, Io> {
         Self {
@@ -44,9 +44,9 @@ impl<Fs, Io> Commit<Fs, Io>
 
 
 impl<Fs, Io> Commit<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn execute(&self, commit_text: impl Into<CommitText>) -> error::Result<CommitHash> {
         let Some(stage_tree) = self.staging.read()? else {
@@ -99,7 +99,8 @@ impl<Fs, Io> Commit<Fs, Io>
         let commit_obj = commit.as_meta()?;
         self.object.write(&commit_obj)?;
         self.head.write(CommitHash(commit_obj.hash.clone()))?;
-        self.local_commits.append(CommitHash(commit_obj.hash.clone()))?;
+        self.local_commits
+            .append(CommitHash(commit_obj.hash.clone()))?;
         Ok(CommitHash(commit_obj.hash.clone()))
     }
 }
@@ -109,16 +110,16 @@ impl<Fs, Io> Commit<Fs, Io>
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::{FilePath, FileSystem};
     use crate::io::atomic::head::{CommitText, HeadIo};
     use crate::io::atomic::local_commits::LocalCommitsIo;
     use crate::io::atomic::object::ObjIo;
     use crate::io::atomic::staging::StagingIo;
-    use crate::object::{AsMeta, ObjHash};
     use crate::object::commit::CommitObj;
     use crate::object::local_commits::LocalCommitsObj;
     use crate::object::tree::TreeObj;
+    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::tests::init_main_branch;
@@ -129,7 +130,7 @@ mod tests {
         let commit = Commit::new(BranchName::main(), mock);
         match commit.execute("") {
             Err(error::Error::NotfoundStages) => {}
-            _ => panic!("expect return error::Error::NotfoundStages bad none")
+            _ => panic!("expect return error::Error::NotfoundStages bad none"),
         }
     }
 
@@ -166,11 +167,14 @@ mod tests {
 
         let mut tree = TreeObj::default();
         tree.insert(FilePath::from_path("./hello"), ObjHash::new(b"hello"));
-        assert_eq!(commit, CommitObj {
-            parents: vec![null_commit_hash],
-            text: CommitText::from("test"),
-            committed_objs_tree: tree.as_meta().unwrap().hash,
-        });
+        assert_eq!(
+            commit,
+            CommitObj {
+                parents: vec![null_commit_hash],
+                text: CommitText::from("test"),
+                committed_objs_tree: tree.as_meta().unwrap().hash,
+            }
+        );
     }
 
     #[test]
@@ -206,6 +210,9 @@ mod tests {
         let commit_hash2 = commit.execute("2").unwrap();
 
         let local = local_commits.read().unwrap().unwrap();
-        assert_eq!(local, LocalCommitsObj(vec![null_commit_hash, commit_hash1, commit_hash2]))
+        assert_eq!(
+            local,
+            LocalCommitsObj(vec![null_commit_hash, commit_hash1, commit_hash2])
+        )
     }
 }

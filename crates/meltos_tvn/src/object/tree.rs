@@ -9,18 +9,18 @@ use crate::object::{AsMeta, Decodable, Encodable, ObjHash, ObjMeta};
 
 #[derive(Debug, Clone)]
 pub struct TreeIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     io: FsIo<Fs, Io>,
     file_path: FilePath,
 }
 
 impl<Fs, Io> TreeIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     #[inline]
     pub fn new(file_path: impl Into<FilePath>, io: FsIo<Fs, Io>) -> TreeIo<Fs, Io> {
@@ -31,8 +31,7 @@ impl<Fs, Io> TreeIo<Fs, Io>
     }
 
     pub fn write_tree(&self, tree: &TreeObj) -> error::Result<()> {
-        self.io
-            .write(&self.file_path, &tree.encode()?)?;
+        self.io.write(&self.file_path, &tree.encode()?)?;
         Ok(())
     }
 
@@ -115,9 +114,11 @@ impl Encodable for TreeObj {
         let mut key_value = self
             .0
             .iter()
-            .map(|(file_path, hash)| KeyValue {
-                file_path,
-                hash,
+            .map(|(file_path, hash)| {
+                KeyValue {
+                    file_path,
+                    hash,
+                }
             })
             .collect::<Vec<KeyValue>>();
         key_value.sort();
@@ -163,8 +164,8 @@ fn decode_entry_count(buf: &mut VecDeque<&[u8]>) -> error::Result<usize> {
 #[cfg(test)]
 mod tests {
     use crate::file_system::FilePath;
+    use crate::object::tree::{TreeObj, HEAD};
     use crate::object::{Decodable, Encodable, ObjHash};
-    use crate::object::tree::{HEAD, TreeObj};
 
     #[test]
     fn encode() {

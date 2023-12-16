@@ -3,15 +3,15 @@ use std::io;
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
-use crate::object::{Decodable, Encodable};
 use crate::object::commit::CommitHash;
 use crate::object::local_commits::LocalCommitsObj;
+use crate::object::{Decodable, Encodable};
 
 #[derive(Debug, Clone)]
 pub struct LocalCommitsIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: io::Read + io::Write
+where
+    Fs: FileSystem<Io>,
+    Io: io::Read + io::Write,
 {
     fs: FsIo<Fs, Io>,
     file_path: String,
@@ -19,9 +19,9 @@ pub struct LocalCommitsIo<Fs, Io>
 
 
 impl<Fs, Io> LocalCommitsIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     #[inline]
     pub fn new(branch_name: BranchName, fs: Fs) -> LocalCommitsIo<Fs, Io> {
@@ -45,10 +45,9 @@ impl<Fs, Io> LocalCommitsIo<Fs, Io>
 
 
     pub fn read(&self) -> error::Result<Option<LocalCommitsObj>> {
-        let Some(buf) = self.fs.read(&self.file_path)?
-            else {
-                return Ok(None);
-            };
+        let Some(buf) = self.fs.read(&self.file_path)? else {
+            return Ok(None);
+        };
 
         Ok(Some(LocalCommitsObj::decode(&buf)?))
     }

@@ -1,14 +1,13 @@
 pub mod branch;
 pub mod error;
 pub mod file_system;
-pub mod object;
 pub mod io;
+pub mod object;
 pub mod operation;
 
 #[cfg(feature = "cli")]
 pub mod command;
 mod remote_client;
-
 
 
 #[cfg(test)]
@@ -18,7 +17,7 @@ mod tests {
     use crate::object::commit::CommitHash;
     use crate::operation::init;
 
-    pub(crate) fn init_main_branch(mock: MockFileSystem) -> CommitHash{
+    pub(crate) fn init_main_branch(mock: MockFileSystem) -> CommitHash {
         init::Init::new(BranchName::main(), mock).execute().unwrap()
     }
 }

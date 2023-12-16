@@ -2,7 +2,7 @@ use crate::error;
 use crate::object::{AsMeta, Decodable, Encodable, ObjMeta};
 
 #[repr(transparent)]
-#[derive(Debug, Clone, Eq, PartialEq, Hash, )]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct FileObj(pub Vec<u8>);
 
 
@@ -34,8 +34,8 @@ impl Decodable for FileObj {
 
 #[cfg(test)]
 mod tests {
-    use crate::object::{Decodable, Encodable};
     use crate::object::file::FileObj;
+    use crate::object::{Decodable, Encodable};
 
     #[test]
     fn append_header_if_serialized() {

@@ -9,18 +9,17 @@ use meltos_util::compression::gz::Gz;
 use meltos_util::macros::{Deref, Display};
 
 use crate::error;
-use crate::file_system::FilePath;
 use crate::object::commit::CommitObj;
 use crate::object::delete::DeleteObj;
 use crate::object::file::FileObj;
 use crate::object::local_commits::LocalCommitsObj;
 use crate::object::tree::TreeObj;
 
-pub mod tree;
 pub mod commit;
+pub mod delete;
+pub mod file;
 pub mod local_commits;
-mod file;
-mod delete;
+pub mod tree;
 
 
 #[delegate]
@@ -39,37 +38,6 @@ pub trait Decodable: Sized {
     fn decode(buf: &[u8]) -> error::Result<Self>;
 }
 
-
-#[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct ObjMetaPath {
-    pub file_path: FilePath,
-    pub obj: ObjMeta,
-}
-
-
-impl ObjMetaPath {
-    pub fn new(file_path: FilePath, buf: Vec<u8>) -> io::Result<Self> {
-        Ok(Self {
-            file_path,
-            obj: ObjMeta::compress(buf)?,
-        })
-    }
-
-    #[inline]
-    pub const fn hash(&self) -> &ObjHash {
-        &self.obj.hash
-    }
-
-    #[inline]
-    pub const fn compressed_buf(&self) -> &CompressedBuf {
-        &self.obj.compressed_buf
-    }
-
-    #[inline]
-    pub fn buf(&self) -> &[u8] {
-        &self.obj.buf
-    }
-}
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct ObjMeta {
@@ -105,6 +73,7 @@ impl ObjMeta {
 }
 
 
+
 #[derive(Debug, Clone)]
 pub enum Obj {
     File(FileObj),
@@ -123,7 +92,7 @@ impl AsMeta for Obj {
             Self::Tree(tree) => tree.as_meta(),
             Self::Delete(delete) => delete.as_meta(),
             Self::Commit(commit) => commit.as_meta(),
-            Self::LocalCommits(local_commits) => local_commits.as_meta()
+            Self::LocalCommits(local_commits) => local_commits.as_meta(),
         }
     }
 }
@@ -152,7 +121,8 @@ impl Encodable for ObjHash {
 impl Decodable for ObjHash {
     #[inline]
     fn decode(buf: &[u8]) -> error::Result<Self> {
-        let hash = String::from_utf8(buf.to_vec()).map_err(|_| error::Error::ObjHashBufferIsInvalid)?;
+        let hash =
+            String::from_utf8(buf.to_vec()).map_err(|_| error::Error::ObjHashBufferIsInvalid)?;
         Ok(Self(hash))
     }
 }
