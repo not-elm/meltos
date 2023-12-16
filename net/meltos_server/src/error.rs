@@ -30,7 +30,7 @@ pub enum Error {
     #[error("failed sent server command error")]
     SendServerOrder,
 
-    #[error("failed sent client command error")]
+    #[error("failed sent remote_client command error")]
     SendClientOrder,
 
     #[error("room_id {0} was already created")]

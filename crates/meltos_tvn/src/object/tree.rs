@@ -33,12 +33,12 @@ impl<Fs, Io> TreeIo<Fs, Io>
 
     pub fn write_tree(&self, tree: &TreeObj) -> std::io::Result<()> {
         self.io
-            .write_all(&self.file_path, &serde_json::to_vec(&tree)?)?;
+            .write(&self.file_path, &serde_json::to_vec(&tree)?)?;
         Ok(())
     }
 
     pub fn read(&self) -> std::io::Result<Option<TreeObj>> {
-        let Some(json) = self.io.read_to_end(&self.file_path)? else {
+        let Some(json) = self.io.read(&self.file_path)? else {
             return Ok(None);
         };
 
@@ -47,7 +47,7 @@ impl<Fs, Io> TreeIo<Fs, Io>
 
     pub fn reset(&self) -> std::io::Result<()> {
         self.io
-            .write_all(&self.file_path, &serde_json::to_vec(&TreeObj::default())?)?;
+            .write(&self.file_path, &serde_json::to_vec(&TreeObj::default())?)?;
         Ok(())
     }
 
@@ -65,7 +65,7 @@ impl<Fs, Io> TreeIo<Fs, Io>
     ) -> std::io::Result<()> {
         let mut tree = self.read()?.unwrap_or_default();
         tree.0.insert(target_path, object_hash);
-        self.io.write_all(&self.file_path, &serde_json::to_vec(&tree)?)?;
+        self.io.write(&self.file_path, &serde_json::to_vec(&tree)?)?;
         Ok(())
     }
 }

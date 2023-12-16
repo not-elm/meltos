@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
@@ -7,6 +9,7 @@ use crate::io::commit_obj::CommitObjIo;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::object::{CompressedBuf, ObjHash};
 use crate::object::tree::TreeObj;
+use crate::remote_client::CommitSendable;
 
 pub struct Push<Fs, Io>
     where
@@ -41,15 +44,16 @@ impl<Fs, Io> Push<Fs, Io>
         Fs: FileSystem<Io>,
         Io: std::io::Write + std::io::Read
 {
-    ///
+    /// Sends the currently locally committed data to the remote.
+    /// * push local commits to remote server.
     /// * clear local commits
-    /// *
-    pub fn execute(&self) -> error::Result {
+    pub async fn execute(&self, sender: &impl CommitSendable) -> error::Result {
         let local_commits = self.commit_obj.read_local_commits()?;
         if local_commits.is_empty() {
             return Err(error::Error::NotfoundLocalCommits);
         }
-        let _push_param = self.create_push_param();
+        let push_param = self.create_push_param()?;
+        sender.send(push_param).await?;
         self.commit_obj.reset_local_commits()?;
         Ok(())
     }
@@ -64,7 +68,7 @@ impl<Fs, Io> Push<Fs, Io>
         Ok(PushParam {
             compressed_objs,
             head,
-            trace
+            trace,
         })
     }
 
@@ -83,7 +87,8 @@ impl<Fs, Io> Push<Fs, Io>
 }
 
 
-struct PushParam {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PushParam {
     pub compressed_objs: Vec<CompressedBuf>,
     pub trace: Option<TreeObj>,
     pub head: ObjHash,
@@ -94,23 +99,26 @@ mod tests {
     use crate::branch::BranchName;
     use crate::error;
     use crate::file_system::mock::MockFileSystem;
+    use crate::io::atomic::head::HeadIo;
     use crate::io::commit_obj::CommitObjIo;
+    use crate::io::trace_tree::TraceTreeIo;
     use crate::operation::commit::Commit;
     use crate::operation::push::Push;
     use crate::operation::stage::Stage;
+    use crate::remote_client::mock::MockRemoteClient;
 
-    #[test]
-    fn failed_if_no_commit() {
+    #[tokio::test]
+    async fn failed_if_no_commit() {
         let mock = MockFileSystem::default();
         let push = Push::new(BranchName::main(), mock);
-        match push.execute() {
+        match push.execute(&MockRemoteClient::default()).await {
             Err(error::Error::NotfoundLocalCommits) => {}
             _ => panic!("expected return error::Error::NotfoundLocalCommits bad was")
         }
     }
 
-    #[test]
-    fn success_if_committed() {
+    #[tokio::test]
+    async fn success_if_committed() {
         let mock = MockFileSystem::default();
         let branch = BranchName::main();
         let stage = Stage::new(branch.clone(), mock.clone());
@@ -119,12 +127,12 @@ mod tests {
 
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
-        assert!(push.execute().is_ok());
+        assert!(push.execute(&MockRemoteClient::default()).await.is_ok());
     }
 
 
-    #[test]
-    fn local_commits_is_cleared_if_succeed() {
+    #[tokio::test]
+    async fn local_commits_is_cleared_if_succeed() {
         let mock = MockFileSystem::default();
         let branch = BranchName::main();
         let commit_obj = CommitObjIo::new(branch.clone(), mock.clone());
@@ -134,8 +142,28 @@ mod tests {
 
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
-        push.execute().unwrap();
+        push.execute(&MockRemoteClient::default()).await.unwrap();
 
         assert_eq!(commit_obj.read_local_commits().unwrap().len(), 0);
+    }
+
+
+    #[tokio::test]
+    async fn push_param() {
+        let mock = MockFileSystem::default();
+        let branch = BranchName::main();
+        let stage = Stage::new(branch.clone(), mock.clone());
+        let commit = Commit::new(branch.clone(), mock.clone());
+        let push = Push::new(branch.clone(), mock.clone());
+
+        stage.execute(".").unwrap();
+        commit.execute("commit text").unwrap();
+        let remote = MockRemoteClient::default();
+        push.execute(&remote).await.unwrap();
+        let param = remote.push_param.lock().await.clone().unwrap();
+        let trace_tree = TraceTreeIo::new(branch.clone(), mock.clone());
+        let head = HeadIo::new(branch, mock);
+        assert_eq!(&param.head, &head.read().unwrap().unwrap());
+        assert_eq!(&param.trace, &trace_tree.read().unwrap());
     }
 }

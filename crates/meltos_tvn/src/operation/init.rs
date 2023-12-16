@@ -70,21 +70,21 @@ mod tests {
     #[test]
     fn init() {
         let mock = MockFileSystem::default();
-        mock.write_all("./src/main.rs", b"bdadasjlgd").unwrap();
-        mock.write_all("./test.rs", b"test").unwrap();
+        mock.write("./src/main.rs", b"bdadasjlgd").unwrap();
+        mock.write("./test.rs", b"test").unwrap();
         let init = Init::new(BranchName::main(), mock.clone());
         init.execute().unwrap();
 
         assert!(&mock
-            .read_to_end(&format!(
+            .read(&format!(
                 ".meltos/objects/{}",
                 ObjHash::new(b"bdadasjlgd")
             ))
             .is_ok());
         assert!(&mock
-            .read_to_end(&format!(".meltos/objects/{}", ObjHash::new(b"test")))
+            .read(&format!(".meltos/objects/{}", ObjHash::new(b"test")))
             .is_ok());
-        assert!(&mock.read_to_end(".meltos/branches/main/NOW").is_ok());
+        assert!(&mock.read(".meltos/branches/main/NOW").is_ok());
     }
 
     #[test]

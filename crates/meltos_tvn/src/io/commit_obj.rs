@@ -180,12 +180,12 @@ mod tests {
         let obj = ObjIo::new(mock.clone());
         let commit_obj = CommitObjIo::new(branch, mock.clone());
 
-        mock.write_all("./hello/hello", b"hello").unwrap();
+        mock.write("./hello/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         let commit_hash1 = commit.execute("commit text").unwrap();
 
-        mock.write_all("./src/sample", b"sample").unwrap();
-        mock.write_all("./t", b"t").unwrap();
+        mock.write("./src/sample", b"sample").unwrap();
+        mock.write("./t", b"t").unwrap();
         stage.execute(".").unwrap();
         let commit_hash2 = commit.execute("commit text").unwrap();
 

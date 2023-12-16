@@ -33,7 +33,7 @@ impl<Fs, Io> HeadIo<Fs, Io>
         &self,
         commit_hash: ObjHash,
     ) -> std::io::Result<()> {
-        self.io.write_all(
+        self.io.write(
             &format!(".meltos/branches/{}/HEAD", self.branch_name),
             &commit_hash.serialize_to_buf(),
         )?;
@@ -43,7 +43,7 @@ impl<Fs, Io> HeadIo<Fs, Io>
     pub fn read(&self) -> error::Result<Option<ObjHash>> {
         let Some(buf) = self
             .io
-            .read_to_end(&format!(".meltos/branches/{}/HEAD", self.branch_name))?
+            .read(&format!(".meltos/branches/{}/HEAD", self.branch_name))?
             else {
                 return Ok(None);
             };

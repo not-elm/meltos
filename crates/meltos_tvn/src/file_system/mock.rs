@@ -80,9 +80,9 @@ mod tests {
         let buf2 = [5, 6, 7, 8];
         let mock = MockFileSystem::default();
 
-        mock.write_all("buf1", &buf1).unwrap();
-        mock.write_all("buf2", &buf2).unwrap();
-        assert_eq!(mock.read_to_end("buf1").unwrap().unwrap(), buf1.to_vec());
-        assert_eq!(mock.read_to_end("buf2").unwrap().unwrap(), buf2.to_vec());
+        mock.write("buf1", &buf1).unwrap();
+        mock.write("buf2", &buf2).unwrap();
+        assert_eq!(mock.read("buf1").unwrap().unwrap(), buf1.to_vec());
+        assert_eq!(mock.read("buf2").unwrap().unwrap(), buf2.to_vec());
     }
 }

@@ -22,6 +22,9 @@ pub enum Error {
     #[error("not found stages")]
     NotfoundStages,
 
+    #[error("not found trace")]
+    NotfoundTrace,
+
     #[error("not found local commits")]
     NotfoundLocalCommits,
 

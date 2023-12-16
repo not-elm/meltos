@@ -66,7 +66,7 @@ impl<Fs, Io> ObjIo<Fs, Io>
     pub fn read(&self, object_hash: &ObjHash) -> error::Result<Option<CompressedBuf>> {
         let Some(buf) = self
             .0
-            .read_to_end(&format!("./.meltos/objects/{}", object_hash))?
+            .read(&format!("./.meltos/objects/{}", object_hash))?
             else {
                 return Ok(None);
             };
@@ -111,7 +111,7 @@ mod tests {
         io.write(&meta.obj).unwrap();
 
         let hello_buf = mock
-            .try_read_to_end(&format!(
+            .try_read(&format!(
                 "./.meltos/objects/{}",
                 meltos_util::hash::hash(buf)
             ))

@@ -79,8 +79,8 @@ mod tests {
     fn create_obj_file_after_staged() {
         let mock = MockFileSystem::default();
         let stage = Stage::new(BranchName::main(), mock.clone());
-        mock.write_all(&FilePath::from_path("./hello"), b"hello").unwrap();
-        mock.write_all(&FilePath::from_path("./src/main.rs"), "dasds日本語".as_bytes()).unwrap();
+        mock.write(&FilePath::from_path("./hello"), b"hello").unwrap();
+        mock.write(&FilePath::from_path("./src/main.rs"), "dasds日本語".as_bytes()).unwrap();
         stage.execute(".").unwrap();
 
         let obj = ObjIo::new(mock);

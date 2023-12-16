@@ -9,6 +9,10 @@ pub mod object;
 pub mod io;
 pub mod operation;
 
+#[cfg(feature = "cli")]
+pub mod cli;
+mod remote_client;
+
 pub struct RepositoryIo<Fs, Io>
     where
         Fs: FileSystem<Io> + Clone,

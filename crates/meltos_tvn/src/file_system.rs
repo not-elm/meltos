@@ -18,7 +18,17 @@ pub trait FileSystem<Io: std::io::Read + std::io::Write> {
 
     fn delete(&self, path: &str) -> std::io::Result<()>;
 
-    fn read_to_end(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
+
+    fn try_read(&self, path: &str) -> std::io::Result<Vec<u8>> {
+        self.read(path).and_then(|buf| {
+            match buf {
+                Some(buf) => Ok(buf),
+                None => Err(std::io::Error::new(ErrorKind::NotFound, "file not found")),
+            }
+        })
+    }
+
+    fn read(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
         let mut buf = Vec::new();
         match self.open_file(path)? {
             Some(mut io) => {
@@ -29,16 +39,7 @@ pub trait FileSystem<Io: std::io::Read + std::io::Write> {
         }
     }
 
-    fn try_read_to_end(&self, path: &str) -> std::io::Result<Vec<u8>> {
-        self.read_to_end(path).and_then(|buf| {
-            match buf {
-                Some(buf) => Ok(buf),
-                None => Err(std::io::Error::new(ErrorKind::NotFound, "file not found")),
-            }
-        })
-    }
-
-    fn write_all(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
+    fn write(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
         self.create(path)?.write_all(buf)
     }
 }
@@ -118,7 +119,7 @@ impl<Fs, Io> FileSystem<Io> for FsIo<Fs, Io>
 
 
 #[repr(transparent)]
-#[derive(Eq, PartialEq, Debug, Clone, Hash, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Debug, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd)]
 pub struct FilePath(pub String);
 impl_string_new_type!(FilePath);
 

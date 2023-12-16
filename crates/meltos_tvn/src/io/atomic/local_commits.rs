@@ -31,7 +31,7 @@ impl<Fs, Io> LocalCommitsIo<Fs, Io>
     }
 
     pub fn write(&self, local_commits: &LocalCommitsObj) -> error::Result {
-        self.fs.write_all(&self.file_path, &local_commits.to_buf())?;
+        self.fs.write(&self.file_path, &local_commits.to_buf())?;
         Ok(())
     }
     
@@ -44,7 +44,7 @@ impl<Fs, Io> LocalCommitsIo<Fs, Io>
 
 
     pub fn read(&self) -> error::Result<Option<LocalCommitsObj>> {
-        let Some(buf) = self.fs.read_to_end(&self.file_path)?
+        let Some(buf) = self.fs.read(&self.file_path)?
             else {
                 return Ok(None);
             };

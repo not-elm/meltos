@@ -75,7 +75,7 @@ mod tests {
         let obj = ObjIo::new(mock.clone());
         obj.write(&tree.as_obj().unwrap()).unwrap();
 
-        mock.write_all("./.meltos/branches/main/TRACE", &tree.as_obj().unwrap().hash.serialize_to_buf()).unwrap();
+        mock.write("./.meltos/branches/main/TRACE", &tree.as_obj().unwrap().hash.serialize_to_buf()).unwrap();
         let trace_tree = io.read();
         assert!(trace_tree.is_ok_and(|tree| tree.is_some()));
     }

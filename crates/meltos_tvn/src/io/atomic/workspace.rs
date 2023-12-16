@@ -33,7 +33,7 @@ impl<Fs, Io> WorkspaceIo<Fs, Io>
     }
 
     pub fn unpack(&self, file_path: &FilePath, obj_buf: &[u8]) -> std::io::Result<()> {
-        self.0.write_all(file_path, obj_buf)
+        self.0.write(file_path, obj_buf)
     }
 }
 
@@ -82,7 +82,7 @@ impl<'a, Fs, Io> ObjectIter<'a, Fs, Io>
 {
     fn read_to_obj(&self) -> std::io::Result<ObjMeta> {
         let path = self.files.get(self.index).unwrap();
-        let buf = self.io.try_read_to_end(path.as_ref())?;
+        let buf = self.io.try_read(path.as_ref())?;
         ObjMeta::new(FilePath::from_path(path), buf)
     }
 }
@@ -98,9 +98,9 @@ mod tests {
     fn read_all_objects_in_dir() {
         let mock = MockFileSystem::default();
         let workspace = WorkspaceIo(FsIo::new(mock.clone()));
-        mock.write_all("hello/hello.txt", b"hello").unwrap();
-        mock.write_all("hello/world", b"world").unwrap();
-        mock.write_all("hello/dir/main.sh", b"echo hi ").unwrap();
+        mock.write("hello/hello.txt", b"hello").unwrap();
+        mock.write("hello/world", b"world").unwrap();
+        mock.write("hello/dir/main.sh", b"echo hi ").unwrap();
         let mut hashes = workspace
             .convert_to_objs("hello")
             .unwrap()

@@ -7,7 +7,18 @@ edition = "2021"
 [dependencies]
 meltos_util = { path = "../meltos_util" }
 
+async-trait = { workspace = true }
 auto-delegate = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+clap = { workspace = true, optional = true }
+
+
+[dev-dependencies]
+tokio = { workspace = true }
+
+
+[features]
+default = []
+cli = ["dep:clap"]

@@ -25,12 +25,12 @@ impl<Fs, Io> WorkBranchIo<Fs, Io>
 {
     pub fn write(&self, branch_name: &BranchName) -> std::io::Result<()> {
         self.0
-            .write_all(".meltos/WORK_BRANCH", &serde_json::to_vec(branch_name)?)?;
+            .write(".meltos/WORK_BRANCH", &serde_json::to_vec(branch_name)?)?;
         Ok(())
     }
 
     pub fn read(&self) -> std::io::Result<BranchName> {
-        let buf = self.0.try_read_to_end(".meltos/WORK_BRANCH")?;
+        let buf = self.0.try_read(".meltos/WORK_BRANCH")?;
         Ok(serde_json::from_slice(&buf)?)
     }
 }

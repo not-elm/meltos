@@ -25,6 +25,6 @@ pub enum Error {
     #[error("message not exists id = {0}")]
     MessageNotExists(MessageId),
 
-    #[error("websocket message can't serialize to client command")]
+    #[error("websocket message can't serialize to remote_client command")]
     SerializeClientCommand,
 }
