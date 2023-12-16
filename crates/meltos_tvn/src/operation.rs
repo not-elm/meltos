@@ -12,7 +12,7 @@ pub mod stage;
 pub mod commit;
 pub mod push;
 pub mod unzip;
-mod new_branch;
+pub mod new_branch;
 
 
 #[derive(Debug, Clone)]

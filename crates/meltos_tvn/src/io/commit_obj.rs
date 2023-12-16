@@ -60,7 +60,7 @@ impl<Fs, Io> CommitObjIo<Fs, Io>
 
     pub fn read_head(&self) -> error::Result<CommitObj> {
         let hash = self.head.read()?;
-        Ok(self.read(&hash)?)
+        self.read(&hash)
     }
 
 
