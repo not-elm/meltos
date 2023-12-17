@@ -2,6 +2,7 @@ use axum::body::Body;
 use axum::http::Response;
 use serde::{Deserialize, Serialize};
 
+use meltos::user::UserId;
 use meltos_tvn::io::bundle::Bundle;
 
 use crate::api::HttpResult;
@@ -15,11 +16,12 @@ use crate::middleware::user::SessionUser;
 ///
 pub async fn join(
     SessionRoom(room): SessionRoom,
-    SessionUser(_user_id): SessionUser,
+    SessionUser(user_id): SessionUser,
 ) -> HttpResult {
     let bundle = room.create_bundle()?;
     let room_meta = RoomMeta {
-        bundle
+        user_id,
+        bundle,
     };
     Ok(Response::builder()
         .body(Body::from(serde_json::to_string(&room_meta).unwrap().to_string()))
@@ -30,6 +32,7 @@ pub async fn join(
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoomMeta {
+    pub user_id: UserId,
     pub bundle: Bundle,
 }
 
@@ -109,5 +112,30 @@ mod tests {
         let response = http_join(&mut app, &room_id, &user_session).await;
         let meta = response.deserialize::<RoomMeta>().await;
         assert_eq!(meta.bundle.branches.len(), 1);
+    }
+
+
+    #[tokio::test]
+    async fn return_user_id() {
+        let session = MockUserSessionIo::default();
+        let owner_session = SessionId("owner".to_string());
+        let user_session = SessionId("user".to_string());
+        session
+            .register(owner_session.clone(), UserId::from("owner"))
+            .await
+            .unwrap();
+        session
+            .register(user_session.clone(), UserId::from("user"))
+            .await
+            .unwrap();
+
+        let mut app = app(session, MockGlobalDiscussionIo::default());
+
+        let mock = MockFileSystem::default();
+        mock.write("./some_text.txt", b"text file").unwrap();
+        let room_id = http_open_room(&mut app, mock.clone(), owner_session).await;
+        let response = http_join(&mut app, &room_id, &user_session).await;
+        let meta = response.deserialize::<RoomMeta>().await;
+        assert_eq!(meta.user_id, UserId::from("user"));
     }
 }
