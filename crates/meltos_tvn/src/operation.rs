@@ -16,6 +16,7 @@ pub mod push;
 pub mod save;
 pub mod stage;
 pub mod unzip;
+mod pull;
 
 
 #[derive(Debug)]
