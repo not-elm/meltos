@@ -15,12 +15,13 @@ use meltos::user::UserId;
 use meltos_backend::discussion::DiscussionIo;
 use meltos_tvn::branch::BranchName;
 use meltos_tvn::file_system::file::StdFileSystem;
+use meltos_tvn::io::bundle::Bundle;
 use meltos_tvn::operation::push::PushParam;
 use meltos_tvn::operation::Operations;
 use meltos_util::macros::Deref;
 use meltos_util::sync::arc_mutex::ArcMutex;
 
-use crate::api::AsSuccessResponse;
+use crate::api::{AsSuccessResponse, HttpResult};
 use crate::error;
 use crate::room::executor::discussion::DiscussionCommandExecutor;
 
@@ -92,6 +93,23 @@ impl Room {
         })?;
 
         Ok(())
+    }
+
+
+
+    pub fn create_bundle(&self) -> std::result::Result<Bundle, Response>{
+        match self.tvn.bundle.create(){
+            Ok(bundle) => Ok(bundle),
+            Err(error) => {
+                let response = Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Body::from(json!({
+                        "error": error.to_string()
+                    }).to_string()))
+                    .unwrap();
+                Err(response)
+            }
+        }
     }
 
 

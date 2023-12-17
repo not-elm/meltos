@@ -2,6 +2,7 @@ use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::atomic::work_branch::WorkingIo;
+use crate::io::bundle::BundleIo;
 use crate::operation::commit::Commit;
 use crate::operation::init::Init;
 use crate::operation::push::Push;
@@ -28,6 +29,7 @@ where
     pub commit: Commit<Fs, Io>,
     pub push: Push<Fs, Io>,
     pub save: Save<Fs, Io>,
+    pub bundle: BundleIo<Fs, Io>,
     fs: Fs,
     branch_name: BranchName,
 }
@@ -56,6 +58,7 @@ where
             commit: Commit::new(branch_name.clone(), fs.clone()),
             push: Push::new(branch_name.clone(), fs.clone()),
             save: Save::new(fs.clone()),
+            bundle: BundleIo::new(fs.clone()),
             fs,
             branch_name,
         }

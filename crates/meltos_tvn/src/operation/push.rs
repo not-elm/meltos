@@ -7,7 +7,6 @@ use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
 use crate::io::commit_obj::CommitObjIo;
-use crate::io::trace_tree::TraceTreeIo;
 use crate::object::{CompressedBuf, ObjHash};
 use crate::object::commit::CommitHash;
 use crate::remote_client::CommitSendable;
@@ -76,14 +75,14 @@ impl<Fs, Io> Push<Fs, Io>
     }
 
 
-    fn read_objs_associated_commits(&self, head: CommitHash) -> error::Result<Vec<CompressedBuf>> {
+    fn read_objs_associated_commits(&self, head: CommitHash) -> error::Result<Vec<(ObjHash, CompressedBuf)>> {
         let obj_hashes = self.commit_obj.read_obj_hashes_associate_with(head)?;
         let mut obj_bufs = Vec::with_capacity(obj_hashes.len());
         for hash in obj_hashes {
             let Some(buf) = self.object.read(&hash)? else {
                 return Err(error::Error::NotfoundObj(hash));
             };
-            obj_bufs.push(buf);
+            obj_bufs.push((hash, buf));
         }
         Ok(obj_bufs)
     }
@@ -93,7 +92,7 @@ impl<Fs, Io> Push<Fs, Io>
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PushParam {
     pub branch: BranchName,
-    pub compressed_objs: Vec<CompressedBuf>,
+    pub compressed_objs: Vec<(ObjHash, CompressedBuf)>,
     pub traces: Vec<(CommitHash, ObjHash)>,
     pub head: CommitHash,
 }

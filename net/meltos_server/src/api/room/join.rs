@@ -1,6 +1,7 @@
+use axum::body::Body;
 use axum::http::Response;
-use meltos_tvn::object::commit::CommitHash;
 use serde::{Deserialize, Serialize};
+
 use meltos_tvn::io::bundle::Bundle;
 
 use crate::api::HttpResult;
@@ -13,33 +14,40 @@ use crate::middleware::user::SessionUser;
 /// レスポンスはRoomのメタデータ
 ///
 pub async fn join(
-    SessionRoom(_room): SessionRoom,
+    SessionRoom(room): SessionRoom,
     SessionUser(_user_id): SessionUser,
 ) -> HttpResult {
-    Ok(Response::default())
+    let bundle = room.create_bundle()?;
+    let room_meta = RoomMeta {
+        bundle
+    };
+    Ok(Response::builder()
+        .body(Body::from(serde_json::to_string(&room_meta).unwrap().to_string()))
+        .unwrap()
+    )
 }
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoomMeta {
-    pub bundle: Bundle
+    pub bundle: Bundle,
 }
 
 #[cfg(test)]
 mod tests {
     use axum::http::StatusCode;
-    use meltos::room::RoomId;
 
+    use meltos::room::RoomId;
     use meltos::user::{SessionId, UserId};
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
     use meltos_backend::user::SessionIo;
-    use meltos_tvn::file_system::mock::MockFileSystem;
     use meltos_tvn::file_system::FileSystem;
-    use crate::api::room::join::RoomMeta;
+    use meltos_tvn::file_system::mock::MockFileSystem;
 
+    use crate::api::room::join::RoomMeta;
     use crate::api::test_util::{
-        convert_body_json, http_call_with_deserialize, http_join, http_open_room, logged_in_app,
+        http_join, http_open_room, logged_in_app,
         ResponseConvertable,
     };
     use crate::app;

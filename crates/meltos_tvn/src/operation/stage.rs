@@ -95,7 +95,7 @@ where
 
         if stage.changed_hash(&file_path, &obj.hash) {
             *changed = true;
-            self.object.write(&obj)?;
+            self.object.write_obj(&obj)?;
             stage.insert(file_path, obj.hash);
         }
         Ok(())
@@ -112,7 +112,7 @@ where
         for (path, hash) in self.scan_deleted_files(trace_tree, work_space_path)? {
             *changed = true;
             let delete_obj = DeleteObj(hash).as_meta()?;
-            self.object.write(&delete_obj)?;
+            self.object.write_obj(&delete_obj)?;
             staging.insert(path, delete_obj.hash);
         }
         Ok(())

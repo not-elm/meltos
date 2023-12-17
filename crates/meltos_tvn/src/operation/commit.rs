@@ -54,7 +54,7 @@ where
         };
         self.staging.reset()?;
         let stage_obj = stage_tree.as_meta()?;
-        self.object.write(&stage_obj)?;
+        self.object.write_obj(&stage_obj)?;
 
         let commit = self.commit_obj.create(commit_text, stage_obj.hash)?;
         let head_commit_hash = self.commit(commit)?;
@@ -96,7 +96,7 @@ where
 
     fn commit(&self, commit: CommitObj) -> error::Result<CommitHash> {
         let commit_obj = commit.as_meta()?;
-        self.object.write(&commit_obj)?;
+        self.object.write_obj(&commit_obj)?;
         self.head.write(CommitHash(commit_obj.hash.clone()))?;
         self.local_commits
             .append(CommitHash(commit_obj.hash.clone()))?;

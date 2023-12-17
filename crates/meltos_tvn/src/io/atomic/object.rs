@@ -1,22 +1,22 @@
-use crate::encode::Decodable;
 use std::io;
 
+use crate::encode::Decodable;
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
+use crate::object::{CompressedBuf, ObjHash, ObjMeta};
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::tree::TreeObj;
-use crate::object::{CompressedBuf, ObjHash, ObjMeta};
 
 #[derive(Debug, Clone)]
 pub struct ObjIo<Fs, Io>(FsIo<Fs, Io>)
-where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write;
+    where
+        Fs: FileSystem<Io>,
+        Io: io::Read + io::Write;
 
 impl<Fs, Io> Default for ObjIo<Fs, Io>
-where
-    Fs: FileSystem<Io> + Default,
-    Io: io::Read + io::Write,
+    where
+        Fs: FileSystem<Io> + Default,
+        Io: io::Read + io::Write,
 {
     fn default() -> Self {
         Self(FsIo::default())
@@ -24,9 +24,9 @@ where
 }
 
 impl<Fs, Io> ObjIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write,
+    where
+        Fs: FileSystem<Io>,
+        Io: io::Read + io::Write,
 {
     #[inline]
     pub const fn new(fs: Fs) -> ObjIo<Fs, Io> {
@@ -63,10 +63,10 @@ where
     }
 
 
-    pub fn read_all(&self) -> error::Result<Vec<CompressedBuf>>{
+    pub fn read_all(&self) -> error::Result<Vec<CompressedBuf>> {
         let files = self.0.all_file_path("./.meltos/objects/")?;
         let mut objs = Vec::with_capacity(files.len());
-        for path in files{
+        for path in files {
             let buf = self.0.try_read(&path)?;
             objs.push(CompressedBuf(buf));
         }
@@ -82,10 +82,15 @@ where
         Ok(Some(CompressedBuf(buf)))
     }
 
-    pub fn write(&self, obj: &ObjMeta) -> io::Result<()> {
+    pub fn write_obj(&self, obj: &ObjMeta) -> error::Result<()> {
+        self.write(&obj.hash, &obj.compressed_buf)
+    }
+
+
+    pub fn write(&self, hash: &ObjHash, compressed_buf: &CompressedBuf) -> error::Result {
         self.0
-            .create(&format!("./.meltos/objects/{}", &obj.hash))?
-            .write_all(&obj.compressed_buf)?;
+            .create(&format!("./.meltos/objects/{}", &hash))?
+            .write_all(&compressed_buf)?;
         Ok(())
     }
 }
@@ -94,11 +99,11 @@ where
 mod tests {
     use std::io::Write;
 
-    use meltos_util::compression::gz::Gz;
     use meltos_util::compression::CompressionBuf;
+    use meltos_util::compression::gz::Gz;
 
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::{FileSystem, FsIo};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::atomic::workspace::WorkspaceIo;
     use crate::object::{AsMeta, ObjMeta};
@@ -116,7 +121,7 @@ mod tests {
         let workspace = WorkspaceIo(FsIo::new(mock.clone()));
         let mut objs = workspace.convert_to_objs("test/hello.txt").unwrap();
         let (_, file_obj) = objs.next().unwrap().unwrap();
-        io.write(&file_obj.as_meta().unwrap()).unwrap();
+        io.write_obj(&file_obj.as_meta().unwrap()).unwrap();
 
         let hello_buf = mock
             .try_read(&format!(
@@ -132,7 +137,7 @@ mod tests {
         let mock = MockFileSystem::default();
         let io = ObjIo::new(mock.clone());
         let obj = ObjMeta::compress(b"hello world!".to_vec()).unwrap();
-        io.write(&obj).unwrap();
+        io.write_obj(&obj).unwrap();
         assert_eq!(io.read_obj(&obj.hash).unwrap(), Some(obj));
     }
 }

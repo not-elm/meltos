@@ -26,6 +26,7 @@ pub struct BranchHead {
 }
 
 
+#[derive(Debug)]
 pub struct BundleIo<Fs, Io>
     where
         Fs: FileSystem<Io>,
@@ -46,6 +47,7 @@ impl<Fs, Io> BundleIo<Fs, Io>
     pub fn new(fs: Fs) -> BundleIo<Fs, Io> {
         Self {
             object: ObjIo::new(fs.clone()),
+            trace: TraceIo::new(fs.clone()),
             fs: FsIo::new(fs),
         }
     }
