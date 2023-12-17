@@ -50,7 +50,7 @@ impl<Fs, Io> Push<Fs, Io>
     /// Sends the currently locally committed data to the remote.
     /// * push local commits to remote server.
     /// * clear local commits
-    pub async fn execute(&self, sender: &impl CommitSendable) -> error::Result {
+    pub async fn execute(&self, sender: &mut impl CommitSendable) -> error::Result {
         let local_commits = self.commit_obj.read_local_commits()?;
         if local_commits.is_empty() {
             return Err(error::Error::NotfoundLocalCommits);
@@ -96,6 +96,7 @@ pub struct PushParam {
     pub traces: Vec<(CommitHash, ObjHash)>,
     pub head: CommitHash,
 }
+
 
 #[cfg(test)]
 mod tests {

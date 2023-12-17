@@ -54,6 +54,8 @@ where
 {
     Router::new()
         .route("/join", post(api::room::join))
+        // .route("/pull", )
+        .route("/push", post(api::room::push))
         .nest("/discussion/global", global_discussion_route())
 }
 

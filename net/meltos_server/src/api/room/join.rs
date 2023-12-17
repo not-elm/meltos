@@ -63,7 +63,6 @@ mod tests {
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
-
     #[tokio::test]
     async fn return_status_code_is_ok_if_joined_exists_room() {
         let session = MockUserSessionIo::default();
@@ -79,7 +78,6 @@ mod tests {
             .unwrap();
 
         let mut app = app(session, MockGlobalDiscussionIo::default());
-
         let mock = MockFileSystem::default();
         mock.write("./some_text.txt", b"text file").unwrap();
         let room_id = http_open_room(&mut app, mock.clone(), owner_session).await;
@@ -130,7 +128,6 @@ mod tests {
             .unwrap();
 
         let mut app = app(session, MockGlobalDiscussionIo::default());
-
         let mock = MockFileSystem::default();
         mock.write("./some_text.txt", b"text file").unwrap();
         let room_id = http_open_room(&mut app, mock.clone(), owner_session).await;

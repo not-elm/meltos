@@ -13,7 +13,7 @@ pub struct MockRemoteClient {
 
 #[async_trait]
 impl CommitSendable for MockRemoteClient {
-    async fn send(&self, param: PushParam) -> std::io::Result<()> {
+    async fn send(&mut self, param: PushParam) -> std::io::Result<()> {
         *self.push_param.lock().await = Some(param);
         Ok(())
     }

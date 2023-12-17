@@ -30,8 +30,9 @@ mod test_util {
     use axum::{async_trait, http, Router};
     use axum::body::Body;
     use axum::extract::Request;
-    use axum::http::header;
+    use axum::http::{header, StatusCode};
     use axum::response::Response;
+    use futures::task::Spawn;
     use http_body_util::BodyExt;
     use serde::de::DeserializeOwned;
     use tower::{Service, ServiceExt};
@@ -48,10 +49,46 @@ mod test_util {
     use meltos_tvn::branch::BranchName;
     use meltos_tvn::file_system::mock::MockFileSystem;
     use meltos_tvn::operation::init::Init;
-    use meltos_tvn::operation::push::Push;
+    use meltos_tvn::operation::push::{Push, PushParam};
+    use meltos_tvn::remote_client::CommitSendable;
     use meltos_util::serde::SerializeJson;
 
     use crate::app;
+
+    pub struct MockServerClient<'a>{
+        app: &'a mut Router,
+        room_id: RoomId,
+        session_id: SessionId
+    }
+    impl<'a> MockServerClient<'a>{
+        pub fn new(app: &'a mut Router, room_id: RoomId, session_id: SessionId) -> MockServerClient<'a>{
+            Self{
+                app,
+                room_id,
+                session_id
+            }
+        }
+    }
+
+    unsafe impl<'a> Send for MockServerClient<'a>{}
+    unsafe impl<'a> Sync for MockServerClient<'a>{}
+
+
+    #[async_trait]
+    impl<'a> CommitSendable for MockServerClient<'a> {
+        async fn send(&mut self, param: PushParam) -> std::io::Result<()> {
+            let response = http_call(self.app, Request::builder()
+                .header(header::SET_COOKIE, format!("session_id={}", self.session_id))
+                .header(header::CONTENT_TYPE, "application/json")
+                .method(http::method::Method::POST)
+                .uri(format!("/room/{}/push", self.room_id))
+                .body(Body::from(serde_json::to_string(&param).unwrap()))
+                .unwrap()
+            ).await;
+            assert_eq!(response.status(), StatusCode::OK);
+            Ok(())
+        }
+    }
 
     #[async_trait]
     pub trait ResponseConvertable {
@@ -92,6 +129,14 @@ mod test_util {
 
     pub fn mock_session_id() -> SessionId {
         SessionId("session_id".to_string())
+    }
+
+    pub fn owner_session_id() -> SessionId {
+        SessionId("owner".to_string())
+    }
+
+    pub fn user_session_id() -> SessionId {
+        SessionId("user".to_string())
     }
 
 
