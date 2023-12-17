@@ -63,6 +63,17 @@ where
     }
 
 
+    pub fn read_all(&self) -> error::Result<Vec<CompressedBuf>>{
+        let files = self.0.all_file_path("./.meltos/objects/")?;
+        let mut objs = Vec::with_capacity(files.len());
+        for path in files{
+            let buf = self.0.try_read(&path)?;
+            objs.push(CompressedBuf(buf));
+        }
+        Ok(objs)
+    }
+
+
     pub fn read(&self, object_hash: &ObjHash) -> error::Result<Option<CompressedBuf>> {
         let Some(buf) = self.0.read(&format!("./.meltos/objects/{}", object_hash))? else {
             return Ok(None);

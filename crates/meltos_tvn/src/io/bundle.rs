@@ -6,18 +6,19 @@ use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
 use crate::io::atomic::head::HeadIo;
-use crate::object::commit::CommitHash;
+use crate::io::atomic::object::ObjIo;
 use crate::object::{CompressedBuf, ObjHash};
+use crate::object::commit::CommitHash;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bundle {
-    traces: Vec<(CommitHash, ObjHash)>,
-    objs: Vec<CompressedBuf>,
-    branches: Vec<BranchHead>,
+    pub traces: Vec<(CommitHash, ObjHash)>,
+    pub objs: Vec<CompressedBuf>,
+    pub branches: Vec<BranchHead>,
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BranchHead {
     pub branch_name: BranchName,
     pub head: CommitHash,
@@ -25,22 +26,24 @@ pub struct BranchHead {
 
 
 pub struct BundleIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
+    object: ObjIo<Fs, Io>,
     fs: FsIo<Fs, Io>,
 }
 
 
 impl<Fs, Io> BundleIo<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Write + std::io::Read,
 {
     #[inline]
-    pub const fn new(fs: Fs) -> BundleIo<Fs, Io> {
+    pub fn new(fs: Fs) -> BundleIo<Fs, Io> {
         Self {
+            object: ObjIo::new(fs.clone()),
             fs: FsIo::new(fs),
         }
     }
@@ -50,10 +53,11 @@ where
         let branches = self.read_branch_heads()?;
         Ok(Bundle {
             branches,
-            objs: vec![],
+            objs: self.object.read_all()?,
             traces: vec![],
         })
     }
+
 
     fn read_branch_heads(&self) -> error::Result<Vec<BranchHead>> {
         let head_files = self.read_all_branch_head_path()?;
@@ -63,9 +67,9 @@ where
                 .parent()
                 .and_then(|dir| dir.file_name())
                 .and_then(|name| name.to_str())
-            else {
-                continue;
-            };
+                else {
+                    continue;
+                };
 
             let branch_name = BranchName::from(branch_name);
             let head = HeadIo::new(branch_name.clone(), self.fs.clone()).read()?;
@@ -86,9 +90,9 @@ where
             .into_iter()
             .filter(|path| {
                 let Some(file_name) = Path::new(path).file_name().and_then(|path| path.to_str())
-                else {
-                    return false;
-                };
+                    else {
+                        return false;
+                    };
                 file_name == "HEAD"
             })
             .collect())
@@ -99,8 +103,8 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
     use crate::io::bundle::BundleIo;
     use crate::operation::commit::Commit;
@@ -114,7 +118,6 @@ mod tests {
         let bundle_io = BundleIo::new(mock.clone());
         let null_commit_hash = init_main_branch(mock.clone());
         let bundle = bundle_io.create().unwrap();
-
         assert_eq!(bundle.branches.len(), 1);
         assert_eq!(&bundle.branches[0].branch_name, &BranchName::main());
         assert_eq!(&bundle.branches[0].head, &null_commit_hash);
@@ -131,14 +134,14 @@ mod tests {
             .execute(BranchName::main(), BranchName::from("branch2"))
             .unwrap();
 
-        let bundle = bundle_io.create().unwrap();
+        let mut bundle = bundle_io.create().unwrap();
         assert_eq!(bundle.branches.len(), 2);
-
-        assert_eq!(&bundle.branches[0].branch_name, &BranchName::main());
+        bundle.branches.sort();
         assert_eq!(
-            &bundle.branches[1].branch_name,
+            &bundle.branches[0].branch_name,
             &BranchName::from("branch2")
         );
+        assert_eq!(&bundle.branches[1].branch_name, &BranchName::main());
 
         assert_eq!(&bundle.branches[0].head, &null_commit);
         assert_eq!(&bundle.branches[1].head, &null_commit);
@@ -150,14 +153,32 @@ mod tests {
         mock.write("./hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
         let commit_hash = commit.execute("text").unwrap();
-        let bundle = bundle_io.create().unwrap();
-        assert_eq!(&bundle.branches[0].branch_name, &BranchName::main());
+        let mut bundle = bundle_io.create().unwrap();
+        bundle.branches.sort();
         assert_eq!(
-            &bundle.branches[1].branch_name,
+            &bundle.branches[0].branch_name,
             &BranchName::from("branch2")
         );
+        assert_eq!(&bundle.branches[1].branch_name, &BranchName::main());
 
-        assert_eq!(&bundle.branches[0].head, &null_commit);
-        assert_eq!(&bundle.branches[1].head, &commit_hash);
+        assert_eq!(&bundle.branches[0].head, &commit_hash);
+        assert_eq!(&bundle.branches[1].head, &null_commit);
+    }
+
+
+    #[test]
+    fn read_all_objs() {
+        let mock = MockFileSystem::default();
+        init_main_branch(mock.clone());
+        mock.write("./hello.txt", b"hello").unwrap();
+
+        Stage::new(BranchName::main(), mock.clone()).execute(".").unwrap();
+        Commit::new(BranchName::main(), mock.clone()).execute("commit").unwrap();
+        let bundle = BundleIo::new(mock.clone()).create().unwrap();
+        let objs_count = mock
+            .all_file_path("./.meltos/objects/").unwrap()
+            .len();
+
+        assert_eq!(objs_count, bundle.objs.len());
     }
 }

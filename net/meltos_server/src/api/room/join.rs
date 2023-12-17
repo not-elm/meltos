@@ -1,6 +1,7 @@
 use axum::http::Response;
 use meltos_tvn::object::commit::CommitHash;
 use serde::{Deserialize, Serialize};
+use meltos_tvn::io::bundle::Bundle;
 
 use crate::api::HttpResult;
 use crate::middleware::room::SessionRoom;
@@ -21,7 +22,7 @@ pub async fn join(
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoomMeta {
-    pub head: CommitHash,
+    pub bundle: Bundle
 }
 
 #[cfg(test)]
@@ -35,6 +36,7 @@ mod tests {
     use meltos_backend::user::SessionIo;
     use meltos_tvn::file_system::mock::MockFileSystem;
     use meltos_tvn::file_system::FileSystem;
+    use crate::api::room::join::RoomMeta;
 
     use crate::api::test_util::{
         convert_body_json, http_call_with_deserialize, http_join, http_open_room, logged_in_app,
@@ -97,6 +99,7 @@ mod tests {
         let room_id = http_open_room(&mut app, mock.clone(), owner_session).await;
 
         let response = http_join(&mut app, &room_id, &user_session).await;
-
+        let meta = response.deserialize::<RoomMeta>().await;
+        assert_eq!(meta.bundle.branches.len(), 1);
     }
 }

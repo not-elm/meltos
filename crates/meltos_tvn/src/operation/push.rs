@@ -8,20 +8,18 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
 use crate::io::commit_obj::CommitObjIo;
 use crate::io::trace_tree::TraceTreeIo;
-use crate::object::commit::CommitHash;
 use crate::object::{CompressedBuf, ObjHash};
-
+use crate::object::commit::CommitHash;
 use crate::remote_client::CommitSendable;
 
 #[derive(Debug, Clone)]
 pub struct Push<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     head: HeadIo<Fs, Io>,
     commit_obj: CommitObjIo<Fs, Io>,
-    trace_tree: TraceTreeIo<Fs, Io>,
     object: ObjIo<Fs, Io>,
     branch_name: BranchName,
     trace: TraceIo<Fs, Io>,
@@ -29,14 +27,13 @@ where
 
 
 impl<Fs, Io> Push<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Write + std::io::Read,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> Push<Fs, Io> {
         Self {
             commit_obj: CommitObjIo::new(branch_name.clone(), fs.clone()),
-            trace_tree: TraceTreeIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
             head: HeadIo::new(branch_name.clone(), fs.clone()),
             trace: TraceIo::new(fs),
@@ -47,9 +44,9 @@ where
 
 
 impl<Fs, Io> Push<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     /// Sends the currently locally committed data to the remote.
     /// * push local commits to remote server.
@@ -105,11 +102,10 @@ pub struct PushParam {
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::commit_obj::CommitObjIo;
-    use crate::io::trace_tree::TraceTreeIo;
     use crate::operation::commit::Commit;
     use crate::operation::push::Push;
     use crate::operation::stage::Stage;
@@ -175,9 +171,8 @@ mod tests {
         let remote = MockRemoteClient::default();
         push.execute(&remote).await.unwrap();
         let param = remote.push_param.lock().await.clone().unwrap();
-        let trace_tree = TraceTreeIo::new(mock.clone());
+
         let head = HeadIo::new(branch, mock);
         assert_eq!(&param.head, &head.read().unwrap());
-        let head = head.read().unwrap();
     }
 }
