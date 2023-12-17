@@ -105,6 +105,8 @@ impl<Fs, Io> Stage<Fs, Io>
         }
         Ok(())
     }
+
+
     fn scan_deleted_files(
         &self,
         trace_tree: &TreeObj,

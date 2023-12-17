@@ -62,7 +62,6 @@ where
         Ok(head_commit_hash)
     }
 
-
     ///
     /// * create `null commit`
     /// * create `head file` and write `null commit hash`

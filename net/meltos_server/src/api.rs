@@ -24,6 +24,8 @@ where
     }
 }
 
+
+
 #[cfg(test)]
 mod test_util {
     use axum::body::Body;
@@ -83,8 +85,9 @@ mod test_util {
         SessionId("session_id".to_string())
     }
 
-    pub async fn http_Fs_room(app: &mut Router, user_token: SessionId) -> RoomId {
-        http_call::<Opened>(app, Fs_room_request(user_token))
+
+    pub async fn http_open_room(app: &mut Router, user_token: SessionId) -> RoomId {
+        http_call::<Opened>(app, open_room_request(user_token))
             .await
             .room_id
     }
@@ -130,7 +133,7 @@ mod test_util {
         .await
     }
 
-    pub fn Fs_room_request(session_id: SessionId) -> Request {
+    pub fn open_room_request(session_id: SessionId) -> Request {
         Request::builder()
             .method(http::Method::POST)
             .header("set-cookie", format!("session_id={session_id}"))

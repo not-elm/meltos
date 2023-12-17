@@ -20,13 +20,13 @@ mod tests {
 
     use meltos::command::client::discussion::global::Created;
 
-    use crate::api::test_util::{create_discussion_request, http_Fs_room, logged_in_app};
+    use crate::api::test_util::{create_discussion_request, http_open_room, logged_in_app};
     use crate::error;
 
     #[tokio::test]
     async fn return_created_command() -> error::Result {
         let (user_token, mut app) = logged_in_app().await;
-        let room_id = http_Fs_room(&mut app, user_token.clone()).await;
+        let room_id = http_open_room(&mut app, user_token.clone()).await;
         let request = create_discussion_request(room_id);
         let response = app.oneshot(request).await.unwrap();
         assert_eq!(response.status(), StatusCode::OK);
