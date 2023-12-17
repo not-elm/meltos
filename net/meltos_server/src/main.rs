@@ -52,8 +52,11 @@ fn room_operations_router<Session>() -> Router<AppState<Session>>
 where
     Session: SessionIo + Clone + Debug + 'static,
 {
-    Router::new().nest("/discussion/global", global_discussion_route())
+    Router::new()
+        .route("/join", post(api::room::join))
+        .nest("/discussion/global", global_discussion_route())
 }
+
 
 fn global_discussion_route<Session>() -> Router<AppState<Session>>
 where

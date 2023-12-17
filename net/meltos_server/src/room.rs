@@ -47,7 +47,7 @@ impl RoomMap {
     pub fn room_mut(&mut self, room_id: &RoomId) -> std::result::Result<&mut Room, Response> {
         self.0.get_mut(room_id).ok_or(
             Response::builder()
-                .status(StatusCode::BAD_REQUEST)
+                .status(StatusCode::NOT_FOUND)
                 .body(Body::from(
                     json!({
                         "error": format!("room_id {room_id} is not exists")

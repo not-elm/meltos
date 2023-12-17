@@ -14,8 +14,8 @@ pub trait AsSuccessResponse {
 }
 
 impl<D> AsSuccessResponse for D
-    where
-        D: Serialize,
+where
+    D: Serialize,
 {
     fn as_success_response(&self) -> Response {
         Response::builder()
@@ -27,11 +27,11 @@ impl<D> AsSuccessResponse for D
 
 #[cfg(test)]
 mod test_util {
-    use axum::{async_trait, http, Router};
     use axum::body::Body;
     use axum::extract::Request;
     use axum::http::header;
     use axum::response::Response;
+    use axum::{async_trait, http, Router};
     use http_body_util::BodyExt;
     use serde::de::DeserializeOwned;
     use tower::{Service, ServiceExt};
@@ -94,21 +94,21 @@ mod test_util {
         mock: MockFileSystem,
         user_token: SessionId,
     ) -> RoomId {
-        http_call::<Opened>(app, open_room_request(user_token, mock))
+        http_call_with_deserialize::<Opened>(app, open_room_request(user_token, mock))
             .await
             .room_id
     }
 
     pub async fn http_create_discussion(app: &mut Router, room_id: RoomId) -> Created {
-        http_call(app, create_discussion_request(room_id)).await
+        http_call_with_deserialize(app, create_discussion_request(room_id)).await
     }
 
     pub async fn http_speak(app: &mut Router, room_id: &RoomId, speak: Speak) -> Spoke {
-        http_call(app, speak_request(speak, room_id)).await
+        http_call_with_deserialize(app, speak_request(speak, room_id)).await
     }
 
     pub async fn http_reply(app: &mut Router, room_id: &RoomId, reply: Reply) -> Replied {
-        http_call(
+        http_call_with_deserialize(
             app,
             Request::builder()
                 .method(http::Method::POST)
@@ -118,7 +118,7 @@ mod test_util {
                 .body(Body::from(reply.as_json()))
                 .unwrap(),
         )
-            .await
+        .await
     }
 
     pub async fn http_discussion_close(
@@ -126,7 +126,7 @@ mod test_util {
         room_id: &RoomId,
         discussion_id: DiscussionId,
     ) -> Closed {
-        http_call(
+        http_call_with_deserialize(
             app,
             Request::builder()
                 .method(http::Method::DELETE)
@@ -137,7 +137,7 @@ mod test_util {
                 .body(Body::empty())
                 .unwrap(),
         )
-            .await
+        .await
     }
 
     pub fn open_room_request(session_id: SessionId, mock: MockFileSystem) -> Request {
@@ -179,18 +179,38 @@ mod test_util {
             .unwrap()
     }
 
-    pub async fn http_call<D: DeserializeOwned>(app: &mut Router, request: Request) -> D {
-        let response = ServiceExt::<axum::extract::Request<Body>>::ready(app)
+    pub async fn http_join(app: &mut Router, room_id: &RoomId, session_id: &SessionId) -> Response {
+        http_call(
+            app,
+            Request::builder()
+                .uri(format!("/room/{room_id}/join"))
+                .method(http::method::Method::POST)
+                .header(header::SET_COOKIE, format!("session_id={session_id}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+    }
+
+    pub async fn http_call(app: &mut Router, request: Request) -> Response {
+        ServiceExt::<axum::extract::Request<Body>>::ready(app)
             .await
             .unwrap()
             .call(request)
             .await
-            .unwrap();
+            .unwrap()
+    }
 
+
+    pub async fn http_call_with_deserialize<D: DeserializeOwned>(
+        app: &mut Router,
+        request: Request,
+    ) -> D {
+        let response = http_call(app, request).await;
         convert_body_json::<D>(response).await
     }
 
-    async fn convert_body_json<D: DeserializeOwned>(response: Response) -> D {
+    pub async fn convert_body_json<D: DeserializeOwned>(response: Response) -> D {
         let b = response.into_body().collect().await.unwrap().to_bytes();
         println!("{:?}", String::from_utf8(b.to_vec()));
         serde_json::from_slice::<D>(&b).unwrap()
