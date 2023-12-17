@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 use std::str::FromStr;
 
+use crate::impl_serialize_and_deserialize;
 use meltos_util::macros::{Deref, DerefMut};
 
 use crate::object::commit::CommitHash;
@@ -9,7 +10,7 @@ use crate::object::{AsMeta, Decodable, Encodable, ObjMeta};
 #[repr(transparent)]
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Deref, DerefMut, Default)]
 pub struct LocalCommitsObj(pub Vec<CommitHash>);
-
+impl_serialize_and_deserialize!(LocalCommitsObj);
 
 impl AsMeta for LocalCommitsObj {
     #[inline]

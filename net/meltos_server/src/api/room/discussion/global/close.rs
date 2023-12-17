@@ -30,16 +30,18 @@ mod tests {
     use axum::extract::Request;
     use axum::http;
     use axum::http::{header, StatusCode};
+    use meltos_tvn::file_system::mock::MockFileSystem;
     use tower::ServiceExt;
 
     use crate::api::test_util::{
-        http_open_room, http_create_discussion, http_discussion_close, logged_in_app,
+        http_create_discussion, http_discussion_close, http_open_room, logged_in_app,
     };
 
     #[tokio::test]
     async fn failed_if_not_exists_query() {
         let (session_id, mut app) = logged_in_app().await;
-        let room_id = http_open_room(&mut app, session_id).await;
+        let mock = MockFileSystem::default();
+        let room_id = http_open_room(&mut app, mock, session_id).await;
         http_create_discussion(&mut app, room_id.clone()).await;
         let response = app
             .oneshot(
@@ -59,7 +61,8 @@ mod tests {
     #[tokio::test]
     async fn failed_no_exists_discussion() {
         let (session_id, mut app) = logged_in_app().await;
-        let room_id = http_open_room(&mut app, session_id).await;
+        let mock = MockFileSystem::default();
+        let room_id = http_open_room(&mut app, mock, session_id).await;
         let response = app
             .oneshot(
                 Request::builder()
@@ -79,7 +82,8 @@ mod tests {
     #[tokio::test]
     async fn return_closed_command() {
         let (session_id, mut app) = logged_in_app().await;
-        let room_id = http_open_room(&mut app, session_id).await;
+        let mock = MockFileSystem::default();
+        let room_id = http_open_room(&mut app, mock, session_id).await;
         let discussion_id = http_create_discussion(&mut app, room_id.clone())
             .await
             .meta

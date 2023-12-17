@@ -7,15 +7,15 @@ use meltos_util::serde::SerializeJson;
 pub mod login;
 pub mod room;
 
-type HttpResult = std::result::Result<Response, Response>;
+pub type HttpResult = std::result::Result<Response, Response>;
 
 pub trait AsSuccessResponse {
     fn as_success_response(&self) -> Response;
 }
 
 impl<D> AsSuccessResponse for D
-where
-    D: Serialize,
+    where
+        D: Serialize,
 {
     fn as_success_response(&self) -> Response {
         Response::builder()
@@ -25,14 +25,13 @@ where
 }
 
 
-
 #[cfg(test)]
 mod test_util {
+    use axum::{async_trait, http, Router};
     use axum::body::Body;
     use axum::extract::Request;
     use axum::http::header;
     use axum::response::Response;
-    use axum::{async_trait, http, Router};
     use http_body_util::BodyExt;
     use serde::de::DeserializeOwned;
     use tower::{Service, ServiceExt};
@@ -46,6 +45,10 @@ mod test_util {
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
     use meltos_backend::user::SessionIo;
+    use meltos_tvn::branch::BranchName;
+    use meltos_tvn::file_system::mock::MockFileSystem;
+    use meltos_tvn::operation::init::Init;
+    use meltos_tvn::operation::push::Push;
     use meltos_util::serde::SerializeJson;
 
     use crate::app;
@@ -86,8 +89,12 @@ mod test_util {
     }
 
 
-    pub async fn http_open_room(app: &mut Router, user_token: SessionId) -> RoomId {
-        http_call::<Opened>(app, open_room_request(user_token))
+    pub async fn http_open_room(
+        app: &mut Router,
+        mock: MockFileSystem,
+        user_token: SessionId,
+    ) -> RoomId {
+        http_call::<Opened>(app, open_room_request(user_token, mock))
             .await
             .room_id
     }
@@ -111,7 +118,7 @@ mod test_util {
                 .body(Body::from(reply.as_json()))
                 .unwrap(),
         )
-        .await
+            .await
     }
 
     pub async fn http_discussion_close(
@@ -130,15 +137,23 @@ mod test_util {
                 .body(Body::empty())
                 .unwrap(),
         )
-        .await
+            .await
     }
 
-    pub fn open_room_request(session_id: SessionId) -> Request {
+    pub fn open_room_request(session_id: SessionId, mock: MockFileSystem) -> Request {
+        Init::new(BranchName::main(), mock.clone())
+            .execute()
+            .unwrap();
+        let push_param = Push::new(BranchName::main(), mock)
+            .create_push_param()
+            .unwrap();
+
         Request::builder()
             .method(http::Method::POST)
             .header("set-cookie", format!("session_id={session_id}"))
+            .header(header::CONTENT_TYPE, "application/json")
             .uri("/room/open")
-            .body(Body::empty())
+            .body(Body::from(serde_json::to_string(&push_param).unwrap()))
             .unwrap()
     }
 

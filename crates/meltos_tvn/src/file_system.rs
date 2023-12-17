@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use meltos_util::impl_string_new_type;
 
 pub mod file;
-pub(crate) mod mock;
+pub mod mock;
 
 pub trait FileSystem<Io: std::io::Read + std::io::Write> {
     fn open_file(&self, path: &str) -> std::io::Result<Option<Io>>;
@@ -17,7 +17,6 @@ pub trait FileSystem<Io: std::io::Read + std::io::Write> {
     fn create(&self, path: &str) -> std::io::Result<Io>;
 
     fn delete(&self, path: &str) -> std::io::Result<()>;
-
 
     fn try_read(&self, path: &str) -> std::io::Result<Vec<u8>> {
         self.read(path).and_then(|buf| {

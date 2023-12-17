@@ -24,15 +24,17 @@ mod tests {
     use meltos::command::request::discussion::global::{Reply, Speak};
     use meltos::discussion::message::{Message, MessageText};
     use meltos::user::UserId;
+    use meltos_tvn::file_system::mock::MockFileSystem;
 
     use crate::api::test_util::{
-        http_open_room, http_create_discussion, http_reply, http_speak, logged_in_app,
+        http_create_discussion, http_open_room, http_reply, http_speak, logged_in_app,
     };
 
     #[tokio::test]
     async fn return_replied_command() {
         let (session_id, mut app) = logged_in_app().await;
-        let room_id = http_open_room(&mut app, session_id.clone()).await;
+        let mock = MockFileSystem::default();
+        let room_id = http_open_room(&mut app, mock, session_id.clone()).await;
         let created = http_create_discussion(&mut app, room_id.clone()).await;
         let spoke = http_speak(
             &mut app,

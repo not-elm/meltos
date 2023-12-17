@@ -1,13 +1,16 @@
+use serde::{Deserialize, Serialize};
+
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
+use crate::io::atomic::trace::TraceIo;
 use crate::io::commit_obj::CommitObjIo;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::object::commit::CommitHash;
-use crate::object::tree::TreeObj;
-use crate::object::CompressedBuf;
+use crate::object::{CompressedBuf, ObjHash};
+
 use crate::remote_client::CommitSendable;
 
 #[derive(Debug, Clone)]
@@ -20,6 +23,8 @@ where
     commit_obj: CommitObjIo<Fs, Io>,
     trace_tree: TraceTreeIo<Fs, Io>,
     object: ObjIo<Fs, Io>,
+    branch_name: BranchName,
+    trace: TraceIo<Fs, Io>,
 }
 
 
@@ -33,7 +38,9 @@ where
             commit_obj: CommitObjIo::new(branch_name.clone(), fs.clone()),
             trace_tree: TraceTreeIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
-            head: HeadIo::new(branch_name, fs),
+            head: HeadIo::new(branch_name.clone(), fs.clone()),
+            trace: TraceIo::new(fs),
+            branch_name,
         }
     }
 }
@@ -59,15 +66,15 @@ where
     }
 
 
-    fn create_push_param(&self) -> error::Result<PushParam> {
+    pub fn create_push_param(&self) -> error::Result<PushParam> {
+        let traces = self.trace.read_all()?;
         let head = self.head.read()?;
         let compressed_objs = self.read_objs_associated_commits(head.clone())?;
-        let head = self.head.read()?;
-        let trace = self.trace_tree.read(&head)?;
         Ok(PushParam {
+            branch: self.branch_name.clone(),
             compressed_objs,
             head,
-            trace,
+            traces,
         })
     }
 
@@ -86,10 +93,11 @@ where
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PushParam {
+    pub branch: BranchName,
     pub compressed_objs: Vec<CompressedBuf>,
-    pub trace: TreeObj,
+    pub traces: Vec<(CommitHash, ObjHash)>,
     pub head: CommitHash,
 }
 
@@ -171,6 +179,5 @@ mod tests {
         let head = HeadIo::new(branch, mock);
         assert_eq!(&param.head, &head.read().unwrap());
         let head = head.read().unwrap();
-        assert_eq!(&param.trace, &trace_tree.read(&head).unwrap());
     }
 }

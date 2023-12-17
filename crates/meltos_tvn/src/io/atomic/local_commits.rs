@@ -1,11 +1,11 @@
 use std::io;
 
 use crate::branch::BranchName;
+use crate::encode::{Decodable, Encodable};
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
 use crate::object::commit::CommitHash;
 use crate::object::local_commits::LocalCommitsObj;
-use crate::object::{Decodable, Encodable};
 
 #[derive(Debug, Clone)]
 pub struct LocalCommitsIo<Fs, Io>

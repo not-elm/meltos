@@ -3,9 +3,9 @@ use std::str::FromStr;
 
 use meltos_util::macros::{Deref, DerefMut};
 
-use crate::error;
 use crate::file_system::{FilePath, FileSystem, FsIo};
 use crate::object::{AsMeta, Decodable, Encodable, ObjHash, ObjMeta};
+use crate::{error, impl_serialize_and_deserialize};
 
 #[derive(Debug, Clone)]
 pub struct TreeIo<Fs, Io>
@@ -72,6 +72,7 @@ where
 #[repr(transparent)]
 #[derive(Default, Clone, Deref, DerefMut, Debug, Eq, PartialEq)]
 pub struct TreeObj(pub HashMap<FilePath, ObjHash>);
+impl_serialize_and_deserialize!(TreeObj);
 
 
 impl TreeObj {
@@ -202,6 +203,19 @@ mod tests {
 
         let buf = tree.encode().unwrap();
         let decoded = TreeObj::decode(&buf).unwrap();
+        assert_eq!(decoded, tree);
+    }
+
+
+    #[test]
+    fn deserialize() {
+        let mut tree = TreeObj::default();
+        let p1 = FilePath::from_path("hello");
+        let h1 = ObjHash::new(b"hello");
+        tree.0.insert(p1.clone(), h1.clone());
+
+        let json = serde_json::to_string(&tree).unwrap();
+        let decoded: TreeObj = serde_json::from_str(&json).unwrap();
         assert_eq!(decoded, tree);
     }
 }

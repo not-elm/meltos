@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 use std::net::SocketAddr;
 
-use axum::http::StatusCode;
 use axum::routing::{delete, get, post};
 use axum::Router;
 
@@ -19,7 +18,6 @@ mod middleware;
 mod room;
 mod state;
 
-pub type HttpResult<T> = std::result::Result<T, StatusCode>;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
+use std::fs::File;
 use std::future::Future;
 use std::sync::Arc;
 
@@ -12,6 +13,10 @@ use serde_json::json;
 use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_backend::discussion::DiscussionIo;
+use meltos_tvn::branch::BranchName;
+use meltos_tvn::file_system::file::StdFileSystem;
+use meltos_tvn::operation::push::PushParam;
+use meltos_tvn::operation::Operations;
 use meltos_util::macros::Deref;
 use meltos_util::sync::arc_mutex::ArcMutex;
 
@@ -58,17 +63,37 @@ impl RoomMap {
 pub struct Room {
     pub owner: UserId,
     pub id: RoomId,
+    pub tvn: Operations<StdFileSystem, File>,
     discussion: Arc<dyn DiscussionIo>,
 }
+
 
 impl Room {
     pub fn open<Discussion: DiscussionIo + Default + 'static>(owner: UserId) -> Self {
         Self {
             id: RoomId::default(),
-            owner,
+            owner: owner.clone(),
             discussion: Arc::new(Discussion::default()),
+            tvn: Operations::new(BranchName::from(owner.to_string()), StdFileSystem),
         }
     }
+
+    pub fn save_commits(&self, push_param: PushParam) -> std::result::Result<(), Response> {
+        self.tvn.save.execute(push_param).map_err(|e| {
+            Response::builder()
+                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .body(Body::from(
+                    json!({
+                        "error" : e.to_string()
+                    })
+                    .to_string(),
+                ))
+                .unwrap()
+        })?;
+
+        Ok(())
+    }
+
 
     pub async fn global_discussion<'a, F, O, S>(
         &'a self,

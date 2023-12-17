@@ -7,7 +7,8 @@ pub mod operation;
 
 #[cfg(feature = "cli")]
 pub mod command;
-mod remote_client;
+pub mod encode;
+pub mod remote_client;
 
 
 #[cfg(test)]

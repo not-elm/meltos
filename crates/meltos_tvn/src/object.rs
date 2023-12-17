@@ -1,19 +1,20 @@
 use std::io;
 
 use auto_delegate::delegate;
-use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 
-use meltos_util::compression::CompressionBuf;
 use meltos_util::compression::gz::Gz;
+use meltos_util::compression::CompressionBuf;
 use meltos_util::macros::{Deref, Display};
 
-use crate::error;
+use crate::encode::{Decodable, Encodable};
 use crate::object::commit::CommitObj;
 use crate::object::delete::DeleteObj;
 use crate::object::file::FileObj;
 use crate::object::local_commits::LocalCommitsObj;
 use crate::object::tree::TreeObj;
+use crate::{error, impl_serialize_and_deserialize};
 
 pub mod commit;
 pub mod delete;
@@ -25,17 +26,6 @@ pub mod tree;
 #[delegate]
 pub trait AsMeta {
     fn as_meta(&self) -> error::Result<ObjMeta>;
-}
-
-
-#[delegate]
-pub trait Encodable {
-    fn encode(&self) -> error::Result<Vec<u8>>;
-}
-
-
-pub trait Decodable: Sized {
-    fn decode(buf: &[u8]) -> error::Result<Self>;
 }
 
 
@@ -73,7 +63,6 @@ impl ObjMeta {
 }
 
 
-
 #[derive(Debug, Clone)]
 pub enum Obj {
     File(FileObj),
@@ -100,6 +89,7 @@ impl AsMeta for Obj {
 #[repr(transparent)]
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Ord, PartialOrd, Display)]
 pub struct ObjHash(pub String);
+impl_serialize_and_deserialize!(ObjHash);
 
 
 impl ObjHash {
@@ -129,5 +119,5 @@ impl Decodable for ObjHash {
 
 
 #[repr(transparent)]
-#[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd, Deref)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash, Ord, PartialOrd, Deref, Serialize, Deserialize)]
 pub struct CompressedBuf(pub Vec<u8>);

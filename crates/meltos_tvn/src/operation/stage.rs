@@ -6,16 +6,16 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::atomic::workspace::WorkspaceIo;
 use crate::io::trace_tree::TraceTreeIo;
-use crate::object::{AsMeta, ObjHash};
 use crate::object::delete::DeleteObj;
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
+use crate::object::{AsMeta, ObjHash};
 
 #[derive(Debug, Clone)]
 pub struct Stage<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     trace_tree: TraceTreeIo<Fs, Io>,
     staging: StagingIo<Fs, Io>,
@@ -27,9 +27,9 @@ pub struct Stage<Fs, Io>
 
 
 impl<Fs, Io> Stage<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     #[inline]
     pub fn new(branch_name: BranchName, fs: Fs) -> Stage<Fs, Io> {
@@ -46,9 +46,9 @@ impl<Fs, Io> Stage<Fs, Io>
 
 
 impl<Fs, Io> Stage<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn execute(&self, workspace_path: &str) -> error::Result {
         let mut stage_tree = self.staging.read()?.unwrap_or_default();
@@ -57,9 +57,20 @@ impl<Fs, Io> Stage<Fs, Io>
         let mut changed = false;
         for result in self.workspace.convert_to_objs(workspace_path)? {
             let (file_path, file_obj) = result?;
-            self.stage_file(&mut stage_tree, &mut changed, &trace_tree, file_path, file_obj)?;
+            self.stage_file(
+                &mut stage_tree,
+                &mut changed,
+                &trace_tree,
+                file_path,
+                file_obj,
+            )?;
         }
-        self.add_delete_objs_into_staging(&mut stage_tree, &mut changed, &trace_tree, workspace_path)?;
+        self.add_delete_objs_into_staging(
+            &mut stage_tree,
+            &mut changed,
+            &trace_tree,
+            workspace_path,
+        )?;
         if !changed {
             return Err(error::Error::ChangedFileNotExits);
         }
@@ -96,7 +107,8 @@ impl<Fs, Io> Stage<Fs, Io>
         staging: &mut TreeObj,
         changed: &mut bool,
         trace_tree: &TreeObj,
-        work_space_path: &str) -> error::Result {
+        work_space_path: &str,
+    ) -> error::Result {
         for (path, hash) in self.scan_deleted_files(trace_tree, work_space_path)? {
             *changed = true;
             let delete_obj = DeleteObj(hash).as_meta()?;
@@ -131,12 +143,12 @@ impl<Fs, Io> Stage<Fs, Io>
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::{FilePath, FileSystem};
     use crate::io::atomic::object::ObjIo;
-    use crate::object::{AsMeta, ObjHash};
     use crate::object::delete::DeleteObj;
     use crate::object::file::FileObj;
+    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::stage;
     use crate::operation::stage::Stage;
@@ -153,7 +165,7 @@ mod tests {
             &FilePath::from_path("./src/main.rs"),
             "dasds日本語".as_bytes(),
         )
-            .unwrap();
+        .unwrap();
         stage.execute(".").unwrap();
 
         let obj = ObjIo::new(mock);
@@ -209,7 +221,7 @@ mod tests {
 
         match stage.execute(".") {
             Err(error::Error::ChangedFileNotExits) => {}
-            _ => panic!("expected the [error::Error::ChangedFileNotExits] bad was.")
+            _ => panic!("expected the [error::Error::ChangedFileNotExits] bad was."),
         }
     }
 }

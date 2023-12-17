@@ -62,12 +62,13 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
+    use crate::encode::Encodable;
     use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::object::commit::CommitHash;
     use crate::object::tree::TreeObj;
-    use crate::object::{AsMeta, Encodable};
+    use crate::object::AsMeta;
     use crate::operation::commit::Commit;
     use crate::operation::init;
     use crate::operation::init::Init;

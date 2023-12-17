@@ -9,6 +9,7 @@ use crate::io::atomic::work_branch::WorkingIo;
 pub struct BranchName(pub String);
 impl_string_new_type!(BranchName);
 
+
 impl BranchName {
     #[inline]
     pub fn main() -> Self {

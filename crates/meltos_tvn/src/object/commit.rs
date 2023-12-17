@@ -5,14 +5,15 @@ use auto_delegate::Delegate;
 
 use meltos_util::macros::{Deref, Display};
 
-use crate::error;
 use crate::io::atomic::head::CommitText;
 use crate::object::{AsMeta, Decodable, Encodable, ObjHash, ObjMeta};
+use crate::{error, impl_serialize_and_deserialize};
 
 #[repr(transparent)]
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Display, Delegate, Deref, Hash)]
 #[to(Encodable)]
 pub struct CommitHash(pub ObjHash);
+impl_serialize_and_deserialize!(CommitHash);
 
 impl Decodable for CommitHash {
     #[inline]

@@ -1,10 +1,11 @@
 use meltos_util::impl_string_new_type;
 
 use crate::branch::BranchName;
+use crate::encode::{Decodable, Encodable};
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
 use crate::object::commit::CommitHash;
-use crate::object::{Decodable, Encodable, ObjHash};
+use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct HeadIo<Fs, Io>
@@ -15,6 +16,7 @@ where
     io: FsIo<Fs, Io>,
     branch_name: BranchName,
 }
+
 
 impl<Fs, Io> HeadIo<Fs, Io>
 where

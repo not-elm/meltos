@@ -1,10 +1,11 @@
+use crate::encode::Decodable;
 use std::io;
 
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::tree::TreeObj;
-use crate::object::{CompressedBuf, Decodable, ObjHash, ObjMeta};
+use crate::object::{CompressedBuf, ObjHash, ObjMeta};
 
 #[derive(Debug, Clone)]
 pub struct ObjIo<Fs, Io>(FsIo<Fs, Io>)
