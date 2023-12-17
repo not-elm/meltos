@@ -7,6 +7,7 @@ use crate::error;
 use crate::file_system::{FileSystem, FsIo};
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
+use crate::io::atomic::trace::TraceIo;
 use crate::object::{CompressedBuf, ObjHash};
 use crate::object::commit::CommitHash;
 
@@ -31,6 +32,7 @@ pub struct BundleIo<Fs, Io>
         Io: std::io::Write + std::io::Read,
 {
     object: ObjIo<Fs, Io>,
+    trace: TraceIo<Fs, Io>,
     fs: FsIo<Fs, Io>,
 }
 
@@ -54,7 +56,7 @@ impl<Fs, Io> BundleIo<Fs, Io>
         Ok(Bundle {
             branches,
             objs: self.object.read_all()?,
-            traces: vec![],
+            traces: self.trace.read_all()?,
         })
     }
 
