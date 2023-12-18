@@ -54,11 +54,17 @@ where
 {
     Router::new()
         .route("/join", post(api::room::join))
-        // .route("/pull", )
-        .route("/push", post(api::room::push))
+        .nest("/tvn", tvn_routes())
         .nest("/discussion/global", global_discussion_route())
 }
 
+
+fn tvn_routes<Session>() -> Router<AppState<Session>>
+where
+    Session: SessionIo + Clone + Debug + 'static,
+{
+    Router::new().route("/push", post(api::room::tvn::push))
+}
 
 fn global_discussion_route<Session>() -> Router<AppState<Session>>
 where

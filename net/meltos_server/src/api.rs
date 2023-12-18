@@ -90,7 +90,7 @@ mod test_util {
                     )
                     .header(header::CONTENT_TYPE, "application/json")
                     .method(http::method::Method::POST)
-                    .uri(format!("/room/{}/push", self.room_id))
+                    .uri(format!("/room/{}/tvn/push", self.room_id))
                     .body(Body::from(serde_json::to_string(&param).unwrap()))
                     .unwrap(),
             )
