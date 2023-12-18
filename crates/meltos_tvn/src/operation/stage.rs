@@ -6,16 +6,16 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::atomic::workspace::WorkspaceIo;
 use crate::io::trace_tree::TraceTreeIo;
+use crate::object::{AsMeta, ObjHash};
 use crate::object::delete::DeleteObj;
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
-use crate::object::{AsMeta, ObjHash};
 
 #[derive(Debug, Clone)]
 pub struct Stage<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     trace_tree: TraceTreeIo<Fs, Io>,
     staging: StagingIo<Fs, Io>,
@@ -23,13 +23,14 @@ where
     head: HeadIo<Fs, Io>,
     workspace: WorkspaceIo<Fs, Io>,
     fs: FsIo<Fs, Io>,
+    branch_name: BranchName,
 }
 
 
 impl<Fs, Io> Stage<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Write + std::io::Read,
 {
     #[inline]
     pub fn new(branch_name: BranchName, fs: Fs) -> Stage<Fs, Io> {
@@ -37,22 +38,23 @@ where
             staging: StagingIo::new(fs.clone()),
             workspace: WorkspaceIo::new(fs.clone()),
             trace_tree: TraceTreeIo::new(fs.clone()),
-            head: HeadIo::new(branch_name, fs.clone()),
+            head: HeadIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
             fs: FsIo::new(fs),
+            branch_name,
         }
     }
 }
 
 
 impl<Fs, Io> Stage<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     pub fn execute(&self, workspace_path: &str) -> error::Result {
         let mut stage_tree = self.staging.read()?.unwrap_or_default();
-        let head = self.head.read()?;
+        let head = self.head.read(&self.branch_name)?;
         let trace_tree = self.trace_tree.read(&head)?;
         let mut changed = false;
         for result in self.workspace.convert_to_objs(workspace_path)? {
@@ -143,12 +145,12 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
+    use crate::object::{AsMeta, ObjHash};
     use crate::object::delete::DeleteObj;
     use crate::object::file::FileObj;
-    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::stage;
     use crate::operation::stage::Stage;
@@ -165,7 +167,7 @@ mod tests {
             &FilePath::from_path("./src/main.rs"),
             "dasds日本語".as_bytes(),
         )
-        .unwrap();
+            .unwrap();
         stage.execute(".").unwrap();
 
         let obj = ObjIo::new(mock);

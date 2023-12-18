@@ -34,7 +34,7 @@ impl<Fs, Io> Push<Fs, Io>
         Self {
             commit_obj: CommitObjIo::new(branch_name.clone(), fs.clone()),
             object: ObjIo::new(fs.clone()),
-            head: HeadIo::new(branch_name.clone(), fs.clone()),
+            head: HeadIo::new(fs.clone()),
             trace: TraceIo::new(fs),
             branch_name,
         }
@@ -64,7 +64,7 @@ impl<Fs, Io> Push<Fs, Io>
 
     pub fn create_push_param(&self) -> error::Result<PushParam> {
         let traces = self.trace.read_all()?;
-        let head = self.head.read()?;
+        let head = self.head.read(&self.branch_name)?;
         let compressed_objs = self.read_objs_associated_commits(head.clone())?;
         Ok(PushParam {
             branch: self.branch_name.clone(),
@@ -116,7 +116,7 @@ mod tests {
     async fn failed_if_no_commit() {
         let mock = MockFileSystem::default();
         let push = Push::new(BranchName::main(), mock);
-        match push.execute(&MockRemoteClient::default()).await {
+        match push.execute(&mut MockRemoteClient::default()).await {
             Err(error::Error::NotfoundLocalCommits) => {}
             _ => panic!("expected return error::Error::NotfoundLocalCommits bad was"),
         }
@@ -134,7 +134,7 @@ mod tests {
         mock.write("./hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
-        assert!(push.execute(&MockRemoteClient::default()).await.is_ok());
+        assert!(push.execute(&mut MockRemoteClient::default()).await.is_ok());
     }
 
 
@@ -150,7 +150,7 @@ mod tests {
         mock.write("./.hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
-        push.execute(&MockRemoteClient::default()).await.unwrap();
+        push.execute(&mut MockRemoteClient::default()).await.unwrap();
 
         assert_eq!(commit_obj.read_local_commits().unwrap().len(), 0);
     }
@@ -168,11 +168,11 @@ mod tests {
         mock.write("./hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
-        let remote = MockRemoteClient::default();
-        push.execute(&remote).await.unwrap();
+        let mut remote = MockRemoteClient::default();
+        push.execute(&mut remote).await.unwrap();
         let param = remote.push_param.lock().await.clone().unwrap();
 
-        let head = HeadIo::new(branch, mock);
-        assert_eq!(&param.head, &head.read().unwrap());
+        let head = HeadIo::new(mock);
+        assert_eq!(&param.head, &head.read(&branch).unwrap());
     }
 }

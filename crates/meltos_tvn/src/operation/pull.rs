@@ -1,5 +1,5 @@
 use crate::error;
-use crate::file_system::FileSystem;
+use crate::file_system::{FileSystem, FsIo};
 
 #[derive(Debug, Clone)]
 pub struct Pull<Fs, Io>
@@ -7,7 +7,7 @@ pub struct Pull<Fs, Io>
         Fs: FileSystem<Io>,
         Io: std::io::Write + std::io::Read,
 {
-
+    fs: FsIo<Fs, Io>
 }
 
 

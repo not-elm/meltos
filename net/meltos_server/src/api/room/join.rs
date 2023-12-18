@@ -102,11 +102,9 @@ mod tests {
             .unwrap();
 
         let mut app = app(session, MockGlobalDiscussionIo::default());
-
         let mock = MockFileSystem::default();
         mock.write("./some_text.txt", b"text file").unwrap();
         let room_id = http_open_room(&mut app, mock.clone(), owner_session).await;
-
         let response = http_join(&mut app, &room_id, &user_session).await;
         let meta = response.deserialize::<RoomMeta>().await;
         assert_eq!(meta.bundle.branches.len(), 1);

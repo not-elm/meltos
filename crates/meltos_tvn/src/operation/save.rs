@@ -16,6 +16,7 @@ pub struct Save<Fs, Io>
 {
     trace: TraceIo<Fs, Io>,
     object: ObjIo<Fs, Io>,
+    head: HeadIo<Fs, Io>,
     fs: Fs,
 }
 
@@ -29,6 +30,7 @@ impl<Fs, Io> Save<Fs, Io>
         Self {
             trace: TraceIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
+            head: HeadIo::new(fs.clone()),
             fs,
         }
     }
@@ -39,7 +41,7 @@ impl<Fs, Io> Save<Fs, Io>
     /// * write traces related to commits.
     pub fn execute(&self, push_param: PushParam) -> error::Result {
         self.write_objs(push_param.compressed_objs)?;
-        self.write_head(push_param.branch, push_param.head)?;
+        self.write_head(&push_param.branch, &push_param.head)?;
         self.write_traces(push_param.traces)
     }
 
@@ -52,9 +54,8 @@ impl<Fs, Io> Save<Fs, Io>
         Ok(())
     }
 
-    fn write_head(&self, branch: BranchName, head_hash: CommitHash) -> error::Result {
-        let head = HeadIo::new(branch, self.fs.clone());
-        head.write(head_hash)?;
+    fn write_head(&self, branch: &BranchName, head_hash: &CommitHash) -> error::Result {
+       self.head.write(branch, head_hash)?;
         Ok(())
     }
 
@@ -91,7 +92,7 @@ mod tests {
             head: head.clone(),
         };
         save.execute(push_param).unwrap();
-        let actual = mock.try_read(".meltos/branches/main/HEAD").unwrap();
+        let actual = mock.try_read(".meltos/refs/heads/main").unwrap();
         assert_eq!(actual, head.encode().unwrap());
     }
 }

@@ -14,7 +14,6 @@ where
     Io: std::io::Write + std::io::Read,
 {
     io: FsIo<Fs, Io>,
-    branch_name: BranchName,
 }
 
 
@@ -23,25 +22,24 @@ where
     Fs: FileSystem<Io>,
     Io: std::io::Write + std::io::Read,
 {
-    pub fn new(branch_name: BranchName, fs: Fs) -> HeadIo<Fs, Io> {
+    pub const fn new(fs: Fs) -> HeadIo<Fs, Io> {
         Self {
-            branch_name,
             io: FsIo::new(fs),
         }
     }
 
-    pub fn write(&self, commit_hash: CommitHash) -> std::io::Result<()> {
+    pub fn write(&self, branch_name: &BranchName, commit_hash: &CommitHash) -> error::Result<()> {
         self.io.write(
-            &format!(".meltos/branches/{}/HEAD", self.branch_name),
-            &commit_hash.encode().unwrap(),
+            &format!(".meltos/refs/heads/{branch_name}"),
+            &commit_hash.encode()?,
         )?;
         Ok(())
     }
 
-    pub fn read(&self) -> error::Result<CommitHash> {
+    pub fn read(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
         let buf = self
             .io
-            .try_read(&format!(".meltos/branches/{}/HEAD", self.branch_name))
+            .try_read(&format!(".meltos/refs/heads/{branch_name}"))
             .map_err(|_| error::Error::NotfoundHead)?;
         Ok(CommitHash(ObjHash::decode(&buf)?))
     }

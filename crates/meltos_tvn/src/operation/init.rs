@@ -126,7 +126,7 @@ mod tests {
 
 
     fn read_head_commit_hash(mock: MockFileSystem) -> CommitHash {
-        let head = HeadIo::new(BranchName::main(), mock);
-        head.read().unwrap()
+        let head = HeadIo::new(mock);
+        head.read(&BranchName::main()).unwrap()
     }
 }

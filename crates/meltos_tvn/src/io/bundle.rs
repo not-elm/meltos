@@ -68,15 +68,14 @@ impl<Fs, Io> BundleIo<Fs, Io>
         let mut branches = Vec::with_capacity(head_files.len());
         for path in head_files {
             let Some(branch_name) = Path::new(&path)
-                .parent()
-                .and_then(|dir| dir.file_name())
-                .and_then(|name| name.to_str())
+                .file_name()
+                .and_then(|name|name.to_str())
                 else {
                     continue;
                 };
 
             let branch_name = BranchName::from(branch_name);
-            let head = HeadIo::new(branch_name.clone(), self.fs.clone()).read()?;
+            let head = HeadIo::new(self.fs.clone()).read(&branch_name)?;
             branches.push(BranchHead {
                 head,
                 branch_name,
@@ -90,16 +89,7 @@ impl<Fs, Io> BundleIo<Fs, Io>
     fn read_all_branch_head_path(&self) -> error::Result<Vec<String>> {
         Ok(self
             .fs
-            .all_file_path(".meltos/branches")?
-            .into_iter()
-            .filter(|path| {
-                let Some(file_name) = Path::new(path).file_name().and_then(|path| path.to_str())
-                    else {
-                        return false;
-                    };
-                file_name == "HEAD"
-            })
-            .collect())
+            .all_file_path(".meltos/refs/heads")?)
     }
 }
 

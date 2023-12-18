@@ -33,9 +33,9 @@ where
     /// * copy `head file` from old branch
     /// * writes the `working` to new branch
     pub fn execute(&self, old: BranchName, new: BranchName) -> error::Result {
-        let old_branch_head = HeadIo::new(old, self.fs.clone()).read()?;
+        let old_branch_head = HeadIo::new(self.fs.clone()).read(&old)?;
         self.working.write(&new)?;
-        HeadIo::new(new, self.fs.clone()).write(old_branch_head)?;
+        HeadIo::new(self.fs.clone()).write(&new, &old_branch_head)?;
         Ok(())
     }
 }
@@ -70,12 +70,12 @@ mod tests {
         let null_commit_hash = init_main_branch(mock.clone());
 
         let new_branch = NewBranch::new(mock.clone());
-        let head = HeadIo::new(BranchName::from("second"), mock);
+        let head = HeadIo::new(mock);
         new_branch
             .execute(BranchName::main(), BranchName::from("second"))
             .unwrap();
 
-        let head = head.read().unwrap();
+        let head = head.read(&BranchName::from("second"), ).unwrap();
         assert_eq!(head, null_commit_hash);
     }
 }

@@ -21,6 +21,7 @@ where
     object: ObjIo<Fs, Io>,
     local_commits: LocalCommitsIo<Fs, Io>,
     trace_tree: TraceTreeIo<Fs, Io>,
+    branch_name: BranchName
 }
 
 
@@ -31,10 +32,11 @@ where
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> CommitObjIo<Fs, Io> {
         CommitObjIo {
-            head: HeadIo::new(branch_name.clone(), fs.clone()),
+            head: HeadIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
-            local_commits: LocalCommitsIo::new(branch_name, fs.clone()),
+            local_commits: LocalCommitsIo::new(branch_name.clone(), fs.clone()),
             trace_tree: TraceTreeIo::new(fs),
+            branch_name
         }
     }
 }
@@ -58,7 +60,7 @@ where
 
 
     pub fn read_head(&self) -> error::Result<CommitObj> {
-        let hash = self.head.read()?;
+        let hash = self.head.read(&self.branch_name)?;
         self.read(&hash)
     }
 
@@ -74,7 +76,7 @@ where
         commit_text: impl Into<CommitText>,
         staging_hash: ObjHash,
     ) -> error::Result<CommitObj> {
-        let head_commit = self.head.read()?;
+        let head_commit = self.head.read(&self.branch_name)?;
         Ok(CommitObj {
             parents: vec![head_commit],
             text: commit_text.into(),
