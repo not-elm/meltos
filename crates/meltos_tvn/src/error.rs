@@ -59,4 +59,7 @@ pub enum Error {
 
     #[error(transparent)]
     ParseInt(#[from] ParseIntError),
+
+    #[error("failed connect server : detail={0}")]
+    FailedConnectServer(String),
 }

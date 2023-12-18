@@ -1,19 +1,23 @@
+use std::fs::File;
+
 use crate::branch::BranchName;
 use crate::error;
+use crate::file_system::file::StdFileSystem;
 use crate::file_system::FileSystem;
 use crate::io::atomic::work_branch::WorkingIo;
 use crate::io::bundle::BundleIo;
 use crate::operation::commit::Commit;
 use crate::operation::init::Init;
+use crate::operation::patch::Patch;
 use crate::operation::push::Push;
 use crate::operation::save::Save;
 use crate::operation::stage::Stage;
 
 pub mod checkout;
 pub mod commit;
-pub mod fetch;
 pub mod init;
 pub mod new_branch;
+pub mod patch;
 pub mod push;
 pub mod save;
 pub mod stage;
@@ -21,12 +25,13 @@ pub mod unzip;
 
 
 #[derive(Debug)]
-pub struct Operations<Fs, Io>
+pub struct Operations<Fs = StdFileSystem, Io = File>
 where
     Fs: FileSystem<Io> + Clone,
     Io: std::io::Write + std::io::Read,
 {
     pub init: Init<Fs, Io>,
+    pub patch: Patch<Fs, Io>,
     pub stage: Stage<Fs, Io>,
     pub commit: Commit<Fs, Io>,
     pub push: Push<Fs, Io>,
@@ -56,6 +61,7 @@ where
     pub fn new(branch_name: BranchName, fs: Fs) -> Operations<Fs, Io> {
         Self {
             init: Init::new(branch_name.clone(), fs.clone()),
+            patch: Patch::new(fs.clone()),
             stage: Stage::new(branch_name.clone(), fs.clone()),
             commit: Commit::new(branch_name.clone(), fs.clone()),
             push: Push::new(branch_name.clone(), fs.clone()),

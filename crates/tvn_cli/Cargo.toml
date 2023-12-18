@@ -1,0 +1,17 @@
+[package]
+name = "tvn_cli"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+tokio = { version = "1.35.0", features = ["full"] }
+clap = { version = "4.4.11", features = ["derive"] }
+meltos = { path = "../meltos" }
+meltos_tvn = { path = "../meltos_tvn" }
+meltos_client = { path = "../meltos_client" }
+auto-delegate = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+log = "0.4.20"
+

@@ -81,6 +81,8 @@ mod test_util {
 
     #[async_trait]
     impl<'a> CommitPushable for MockServerClient<'a> {
+        type Error = std::io::Error;
+
         async fn push(&mut self, param: PushParam) -> std::io::Result<()> {
             let response = http_call(
                 self.app,
@@ -163,17 +165,16 @@ mod test_util {
     }
 
 
-    pub async fn http_fetch(
-        app: &mut Router,
-        room_id: &RoomId,
-        session_id: &SessionId
-    ) -> Bundle{
-        http_call_with_deserialize::<Bundle>(app, Request::builder()
-            .header(header::SET_COOKIE, format!("session_id={session_id}"))
-            .uri(format!("/room/{room_id}/tvn/fetch"))
-            .body(Body::empty())
-            .unwrap()
-        ).await
+    pub async fn http_fetch(app: &mut Router, room_id: &RoomId, session_id: &SessionId) -> Bundle {
+        http_call_with_deserialize::<Bundle>(
+            app,
+            Request::builder()
+                .header(header::SET_COOKIE, format!("session_id={session_id}"))
+                .uri(format!("/room/{room_id}/tvn/fetch"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
     }
 
     pub async fn http_create_discussion(app: &mut Router, room_id: RoomId) -> Created {

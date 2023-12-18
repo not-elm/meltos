@@ -5,8 +5,6 @@ pub mod io;
 pub mod object;
 pub mod operation;
 
-#[cfg(feature = "cli")]
-pub mod command;
 pub mod encode;
 pub mod remote;
 

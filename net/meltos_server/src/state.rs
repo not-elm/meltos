@@ -3,6 +3,7 @@ use axum::body::Body;
 use axum::extract::FromRef;
 use axum::http::StatusCode;
 use axum::response::Response;
+use serde_json::json;
 
 use meltos::user::{SessionId, UserId};
 use meltos_backend::user::SessionIo;
@@ -16,8 +17,8 @@ pub struct AppState<Session> {
 }
 
 impl<Session> AppState<Session>
-where
-    Session: SessionIo + Clone,
+    where
+        Session: SessionIo + Clone,
 {
     pub fn new(session: Session) -> AppState<Session> {
         Self {
@@ -32,8 +33,8 @@ where
 pub struct SessionState<Session>(Session);
 
 impl<Session> SessionState<Session>
-where
-    Session: SessionIo,
+    where
+        Session: SessionIo,
 {
     pub async fn try_fetch_user_id(
         &self,
@@ -46,7 +47,30 @@ where
                 .unwrap()
         })
     }
+
+
+    pub async fn register(
+        &self,
+        session_id: SessionId,
+        user_id: UserId,
+    ) -> std::result::Result<(), Response<Body>> {
+        match self.0.register(session_id, user_id).await {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                Err(axum::http::Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Body::from(
+                        json!({
+                            "error" : e.to_string()
+                        })
+                            .to_string(),
+                    ))
+                    .unwrap())
+            }
+        }
+    }
 }
+
 
 impl<Session> FromRef<AppState<Session>> for Rooms {
     fn from_ref(input: &AppState<Session>) -> Self {
@@ -55,8 +79,8 @@ impl<Session> FromRef<AppState<Session>> for Rooms {
 }
 
 impl<Session> FromRef<AppState<Session>> for SessionState<Session>
-where
-    Session: SessionIo + Clone,
+    where
+        Session: SessionIo + Clone,
 {
     fn from_ref(input: &AppState<Session>) -> Self {
         input.session.clone()

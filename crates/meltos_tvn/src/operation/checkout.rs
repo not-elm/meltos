@@ -75,8 +75,8 @@ mod tests {
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
     use crate::operation::checkout::{CheckOutStatus, Checkout};
-    use crate::operation::fetch::Fetch;
     use crate::operation::new_branch::NewBranch;
+    use crate::operation::patch::Patch;
     use crate::remote::mock::MockRemoteClient;
     use crate::tests::init_main_branch;
 
@@ -128,7 +128,7 @@ mod tests {
     async fn checkout_from_remote_branch() {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
-        Fetch::new(mock.clone(), mock_remote())
+        Patch::new(mock.clone(), mock_remote())
             .execute(None)
             .await
             .unwrap();

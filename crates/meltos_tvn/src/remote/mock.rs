@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 
+use meltos::room::RoomId;
 use meltos_util::sync::arc_mutex::ArcMutex;
 
 use crate::branch::BranchName;
@@ -27,6 +28,8 @@ impl MockRemoteClient {
 
 #[async_trait]
 impl CommitPushable for MockRemoteClient {
+    type Error = std::io::Error;
+
     async fn push(&mut self, param: PushParam) -> std::io::Result<()> {
         *self.push_param.lock().await = Some(param);
         Ok(())
@@ -35,7 +38,12 @@ impl CommitPushable for MockRemoteClient {
 
 #[async_trait]
 impl CommitFetchable for MockRemoteClient {
-    async fn fetch(&mut self, target_branch: Option<BranchName>) -> std::io::Result<Bundle> {
+    type Error = std::io::Error;
+
+    async fn fetch(
+        &mut self,
+        _target_branch: Option<BranchName>,
+    ) -> std::result::Result<Bundle, Self::Error> {
         let bundle = BundleIo::new(self.fs.clone()).create().unwrap();
         Ok(bundle)
     }

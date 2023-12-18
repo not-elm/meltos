@@ -6,8 +6,10 @@ edition = "2021"
 
 [dependencies]
 meltos = { path = "../meltos" }
+meltos_tvn = { path = "../meltos_tvn" }
 
-
+reqwest = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 async-trait = { workspace = true }
+auto-delegate = { workspace = true }

@@ -1,4 +1,3 @@
-use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
@@ -8,7 +7,7 @@ use crate::io::bundle::Bundle;
 use crate::remote::CommitFetchable;
 
 #[derive(Debug, Clone)]
-pub struct Fetch<Fs, Io, Client>
+pub struct Patch<Fs, Io>
 where
     Fs: FileSystem<Io>,
     Io: std::io::Write + std::io::Read,
@@ -16,39 +15,30 @@ where
     obj: ObjIo<Fs, Io>,
     head: HeadIo<Fs, Io>,
     trace: TraceIo<Fs, Io>,
-    client: Client,
 }
 
 
-impl<Fs, Io, Client> Fetch<Fs, Io, Client>
+impl<Fs, Io> Patch<Fs, Io>
 where
     Fs: FileSystem<Io> + Clone,
     Io: std::io::Write + std::io::Read,
-    Client: CommitFetchable,
 {
-    pub fn new(fs: Fs, client: Client) -> Fetch<Fs, Io, Client> {
+    pub fn new(fs: Fs) -> Patch<Fs, Io> {
         Self {
             obj: ObjIo::new(fs.clone()),
             head: HeadIo::new(fs.clone()),
             trace: TraceIo::new(fs),
-            client,
         }
     }
 }
 
 
-impl<Fs, Io, Client> Fetch<Fs, Io, Client>
+impl<Fs, Io> Patch<Fs, Io>
 where
     Fs: FileSystem<Io>,
     Io: std::io::Write + std::io::Read,
-    Client: CommitFetchable,
 {
-    pub async fn execute(&mut self, target_branch: Option<BranchName>) -> error::Result {
-        let bundle = self.client.fetch(target_branch).await?;
-        self.patch(&bundle)
-    }
-
-    fn patch(&self, bundle: &Bundle) -> error::Result {
+    pub fn execute(&self, bundle: &Bundle) -> error::Result {
         self.trace.write_all(&bundle.traces)?;
         for branch in &bundle.branches {
             self.head.write_remote(&branch.branch_name, &branch.head)?;
@@ -67,9 +57,10 @@ mod tests {
     use crate::io::atomic::head::HeadIo;
     use crate::io::atomic::object::ObjIo;
     use crate::io::atomic::trace::TraceIo;
+    use crate::io::bundle::BundleIo;
     use crate::object::commit::CommitHash;
     use crate::operation::commit::Commit;
-    use crate::operation::fetch::Fetch;
+    use crate::operation::patch::Patch;
     use crate::operation::stage::Stage;
     use crate::remote::mock::MockRemoteClient;
     use crate::tests::init_main_branch;
@@ -78,8 +69,9 @@ mod tests {
     async fn updated_traces() {
         let mock = MockFileSystem::default();
         let (server, _) = create_mock_server_file_system();
-        let mut fetch = Fetch::new(mock.clone(), server.clone());
-        fetch.execute(None).await.unwrap();
+        let bundle = BundleIo::new(mock.clone()).create().unwrap();
+        let mut fetch = Patch::new(mock.clone());
+        fetch.execute(&bundle).unwrap();
 
         let mut server_traces = TraceIo::new(server.fs.clone()).read_all().unwrap();
         let mut local_traces = TraceIo::new(mock.clone()).read_all().unwrap();
@@ -93,8 +85,9 @@ mod tests {
     async fn updated_objs() {
         let mock = MockFileSystem::default();
         let (server, _) = create_mock_server_file_system();
-        let mut fetch = Fetch::new(mock.clone(), server.clone());
-        fetch.execute(None).await.unwrap();
+        let bundle = BundleIo::new(mock.clone()).create().unwrap();
+        let mut fetch = Patch::new(mock.clone());
+        fetch.execute(&bundle).unwrap();
 
         let mut server_objs = ObjIo::new(server.fs.clone()).read_all().unwrap();
         let mut local_objs = ObjIo::new(mock.clone()).read_all().unwrap();
@@ -107,8 +100,9 @@ mod tests {
     async fn updated_branches() {
         let mock = MockFileSystem::default();
         let (server, commit_hash) = create_mock_server_file_system();
-        let mut fetch = Fetch::new(mock.clone(), server.clone());
-        fetch.execute(None).await.unwrap();
+        let bundle = BundleIo::new(mock.clone()).create().unwrap();
+        let mut patch = Patch::new(mock.clone());
+        patch.execute(&bundle).unwrap();
 
         let remote_main_head = HeadIo::new(mock.clone())
             .try_read_remote(&BranchName::main())

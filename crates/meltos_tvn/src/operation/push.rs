@@ -53,7 +53,10 @@ where
             return Err(error::Error::NotfoundLocalCommits);
         }
         let push_param = self.create_push_param()?;
-        sender.push(push_param).await?;
+        sender
+            .push(push_param)
+            .await
+            .map_err(|e| error::Error::FailedConnectServer(format!("{e}")))?;
         self.commit_obj.reset_local_commits()?;
         Ok(())
     }
