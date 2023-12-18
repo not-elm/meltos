@@ -48,7 +48,7 @@ where
 {
     pub fn read_local_commits(&self) -> error::Result<Vec<CommitObj>> {
         let Some(LocalCommitsObj(local_hashes)) = self.local_commits.read()? else {
-            return Ok(vec![]);
+            return Ok(Vec::with_capacity(0));
         };
 
         let mut commit_objs = Vec::with_capacity(local_hashes.len());
