@@ -54,7 +54,7 @@ where
 {
     pub fn execute(&self, workspace_path: &str) -> error::Result {
         let mut stage_tree = self.staging.read()?.unwrap_or_default();
-        let head = self.head.read(&self.branch_name)?;
+        let head = self.head.try_read(&self.branch_name)?;
         let trace_tree = self.trace_tree.read(&head)?;
         let mut changed = false;
         for result in self.workspace.convert_to_objs(workspace_path)? {

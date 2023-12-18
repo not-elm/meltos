@@ -64,30 +64,14 @@ where
 
     pub fn create_push_param(&self) -> error::Result<PushParam> {
         let traces = self.trace.read_all()?;
-        let head = self.head.read(&self.branch_name)?;
-        let compressed_objs = self.read_objs_associated_commits(head.clone())?;
+        let head = self.head.try_read(&self.branch_name)?;
+        let compressed_objs = self.commit_obj.read_obj_associate_with(head.clone())?;
         Ok(PushParam {
             branch: self.branch_name.clone(),
             compressed_objs,
             head,
             traces,
         })
-    }
-
-
-    fn read_objs_associated_commits(
-        &self,
-        head: CommitHash,
-    ) -> error::Result<Vec<(ObjHash, CompressedBuf)>> {
-        let obj_hashes = self.commit_obj.read_obj_hashes_associate_with(head)?;
-        let mut obj_bufs = Vec::with_capacity(obj_hashes.len());
-        for hash in obj_hashes {
-            let Some(buf) = self.object.read(&hash)? else {
-                return Err(error::Error::NotfoundObj(hash));
-            };
-            obj_bufs.push((hash, buf));
-        }
-        Ok(obj_bufs)
     }
 }
 
@@ -178,6 +162,6 @@ mod tests {
         let param = remote.push_param.lock().await.clone().unwrap();
 
         let head = HeadIo::new(mock);
-        assert_eq!(&param.head, &head.read(&branch).unwrap());
+        assert_eq!(&param.head, &head.try_read(&branch).unwrap());
     }
 }

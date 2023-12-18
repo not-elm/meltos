@@ -24,4 +24,3 @@ pub trait CommitFetchable: Send + Sync {
     ///
     async fn fetch(&mut self, target_branch: Option<BranchName>) -> std::io::Result<Bundle>;
 }
-

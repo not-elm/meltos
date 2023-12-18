@@ -1,6 +1,7 @@
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
+use crate::io::atomic::work_branch::WorkingIo;
 use crate::object::commit::CommitHash;
 use crate::operation::commit::Commit;
 
@@ -11,6 +12,7 @@ where
     Io: std::io::Write + std::io::Read,
 {
     commit: Commit<Fs, Io>,
+    working: WorkingIo<Fs, Io>,
     fs: FsIo<Fs, Io>,
 }
 
@@ -23,6 +25,7 @@ where
     pub fn new(branch_name: BranchName, fs: Fs) -> Init<Fs, Io> {
         Self {
             commit: Commit::new(branch_name.clone(), fs.clone()),
+            working: WorkingIo::new(fs.clone()),
             fs: FsIo::new(fs.clone()),
         }
     }
@@ -43,8 +46,10 @@ where
     /// * create `head file` and write `null commit hash`
     /// * create `trace file` named `null commit hash`.
     /// * create `local commits file` and append `null commit hash`.
+    /// * write `main` to the`WORKING`.
     pub fn execute(&self) -> error::Result<CommitHash> {
         self.check_branch_not_initialized()?;
+        self.working.write(&BranchName::main())?;
         self.commit.execute_null_commit()
     }
 
@@ -127,6 +132,6 @@ mod tests {
 
     fn read_head_commit_hash(mock: MockFileSystem) -> CommitHash {
         let head = HeadIo::new(mock);
-        head.read(&BranchName::main()).unwrap()
+        head.try_read(&BranchName::main()).unwrap()
     }
 }

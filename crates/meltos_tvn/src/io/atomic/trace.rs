@@ -25,10 +25,10 @@ where
             io: FsIo::new(fs),
         }
     }
-    
-    
-    pub fn write_all(&self, traces: &[(CommitHash, ObjHash)])-> error::Result{
-        for (commit, obj) in traces{
+
+
+    pub fn write_all(&self, traces: &[(CommitHash, ObjHash)]) -> error::Result {
+        for (commit, obj) in traces {
             self.write(commit, obj)?;
         }
         Ok(())

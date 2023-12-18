@@ -42,8 +42,8 @@ pub enum Error {
     #[error("not found local commits")]
     NotfoundLocalCommits,
 
-    #[error("not found head")]
-    NotfoundHead,
+    #[error("not found head: branch={0}")]
+    NotfoundHead(BranchName),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),

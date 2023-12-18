@@ -9,15 +9,15 @@ use crate::operation::push::Push;
 use crate::operation::save::Save;
 use crate::operation::stage::Stage;
 
+pub mod checkout;
 pub mod commit;
+pub mod fetch;
 pub mod init;
 pub mod new_branch;
-pub mod fetch;
 pub mod push;
 pub mod save;
 pub mod stage;
 pub mod unzip;
-pub mod checkout;
 
 
 #[derive(Debug)]

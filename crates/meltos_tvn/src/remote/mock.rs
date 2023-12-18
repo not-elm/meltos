@@ -16,6 +16,7 @@ pub struct MockRemoteClient {
 
 
 impl MockRemoteClient {
+    #[allow(unused)]
     pub fn new(fs: MockFileSystem) -> Self {
         Self {
             fs,

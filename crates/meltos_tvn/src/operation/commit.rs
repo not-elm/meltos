@@ -165,7 +165,7 @@ mod tests {
         commit.execute("test").unwrap();
 
         let head = HeadIo::new(mock.clone());
-        let head_hash = head.read(&BranchName::main()).unwrap();
+        let head_hash = head.try_read(&BranchName::main()).unwrap();
         let commit = ObjIo::new(mock).read_to_commit(&head_hash).unwrap();
 
         let mut tree = TreeObj::default();

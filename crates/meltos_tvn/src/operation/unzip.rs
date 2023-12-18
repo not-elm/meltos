@@ -45,7 +45,7 @@ where
 {
     /// Restore committed data into the workspace.
     pub fn execute(&self) -> error::Result {
-        let head = self.head.read(&self.branch_name)?;
+        let head = self.head.try_read(&self.branch_name)?;
         let trace_tree = self.trace_tree.read(&head)?;
         for (path, hash) in trace_tree.iter() {
             self.workspace

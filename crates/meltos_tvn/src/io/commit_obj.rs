@@ -9,7 +9,7 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::local_commits::LocalCommitsObj;
-use crate::object::ObjHash;
+use crate::object::{CompressedBuf, ObjHash};
 
 #[derive(Debug, Clone)]
 pub struct CommitObjIo<Fs, Io>
@@ -60,7 +60,7 @@ where
 
 
     pub fn read_head(&self) -> error::Result<CommitObj> {
-        let hash = self.head.read(&self.branch_name)?;
+        let hash = self.head.try_read(&self.branch_name)?;
         self.read(&hash)
     }
 
@@ -76,7 +76,7 @@ where
         commit_text: impl Into<CommitText>,
         staging_hash: ObjHash,
     ) -> error::Result<CommitObj> {
-        let head_commit = self.head.read(&self.branch_name)?;
+        let head_commit = self.head.try_read(&self.branch_name)?;
         Ok(CommitObj {
             parents: vec![head_commit],
             text: commit_text.into(),
@@ -88,6 +88,21 @@ where
     #[inline]
     pub fn reset_local_commits(&self) -> error::Result {
         self.local_commits.write(&LocalCommitsObj::default())
+    }
+
+    pub fn read_obj_associate_with(
+        &self,
+        commit_hash: CommitHash,
+    ) -> error::Result<Vec<(ObjHash, CompressedBuf)>> {
+        let obj_hashes = self.read_obj_hashes_associate_with(commit_hash)?;
+        let mut obj_bufs = Vec::with_capacity(obj_hashes.len());
+        for hash in obj_hashes {
+            let Some(buf) = self.object.read(&hash)? else {
+                return Err(error::Error::NotfoundObj(hash));
+            };
+            obj_bufs.push((hash, buf));
+        }
+        Ok(obj_bufs)
     }
 
     pub fn read_obj_hashes_associate_with(

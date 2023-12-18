@@ -9,9 +9,9 @@ use crate::remote::CommitFetchable;
 
 #[derive(Debug, Clone)]
 pub struct Fetch<Fs, Io, Client>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     obj: ObjIo<Fs, Io>,
     head: HeadIo<Fs, Io>,
@@ -21,10 +21,10 @@ pub struct Fetch<Fs, Io, Client>
 
 
 impl<Fs, Io, Client> Fetch<Fs, Io, Client>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
-        Client: CommitFetchable
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
+    Client: CommitFetchable,
 {
     pub fn new(fs: Fs, client: Client) -> Fetch<Fs, Io, Client> {
         Self {
@@ -38,10 +38,10 @@ impl<Fs, Io, Client> Fetch<Fs, Io, Client>
 
 
 impl<Fs, Io, Client> Fetch<Fs, Io, Client>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
-        Client: CommitFetchable
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
+    Client: CommitFetchable,
 {
     pub async fn execute(&mut self, target_branch: Option<BranchName>) -> error::Result {
         let bundle = self.client.fetch(target_branch).await?;
@@ -62,8 +62,8 @@ impl<Fs, Io, Client> Fetch<Fs, Io, Client>
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::atomic::object::ObjIo;
     use crate::io::atomic::trace::TraceIo;
@@ -111,7 +111,7 @@ mod tests {
         fetch.execute(None).await.unwrap();
 
         let remote_main_head = HeadIo::new(mock.clone())
-            .read_remote(&BranchName::main())
+            .try_read_remote(&BranchName::main())
             .unwrap();
         assert_eq!(remote_main_head, commit_hash);
     }
@@ -120,8 +120,12 @@ mod tests {
         let mock = MockFileSystem::default();
         mock.write("./hello.txt", b"hello").unwrap();
         init_main_branch(mock.clone());
-        Stage::new(BranchName::main(), mock.clone()).execute(".").unwrap();
-        let commit_hash = Commit::new(BranchName::main(), mock.clone()).execute("commit text").unwrap();
+        Stage::new(BranchName::main(), mock.clone())
+            .execute(".")
+            .unwrap();
+        let commit_hash = Commit::new(BranchName::main(), mock.clone())
+            .execute("commit text")
+            .unwrap();
         (MockRemoteClient::new(mock), commit_hash)
     }
 }
