@@ -50,7 +50,7 @@ mod test_util {
     use meltos_tvn::file_system::mock::MockFileSystem;
     use meltos_tvn::operation::init::Init;
     use meltos_tvn::operation::push::{Push, PushParam};
-    use meltos_tvn::remote_client::CommitSendable;
+    use meltos_tvn::remote::CommitPushable;
     use meltos_util::serde::SerializeJson;
 
     use crate::app;
@@ -79,8 +79,8 @@ mod test_util {
 
 
     #[async_trait]
-    impl<'a> CommitSendable for MockServerClient<'a> {
-        async fn send(&mut self, param: PushParam) -> std::io::Result<()> {
+    impl<'a> CommitPushable for MockServerClient<'a> {
+        async fn push(&mut self, param: PushParam) -> std::io::Result<()> {
             let response = http_call(
                 self.app,
                 Request::builder()

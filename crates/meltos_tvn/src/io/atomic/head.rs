@@ -9,36 +9,56 @@ use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct HeadIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
-    io: FsIo<Fs, Io>,
+    fs: FsIo<Fs, Io>,
 }
 
 
 impl<Fs, Io> HeadIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     pub const fn new(fs: Fs) -> HeadIo<Fs, Io> {
         Self {
-            io: FsIo::new(fs),
+            fs: FsIo::new(fs),
         }
     }
 
+
+    pub fn write_remote(&self, branch_name: &BranchName, commit_hash: &CommitHash) -> error::Result {
+        self.fs.write(
+            &format!(".meltos/refs/remotes/{branch_name}"),
+            &commit_hash.encode()?,
+        )?;
+        Ok(())
+    }
+
+
     pub fn write(&self, branch_name: &BranchName, commit_hash: &CommitHash) -> error::Result<()> {
-        self.io.write(
+        self.fs.write(
             &format!(".meltos/refs/heads/{branch_name}"),
             &commit_hash.encode()?,
         )?;
         Ok(())
     }
 
+
+    pub fn read_remote(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
+        let buf = self
+            .fs
+            .try_read(&format!(".meltos/refs/remotes/{branch_name}"))
+            .map_err(|_| error::Error::NotfoundHead)?;
+        Ok(CommitHash(ObjHash::decode(&buf)?))
+    }
+
+
     pub fn read(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
         let buf = self
-            .io
+            .fs
             .try_read(&format!(".meltos/refs/heads/{branch_name}"))
             .map_err(|_| error::Error::NotfoundHead)?;
         Ok(CommitHash(ObjHash::decode(&buf)?))

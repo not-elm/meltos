@@ -9,7 +9,7 @@ use crate::io::atomic::trace::TraceIo;
 use crate::io::commit_obj::CommitObjIo;
 use crate::object::commit::CommitHash;
 use crate::object::{CompressedBuf, ObjHash};
-use crate::remote_client::CommitSendable;
+use crate::remote::CommitPushable;
 
 #[derive(Debug, Clone)]
 pub struct Push<Fs, Io>
@@ -50,13 +50,13 @@ where
     /// Sends the currently locally committed data to the remote.
     /// * push local commits to remote server.
     /// * clear local commits
-    pub async fn execute(&self, sender: &mut impl CommitSendable) -> error::Result {
+    pub async fn execute(&self, sender: &mut impl CommitPushable) -> error::Result {
         let local_commits = self.commit_obj.read_local_commits()?;
         if local_commits.is_empty() {
             return Err(error::Error::NotfoundLocalCommits);
         }
         let push_param = self.create_push_param()?;
-        sender.send(push_param).await?;
+        sender.push(push_param).await?;
         self.commit_obj.reset_local_commits()?;
         Ok(())
     }
@@ -112,7 +112,7 @@ mod tests {
     use crate::operation::commit::Commit;
     use crate::operation::push::Push;
     use crate::operation::stage::Stage;
-    use crate::remote_client::mock::MockRemoteClient;
+    use crate::remote::mock::MockRemoteClient;
     use crate::tests::init_main_branch;
 
     #[tokio::test]

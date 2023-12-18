@@ -5,7 +5,7 @@ use crate::branch::BranchName;
 use crate::command::CommandExecutable;
 use crate::file_system::file::StdFileSystem;
 use crate::operation::push::Push;
-use crate::remote_client::mock::MockRemoteClient;
+use crate::remote::mock::MockRemoteClient;
 
 #[derive(Args, Clone, Debug)]
 pub struct PushArgs {
