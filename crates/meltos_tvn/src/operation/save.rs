@@ -17,7 +17,6 @@ where
     trace: TraceIo<Fs, Io>,
     object: ObjIo<Fs, Io>,
     head: HeadIo<Fs, Io>,
-    fs: Fs,
 }
 
 
@@ -30,8 +29,7 @@ where
         Self {
             trace: TraceIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
-            head: HeadIo::new(fs.clone()),
-            fs,
+            head: HeadIo::new(fs),
         }
     }
 

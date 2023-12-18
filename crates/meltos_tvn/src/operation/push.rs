@@ -4,7 +4,6 @@ use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
-use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
 use crate::io::commit_obj::CommitObjIo;
 use crate::object::commit::CommitHash;
@@ -19,7 +18,6 @@ where
 {
     head: HeadIo<Fs, Io>,
     commit_obj: CommitObjIo<Fs, Io>,
-    object: ObjIo<Fs, Io>,
     branch_name: BranchName,
     trace: TraceIo<Fs, Io>,
 }
@@ -33,7 +31,6 @@ where
     pub fn new(branch_name: BranchName, fs: Fs) -> Push<Fs, Io> {
         Self {
             commit_obj: CommitObjIo::new(branch_name.clone(), fs.clone()),
-            object: ObjIo::new(fs.clone()),
             head: HeadIo::new(fs.clone()),
             trace: TraceIo::new(fs),
             branch_name,

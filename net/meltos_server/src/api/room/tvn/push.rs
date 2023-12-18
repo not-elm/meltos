@@ -10,6 +10,7 @@ use crate::middleware::user::SessionUser;
 
 ///
 /// * save pushed data related to commits.
+#[tracing::instrument]
 pub async fn push(
     SessionRoom(room): SessionRoom,
     SessionUser(_): SessionUser,

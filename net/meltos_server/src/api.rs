@@ -32,7 +32,7 @@ mod test_util {
     use axum::http::{header, StatusCode};
     use axum::response::Response;
     use axum::{async_trait, http, Router};
-    use futures::task::Spawn;
+
     use http_body_util::BodyExt;
     use serde::de::DeserializeOwned;
     use tower::{Service, ServiceExt};
@@ -48,6 +48,7 @@ mod test_util {
     use meltos_backend::user::SessionIo;
     use meltos_tvn::branch::BranchName;
     use meltos_tvn::file_system::mock::MockFileSystem;
+    use meltos_tvn::io::bundle::Bundle;
     use meltos_tvn::operation::init::Init;
     use meltos_tvn::operation::push::{Push, PushParam};
     use meltos_tvn::remote::CommitPushable;
@@ -145,6 +146,7 @@ mod test_util {
         SessionId("owner".to_string())
     }
 
+    #[allow(unused)]
     pub fn user_session_id() -> SessionId {
         SessionId("user".to_string())
     }
@@ -158,6 +160,20 @@ mod test_util {
         http_call_with_deserialize::<Opened>(app, open_room_request(user_token, mock))
             .await
             .room_id
+    }
+
+
+    pub async fn http_fetch(
+        app: &mut Router,
+        room_id: &RoomId,
+        session_id: &SessionId
+    ) -> Bundle{
+        http_call_with_deserialize::<Bundle>(app, Request::builder()
+            .header(header::SET_COOKIE, format!("session_id={session_id}"))
+            .uri(format!("/room/{room_id}/tvn/fetch"))
+            .body(Body::empty())
+            .unwrap()
+        ).await
     }
 
     pub async fn http_create_discussion(app: &mut Router, room_id: RoomId) -> Created {
@@ -211,7 +227,7 @@ mod test_util {
 
         Request::builder()
             .method(http::Method::POST)
-            .header("set-cookie", format!("session_id={session_id}"))
+            .header(header::SET_COOKIE, format!("session_id={session_id}"))
             .header(header::CONTENT_TYPE, "application/json")
             .uri("/room/open")
             .body(Body::from(serde_json::to_string(&push_param).unwrap()))
@@ -268,6 +284,7 @@ mod test_util {
         request: Request,
     ) -> D {
         let response = http_call(app, request).await;
+        println!("{response:?}");
         convert_body_json::<D>(response).await
     }
 

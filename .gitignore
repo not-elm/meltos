@@ -3,4 +3,4 @@
 Cargo.lock
 /crates/meltos_util/tests/
 /branch/
-/.meltos/
+/**/.meltos/
