@@ -23,7 +23,7 @@ where
     staging: StagingIo<Fs, Io>,
     trace_tree: TraceTreeIo<Fs, Io>,
     local_commits: LocalCommitsIo<Fs, Io>,
-    branch_name: BranchName
+    branch_name: BranchName,
 }
 
 impl<Fs, Io> Commit<Fs, Io>
@@ -39,7 +39,7 @@ where
             staging: StagingIo::new(fs.clone()),
             trace_tree: TraceTreeIo::new(fs.clone()),
             local_commits: LocalCommitsIo::new(branch_name.clone(), fs),
-            branch_name
+            branch_name,
         }
     }
 }
@@ -73,7 +73,8 @@ where
         let null_staging = TreeObj::default();
         let null_staging_meta = null_staging.as_meta()?;
         let null_commit = self.create_null_commit(null_staging_meta);
-        self.head.write(&self.branch_name, &CommitHash(null_commit.as_meta()?.hash))?;
+        self.head
+            .write(&self.branch_name, &CommitHash(null_commit.as_meta()?.hash))?;
         let commit_hash = self.commit(null_commit)?;
         self.update_trace(null_staging, &commit_hash)?;
         Ok(commit_hash)
@@ -99,7 +100,8 @@ where
     fn commit(&self, commit: CommitObj) -> error::Result<CommitHash> {
         let commit_obj = commit.as_meta()?;
         self.object.write_obj(&commit_obj)?;
-        self.head.write(&self.branch_name, &CommitHash(commit_obj.hash.clone()))?;
+        self.head
+            .write(&self.branch_name, &CommitHash(commit_obj.hash.clone()))?;
         self.local_commits
             .append(CommitHash(commit_obj.hash.clone()))?;
         Ok(CommitHash(commit_obj.hash.clone()))
@@ -188,7 +190,6 @@ mod tests {
         mock.write("./hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         let commit_hash = commit.execute("test").unwrap();
-
         let local = local_commits.read().unwrap().unwrap();
         assert_eq!(local, LocalCommitsObj(vec![null_commit_hash, commit_hash]))
     }

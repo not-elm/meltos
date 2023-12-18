@@ -16,8 +16,8 @@ use meltos_backend::discussion::DiscussionIo;
 use meltos_tvn::branch::BranchName;
 use meltos_tvn::file_system::file::StdFileSystem;
 use meltos_tvn::io::bundle::Bundle;
-use meltos_tvn::operation::Operations;
 use meltos_tvn::operation::push::PushParam;
+use meltos_tvn::operation::Operations;
 use meltos_util::macros::Deref;
 use meltos_util::sync::arc_mutex::ArcMutex;
 
@@ -53,7 +53,7 @@ impl RoomMap {
                     json!({
                         "error": format!("room_id {room_id} is not exists")
                     })
-                        .to_string(),
+                    .to_string(),
                 ))
                 .unwrap(),
         )
@@ -87,7 +87,7 @@ impl Room {
                     json!({
                         "error" : e.to_string()
                     })
-                        .to_string(),
+                    .to_string(),
                 ))
                 .unwrap()
         })?;
@@ -102,9 +102,12 @@ impl Room {
             Err(error) => {
                 let response = Response::builder()
                     .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(Body::from(json!({
-                        "error": error.to_string()
-                    }).to_string()))
+                    .body(Body::from(
+                        json!({
+                            "error": error.to_string()
+                        })
+                        .to_string(),
+                    ))
                     .unwrap();
                 Err(response)
             }
@@ -117,10 +120,10 @@ impl Room {
         user_id: UserId,
         f: F,
     ) -> error::Result<Response>
-        where
-            F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
-            O: Future<Output=error::Result<S>>,
-            S: Serialize,
+    where
+        F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
+        O: Future<Output = error::Result<S>>,
+        S: Serialize,
     {
         let command = f(self.as_global_discussion_executor(user_id)).await?;
         Ok(command.as_success_response())

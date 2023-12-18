@@ -75,7 +75,7 @@ mod tests {
             .execute(BranchName::main(), BranchName::from("second"))
             .unwrap();
 
-        let head = head.read(&BranchName::from("second"), ).unwrap();
+        let head = head.read(&BranchName::from("second")).unwrap();
         assert_eq!(head, null_commit_hash);
     }
 }

@@ -21,7 +21,7 @@ where
     object: ObjIo<Fs, Io>,
     local_commits: LocalCommitsIo<Fs, Io>,
     trace_tree: TraceTreeIo<Fs, Io>,
-    branch_name: BranchName
+    branch_name: BranchName,
 }
 
 
@@ -36,7 +36,7 @@ where
             object: ObjIo::new(fs.clone()),
             local_commits: LocalCommitsIo::new(branch_name.clone(), fs.clone()),
             trace_tree: TraceTreeIo::new(fs),
-            branch_name
+            branch_name,
         }
     }
 }

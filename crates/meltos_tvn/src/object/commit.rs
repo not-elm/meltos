@@ -49,7 +49,7 @@ impl TryFrom<ObjMeta> for CommitObj {
 }
 
 
-static HEAD: &[u8] = b"COMMIT";
+static HEAD: &[u8] = b"COMMIT\0";
 
 impl Encodable for CommitObj {
     fn encode(&self) -> error::Result<Vec<u8>> {

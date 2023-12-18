@@ -12,15 +12,17 @@ use crate::user::SessionIo;
 pub struct MockUserSessionIo(ArcMutex<HashMap<SessionId, UserId>>);
 
 
-impl MockUserSessionIo{
-    pub async fn with_mock_users() -> Self{
+impl MockUserSessionIo {
+    pub async fn with_mock_users() -> Self {
         let me = Self::default();
-        me.force_register(SessionId("owner".to_string()), UserId::from("owner")).await;
-        me.force_register(SessionId("user".to_string()), UserId::from("owner")).await;
+        me.force_register(SessionId("owner".to_string()), UserId::from("owner"))
+            .await;
+        me.force_register(SessionId("user".to_string()), UserId::from("owner"))
+            .await;
         me
     }
-    
-    pub async fn force_register(&self, session_id: SessionId, user_id: UserId){
+
+    pub async fn force_register(&self, session_id: SessionId, user_id: UserId) {
         self.0.lock().await.insert(session_id, user_id);
     }
 }

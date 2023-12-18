@@ -12,11 +12,11 @@ use crate::operation::stage::Stage;
 pub mod commit;
 pub mod init;
 pub mod new_branch;
+mod pull;
 pub mod push;
 pub mod save;
 pub mod stage;
 pub mod unzip;
-mod pull;
 
 
 #[derive(Debug)]

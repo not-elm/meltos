@@ -7,15 +7,15 @@ use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
 use crate::io::commit_obj::CommitObjIo;
-use crate::object::{CompressedBuf, ObjHash};
 use crate::object::commit::CommitHash;
+use crate::object::{CompressedBuf, ObjHash};
 use crate::remote_client::CommitSendable;
 
 #[derive(Debug, Clone)]
 pub struct Push<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     head: HeadIo<Fs, Io>,
     commit_obj: CommitObjIo<Fs, Io>,
@@ -26,9 +26,9 @@ pub struct Push<Fs, Io>
 
 
 impl<Fs, Io> Push<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> Push<Fs, Io> {
         Self {
@@ -43,9 +43,9 @@ impl<Fs, Io> Push<Fs, Io>
 
 
 impl<Fs, Io> Push<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     /// Sends the currently locally committed data to the remote.
     /// * push local commits to remote server.
@@ -75,7 +75,10 @@ impl<Fs, Io> Push<Fs, Io>
     }
 
 
-    fn read_objs_associated_commits(&self, head: CommitHash) -> error::Result<Vec<(ObjHash, CompressedBuf)>> {
+    fn read_objs_associated_commits(
+        &self,
+        head: CommitHash,
+    ) -> error::Result<Vec<(ObjHash, CompressedBuf)>> {
         let obj_hashes = self.commit_obj.read_obj_hashes_associate_with(head)?;
         let mut obj_bufs = Vec::with_capacity(obj_hashes.len());
         for hash in obj_hashes {
@@ -102,8 +105,8 @@ pub struct PushParam {
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::commit_obj::CommitObjIo;
     use crate::operation::commit::Commit;
@@ -150,7 +153,9 @@ mod tests {
         mock.write("./.hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
-        push.execute(&mut MockRemoteClient::default()).await.unwrap();
+        push.execute(&mut MockRemoteClient::default())
+            .await
+            .unwrap();
 
         assert_eq!(commit_obj.read_local_commits().unwrap().len(), 0);
     }

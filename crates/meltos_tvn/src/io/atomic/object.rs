@@ -3,20 +3,20 @@ use std::io;
 use crate::encode::Decodable;
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
-use crate::object::{CompressedBuf, ObjHash, ObjMeta};
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::tree::TreeObj;
+use crate::object::{CompressedBuf, ObjHash, ObjMeta};
 
 #[derive(Debug, Clone)]
 pub struct ObjIo<Fs, Io>(FsIo<Fs, Io>)
-    where
-        Fs: FileSystem<Io>,
-        Io: io::Read + io::Write;
+where
+    Fs: FileSystem<Io>,
+    Io: io::Read + io::Write;
 
 impl<Fs, Io> Default for ObjIo<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Default,
-        Io: io::Read + io::Write,
+where
+    Fs: FileSystem<Io> + Default,
+    Io: io::Read + io::Write,
 {
     fn default() -> Self {
         Self(FsIo::default())
@@ -24,9 +24,9 @@ impl<Fs, Io> Default for ObjIo<Fs, Io>
 }
 
 impl<Fs, Io> ObjIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: io::Read + io::Write,
+where
+    Fs: FileSystem<Io>,
+    Io: io::Read + io::Write,
 {
     #[inline]
     pub const fn new(fs: Fs) -> ObjIo<Fs, Io> {
@@ -99,11 +99,11 @@ impl<Fs, Io> ObjIo<Fs, Io>
 mod tests {
     use std::io::Write;
 
-    use meltos_util::compression::CompressionBuf;
     use meltos_util::compression::gz::Gz;
+    use meltos_util::compression::CompressionBuf;
 
-    use crate::file_system::{FileSystem, FsIo};
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::{FileSystem, FsIo};
     use crate::io::atomic::object::ObjIo;
     use crate::io::atomic::workspace::WorkspaceIo;
     use crate::object::{AsMeta, ObjMeta};

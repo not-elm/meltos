@@ -14,19 +14,17 @@ use crate::middleware::user::SessionUser;
 ///
 /// レスポンスはRoomのメタデータ
 ///
-pub async fn join(
-    SessionRoom(room): SessionRoom,
-    SessionUser(user_id): SessionUser,
-) -> HttpResult {
+pub async fn join(SessionRoom(room): SessionRoom, SessionUser(user_id): SessionUser) -> HttpResult {
     let bundle = room.create_bundle()?;
     let room_meta = RoomMeta {
         user_id,
         bundle,
     };
     Ok(Response::builder()
-        .body(Body::from(serde_json::to_string(&room_meta).unwrap().to_string()))
-        .unwrap()
-    )
+        .body(Body::from(
+            serde_json::to_string(&room_meta).unwrap().to_string(),
+        ))
+        .unwrap())
 }
 
 
@@ -45,14 +43,11 @@ mod tests {
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
     use meltos_backend::user::SessionIo;
-    use meltos_tvn::file_system::FileSystem;
     use meltos_tvn::file_system::mock::MockFileSystem;
+    use meltos_tvn::file_system::FileSystem;
 
     use crate::api::room::join::RoomMeta;
-    use crate::api::test_util::{
-        http_join, http_open_room, logged_in_app,
-        ResponseConvertable,
-    };
+    use crate::api::test_util::{http_join, http_open_room, logged_in_app, ResponseConvertable};
     use crate::app;
 
     #[tokio::test]

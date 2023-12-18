@@ -4,15 +4,15 @@ use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
-use crate::object::{CompressedBuf, ObjHash};
 use crate::object::commit::CommitHash;
+use crate::object::{CompressedBuf, ObjHash};
 use crate::operation::push::PushParam;
 
 #[derive(Debug, Clone)]
 pub struct Save<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     trace: TraceIo<Fs, Io>,
     object: ObjIo<Fs, Io>,
@@ -22,9 +22,9 @@ pub struct Save<Fs, Io>
 
 
 impl<Fs, Io> Save<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(fs: Fs) -> Save<Fs, Io> {
         Self {
@@ -55,7 +55,7 @@ impl<Fs, Io> Save<Fs, Io>
     }
 
     fn write_head(&self, branch: &BranchName, head_hash: &CommitHash) -> error::Result {
-       self.head.write(branch, head_hash)?;
+        self.head.write(branch, head_hash)?;
         Ok(())
     }
 
@@ -72,8 +72,8 @@ impl<Fs, Io> Save<Fs, Io>
 mod tests {
     use crate::branch::BranchName;
     use crate::encode::Encodable;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::object::commit::CommitHash;
     use crate::object::ObjHash;
     use crate::operation::push::PushParam;

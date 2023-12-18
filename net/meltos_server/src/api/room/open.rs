@@ -1,7 +1,7 @@
 use axum::body::Body;
 use axum::extract::State;
-use axum::Json;
 use axum::response::Response;
+use axum::Json;
 
 use meltos::command::client::room::Opened;
 use meltos::room::RoomId;
@@ -34,7 +34,7 @@ fn response_success_create_room(room_id: RoomId) -> Response {
             Opened {
                 room_id,
             }
-                .as_json(),
+            .as_json(),
         ))
         .unwrap()
 }
@@ -52,8 +52,8 @@ mod tests {
     use meltos_backend::user::SessionIo;
     use meltos_tvn::file_system::mock::MockFileSystem;
 
-    use crate::{app, error};
     use crate::api::test_util::{mock_session_id, open_room_request};
+    use crate::{app, error};
 
     #[tokio::test]
     async fn failed_if_not_logged_in() {

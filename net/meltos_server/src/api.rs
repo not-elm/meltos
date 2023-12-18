@@ -14,8 +14,8 @@ pub trait AsSuccessResponse {
 }
 
 impl<D> AsSuccessResponse for D
-    where
-        D: Serialize,
+where
+    D: Serialize,
 {
     fn as_success_response(&self) -> Response {
         Response::builder()
@@ -27,11 +27,11 @@ impl<D> AsSuccessResponse for D
 
 #[cfg(test)]
 mod test_util {
-    use axum::{async_trait, http, Router};
     use axum::body::Body;
     use axum::extract::Request;
     use axum::http::{header, StatusCode};
     use axum::response::Response;
+    use axum::{async_trait, http, Router};
     use futures::task::Spawn;
     use http_body_util::BodyExt;
     use serde::de::DeserializeOwned;
@@ -55,36 +55,46 @@ mod test_util {
 
     use crate::app;
 
-    pub struct MockServerClient<'a>{
+    pub struct MockServerClient<'a> {
         app: &'a mut Router,
         room_id: RoomId,
-        session_id: SessionId
+        session_id: SessionId,
     }
-    impl<'a> MockServerClient<'a>{
-        pub fn new(app: &'a mut Router, room_id: RoomId, session_id: SessionId) -> MockServerClient<'a>{
-            Self{
+    impl<'a> MockServerClient<'a> {
+        pub fn new(
+            app: &'a mut Router,
+            room_id: RoomId,
+            session_id: SessionId,
+        ) -> MockServerClient<'a> {
+            Self {
                 app,
                 room_id,
-                session_id
+                session_id,
             }
         }
     }
 
-    unsafe impl<'a> Send for MockServerClient<'a>{}
-    unsafe impl<'a> Sync for MockServerClient<'a>{}
+    unsafe impl<'a> Send for MockServerClient<'a> {}
+    unsafe impl<'a> Sync for MockServerClient<'a> {}
 
 
     #[async_trait]
     impl<'a> CommitSendable for MockServerClient<'a> {
         async fn send(&mut self, param: PushParam) -> std::io::Result<()> {
-            let response = http_call(self.app, Request::builder()
-                .header(header::SET_COOKIE, format!("session_id={}", self.session_id))
-                .header(header::CONTENT_TYPE, "application/json")
-                .method(http::method::Method::POST)
-                .uri(format!("/room/{}/push", self.room_id))
-                .body(Body::from(serde_json::to_string(&param).unwrap()))
-                .unwrap()
-            ).await;
+            let response = http_call(
+                self.app,
+                Request::builder()
+                    .header(
+                        header::SET_COOKIE,
+                        format!("session_id={}", self.session_id),
+                    )
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .method(http::method::Method::POST)
+                    .uri(format!("/room/{}/push", self.room_id))
+                    .body(Body::from(serde_json::to_string(&param).unwrap()))
+                    .unwrap(),
+            )
+            .await;
             assert_eq!(response.status(), StatusCode::OK);
             Ok(())
         }
@@ -169,7 +179,7 @@ mod test_util {
                 .body(Body::from(reply.as_json()))
                 .unwrap(),
         )
-            .await
+        .await
     }
 
     pub async fn http_discussion_close(
@@ -188,7 +198,7 @@ mod test_util {
                 .body(Body::empty())
                 .unwrap(),
         )
-            .await
+        .await
     }
 
     pub fn open_room_request(session_id: SessionId, mock: MockFileSystem) -> Request {
@@ -240,7 +250,7 @@ mod test_util {
                 .body(Body::empty())
                 .unwrap(),
         )
-            .await
+        .await
     }
 
     pub async fn http_call(app: &mut Router, request: Request) -> Response {

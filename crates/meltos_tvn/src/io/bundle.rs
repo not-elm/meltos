@@ -8,8 +8,8 @@ use crate::file_system::{FileSystem, FsIo};
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
-use crate::object::{CompressedBuf, ObjHash};
 use crate::object::commit::CommitHash;
+use crate::object::{CompressedBuf, ObjHash};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bundle {
@@ -28,9 +28,9 @@ pub struct BranchHead {
 
 #[derive(Debug)]
 pub struct BundleIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     object: ObjIo<Fs, Io>,
     trace: TraceIo<Fs, Io>,
@@ -39,9 +39,9 @@ pub struct BundleIo<Fs, Io>
 
 
 impl<Fs, Io> BundleIo<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     #[inline]
     pub fn new(fs: Fs) -> BundleIo<Fs, Io> {
@@ -67,12 +67,10 @@ impl<Fs, Io> BundleIo<Fs, Io>
         let head_files = self.read_all_branch_head_path()?;
         let mut branches = Vec::with_capacity(head_files.len());
         for path in head_files {
-            let Some(branch_name) = Path::new(&path)
-                .file_name()
-                .and_then(|name|name.to_str())
-                else {
-                    continue;
-                };
+            let Some(branch_name) = Path::new(&path).file_name().and_then(|name| name.to_str())
+            else {
+                continue;
+            };
 
             let branch_name = BranchName::from(branch_name);
             let head = HeadIo::new(self.fs.clone()).read(&branch_name)?;
@@ -87,9 +85,7 @@ impl<Fs, Io> BundleIo<Fs, Io>
 
 
     fn read_all_branch_head_path(&self) -> error::Result<Vec<String>> {
-        Ok(self
-            .fs
-            .all_file_path(".meltos/refs/heads")?)
+        Ok(self.fs.all_file_path(".meltos/refs/heads")?)
     }
 }
 
@@ -97,8 +93,8 @@ impl<Fs, Io> BundleIo<Fs, Io>
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
     use crate::io::bundle::BundleIo;
     use crate::operation::commit::Commit;
@@ -166,12 +162,14 @@ mod tests {
         init_main_branch(mock.clone());
         mock.write("./hello.txt", b"hello").unwrap();
 
-        Stage::new(BranchName::main(), mock.clone()).execute(".").unwrap();
-        Commit::new(BranchName::main(), mock.clone()).execute("commit").unwrap();
+        Stage::new(BranchName::main(), mock.clone())
+            .execute(".")
+            .unwrap();
+        Commit::new(BranchName::main(), mock.clone())
+            .execute("commit")
+            .unwrap();
         let bundle = BundleIo::new(mock.clone()).create().unwrap();
-        let objs_count = mock
-            .all_file_path("./.meltos/objects/").unwrap()
-            .len();
+        let objs_count = mock.all_file_path("./.meltos/objects/").unwrap().len();
 
         assert_eq!(objs_count, bundle.objs.len());
     }

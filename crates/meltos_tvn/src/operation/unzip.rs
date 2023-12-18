@@ -9,9 +9,9 @@ use crate::io::atomic::workspace::WorkspaceIo;
 use crate::io::trace_tree::TraceTreeIo;
 
 pub struct UnZip<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: io::Read + io::Write,
+where
+    Fs: FileSystem<Io>,
+    Io: io::Read + io::Write,
 {
     workspace: WorkspaceIo<Fs, Io>,
     trace_tree: TraceTreeIo<Fs, Io>,
@@ -22,9 +22,9 @@ pub struct UnZip<Fs, Io>
 
 
 impl<Fs, Io> UnZip<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: io::Read + io::Write,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: io::Read + io::Write,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> UnZip<Fs, Io> {
         Self {
@@ -39,9 +39,9 @@ impl<Fs, Io> UnZip<Fs, Io>
 
 
 impl<Fs, Io> UnZip<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: io::Read + io::Write,
+where
+    Fs: FileSystem<Io>,
+    Io: io::Read + io::Write,
 {
     /// Restore committed data into the workspace.
     pub fn execute(&self) -> error::Result {
@@ -60,8 +60,8 @@ impl<Fs, Io> UnZip<Fs, Io>
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::operation::unzip::UnZip;
