@@ -16,7 +16,6 @@ use meltos_backend::discussion::DiscussionIo;
 use meltos_tvn::branch::BranchName;
 use meltos_tvn::file_system::file::StdFileSystem;
 use meltos_tvn::io::bundle::Bundle;
-use meltos_tvn::operation::push::PushParam;
 use meltos_tvn::operation::Operations;
 use meltos_util::macros::Deref;
 use meltos_util::sync::arc_mutex::ArcMutex;
@@ -79,8 +78,8 @@ impl Room {
         }
     }
 
-    pub fn save_commits(&self, push_param: PushParam) -> std::result::Result<(), Response> {
-        self.tvn.save.execute(push_param).map_err(|e| {
+    pub fn save_bundle(&self, bundle: Bundle) -> std::result::Result<(), Response> {
+        self.tvn.save.execute(bundle).map_err(|e| {
             Response::builder()
                 .status(StatusCode::INTERNAL_SERVER_ERROR)
                 .body(Body::from(

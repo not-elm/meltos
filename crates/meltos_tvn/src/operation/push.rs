@@ -1,20 +1,28 @@
-use serde::{Deserialize, Serialize};
+use std::fmt::Display;
+use async_trait::async_trait;
 
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::trace::TraceIo;
+use crate::io::bundle::{BundleBranch, Bundle};
 use crate::io::commit_obj::CommitObjIo;
-use crate::object::commit::CommitHash;
-use crate::object::{CompressedBuf, ObjHash};
-use crate::remote::CommitPushable;
+
+
+#[async_trait]
+pub trait Pushable {
+    type Error: Display;
+
+    async fn push(&mut self, bundle: Bundle) -> std::result::Result<(), Self::Error>;
+}
+
 
 #[derive(Debug, Clone)]
 pub struct Push<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     head: HeadIo<Fs, Io>,
     commit_obj: CommitObjIo<Fs, Io>,
@@ -24,9 +32,9 @@ where
 
 
 impl<Fs, Io> Push<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Write + std::io::Read,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> Push<Fs, Io> {
         Self {
@@ -40,64 +48,74 @@ where
 
 
 impl<Fs, Io> Push<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     /// Sends the currently locally committed data to the remote.
     /// * push local commits to remote server.
     /// * clear local commits
-    pub async fn execute(&self, sender: &mut impl CommitPushable) -> error::Result {
+    pub async fn execute(&self, remote: &mut impl Pushable) -> error::Result {
         let local_commits = self.commit_obj.read_local_commits()?;
         if local_commits.is_empty() {
             return Err(error::Error::NotfoundLocalCommits);
         }
-        let push_param = self.create_push_param()?;
-        sender
-            .push(push_param)
+        let bundle = self.create_push_bundle()?;
+        remote
+            .push(bundle)
             .await
-            .map_err(|e| error::Error::FailedConnectServer(format!("{e}")))?;
+            .map_err(|e|error::Error::FailedConnectServer(format!("{e}")))?;
         self.commit_obj.reset_local_commits()?;
         Ok(())
     }
 
 
-    pub fn create_push_param(&self) -> error::Result<PushParam> {
+    pub fn create_push_bundle(&self) -> error::Result<Bundle> {
         let traces = self.trace.read_all()?;
         let head = self.head.try_read(&self.branch_name)?;
-        let compressed_objs = self.commit_obj.read_obj_associate_with(head.clone())?;
-        Ok(PushParam {
-            branch: self.branch_name.clone(),
-            compressed_objs,
-            head,
+        let objs = self.commit_obj.read_obj_associate_with(head.clone())?;
+        Ok(Bundle {
+            objs,
             traces,
+            branches: vec![BundleBranch {
+                branch_name: self.branch_name.clone(),
+                head,
+            }],
         })
     }
 }
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PushParam {
-    pub branch: BranchName,
-    pub compressed_objs: Vec<(ObjHash, CompressedBuf)>,
-    pub traces: Vec<(CommitHash, ObjHash)>,
-    pub head: CommitHash,
-}
-
-
 #[cfg(test)]
 mod tests {
+    use async_trait::async_trait;
     use crate::branch::BranchName;
     use crate::error;
     use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
     use crate::io::atomic::head::HeadIo;
+    use crate::io::bundle::Bundle;
     use crate::io::commit_obj::CommitObjIo;
     use crate::operation::commit::Commit;
-    use crate::operation::push::Push;
+    use crate::operation::push::{Push, Pushable};
     use crate::operation::stage::Stage;
-    use crate::remote::mock::MockRemoteClient;
     use crate::tests::init_main_branch;
+
+    #[derive(Debug, Default)]
+    struct MockRemoteClient{
+        pub bundle: Option<Bundle>
+    }
+
+
+    #[async_trait]
+    impl Pushable for MockRemoteClient{
+        type Error = String;
+
+        async fn push(&mut self, bundle: Bundle) -> Result<(), Self::Error> {
+            self.bundle = Some(bundle);
+            Ok(())
+        }
+    }
 
     #[tokio::test]
     async fn failed_if_no_commit() {
@@ -159,9 +177,8 @@ mod tests {
         commit.execute("commit text").unwrap();
         let mut remote = MockRemoteClient::default();
         push.execute(&mut remote).await.unwrap();
-        let param = remote.push_param.lock().await.clone().unwrap();
-
+        let bundle = remote.bundle.unwrap();
         let head = HeadIo::new(mock);
-        assert_eq!(&param.head, &head.try_read(&branch).unwrap());
+        assert_eq!(&bundle.branches[0].head, &head.try_read(&branch).unwrap());
     }
 }

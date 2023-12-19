@@ -1,37 +1,41 @@
-use reqwest::{header, Client};
+use reqwest::Client;
 
-use meltos::command::client::room::Opened;
 use meltos::room::RoomId;
-use meltos::user::SessionId;
+use meltos::schema::response::room::Opened;
+use meltos::user::{SessionId, UserId};
 use meltos_tvn::file_system::FileSystem;
 use meltos_tvn::io::bundle::Bundle;
 use meltos_tvn::operation::Operations;
 
 pub struct RoomOwner<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Write + std::io::Read,
 {
     pub room_id: RoomId,
+    pub session_id: SessionId,
+    pub user_id: UserId,
     client: Client,
     operations: Operations<Fs, Io>,
 }
 
 
 impl<Fs, Io> RoomOwner<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Read + std::io::Write,
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Read + std::io::Write,
 {
-    pub async fn open(fs: Fs, session_id: &SessionId) -> crate::error::Result<Self> {
+    pub async fn open(fs: Fs) -> crate::error::Result<Self> {
         let operations = Operations::new_main(fs);
         operations.init.execute()?;
         let bundle = operations.bundle.create()?;
         let client = Client::new();
-        let room_id = http_open(&bundle, &client, session_id).await?;
+        let opened = http_open(&bundle, &client).await?;
 
         Ok(Self {
-            room_id,
+            room_id: opened.room_id,
+            session_id: opened.session_id,
+            user_id: opened.user_id,
             client,
             operations,
         })
@@ -41,14 +45,12 @@ where
 async fn http_open(
     bundle: &Bundle,
     client: &Client,
-    session_id: &SessionId,
-) -> crate::error::Result<RoomId> {
+) -> crate::error::Result<Opened> {
     let response = client
         .post("http://localhost:3000/room/open".to_string())
-        .header(header::SET_COOKIE, format!("session_id={session_id}"))
         .json(&bundle)
         .send()
         .await?;
     let opened = response.json::<Opened>().await?;
-    Ok(opened.room_id)
+    Ok(opened)
 }

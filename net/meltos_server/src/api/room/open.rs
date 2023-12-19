@@ -1,94 +1,81 @@
+use std::fmt::Debug;
+
 use axum::body::Body;
 use axum::extract::State;
-use axum::response::Response;
 use axum::Json;
+use axum::response::Response;
 
-use meltos::command::client::room::Opened;
 use meltos::room::RoomId;
+use meltos::schema::request::room::Open;
+use meltos::schema::response::room::Opened;
+use meltos::user::{SessionId, UserId};
 use meltos_backend::discussion::DiscussionIo;
-use meltos_tvn::operation::push::PushParam;
+use meltos_backend::user::SessionIo;
 use meltos_util::serde::SerializeJson;
 
 use crate::api::HttpResult;
-use crate::middleware::user::SessionUser;
 use crate::room::{Room, Rooms};
+use crate::state::SessionState;
 
 #[tracing::instrument]
-pub async fn open<Discussion: DiscussionIo + Default + 'static>(
+pub async fn open<Session, Discussion>(
     State(rooms): State<Rooms>,
-    SessionUser(user_id): SessionUser,
-    Json(param): Json<PushParam>,
-) -> HttpResult {
-    let room = Room::open::<Discussion>(user_id);
+    State(session): State<SessionState<Session>>,
+    Json(param): Json<Open>,
+) -> HttpResult
+    where
+        Discussion: DiscussionIo + Default + 'static,
+        Session: SessionIo + Debug
+{
+    let (user_id, session_id) = session.register(param.user_id.clone()).await?;
+    let room = Room::open::<Discussion>(user_id.clone());
     let room_id = room.id.clone();
-    room.save_commits(param)?;
+    room.save_bundle(param.bundle)?;
     rooms.insert_room(room).await;
 
-    Ok(response_success_create_room(room_id))
+    Ok(response_success_create_room(room_id, user_id, session_id))
 }
 
 
-fn response_success_create_room(room_id: RoomId) -> Response {
+fn response_success_create_room(room_id: RoomId, user_id: UserId, session_id: SessionId) -> Response {
     Response::builder()
         .body(Body::from(
             Opened {
                 room_id,
+                user_id,
+                session_id,
             }
-            .as_json(),
+                .as_json(),
         ))
         .unwrap()
 }
 
 #[cfg(test)]
 mod tests {
-    use axum::http::StatusCode;
-    use http_body_util::BodyExt;
     use tower::ServiceExt;
 
-    use meltos::command::client::room::Opened;
-    use meltos::user::UserId;
+    use meltos::schema::response::room::Opened;
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
-    use meltos_backend::user::SessionIo;
     use meltos_tvn::file_system::mock::MockFileSystem;
 
-    use crate::api::test_util::{mock_session_id, open_room_request};
     use crate::{app, error};
+    use crate::api::test_util::{open_room_request, ResponseConvertable};
 
     #[tokio::test]
-    async fn failed_if_not_logged_in() {
+    async fn return_room_id_and_session_id() -> error::Result {
         let app = app(
             MockUserSessionIo::default(),
             MockGlobalDiscussionIo::default(),
         );
         let mock = MockFileSystem::default();
         let response = app
-            .oneshot(open_room_request(mock_session_id(), mock))
+            .oneshot(open_room_request(mock))
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
-    }
-
-    #[tokio::test]
-    async fn success_if_logged_in() -> error::Result {
-        let session = MockUserSessionIo::default();
-        session
-            .register(mock_session_id(), UserId::from("user"))
-            .await
-            .unwrap();
-
-        let app = app(session, MockGlobalDiscussionIo::default());
-        let mock = MockFileSystem::default();
-        let response = app
-            .oneshot(open_room_request(mock_session_id(), mock))
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
-        serde_json::from_slice::<Opened>(
-            &response.into_body().collect().await.unwrap().to_bytes(),
-        )?;
-
+        let opened = response.deserialize::<Opened>().await;
+        assert_eq!(opened.room_id.0.len(), 40);
+        assert_eq!(opened.session_id.0.len(), 40);
         Ok(())
     }
 }

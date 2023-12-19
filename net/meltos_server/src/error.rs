@@ -27,10 +27,10 @@ pub enum Error {
     #[error(transparent)]
     TaskJoin(#[from] JoinError),
 
-    #[error("failed sent server command error")]
+    #[error("failed sent server schema error")]
     SendServerOrder,
 
-    #[error("failed sent remote command error")]
+    #[error("failed sent remote schema error")]
     SendClientOrder,
 
     #[error("room_id {0} was already created")]
@@ -48,7 +48,7 @@ pub enum Error {
     #[error("session not exists: session id = {0}")]
     SessionNotExists(RoomId),
 
-    #[error("websocket message invalid command")]
+    #[error("websocket message invalid schema")]
     InvalidOrder,
 }
 

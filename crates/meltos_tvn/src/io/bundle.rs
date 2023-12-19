@@ -13,14 +13,29 @@ use crate::object::{CompressedBuf, ObjHash};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Bundle {
-    pub traces: Vec<(CommitHash, ObjHash)>,
-    pub objs: Vec<(ObjHash, CompressedBuf)>,
-    pub branches: Vec<BranchHead>,
+    pub traces: Vec<BundleTrace>,
+    pub objs: Vec<BundleObject>,
+    pub branches: Vec<BundleBranch>,
 }
 
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct BranchHead {
+pub struct BundleTrace {
+    pub commit_hash: CommitHash,
+    pub obj_hash: ObjHash,
+}
+
+
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct BundleObject {
+    pub hash: ObjHash,
+    pub compressed_buf: CompressedBuf,
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct BundleBranch {
     pub branch_name: BranchName,
     pub head: CommitHash,
 }
@@ -63,7 +78,7 @@ where
     }
 
 
-    fn read_branch_heads(&self) -> error::Result<Vec<BranchHead>> {
+    fn read_branch_heads(&self) -> error::Result<Vec<BundleBranch>> {
         let head_files = self.read_all_branch_head_path()?;
         let mut branches = Vec::with_capacity(head_files.len());
         for path in head_files {
@@ -74,7 +89,7 @@ where
 
             let branch_name = BranchName::from(branch_name);
             let head = HeadIo::new(self.fs.clone()).try_read(&branch_name)?;
-            branches.push(BranchHead {
+            branches.push(BundleBranch {
                 head,
                 branch_name,
             });

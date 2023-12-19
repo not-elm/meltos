@@ -6,6 +6,7 @@ use crate::file_system::FileSystem;
 use crate::io::atomic::head::{CommitText, HeadIo};
 use crate::io::atomic::local_commits::LocalCommitsIo;
 use crate::io::atomic::object::ObjIo;
+use crate::io::bundle::BundleObject;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::local_commits::LocalCommitsObj;
@@ -93,14 +94,17 @@ where
     pub fn read_obj_associate_with(
         &self,
         commit_hash: CommitHash,
-    ) -> error::Result<Vec<(ObjHash, CompressedBuf)>> {
+    ) -> error::Result<Vec<BundleObject>> {
         let obj_hashes = self.read_obj_hashes_associate_with(commit_hash)?;
         let mut obj_bufs = Vec::with_capacity(obj_hashes.len());
         for hash in obj_hashes {
-            let Some(buf) = self.object.read(&hash)? else {
+            let Some(compressed_buf) = self.object.read(&hash)? else {
                 return Err(error::Error::NotfoundObj(hash));
             };
-            obj_bufs.push((hash, buf));
+            obj_bufs.push(BundleObject{
+                hash,
+                compressed_buf
+            });
         }
         Ok(obj_bufs)
     }

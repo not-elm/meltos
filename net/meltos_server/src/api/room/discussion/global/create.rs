@@ -18,7 +18,7 @@ mod tests {
     use http_body_util::BodyExt;
     use tower::ServiceExt;
 
-    use meltos::command::client::discussion::global::Created;
+    use meltos::schema::response::discussion::global::Created;
     use meltos_tvn::file_system::mock::MockFileSystem;
 
     use crate::api::test_util::{create_discussion_request, http_open_room, logged_in_app};
@@ -28,7 +28,7 @@ mod tests {
     async fn return_created_command() -> error::Result {
         let (user_token, mut app) = logged_in_app().await;
         let mock = MockFileSystem::default();
-        let room_id = http_open_room(&mut app, mock, user_token.clone()).await;
+        let room_id = http_open_room(&mut app, mock).await;
         let request = create_discussion_request(room_id);
         let response = app.oneshot(request).await.unwrap();
         assert_eq!(response.status(), StatusCode::OK);

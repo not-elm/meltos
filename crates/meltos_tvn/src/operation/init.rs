@@ -55,6 +55,7 @@ where
 
 
     fn check_branch_not_initialized(&self) -> error::Result {
+        println!("{:?}", self.fs.all_file_path("./.meltos")?);
         if self.fs.all_file_path("./.meltos")?.is_empty() {
             Ok(())
         } else {

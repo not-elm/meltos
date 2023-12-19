@@ -41,7 +41,7 @@ mod tests {
     async fn failed_if_not_exists_query() {
         let (session_id, mut app) = logged_in_app().await;
         let mock = MockFileSystem::default();
-        let room_id = http_open_room(&mut app, mock, session_id).await;
+        let room_id = http_open_room(&mut app, mock).await;
         http_create_discussion(&mut app, room_id.clone()).await;
         let response = app
             .oneshot(
@@ -62,7 +62,7 @@ mod tests {
     async fn failed_no_exists_discussion() {
         let (session_id, mut app) = logged_in_app().await;
         let mock = MockFileSystem::default();
-        let room_id = http_open_room(&mut app, mock, session_id).await;
+        let room_id = http_open_room(&mut app, mock).await;
         let response = app
             .oneshot(
                 Request::builder()
@@ -83,7 +83,7 @@ mod tests {
     async fn return_closed_command() {
         let (session_id, mut app) = logged_in_app().await;
         let mock = MockFileSystem::default();
-        let room_id = http_open_room(&mut app, mock, session_id).await;
+        let room_id = http_open_room(&mut app, mock).await;
         let discussion_id = http_create_discussion(&mut app, room_id.clone())
             .await
             .meta

@@ -6,9 +6,10 @@ use crate::error;
 
 mod open;
 mod tvn;
+mod join;
 
 #[async_trait]
-#[auto_delegate::delegate]
+
 pub trait CommandExecutable {
     async fn execute(self) -> error::Result;
 }

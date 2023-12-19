@@ -1,7 +1,6 @@
 use axum::http::Response;
 use axum::Json;
-
-use meltos_tvn::operation::push::PushParam;
+use meltos_tvn::io::bundle::Bundle;
 
 use crate::api::HttpResult;
 use crate::middleware::room::SessionRoom;
@@ -14,9 +13,9 @@ use crate::middleware::user::SessionUser;
 pub async fn push(
     SessionRoom(room): SessionRoom,
     SessionUser(_): SessionUser,
-    Json(param): Json<PushParam>,
+    Json(bundle): Json<Bundle>,
 ) -> HttpResult {
-    room.save_commits(param)?;
+    room.save_bundle(bundle)?;
     Ok(Response::default())
 }
 
@@ -40,7 +39,7 @@ mod tests {
         let session = MockUserSessionIo::with_mock_users().await;
         let mock = MockFileSystem::default();
         let mut app = app(session, MockGlobalDiscussionIo::default());
-        let room_id = http_open_room(&mut app, mock.clone(), owner_session_id()).await;
+        let room_id = http_open_room(&mut app, mock.clone()).await;
         mock.write("./src/hello.txt", b"hello").unwrap();
         stage::Stage::new(BranchName::main(), mock.clone())
             .execute(".")

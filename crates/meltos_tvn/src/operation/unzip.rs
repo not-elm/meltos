@@ -8,6 +8,8 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::workspace::WorkspaceIo;
 use crate::io::trace_tree::TraceTreeIo;
 
+
+#[derive(Debug)]
 pub struct UnZip<Fs, Io>
 where
     Fs: FileSystem<Io>,
@@ -17,7 +19,6 @@ where
     trace_tree: TraceTreeIo<Fs, Io>,
     object: ObjIo<Fs, Io>,
     head: HeadIo<Fs, Io>,
-    branch_name: BranchName,
 }
 
 
@@ -26,13 +27,13 @@ where
     Fs: FileSystem<Io> + Clone,
     Io: io::Read + io::Write,
 {
-    pub fn new(branch_name: BranchName, fs: Fs) -> UnZip<Fs, Io> {
+    pub fn new(fs: Fs) -> UnZip<Fs, Io> {
         Self {
             workspace: WorkspaceIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
             head: HeadIo::new(fs.clone()),
             trace_tree: TraceTreeIo::new(fs),
-            branch_name,
+
         }
     }
 }
@@ -44,8 +45,8 @@ where
     Io: io::Read + io::Write,
 {
     /// Restore committed data into the workspace.
-    pub fn execute(&self) -> error::Result {
-        let head = self.head.try_read(&self.branch_name)?;
+    pub fn execute(&self, branch_name: &BranchName) -> error::Result {
+        let head = self.head.try_read(branch_name)?;
         let trace_tree = self.trace_tree.read(&head)?;
         for (path, hash) in trace_tree.iter() {
             self.workspace
@@ -75,14 +76,14 @@ mod tests {
 
         let stage = Stage::new(branch.clone(), mock.clone());
         let commit = Commit::new(branch.clone(), mock.clone());
-        let unzip = UnZip::new(branch, mock.clone());
+        let unzip = UnZip::new(mock.clone());
 
         mock.write("hello", b"hello")?;
         stage.execute("hello")?;
         commit.execute("commit text")?;
         mock.delete("hello")?;
 
-        unzip.execute()?;
+        unzip.execute(&branch)?;
         assert_eq!(mock.try_read("hello")?, b"hello");
         Ok(())
     }

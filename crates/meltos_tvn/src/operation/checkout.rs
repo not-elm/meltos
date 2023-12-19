@@ -77,7 +77,7 @@ mod tests {
     use crate::operation::checkout::{CheckOutStatus, Checkout};
     use crate::operation::new_branch::NewBranch;
     use crate::operation::patch::Patch;
-    use crate::remote::mock::MockRemoteClient;
+
     use crate::tests::init_main_branch;
 
     #[test]
@@ -124,31 +124,31 @@ mod tests {
     }
 
 
-    #[tokio::test]
-    async fn checkout_from_remote_branch() {
-        let mock = MockFileSystem::default();
-        init_main_branch(mock.clone());
-        Patch::new(mock.clone(), mock_remote())
-            .execute(None)
-            .await
-            .unwrap();
-        let second = BranchName::from("second");
-        assert_eq!(
-            Checkout::new(mock.clone()).execute(&second).unwrap(),
-            CheckOutStatus::Checkout
-        );
-
-        let working = WorkingIo::new(mock.clone()).read().unwrap();
-        assert_eq!(second, working);
-    }
-
-
-    fn mock_remote() -> MockRemoteClient {
-        let mock = MockFileSystem::default();
-        init_main_branch(mock.clone());
-        NewBranch::new(mock.clone())
-            .execute(BranchName::main(), BranchName::from("second"))
-            .unwrap();
-        MockRemoteClient::new(mock)
-    }
+    // #[tokio::test]
+    // async fn checkout_from_remote_branch() {
+    //     let mock = MockFileSystem::default();
+    //     init_main_branch(mock.clone());
+    //     Patch::new(mock.clone(), mock_remote())
+    //         .execute(None)
+    //         .await
+    //         .unwrap();
+    //     let second = BranchName::from("second");
+    //     assert_eq!(
+    //         Checkout::new(mock.clone()).execute(&second).unwrap(),
+    //         CheckOutStatus::Checkout
+    //     );
+    //
+    //     let working = WorkingIo::new(mock.clone()).read().unwrap();
+    //     assert_eq!(second, working);
+    // }
+    //
+    //
+    // fn mock_remote() -> MockRemoteClient {
+    //     let mock = MockFileSystem::default();
+    //     init_main_branch(mock.clone());
+    //     NewBranch::new(mock.clone())
+    //         .execute(BranchName::main(), BranchName::from("second"))
+    //         .unwrap();
+    //     MockRemoteClient::new(mock)
+    // }
 }

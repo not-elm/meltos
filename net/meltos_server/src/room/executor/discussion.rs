@@ -1,5 +1,5 @@
-use meltos::command::client::discussion::global::{Closed, Created, Replied, Spoke};
-use meltos::command::request::discussion::global::{Reply, Speak};
+use meltos::schema::response::discussion::global::{Closed, Created, Replied, Spoke};
+use meltos::schema::request::discussion::global::{Reply, Speak};
 use meltos::discussion::id::DiscussionId;
 use meltos::user::UserId;
 use meltos_backend::discussion::DiscussionIo;

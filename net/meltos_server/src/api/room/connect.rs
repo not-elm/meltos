@@ -51,7 +51,7 @@ pub async fn connect(
 //     mut client_rx: Receiver<ClientCommand>,
 // ) -> error::Result {
 //     while let Ok(client_command) = client_rx.recv().await {
-//         debug!("send remote command {client_command:?}");
+//         debug!("send remote schema {client_command:?}");
 //
 //         ws_tx.send(Message::Text(client_command.as_json())).await?;
 //     }

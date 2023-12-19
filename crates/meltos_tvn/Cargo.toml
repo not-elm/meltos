@@ -5,7 +5,7 @@ edition = "2021"
 
 
 [dependencies]
-meltos = { path = "../meltos" }
+
 meltos_util = { path = "../meltos_util" }
 reqwest = { version = "0.11.22", features = ["json"] }
 async-trait = { workspace = true }

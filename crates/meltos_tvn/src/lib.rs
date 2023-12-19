@@ -6,7 +6,7 @@ pub mod object;
 pub mod operation;
 
 pub mod encode;
-pub mod remote;
+
 
 
 #[cfg(test)]

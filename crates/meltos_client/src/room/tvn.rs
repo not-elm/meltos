@@ -1,31 +1,49 @@
 use reqwest::{header, Client};
 
-use meltos::branch::structs::branch_name::BranchName;
+
 use meltos::room::RoomId;
 use meltos::user::SessionId;
-use meltos_tvn::file_system::file::StdFileSystem;
+use meltos_tvn::branch::BranchName;
+
+use meltos_tvn::file_system::FileSystem;
 use meltos_tvn::io::atomic::head::CommitText;
 use meltos_tvn::io::bundle::Bundle;
 use meltos_tvn::operation::Operations;
 
 use crate::error::Error;
 
-pub struct TvnClient {
+pub struct TvnClient<Fs, Io>
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
+{
     client: Client,
     room_id: RoomId,
     session_id: SessionId,
-    operations: Operations,
+    operations: Operations<Fs, Io>,
 }
 
 
-impl TvnClient {
-    pub fn new(room_id: RoomId, session_id: SessionId) -> Self {
+impl<Fs, Io> TvnClient<Fs, Io>
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
+{
+    pub fn new(room_id: RoomId, session_id: SessionId, fs: Fs) -> Self {
         Self {
             room_id,
             session_id,
             client: Client::new(),
-            operations: Operations::new_main(StdFileSystem),
+            operations: Operations::new_main(fs),
         }
+    }
+
+
+    pub fn init(&self, branch_name: &BranchName, bundle: Bundle) -> crate::error::Result{
+        self.operations.save.execute(bundle)?;
+        self.operations.checkout.execute(branch_name)?;
+        self.operations.unzip.execute(branch_name)?;
+        Ok(())
     }
 
 

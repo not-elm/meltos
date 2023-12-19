@@ -6,12 +6,14 @@ use crate::file_system::file::StdFileSystem;
 use crate::file_system::FileSystem;
 use crate::io::atomic::work_branch::WorkingIo;
 use crate::io::bundle::BundleIo;
+use crate::operation::checkout::Checkout;
 use crate::operation::commit::Commit;
 use crate::operation::init::Init;
 use crate::operation::patch::Patch;
 use crate::operation::push::Push;
 use crate::operation::save::Save;
 use crate::operation::stage::Stage;
+use crate::operation::unzip::UnZip;
 
 pub mod checkout;
 pub mod commit;
@@ -37,6 +39,8 @@ where
     pub push: Push<Fs, Io>,
     pub save: Save<Fs, Io>,
     pub bundle: BundleIo<Fs, Io>,
+    pub checkout: Checkout<Fs, Io>,
+    pub unzip: UnZip<Fs, Io>,
     fs: Fs,
     branch_name: BranchName,
 }
@@ -67,6 +71,8 @@ where
             push: Push::new(branch_name.clone(), fs.clone()),
             save: Save::new(fs.clone()),
             bundle: BundleIo::new(fs.clone()),
+            checkout: Checkout::new(fs.clone()),
+            unzip: UnZip::new(fs.clone()),
             fs,
             branch_name,
         }

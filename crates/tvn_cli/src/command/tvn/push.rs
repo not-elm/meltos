@@ -3,7 +3,6 @@ use clap::Args;
 use meltos_tvn::branch::BranchName;
 use meltos_tvn::file_system::file::StdFileSystem;
 use meltos_tvn::operation::push::Push;
-use meltos_tvn::remote::local::LocalHttpClient;
 
 use crate::command::CommandExecutable;
 
@@ -18,7 +17,7 @@ pub struct PushArgs {
 impl CommandExecutable for PushArgs {
     async fn execute(self) -> crate::error::Result {
         let push = Push::new(BranchName::working(StdFileSystem)?, StdFileSystem);
-        push.execute(&mut LocalHttpClient::new()).await?;
+        // push.execute(&mut LocalHttpClient::new()).await?;
         Ok(())
     }
 }

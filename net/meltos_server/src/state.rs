@@ -40,7 +40,7 @@ impl<Session> SessionState<Session>
         &self,
         user_token: SessionId,
     ) -> std::result::Result<UserId, Response<Body>> {
-        self.0.fetch_user_id(user_token).await.map_err(|e| {
+        self.0.fetch(user_token).await.map_err(|e| {
             Response::builder()
                 .status(StatusCode::BAD_REQUEST)
                 .body(Body::from(e.to_string()))
@@ -51,11 +51,10 @@ impl<Session> SessionState<Session>
 
     pub async fn register(
         &self,
-        session_id: SessionId,
-        user_id: UserId,
-    ) -> std::result::Result<(), Response<Body>> {
-        match self.0.register(session_id, user_id).await {
-            Ok(()) => Ok(()),
+        user_id: Option<UserId>,
+    ) -> std::result::Result<(UserId, SessionId), Response<Body>> {
+        match self.0.register(user_id).await {
+            Ok(id_pair) => Ok(id_pair),
             Err(e) => {
                 Err(axum::http::Response::builder()
                     .status(StatusCode::INTERNAL_SERVER_ERROR)

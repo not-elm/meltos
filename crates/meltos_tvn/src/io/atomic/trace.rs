@@ -3,22 +3,23 @@ use std::path::Path;
 use crate::encode::{Decodable, Encodable};
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
+use crate::io::bundle::BundleTrace;
 use crate::object::commit::CommitHash;
 use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct TraceIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     io: FsIo<Fs, Io>,
 }
 
 impl<Fs, Io> TraceIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     pub fn new(fs: Fs) -> TraceIo<Fs, Io> {
         Self {
@@ -27,9 +28,9 @@ where
     }
 
 
-    pub fn write_all(&self, traces: &[(CommitHash, ObjHash)]) -> error::Result {
-        for (commit, obj) in traces {
-            self.write(commit, obj)?;
+    pub fn write_all(&self, traces: &[BundleTrace]) -> error::Result {
+        for trace in traces {
+            self.write(&trace.commit_hash, &trace.obj_hash)?;
         }
         Ok(())
     }
@@ -43,7 +44,7 @@ where
 
 
     #[inline]
-    pub fn read_all(&self) -> error::Result<Vec<(CommitHash, ObjHash)>> {
+    pub fn read_all(&self) -> error::Result<Vec<BundleTrace>> {
         let files = self.io.all_file_path("./.meltos/traces/")?;
         let mut traces = Vec::with_capacity(files.len());
         for file_path in files {
@@ -58,7 +59,10 @@ where
                 .io
                 .read(&file_path)?
                 .ok_or(error::Error::NotfoundTrace(commit_hash.clone()))?;
-            traces.push((commit_hash, ObjHash::decode(&buf)?));
+            traces.push(BundleTrace {
+                commit_hash,
+                obj_hash: ObjHash::decode(&buf)?,
+            });
         }
 
         Ok(traces)
@@ -80,8 +84,8 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::trace::TraceIo;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
@@ -108,7 +112,7 @@ mod tests {
         let traces = trace.read_all().unwrap();
         assert_eq!(traces.len(), 3);
 
-        assert!(traces.iter().any(|(h, _)| h == &commit_hash1));
-        assert!(traces.iter().any(|(h, _)| h == &commit_hash2));
+        assert!(traces.iter().any(|trace| &trace.commit_hash == &commit_hash1));
+        assert!(traces.iter().any(|trace| &trace.commit_hash == &commit_hash2));
     }
 }

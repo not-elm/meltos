@@ -1,6 +1,6 @@
 use axum::Json;
 
-use meltos::command::request::discussion::global::Reply;
+use meltos::schema::request::discussion::global::Reply;
 
 use crate::api::HttpResult;
 use crate::middleware::room::SessionRoom;
@@ -21,7 +21,7 @@ pub async fn reply(
 
 #[cfg(test)]
 mod tests {
-    use meltos::command::request::discussion::global::{Reply, Speak};
+    use meltos::schema::request::discussion::global::{Reply, Speak};
     use meltos::discussion::message::{Message, MessageText};
     use meltos::user::UserId;
     use meltos_tvn::file_system::mock::MockFileSystem;
@@ -34,7 +34,7 @@ mod tests {
     async fn return_replied_command() {
         let (session_id, mut app) = logged_in_app().await;
         let mock = MockFileSystem::default();
-        let room_id = http_open_room(&mut app, mock, session_id.clone()).await;
+        let room_id = http_open_room(&mut app, mock).await;
         let created = http_create_discussion(&mut app, room_id.clone()).await;
         let spoke = http_speak(
             &mut app,
