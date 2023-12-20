@@ -54,7 +54,7 @@ where
 
     fn write_branches(&self, branches: &[BundleBranch]) -> error::Result {
         for branch in branches {
-            self.write_head(&branch.branch_name, &branch.head)?;
+            self.write_head(&branch.branch_name, &branch.commits[branch.commits.len()-1])?;
         }
         Ok(())
     }
@@ -94,7 +94,7 @@ mod tests {
         let bundle = Bundle {
             branches: vec![BundleBranch {
                 branch_name: BranchName::main(),
-                head: head.clone(),
+                commits: vec![head.clone()],
             }],
             traces: Vec::with_capacity(0),
             objs: Vec::with_capacity(0),

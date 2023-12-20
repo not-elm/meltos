@@ -4,20 +4,20 @@ use std::path::Path;
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
 use crate::io::bundle::BundleObject;
-use crate::object::{AsMeta, CompressedBuf, Obj, ObjHash};
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::tree::TreeObj;
+use crate::object::{AsMeta, CompressedBuf, Obj, ObjHash};
 
 #[derive(Debug, Clone)]
 pub struct ObjIo<Fs, Io>(FsIo<Fs, Io>)
-    where
-        Fs: FileSystem<Io>,
-        Io: io::Read + io::Write;
+where
+    Fs: FileSystem<Io>,
+    Io: io::Read + io::Write;
 
 impl<Fs, Io> Default for ObjIo<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Default,
-        Io: io::Read + io::Write,
+where
+    Fs: FileSystem<Io> + Default,
+    Io: io::Read + io::Write,
 {
     fn default() -> Self {
         Self(FsIo::default())
@@ -25,9 +25,9 @@ impl<Fs, Io> Default for ObjIo<Fs, Io>
 }
 
 impl<Fs, Io> ObjIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: io::Read + io::Write,
+where
+    Fs: FileSystem<Io>,
+    Io: io::Read + io::Write,
 {
     #[inline]
     pub const fn new(fs: Fs) -> ObjIo<Fs, Io> {
@@ -118,16 +118,16 @@ impl<Fs, Io> ObjIo<Fs, Io>
 mod tests {
     use std::io::Write;
 
-    use meltos_util::compression::CompressionBuf;
     use meltos_util::compression::gz::Gz;
+    use meltos_util::compression::CompressionBuf;
 
     use crate::encode::Decodable;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::workspace::WorkspaceIo;
-    use crate::object::{AsMeta, Obj, ObjMeta};
     use crate::object::file::FileObj;
+    use crate::object::{AsMeta, Obj, ObjMeta};
 
     #[test]
     fn write_object_file() {
@@ -158,7 +158,8 @@ mod tests {
         let mock = MockFileSystem::default();
         let io = ObjIo::new(mock.clone());
         let obj = ObjMeta::compress(b"FILE\0hello world!".to_vec()).unwrap();
-        io.write_obj(&FileObj::decode(b"FILE\0hello world!").unwrap()).unwrap();
+        io.write_obj(&FileObj::decode(b"FILE\0hello world!").unwrap())
+            .unwrap();
         assert_eq!(io.try_read_obj(&obj.hash).unwrap().as_meta().unwrap(), obj);
     }
 }

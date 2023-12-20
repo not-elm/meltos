@@ -29,6 +29,7 @@ pub struct CommitObj {
     pub text: CommitText,
     pub committed_objs_tree: ObjHash,
 }
+impl_serialize_and_deserialize!(CommitObj);
 
 
 impl CommitObj {

@@ -8,8 +8,8 @@ use crate::file_system::{FileSystem, FsIo};
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
-use crate::object::commit::CommitHash;
 use crate::object::{CompressedBuf, ObjHash};
+use crate::object::commit::CommitHash;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Bundle {
@@ -36,15 +36,15 @@ pub struct BundleObject {
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BundleBranch {
     pub branch_name: BranchName,
-    pub head: CommitHash,
+    pub commits: Vec<CommitHash>,
 }
 
 
 #[derive(Debug)]
 pub struct BundleIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     object: ObjIo<Fs, Io>,
     trace: TraceIo<Fs, Io>,
@@ -53,9 +53,9 @@ where
 
 
 impl<Fs, Io> BundleIo<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Write + std::io::Read,
 {
     #[inline]
     pub fn new(fs: Fs) -> BundleIo<Fs, Io> {
@@ -82,14 +82,14 @@ where
         let mut branches = Vec::with_capacity(head_files.len());
         for path in head_files {
             let Some(branch_name) = Path::new(&path).file_name().and_then(|name| name.to_str())
-            else {
-                continue;
-            };
+                else {
+                    continue;
+                };
 
             let branch_name = BranchName::from(branch_name);
             let head = HeadIo::new(self.fs.clone()).try_read(&branch_name)?;
             branches.push(BundleBranch {
-                head,
+                commits: vec![head],
                 branch_name,
             });
         }
@@ -108,8 +108,8 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
     use crate::io::bundle::BundleIo;
     use crate::operation::commit::Commit;
@@ -125,7 +125,7 @@ mod tests {
         let bundle = bundle_io.create().unwrap();
         assert_eq!(bundle.branches.len(), 1);
         assert_eq!(&bundle.branches[0].branch_name, &BranchName::main());
-        assert_eq!(&bundle.branches[0].head, &null_commit_hash);
+        assert_eq!(&bundle.branches[0].commits[0], &null_commit_hash);
     }
 
     #[test]
@@ -148,8 +148,8 @@ mod tests {
         );
         assert_eq!(&bundle.branches[1].branch_name, &BranchName::main());
 
-        assert_eq!(&bundle.branches[0].head, &null_commit);
-        assert_eq!(&bundle.branches[1].head, &null_commit);
+        assert_eq!(&bundle.branches[0].commits[0], &null_commit);
+        assert_eq!(&bundle.branches[1].commits[0], &null_commit);
 
         let working = WorkingIo::new(mock.clone());
         let stage = Stage::new(BranchName::from("branch2"), mock.clone());
@@ -166,8 +166,8 @@ mod tests {
         );
         assert_eq!(&bundle.branches[1].branch_name, &BranchName::main());
 
-        assert_eq!(&bundle.branches[0].head, &commit_hash);
-        assert_eq!(&bundle.branches[1].head, &null_commit);
+        assert_eq!(&bundle.branches[0].commits[0], &commit_hash);
+        assert_eq!(&bundle.branches[1].commits[0], &null_commit);
     }
 
 

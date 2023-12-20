@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use reqwest::Client;
+
 
 use meltos::room::RoomId;
 use meltos::schema::response::room::Opened;
@@ -12,9 +12,9 @@ use meltos_tvn::operation::Operations;
 use crate::http::HttpClient;
 
 pub struct RoomOwner<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Write + std::io::Read,
 {
     pub room_id: RoomId,
     pub session_id: SessionId,
@@ -25,9 +25,9 @@ where
 
 
 impl<Fs, Io> RoomOwner<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Read + std::io::Write,
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Read + std::io::Write,
 {
     pub async fn open(fs: Fs, user_id: Option<UserId>) -> crate::error::Result<Self> {
         let operations = Operations::new_main(fs);

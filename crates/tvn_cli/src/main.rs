@@ -19,6 +19,7 @@ async fn main() {
 }
 
 
+#[allow(unused)]
 fn read_session_id() -> error::Result<SessionId> {
     let session_id = env::var("SESSION_ID").map_err(|_| error::Error::SessionIdNotExists)?;
     Ok(SessionId(session_id))

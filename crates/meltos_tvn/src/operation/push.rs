@@ -1,14 +1,17 @@
-use async_trait::async_trait;
 use std::fmt::Display;
+
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
+use crate::io::atomic::local_commits::LocalCommitsIo;
 use crate::io::atomic::trace::TraceIo;
-use crate::io::bundle::{Bundle, BundleBranch};
+use crate::io::bundle::{Bundle, BundleBranch, BundleObject, BundleTrace};
 use crate::io::commit_obj::CommitObjIo;
-
+use crate::object::commit::CommitObj;
 
 #[async_trait]
 pub trait Pushable<Output> {
@@ -20,27 +23,29 @@ pub trait Pushable<Output> {
 
 #[derive(Debug, Clone)]
 pub struct Push<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     head: HeadIo<Fs, Io>,
     commit_obj: CommitObjIo<Fs, Io>,
+    local_commits: LocalCommitsIo<Fs, Io>,
     branch_name: BranchName,
     trace: TraceIo<Fs, Io>,
 }
 
 
 impl<Fs, Io> Push<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Write + std::io::Read,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> Push<Fs, Io> {
         Self {
             commit_obj: CommitObjIo::new(branch_name.clone(), fs.clone()),
             head: HeadIo::new(fs.clone()),
-            trace: TraceIo::new(fs),
+            trace: TraceIo::new(fs.clone()),
+            local_commits: LocalCommitsIo::new(branch_name.clone(), fs),
             branch_name,
         }
     }
@@ -48,9 +53,9 @@ where
 
 
 impl<Fs, Io> Push<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     /// Sends the currently locally committed data to the remote.
     /// * push local commits to remote server.
@@ -59,10 +64,6 @@ where
         &self,
         remote: &mut impl Pushable<Output>,
     ) -> error::Result<Output> {
-        let local_commits = self.commit_obj.read_local_commits()?;
-        if local_commits.is_empty() {
-            return Err(error::Error::NotfoundLocalCommits);
-        }
         let bundle = self.create_push_bundle()?;
         let output = remote
             .push(bundle)
@@ -74,27 +75,41 @@ where
 
 
     pub fn create_push_bundle(&self) -> error::Result<Bundle> {
+        let local_commits = self.local_commits.read()?.unwrap_or_default();
+        if local_commits.is_empty() {
+            return Err(error::Error::NotfoundLocalCommits);
+        }
         let traces = self.trace.read_all()?;
-        let head = self.head.try_read(&self.branch_name)?;
-        let objs = self.commit_obj.read_obj_associate_with(head.clone())?;
+        let objs = self.commit_obj.read_objs_associated_with_local()?;
         Ok(Bundle {
             objs,
             traces,
             branches: vec![BundleBranch {
                 branch_name: self.branch_name.clone(),
-                head,
+                commits: local_commits.0,
             }],
         })
     }
 }
 
 
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
+pub struct PushBundle {
+    pub traces: Vec<BundleTrace>,
+    pub objs: Vec<BundleObject>,
+    pub branch_name: BranchName,
+    pub commits: Vec<CommitObj>,
+}
+
+
 #[cfg(test)]
 mod tests {
+    use async_trait::async_trait;
+
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::bundle::Bundle;
     use crate::io::commit_obj::CommitObjIo;
@@ -102,7 +117,6 @@ mod tests {
     use crate::operation::push::{Push, Pushable};
     use crate::operation::stage::Stage;
     use crate::tests::init_main_branch;
-    use async_trait::async_trait;
 
     #[derive(Debug, Default)]
     struct MockRemoteClient {
@@ -182,6 +196,7 @@ mod tests {
         push.execute(&mut remote).await.unwrap();
         let bundle = remote.bundle.unwrap();
         let head = HeadIo::new(mock);
-        assert_eq!(&bundle.branches[0].head, &head.try_read(&branch).unwrap());
+        let commits = &bundle.branches[0].commits;
+        assert_eq!(&commits[commits.len()-1], &head.try_read(&branch).unwrap());
     }
 }
