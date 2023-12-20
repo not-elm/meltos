@@ -94,14 +94,11 @@ impl<Fs, Io> CommitObjIo<Fs, Io>
         self.local_commits.write(&LocalCommitsObj::default())
     }
 
-    pub fn read_objs_associated_with_local(&self) -> error::Result<Vec<BundleObject>> {
-        let Some(local_commits) = self.local_commits.read()? else {
-            return Err(error::Error::NotfoundLocalCommits);
-        };
-        let mut obj_hashes = HashSet::new();
-        for commit_hash in local_commits.0 {
-            self.read_obj_hashes_associate_with(&mut obj_hashes, commit_hash, false)?;
-        }
+    pub fn read_objs_associated_with_local_commits(&self) -> error::Result<Vec<BundleObject>> {
+        let local_commits = self.local_commits.try_read()?;
+        let head = self.head.read(&self.branch_name)?;
+        let from = local_commits.0[local_commits.0.len() - 1].clone();
+        let mut obj_hashes = self.read_hashes(from, &head)?;
 
         let mut obj_bufs = Vec::with_capacity(obj_hashes.len());
         for hash in obj_hashes {
@@ -115,48 +112,61 @@ impl<Fs, Io> CommitObjIo<Fs, Io>
         }
         Ok(obj_bufs)
     }
+    
+  
 
-    pub fn read_obj_hashes_associate_with(
+    pub fn read_hashes(
+        &self,
+        from: CommitHash,
+        to: &Option<CommitHash>,
+    ) -> error::Result<HashSet<ObjHash>> {
+        let mut obj_hashes = HashSet::new();
+        self._read_hashes(&mut obj_hashes, from, to)?;
+        Ok(obj_hashes)
+    }
+
+
+    fn _read_hashes(
         &self,
         obj_hashes: &mut HashSet<ObjHash>,
-        commit_hash: CommitHash,
-        read_parents: bool
+        from: CommitHash,
+        to: &Option<CommitHash>,
     ) -> error::Result {
-        let tree = self.trace_tree.read(&commit_hash)?;
-        self.read_commit_objs(commit_hash, obj_hashes, read_parents)?;
+        let tree = self.trace_tree.read(&from)?;
+        self.scan_commit_obj(obj_hashes, from, to)?;
         for obj_hash in tree.0.into_values() {
             obj_hashes.insert(obj_hash);
         }
         Ok(())
     }
 
-    fn read_commit_objs(
+    fn scan_commit_obj(
         &self,
-        commit_hash: CommitHash,
         obj_hashes: &mut HashSet<ObjHash>,
-        read_parents: bool
+        commit_hash: CommitHash,
+        to: &Option<CommitHash>,
     ) -> error::Result {
         let commit_obj = self.read(&commit_hash)?;
-        self.read_objs_with_in_tree(&commit_obj, obj_hashes, read_parents)?;
+        self.scan_commit_tree(obj_hashes, &commit_obj, to)?;
         obj_hashes.insert(commit_hash.0);
 
         Ok(())
     }
 
-    fn read_objs_with_in_tree(
+    fn scan_commit_tree(
         &self,
-        commit_obj: &CommitObj,
         obj_hashes: &mut HashSet<ObjHash>,
-        read_parents: bool
+        commit_obj: &CommitObj,
+        to: &Option<CommitHash>,
     ) -> error::Result {
         let tree = self.object.read_to_tree(&commit_obj.committed_objs_tree)?;
         obj_hashes.insert(commit_obj.committed_objs_tree.clone());
         for hash in tree.0.into_values() {
             obj_hashes.insert(hash);
         }
-        if read_parents{
-            for hash in commit_obj.parents.iter(){
-                self.read_obj_hashes_associate_with(obj_hashes, hash.clone(), read_parents)?;
+        if !to.as_ref().is_some_and(|p| commit_obj.parents.contains(p)) {
+            for hash in commit_obj.parents.iter() {
+                self._read_hashes(obj_hashes, hash.clone(), to)?;
             }
         }
         Ok(())
@@ -229,9 +239,12 @@ mod tests {
         mock.write("./t", b"t").unwrap();
         stage.execute(".").unwrap();
         let commit_hash2 = commit.execute("commit text").unwrap();
-        let mut objs =  HashSet::new();
-        commit_obj.read_obj_hashes_associate_with(&mut objs, commit_hash2.clone(), true).unwrap();
-        let mut objs = objs.into_iter().collect::<Vec<ObjHash>>();
+
+        let mut objs = commit_obj
+            .read_hashes(commit_hash2.clone(), &None)
+            .unwrap()
+            .into_iter().collect::<Vec<ObjHash>>();
+
         objs.sort();
         let trace_obj = trace.read(&commit_hash2).unwrap();
         let mut expect = vec![

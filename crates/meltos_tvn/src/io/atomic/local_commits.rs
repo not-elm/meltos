@@ -9,9 +9,9 @@ use crate::object::local_commits::LocalCommitsObj;
 
 #[derive(Debug, Clone)]
 pub struct LocalCommitsIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write,
+    where
+        Fs: FileSystem<Io>,
+        Io: io::Read + io::Write,
 {
     fs: FsIo<Fs, Io>,
     file_path: String,
@@ -19,9 +19,9 @@ where
 
 
 impl<Fs, Io> LocalCommitsIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     #[inline]
     pub fn new(branch_name: BranchName, fs: Fs) -> LocalCommitsIo<Fs, Io> {
@@ -43,6 +43,12 @@ where
         self.write(&local_commits)
     }
 
+    pub fn try_read(&self) -> error::Result<LocalCommitsObj> {
+        let Some(local_commits) = self.read()? else {
+            return Err(error::Error::NotfoundLocalCommits);
+        };
+        Ok(local_commits)
+    }
 
     pub fn read(&self) -> error::Result<Option<LocalCommitsObj>> {
         let Some(buf) = self.fs.read(&self.file_path)? else {

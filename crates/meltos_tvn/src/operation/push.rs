@@ -80,7 +80,7 @@ impl<Fs, Io> Push<Fs, Io>
             return Err(error::Error::NotfoundLocalCommits);
         }
         let traces = self.trace.read_all()?;
-        let objs = self.commit_obj.read_objs_associated_with_local()?;
+        let objs = self.commit_obj.read_objs_associated_with_local_commits()?;
         Ok(Bundle {
             objs,
             traces,
