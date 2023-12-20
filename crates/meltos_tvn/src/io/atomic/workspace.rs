@@ -112,9 +112,9 @@ mod tests {
             .collect::<Vec<ObjHash>>();
         hashes.sort();
         let mut expect = vec![
-            ObjHash::new(b"hello"),
-            ObjHash::new(b"world"),
-            ObjHash::new(b"echo hi "),
+            ObjHash::new(b"FILE\0hello"),
+            ObjHash::new(b"FILE\0world"),
+            ObjHash::new(b"FILE\0echo hi "),
         ];
         expect.sort();
         assert_eq!(hashes, expect);

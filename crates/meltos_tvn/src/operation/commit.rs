@@ -83,7 +83,7 @@ where
     pub(crate) fn create_null_commit(&self, null_staging: ObjMeta) -> CommitObj {
         CommitObj {
             parents: Vec::with_capacity(0),
-            text: CommitText::from("INIT"),
+            text: CommitText::from(""),
             committed_objs_tree: null_staging.hash,
         }
     }

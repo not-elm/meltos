@@ -7,6 +7,14 @@ use crate::file_system::FileSystem;
 #[derive(Debug, Clone, Default)]
 pub struct MockFileSystem(pub Arc<Mutex<HashMap<String, MockIo>>>);
 
+
+impl MockFileSystem {
+    #[cfg(test)]
+    pub fn force_write(&self, path: &str, buf: &[u8]){
+        self.write(path, buf).unwrap();
+    }
+}
+
 impl FileSystem<MockIo> for MockFileSystem {
     fn open_file(&self, path: &str) -> std::io::Result<Option<MockIo>> {
         let map = self.0.lock().unwrap();

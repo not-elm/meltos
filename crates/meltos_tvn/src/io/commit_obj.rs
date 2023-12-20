@@ -10,13 +10,13 @@ use crate::io::bundle::BundleObject;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::local_commits::LocalCommitsObj;
-use crate::object::{CompressedBuf, ObjHash};
+use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct CommitObjIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     head: HeadIo<Fs, Io>,
     object: ObjIo<Fs, Io>,
@@ -27,9 +27,9 @@ where
 
 
 impl<Fs, Io> CommitObjIo<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Write + std::io::Read,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> CommitObjIo<Fs, Io> {
         CommitObjIo {
@@ -43,9 +43,9 @@ where
 }
 
 impl<Fs, Io> CommitObjIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     pub fn read_local_commits(&self) -> error::Result<Vec<CommitObj>> {
         let Some(LocalCommitsObj(local_hashes)) = self.local_commits.read()? else {
@@ -77,9 +77,12 @@ where
         commit_text: impl Into<CommitText>,
         staging_hash: ObjHash,
     ) -> error::Result<CommitObj> {
-        let head_commit = self.head.try_read(&self.branch_name)?;
+        let head_commit = self.head.read(&self.branch_name)?;
+        let parents = head_commit
+            .map(|head| vec![head])
+            .unwrap_or(Vec::with_capacity(0));
         Ok(CommitObj {
-            parents: vec![head_commit],
+            parents,
             text: commit_text.into(),
             committed_objs_tree: staging_hash,
         })
@@ -101,9 +104,9 @@ where
             let Some(compressed_buf) = self.object.read(&hash)? else {
                 return Err(error::Error::NotfoundObj(hash));
             };
-            obj_bufs.push(BundleObject{
+            obj_bufs.push(BundleObject {
                 hash,
-                compressed_buf
+                compressed_buf,
             });
         }
         Ok(obj_bufs)
@@ -157,8 +160,8 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::commit_obj::CommitObjIo;
     use crate::io::trace_tree::TraceTreeIo;

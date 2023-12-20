@@ -15,9 +15,9 @@ pub enum CheckOutStatus {
 
 #[derive(Debug, Clone)]
 pub struct Checkout<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     working: WorkingIo<Fs, Io>,
     heads: HeadIo<Fs, Io>,
@@ -26,9 +26,9 @@ where
 
 
 impl<Fs, Io> Checkout<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Write + std::io::Read,
 {
     pub fn new(fs: Fs) -> Checkout<Fs, Io> {
         Self {
@@ -41,9 +41,9 @@ where
 
 
 impl<Fs, Io> Checkout<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     pub fn execute(&self, target_branch: &BranchName) -> error::Result<CheckOutStatus> {
         let working = self.working.read()?;
@@ -74,10 +74,8 @@ mod tests {
     use crate::branch::BranchName;
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
-    use crate::operation::checkout::{CheckOutStatus, Checkout};
+    use crate::operation::checkout::{Checkout, CheckOutStatus};
     use crate::operation::new_branch::NewBranch;
-    use crate::operation::patch::Patch;
-
     use crate::tests::init_main_branch;
 
     #[test]
