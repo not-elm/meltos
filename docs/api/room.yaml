@@ -6,7 +6,7 @@ servers:
   - url: https://api.server.test/
 paths:
   /open:
-    description: "open room"
+    description: "open user"
     post:
       requestBody:
         content:

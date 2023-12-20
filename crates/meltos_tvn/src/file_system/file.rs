@@ -28,9 +28,9 @@ impl FileSystem<File> for StdFileSystem {
                 p.extend(self.all_file_path(entry?.path().to_str().unwrap())?);
             }
             Ok(p)
-        } else if  std::fs::File::open(path).is_ok(){
+        } else if std::fs::File::open(path).is_ok() {
             Ok(vec![path.to_string()])
-        }else{
+        } else {
             Ok(Vec::with_capacity(0))
         }
     }

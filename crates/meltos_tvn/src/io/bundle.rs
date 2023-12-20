@@ -26,7 +26,6 @@ pub struct BundleTrace {
 }
 
 
-
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BundleObject {
     pub hash: ObjHash,

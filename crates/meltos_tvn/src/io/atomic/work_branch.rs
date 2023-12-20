@@ -39,8 +39,17 @@ where
 
 
     #[inline]
-    pub fn read(&self) -> std::io::Result<BranchName> {
+    pub fn try_read(&self) -> std::io::Result<BranchName> {
         let buf = self.0.try_read(".meltos/WORKING")?;
         Ok(serde_json::from_slice(&buf)?)
+    }
+
+    #[inline]
+    pub fn read(&self) -> std::io::Result<Option<BranchName>> {
+        let Some(buf) = self.0.read(".meltos/WORKING")? else {
+            return Ok(None);
+        };
+
+        Ok(Some(serde_json::from_slice(&buf)?))
     }
 }

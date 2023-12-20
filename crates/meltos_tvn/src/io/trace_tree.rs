@@ -36,9 +36,9 @@ where
     Io: std::io::Write + std::io::Read,
 {
     pub fn write(&self, trace_tree: &TreeObj, commit_hash: &CommitHash) -> error::Result {
-        let trace_obj = trace_tree.as_meta()?;
-        self.trace.write(commit_hash, &trace_obj.hash)?;
-        self.object.write_obj(&trace_obj)?;
+        let meta = trace_tree.as_meta()?;
+        self.trace.write(commit_hash, &meta.hash)?;
+        self.object.write_obj(trace_tree)?;
         Ok(())
     }
 

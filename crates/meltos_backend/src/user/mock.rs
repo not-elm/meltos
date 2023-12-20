@@ -39,11 +39,11 @@ impl MockUserSessionIo {
         }
     }
 
-    async fn generate_user_id(&self) -> UserId{
-          let map = self.0.lock().await;
+    async fn generate_user_id(&self) -> UserId {
+        let map = self.0.lock().await;
         loop {
             let user_id = UserId::new();
-            if !map.values().any(|id|id == &user_id) {
+            if !map.values().any(|id| id == &user_id) {
                 return user_id;
             }
         }
@@ -64,11 +64,17 @@ impl SessionIo for MockUserSessionIo {
     async fn register(&self, user_id: Option<UserId>) -> crate::error::Result<(UserId, SessionId)> {
         let session_id = self.generate_session_id().await;
         if let Some(user_id) = user_id {
-            self.0.lock().await.insert(session_id.clone(), user_id.clone());
+            self.0
+                .lock()
+                .await
+                .insert(session_id.clone(), user_id.clone());
             Ok((user_id, session_id))
         } else {
             let random_user = self.generate_user_id().await;
-            self.0.lock().await.insert(session_id.clone(), random_user.clone());
+            self.0
+                .lock()
+                .await
+                .insert(session_id.clone(), random_user.clone());
             Ok((random_user, session_id))
         }
     }

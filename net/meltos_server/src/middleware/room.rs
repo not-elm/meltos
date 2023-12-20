@@ -18,7 +18,7 @@ use crate::state::AppState;
 pub struct SessionRoom(pub Room);
 
 #[derive(TypedPath, Deserialize, Serialize)]
-#[typed_path("/room/:room_id")]
+#[typed_path("/user/:room_id")]
 struct PathParam {
     pub room_id: RoomId,
 }

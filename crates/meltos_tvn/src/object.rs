@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::io;
 
 use auto_delegate::delegate;
@@ -47,13 +48,13 @@ impl ObjMeta {
     pub fn compress(buf: Vec<u8>) -> io::Result<Self> {
         Ok(Self {
             hash: ObjHash::new(&buf),
-            compressed_buf: CompressedBuf(Gz.encode(&buf)?),
+            compressed_buf: CompressedBuf(Gz.zip(&buf)?),
             buf,
         })
     }
 
     pub fn expand(compressed_buf: CompressedBuf) -> io::Result<Self> {
-        let buf = Gz.decode(&compressed_buf.0)?;
+        let buf = Gz.unzip(&compressed_buf.0)?;
         Ok(Self {
             hash: ObjHash::new(&buf),
             buf,
@@ -66,10 +67,80 @@ impl ObjMeta {
 #[derive(Debug, Clone)]
 pub enum Obj {
     File(FileObj),
-    Tree(TreeObj),
     Delete(DeleteObj),
+    Tree(TreeObj),
     Commit(CommitObj),
     LocalCommits(LocalCommitsObj),
+}
+
+
+impl Obj {
+    pub fn expand(buf: &CompressedBuf) -> error::Result<Self> {
+        let buf = Gz.unzip(&buf.0)?;
+        if buf.starts_with(FileObj::HEADER) {
+            Ok(Obj::File(FileObj::decode(&buf)?))
+        } else if buf.starts_with(DeleteObj::HEADER) {
+            Ok(Obj::Delete(DeleteObj::decode(&buf)?))
+        } else if buf.starts_with(TreeObj::HEADER) {
+            Ok(Obj::Tree(TreeObj::decode(&buf)?))
+        } else if buf.starts_with(CommitObj::HEADER) {
+            Ok(Obj::Commit(CommitObj::decode(&buf)?))
+        } else if buf.starts_with(LocalCommitsObj::HEADER) {
+            Ok(Obj::LocalCommits(LocalCommitsObj::decode(&buf)?))
+        } else {
+            Err(crate::error::Error::InvalidObjBuffer(ObjHash::new(&buf)))
+        }
+    }
+
+    pub fn file(self) -> error::Result<FileObj> {
+        match self {
+            Self::File(file) => Ok(file),
+            _ => {
+                Err(error::Error::InvalidObjType(
+                    "File".to_string(),
+                    self.to_string(),
+                ))
+            }
+        }
+    }
+
+
+    pub fn commit(self) -> error::Result<CommitObj> {
+        match self {
+            Self::Commit(commit) => Ok(commit),
+            _ => {
+                Err(error::Error::InvalidObjType(
+                    "commit".to_string(),
+                    self.to_string(),
+                ))
+            }
+        }
+    }
+
+    pub fn tree(self) -> error::Result<TreeObj> {
+        match self {
+            Self::Tree(tree) => Ok(tree),
+            _ => {
+                Err(error::Error::InvalidObjType(
+                    "Tree".to_string(),
+                    self.to_string(),
+                ))
+            }
+        }
+    }
+}
+
+
+impl Display for Obj {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Obj::File(_) => f.write_str("File"),
+            Obj::Delete(_) => f.write_str("Delete"),
+            Obj::Tree(_) => f.write_str("Tree"),
+            Obj::Commit(_) => f.write_str("Commit"),
+            Obj::LocalCommits(_) => f.write_str("LocalCommits"),
+        }
+    }
 }
 
 

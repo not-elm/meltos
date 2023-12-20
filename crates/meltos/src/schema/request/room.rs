@@ -1,5 +1,5 @@
-mod open;
 mod join;
+mod open;
 
-pub use open::Open;
 pub use join::*;
+pub use open::Open;

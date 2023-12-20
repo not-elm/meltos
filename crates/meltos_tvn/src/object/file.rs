@@ -1,9 +1,14 @@
 use crate::error;
 use crate::object::{AsMeta, Decodable, Encodable, ObjMeta};
 
+
 #[repr(transparent)]
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct FileObj(pub Vec<u8>);
+
+impl FileObj {
+    pub const HEADER: &'static [u8] = b"FILE\0";
+}
 
 
 impl AsMeta for FileObj {
@@ -17,7 +22,7 @@ impl AsMeta for FileObj {
 impl Encodable for FileObj {
     #[inline]
     fn encode(&self) -> error::Result<Vec<u8>> {
-        let mut buf = b"FILE\0".to_vec();
+        let mut buf = Self::HEADER.to_vec();
         buf.extend(&self.0);
         Ok(buf)
     }
@@ -27,7 +32,7 @@ impl Encodable for FileObj {
 impl Decodable for FileObj {
     #[inline]
     fn decode(buf: &[u8]) -> error::Result<Self> {
-        Ok(Self(buf[5..].to_vec()))
+        Ok(Self(buf[Self::HEADER.len()..].to_vec()))
     }
 }
 

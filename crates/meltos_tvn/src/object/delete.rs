@@ -7,6 +7,11 @@ use crate::object::{AsMeta, Decodable, Encodable, ObjHash, ObjMeta};
 pub struct DeleteObj(pub ObjHash);
 
 
+impl DeleteObj {
+    pub const HEADER: &'static [u8] = b"DELETE\0";
+}
+
+
 impl AsMeta for DeleteObj {
     #[inline]
     fn as_meta(&self) -> error::Result<ObjMeta> {
@@ -28,7 +33,7 @@ impl Encodable for DeleteObj {
 impl Decodable for DeleteObj {
     #[inline]
     fn decode(buf: &[u8]) -> error::Result<Self> {
-        Ok(Self(ObjHash::decode(&buf[7..])?))
+        Ok(Self(ObjHash::decode(&buf[DeleteObj::HEADER.len()..])?))
     }
 }
 

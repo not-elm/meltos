@@ -18,6 +18,14 @@ pub trait FileSystem<Io: std::io::Read + std::io::Write> {
 
     fn delete(&self, path: &str) -> std::io::Result<()>;
 
+    fn all_workspace_file_path(&self, path: &str) -> std::io::Result<Vec<String>> {
+        Ok(self
+            .all_file_path(path)?
+            .into_iter()
+            .filter(|p| !p.contains(".meltos"))
+            .collect())
+    }
+
     fn try_read(&self, path: &str) -> std::io::Result<Vec<u8>> {
         self.read(path).and_then(|buf| {
             match buf {

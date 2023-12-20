@@ -31,6 +31,11 @@ pub struct CommitObj {
 }
 
 
+impl CommitObj {
+    pub const HEADER: &'static [u8] = b"COMMIT\0";
+}
+
+
 impl AsMeta for CommitObj {
     #[inline]
     fn as_meta(&self) -> error::Result<ObjMeta> {
@@ -49,11 +54,9 @@ impl TryFrom<ObjMeta> for CommitObj {
 }
 
 
-static HEAD: &[u8] = b"COMMIT\0";
-
 impl Encodable for CommitObj {
     fn encode(&self) -> error::Result<Vec<u8>> {
-        let mut buf = HEAD.to_vec();
+        let mut buf = Self::HEADER.to_vec();
         let parents_count = self.parents.len();
         buf.extend(format!("{parents_count}\0").as_bytes());
         for hash in &self.parents {
@@ -73,7 +76,7 @@ impl Encodable for CommitObj {
 
 impl Decodable for CommitObj {
     fn decode(buf: &[u8]) -> error::Result<Self> {
-        let mut buf = buf[HEAD.len()..]
+        let mut buf = buf[Self::HEADER.len()..]
             .split(|b| b == &b'\0')
             .collect::<VecDeque<&[u8]>>();
         let parents = decode_parents(&mut buf)?;
@@ -102,7 +105,7 @@ fn decode_parents(buf: &mut VecDeque<&[u8]>) -> error::Result<Vec<CommitHash>> {
 #[cfg(test)]
 mod tests {
     use crate::io::atomic::head::CommitText;
-    use crate::object::commit::{CommitHash, CommitObj, HEAD};
+    use crate::object::commit::{CommitHash, CommitObj};
     use crate::object::{Decodable, Encodable, ObjHash};
 
     #[test]
@@ -118,8 +121,8 @@ mod tests {
             committed_objs_tree: tree.clone(),
         };
         let buf = commit.encode().unwrap();
-        let h = HEAD.len();
-        assert_eq!(&buf[..h], HEAD);
+        let h = CommitObj::HEADER.len();
+        assert_eq!(&buf[..h], CommitObj::HEADER);
         assert_eq!(&buf[h..h + 2], b"2\0");
         assert_eq!(&buf[h + 2..h + 2 + 40], hash1.encode().unwrap());
         assert_eq!(&buf[h + 2 + 41..h + 2 + 41 + 40], hash2.encode().unwrap());

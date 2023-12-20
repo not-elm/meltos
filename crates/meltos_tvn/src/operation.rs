@@ -59,7 +59,7 @@ where
     #[inline]
     pub fn new_work(fs: Fs) -> error::Result<Operations<Fs, Io>> {
         let work = WorkingIo::new(fs.clone());
-        Ok(Self::new(work.read()?, fs))
+        Ok(Self::new(work.try_read()?, fs))
     }
 
     pub fn new(branch_name: BranchName, fs: Fs) -> Operations<Fs, Io> {

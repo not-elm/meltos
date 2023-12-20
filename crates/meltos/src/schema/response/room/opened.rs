@@ -7,5 +7,5 @@ use crate::user::{SessionId, UserId};
 pub struct Opened {
     pub room_id: RoomId,
     pub user_id: UserId,
-    pub session_id: SessionId
+    pub session_id: SessionId,
 }

@@ -5,6 +5,7 @@ use std::string::FromUtf8Error;
 use thiserror::Error;
 
 use crate::branch::BranchName;
+use crate::file_system::FilePath;
 use crate::object::commit::CommitHash;
 use crate::object::ObjHash;
 
@@ -24,6 +25,12 @@ pub enum Error {
     #[error("obj hash buffer is invalid")]
     ObjHashBufferIsInvalid,
 
+    #[error("obj type is invalid : hash={0}")]
+    InvalidObjBuffer(ObjHash),
+
+    #[error("expect obj type is {0} bad was {1}")]
+    InvalidObjType(String, String),
+
     #[error("commit obj buffer is invalid")]
     CommitObjBufferIsInValid,
 
@@ -32,6 +39,9 @@ pub enum Error {
 
     #[error("not found stages")]
     NotfoundStages,
+
+    #[error("not found workspace file : path={0}")]
+    NotfoundWorkspaceFile(FilePath),
 
     #[error("changed file does not exists")]
     ChangedFileNotExits,
@@ -59,6 +69,9 @@ pub enum Error {
 
     #[error(transparent)]
     ParseInt(#[from] ParseIntError),
+
+    #[error("expect obj type is file or delete bad was.")]
+    InvalidWorkspaceObj,
 
     #[error("failed connect server : detail={0}")]
     FailedConnectServer(String),

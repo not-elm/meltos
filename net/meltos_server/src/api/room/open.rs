@@ -2,8 +2,8 @@ use std::fmt::Debug;
 
 use axum::body::Body;
 use axum::extract::State;
-use axum::Json;
 use axum::response::Response;
+use axum::Json;
 
 use meltos::room::RoomId;
 use meltos::schema::request::room::Open;
@@ -23,9 +23,9 @@ pub async fn open<Session, Discussion>(
     State(session): State<SessionState<Session>>,
     Json(param): Json<Open>,
 ) -> HttpResult
-    where
-        Discussion: DiscussionIo + Default + 'static,
-        Session: SessionIo + Debug
+where
+    Discussion: DiscussionIo + Default + 'static,
+    Session: SessionIo + Debug,
 {
     let (user_id, session_id) = session.register(param.user_id.clone()).await?;
     let room = Room::open::<Discussion>(user_id.clone());
@@ -37,7 +37,11 @@ pub async fn open<Session, Discussion>(
 }
 
 
-fn response_success_create_room(room_id: RoomId, user_id: UserId, session_id: SessionId) -> Response {
+fn response_success_create_room(
+    room_id: RoomId,
+    user_id: UserId,
+    session_id: SessionId,
+) -> Response {
     Response::builder()
         .body(Body::from(
             Opened {
@@ -45,7 +49,7 @@ fn response_success_create_room(room_id: RoomId, user_id: UserId, session_id: Se
                 user_id,
                 session_id,
             }
-                .as_json(),
+            .as_json(),
         ))
         .unwrap()
 }
@@ -59,8 +63,8 @@ mod tests {
     use meltos_backend::user::mock::MockUserSessionIo;
     use meltos_tvn::file_system::mock::MockFileSystem;
 
-    use crate::{app, error};
     use crate::api::test_util::{open_room_request, ResponseConvertable};
+    use crate::{app, error};
 
     #[tokio::test]
     async fn return_room_id_and_session_id() -> error::Result {
@@ -69,10 +73,7 @@ mod tests {
             MockGlobalDiscussionIo::default(),
         );
         let mock = MockFileSystem::default();
-        let response = app
-            .oneshot(open_room_request(mock))
-            .await
-            .unwrap();
+        let response = app.oneshot(open_room_request(mock)).await.unwrap();
         let opened = response.deserialize::<Opened>().await;
         assert_eq!(opened.room_id.0.len(), 40);
         assert_eq!(opened.session_id.0.len(), 40);

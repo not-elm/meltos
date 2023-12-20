@@ -14,9 +14,9 @@ use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct CommitObjIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     head: HeadIo<Fs, Io>,
     object: ObjIo<Fs, Io>,
@@ -27,9 +27,9 @@ pub struct CommitObjIo<Fs, Io>
 
 
 impl<Fs, Io> CommitObjIo<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> CommitObjIo<Fs, Io> {
         CommitObjIo {
@@ -43,9 +43,9 @@ impl<Fs, Io> CommitObjIo<Fs, Io>
 }
 
 impl<Fs, Io> CommitObjIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn read_local_commits(&self) -> error::Result<Vec<CommitObj>> {
         let Some(LocalCommitsObj(local_hashes)) = self.local_commits.read()? else {
@@ -67,8 +67,8 @@ impl<Fs, Io> CommitObjIo<Fs, Io>
 
 
     pub fn read(&self, commit_hash: &ObjHash) -> error::Result<CommitObj> {
-        let commit_obj = self.object.try_read_obj(commit_hash)?;
-        CommitObj::try_from(commit_obj)
+        let commit = self.object.try_read_obj(commit_hash)?;
+        commit.commit()
     }
 
 
@@ -160,8 +160,8 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::branch::BranchName;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::commit_obj::CommitObjIo;
     use crate::io::trace_tree::TraceTreeIo;
@@ -232,9 +232,9 @@ mod tests {
             null_commit_hash.clone().0,
             commit_hash1.clone().0,
             commit_hash2.clone().0,
-            ObjHash::new(b"hello"),
-            ObjHash::new(b"sample"),
-            ObjHash::new(b"t"),
+            ObjHash::new(b"FILE\0hello"),
+            ObjHash::new(b"FILE\0sample"),
+            ObjHash::new(b"FILE\0t"),
         ];
         expect.push(
             obj.read_to_commit(&null_commit_hash)

@@ -76,6 +76,8 @@ impl_serialize_and_deserialize!(TreeObj);
 
 
 impl TreeObj {
+    pub const HEADER: &'static [u8] = b"TREE\0";
+
     pub fn changed_hash(&self, path: &FilePath, hash: &ObjHash) -> bool {
         if let Some(old_hash) = self.0.get(path) {
             old_hash != hash
@@ -101,9 +103,6 @@ impl AsMeta for TreeObj {
 }
 
 
-static HEAD: &[u8] = b"TREE";
-
-
 impl Encodable for TreeObj {
     fn encode(&self) -> error::Result<Vec<u8>> {
         #[derive(Ord, PartialOrd, Eq, PartialEq)]
@@ -124,7 +123,7 @@ impl Encodable for TreeObj {
             .collect::<Vec<KeyValue>>();
         key_value.sort();
 
-        let mut buf = HEAD.to_vec();
+        let mut buf = TreeObj::HEADER.to_vec();
         buf.extend(format!("{}\0", key_value.len()).as_bytes());
         for k_v in key_value {
             buf.extend(format!("{}\0{}\0", k_v.file_path, k_v.hash).as_bytes());
@@ -137,7 +136,7 @@ impl Encodable for TreeObj {
 
 impl Decodable for TreeObj {
     fn decode(buf: &[u8]) -> error::Result<Self> {
-        let mut buf = buf[HEAD.len()..]
+        let mut buf = buf[TreeObj::HEADER.len()..]
             .split(|b| b == &b'\0')
             .collect::<VecDeque<&[u8]>>();
 
@@ -165,7 +164,7 @@ fn decode_entry_count(buf: &mut VecDeque<&[u8]>) -> error::Result<usize> {
 #[cfg(test)]
 mod tests {
     use crate::file_system::FilePath;
-    use crate::object::tree::{TreeObj, HEAD};
+    use crate::object::tree::TreeObj;
     use crate::object::{Decodable, Encodable, ObjHash};
 
     #[test]
@@ -179,8 +178,8 @@ mod tests {
         tree.0.insert(p2.clone(), h2.clone());
 
         let buf = tree.encode().unwrap();
-        let h = HEAD.len();
-        assert_eq!(&buf[..h], HEAD);
+        let h = TreeObj::HEADER.len();
+        assert_eq!(&buf[..h], TreeObj::HEADER);
         assert_eq!(&buf[h..h + 2], b"2\0");
 
         let p2_len = p2.len();

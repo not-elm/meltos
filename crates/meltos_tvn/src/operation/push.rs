@@ -1,28 +1,28 @@
-use std::fmt::Display;
 use async_trait::async_trait;
+use std::fmt::Display;
 
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::trace::TraceIo;
-use crate::io::bundle::{BundleBranch, Bundle};
+use crate::io::bundle::{Bundle, BundleBranch};
 use crate::io::commit_obj::CommitObjIo;
 
 
 #[async_trait]
-pub trait Pushable {
+pub trait Pushable<Output> {
     type Error: Display;
 
-    async fn push(&mut self, bundle: Bundle) -> std::result::Result<(), Self::Error>;
+    async fn push(&mut self, bundle: Bundle) -> std::result::Result<Output, Self::Error>;
 }
 
 
 #[derive(Debug, Clone)]
 pub struct Push<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     head: HeadIo<Fs, Io>,
     commit_obj: CommitObjIo<Fs, Io>,
@@ -32,9 +32,9 @@ pub struct Push<Fs, Io>
 
 
 impl<Fs, Io> Push<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> Push<Fs, Io> {
         Self {
@@ -48,25 +48,28 @@ impl<Fs, Io> Push<Fs, Io>
 
 
 impl<Fs, Io> Push<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     /// Sends the currently locally committed data to the remote.
     /// * push local commits to remote server.
     /// * clear local commits
-    pub async fn execute(&self, remote: &mut impl Pushable) -> error::Result {
+    pub async fn execute<Output>(
+        &self,
+        remote: &mut impl Pushable<Output>,
+    ) -> error::Result<Output> {
         let local_commits = self.commit_obj.read_local_commits()?;
         if local_commits.is_empty() {
             return Err(error::Error::NotfoundLocalCommits);
         }
         let bundle = self.create_push_bundle()?;
-        remote
+        let output = remote
             .push(bundle)
             .await
-            .map_err(|e|error::Error::FailedConnectServer(format!("{e}")))?;
+            .map_err(|e| error::Error::FailedConnectServer(format!("{e}")))?;
         self.commit_obj.reset_local_commits()?;
-        Ok(())
+        Ok(output)
     }
 
 
@@ -88,7 +91,6 @@ impl<Fs, Io> Push<Fs, Io>
 
 #[cfg(test)]
 mod tests {
-    use async_trait::async_trait;
     use crate::branch::BranchName;
     use crate::error;
     use crate::file_system::mock::MockFileSystem;
@@ -100,15 +102,16 @@ mod tests {
     use crate::operation::push::{Push, Pushable};
     use crate::operation::stage::Stage;
     use crate::tests::init_main_branch;
+    use async_trait::async_trait;
 
     #[derive(Debug, Default)]
-    struct MockRemoteClient{
-        pub bundle: Option<Bundle>
+    struct MockRemoteClient {
+        pub bundle: Option<Bundle>,
     }
 
 
     #[async_trait]
-    impl Pushable for MockRemoteClient{
+    impl Pushable<()> for MockRemoteClient {
         type Error = String;
 
         async fn push(&mut self, bundle: Bundle) -> Result<(), Self::Error> {

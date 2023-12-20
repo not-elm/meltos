@@ -22,6 +22,6 @@ impl BranchName {
         Fs: FileSystem<Io>,
         Io: std::io::Read + std::io::Write,
     {
-        WorkingIo::new(fs).read()
+        WorkingIo::new(fs).try_read()
     }
 }

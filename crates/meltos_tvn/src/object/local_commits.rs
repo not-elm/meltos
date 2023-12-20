@@ -12,6 +12,11 @@ use crate::object::{AsMeta, Decodable, Encodable, ObjMeta};
 pub struct LocalCommitsObj(pub Vec<CommitHash>);
 impl_serialize_and_deserialize!(LocalCommitsObj);
 
+
+impl LocalCommitsObj {
+    pub const HEADER: &'static [u8] = b"LOCAL_COMMITS\0";
+}
+
 impl AsMeta for LocalCommitsObj {
     #[inline]
     fn as_meta(&self) -> crate::error::Result<ObjMeta> {
@@ -20,11 +25,9 @@ impl AsMeta for LocalCommitsObj {
 }
 
 
-static HEADER: &[u8] = b"LOCAL_COMMITS\0";
-
 impl Encodable for LocalCommitsObj {
     fn encode(&self) -> crate::error::Result<Vec<u8>> {
-        let mut buf = HEADER.to_vec();
+        let mut buf = Self::HEADER.to_vec();
         buf.extend(format!("{}\0", self.0.len()).as_bytes());
         buf.extend(
             self.0
@@ -41,7 +44,7 @@ impl Encodable for LocalCommitsObj {
 
 impl Decodable for LocalCommitsObj {
     fn decode(buf: &[u8]) -> crate::error::Result<Self> {
-        let mut buf = buf[HEADER.len()..]
+        let mut buf = buf[Self::HEADER.len()..]
             .split(|b| b == &b'\0')
             .collect::<VecDeque<&[u8]>>();
         let hash_count = buf.pop_front().unwrap();

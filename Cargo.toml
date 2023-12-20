@@ -2,7 +2,6 @@
 members = [
     "crates/*",
     "net/*",
-    "meltos_tool"
 ]
 resolver = "2"
 

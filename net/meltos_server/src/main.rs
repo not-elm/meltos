@@ -42,9 +42,9 @@ where
     Discussion: DiscussionIo + Default + 'static,
 {
     Router::new()
-        .route("/room/open", post(api::room::open::<Session, Discussion>))
-        .route("/room/connect", get(api::room::connect))
-        .nest("/room/:room_id", room_operations_router())
+        .route("/user/open", post(api::room::open::<Session, Discussion>))
+        .route("/user/connect", get(api::room::connect))
+        .nest("/user/:room_id", room_operations_router())
         .with_state(AppState::<Session>::new(session))
 }
 

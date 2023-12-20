@@ -9,17 +9,17 @@ use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct TraceIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     io: FsIo<Fs, Io>,
 }
 
 impl<Fs, Io> TraceIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(fs: Fs) -> TraceIo<Fs, Io> {
         Self {
@@ -84,8 +84,8 @@ impl<Fs, Io> TraceIo<Fs, Io>
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::trace::TraceIo;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
@@ -112,7 +112,11 @@ mod tests {
         let traces = trace.read_all().unwrap();
         assert_eq!(traces.len(), 3);
 
-        assert!(traces.iter().any(|trace| &trace.commit_hash == &commit_hash1));
-        assert!(traces.iter().any(|trace| &trace.commit_hash == &commit_hash2));
+        assert!(traces
+            .iter()
+            .any(|trace| &trace.commit_hash == &commit_hash1));
+        assert!(traces
+            .iter()
+            .any(|trace| &trace.commit_hash == &commit_hash2));
     }
 }

@@ -13,3 +13,4 @@ anyhow = { workspace = true }
 thiserror = { workspace = true }
 async-trait = { workspace = true }
 auto-delegate = { workspace = true }
+log = "0.4.20"

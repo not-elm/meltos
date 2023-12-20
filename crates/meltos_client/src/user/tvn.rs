@@ -39,7 +39,7 @@ where
     }
 
 
-    pub fn init(&self, branch_name: &BranchName, bundle: Bundle) -> crate::error::Result{
+    pub fn init(&self, branch_name: &BranchName, bundle: Bundle) -> crate::error::Result {
         self.operations.save.execute(bundle)?;
         self.operations.checkout.execute(branch_name)?;
         self.operations.unzip.execute(branch_name)?;

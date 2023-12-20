@@ -55,10 +55,10 @@ where
             return Err(error::Error::NotfoundStages);
         };
         self.staging.reset()?;
-        let stage_obj = stage_tree.as_meta()?;
-        self.object.write_obj(&stage_obj)?;
+        let stage_meta = stage_tree.as_meta()?;
+        self.object.write_obj(&stage_tree)?;
 
-        let commit = self.commit_obj.create(commit_text, stage_obj.hash)?;
+        let commit = self.commit_obj.create(commit_text, stage_meta.hash)?;
         let head_commit_hash = self.commit(commit)?;
         self.update_trace(stage_tree, &head_commit_hash)?;
         Ok(head_commit_hash)
@@ -98,13 +98,13 @@ where
 
 
     fn commit(&self, commit: CommitObj) -> error::Result<CommitHash> {
-        let commit_obj = commit.as_meta()?;
-        self.object.write_obj(&commit_obj)?;
+        let commit_meta = commit.as_meta()?;
+        self.object.write_obj(&commit)?;
         self.head
-            .write(&self.branch_name, &CommitHash(commit_obj.hash.clone()))?;
+            .write(&self.branch_name, &CommitHash(commit_meta.hash.clone()))?;
         self.local_commits
-            .append(CommitHash(commit_obj.hash.clone()))?;
-        Ok(CommitHash(commit_obj.hash.clone()))
+            .append(CommitHash(commit_meta.hash.clone()))?;
+        Ok(CommitHash(commit_meta.hash.clone()))
     }
 }
 
@@ -169,7 +169,7 @@ mod tests {
         let commit = ObjIo::new(mock).read_to_commit(&head_hash).unwrap();
 
         let mut tree = TreeObj::default();
-        tree.insert(FilePath::from_path("./hello"), ObjHash::new(b"hello"));
+        tree.insert(FilePath::from_path("./hello"), ObjHash::new(b"FILE\0hello"));
         assert_eq!(
             commit,
             CommitObj {

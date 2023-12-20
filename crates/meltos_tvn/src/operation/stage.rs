@@ -4,8 +4,8 @@ use crate::file_system::{FilePath, FileSystem, FsIo};
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
-use crate::io::atomic::workspace::WorkspaceIo;
 use crate::io::trace_tree::TraceTreeIo;
+use crate::io::workspace::WorkspaceIo;
 use crate::object::{AsMeta, ObjHash};
 use crate::object::delete::DeleteObj;
 use crate::object::file::FileObj;
@@ -95,15 +95,15 @@ impl<Fs, Io> Stage<Fs, Io>
         file_path: FilePath,
         file_obj: FileObj,
     ) -> error::Result {
-        let obj = file_obj.as_meta()?;
-        if !trace.changed_hash(&file_path, &obj.hash) {
+        let meta = file_obj.as_meta()?;
+        if !trace.changed_hash(&file_path, &meta.hash) {
             return Ok(());
         }
 
-        if stage.changed_hash(&file_path, &obj.hash) {
+        if stage.changed_hash(&file_path, &meta.hash) {
             *changed = true;
-            self.object.write_obj(&obj)?;
-            stage.insert(file_path, obj.hash);
+            self.object.write_obj(&file_obj)?;
+            stage.insert(file_path, meta.hash);
         }
         Ok(())
     }
@@ -118,9 +118,10 @@ impl<Fs, Io> Stage<Fs, Io>
     ) -> error::Result {
         for (path, hash) in self.scan_deleted_files(trace_tree, work_space_path)? {
             *changed = true;
-            let delete_obj = DeleteObj(hash).as_meta()?;
+            let delete_obj = DeleteObj(hash);
+            let delete_meta = delete_obj.as_meta()?;
             self.object.write_obj(&delete_obj)?;
-            staging.insert(path, delete_obj.hash);
+            staging.insert(path, delete_meta.hash);
         }
         Ok(())
     }
@@ -131,7 +132,7 @@ impl<Fs, Io> Stage<Fs, Io>
         trace_tree: &TreeObj,
         workspace_path: &str,
     ) -> error::Result<Vec<(FilePath, ObjHash)>> {
-        let work_space_files = self.fs.all_file_path(workspace_path)?;
+        let work_space_files = self.fs.all_workspace_file_path(workspace_path)?;
         Ok(trace_tree
             .iter()
             .filter_map(|(path, hash)| {
@@ -176,14 +177,24 @@ mod tests {
         stage.execute(".").unwrap();
 
         let obj = ObjIo::new(mock);
-        let obj1 = obj.read_obj(&ObjHash::new(b"hello")).unwrap().unwrap();
-        assert_eq!(obj1.buf, b"hello");
+        let obj1 = obj
+            .read_obj(&ObjHash::new(b"FILE\0hello"))
+            .unwrap()
+            .unwrap()
+            .file()
+            .unwrap()
+            .0;
+
+        assert_eq!(obj1, b"hello");
 
         let obj2 = obj
-            .read_obj(&ObjHash::new("dasds日本語".as_bytes()))
+            .read_obj(&ObjHash::new("FILE\0dasds日本語".as_bytes()))
             .unwrap()
-            .unwrap();
-        assert_eq!(obj2.buf, "dasds日本語".as_bytes());
+            .unwrap()
+            .file()
+            .unwrap()
+            .0;
+        assert_eq!(obj2, "dasds日本語".as_bytes());
     }
 
 
@@ -210,6 +221,8 @@ mod tests {
         let buf = ObjIo::new(mock)
             .read_obj(&delete_hello_hash)
             .unwrap()
+            .unwrap()
+            .as_meta()
             .unwrap()
             .buf;
         assert_eq!(buf, delete_hello.buf);

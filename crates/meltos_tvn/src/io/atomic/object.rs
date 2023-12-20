@@ -1,11 +1,10 @@
 use std::io;
 use std::path::Path;
 
-use crate::encode::Decodable;
 use crate::error;
 use crate::file_system::{FileSystem, FsIo};
 use crate::io::bundle::BundleObject;
-use crate::object::{CompressedBuf, ObjHash, ObjMeta};
+use crate::object::{AsMeta, CompressedBuf, Obj, ObjHash};
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::tree::TreeObj;
 
@@ -38,16 +37,16 @@ impl<Fs, Io> ObjIo<Fs, Io>
 
     pub fn read_to_commit(&self, object_hash: &CommitHash) -> error::Result<CommitObj> {
         let obj = self.try_read_obj(&object_hash.0)?;
-        CommitObj::try_from(obj)
+        obj.commit()
     }
 
 
     pub fn read_to_tree(&self, object_hash: &ObjHash) -> error::Result<TreeObj> {
-        let meta = self.try_read_obj(object_hash)?;
-        TreeObj::decode(&meta.buf)
+        let obj = self.try_read_obj(object_hash)?;
+        obj.tree()
     }
 
-    pub fn try_read_obj(&self, object_hash: &ObjHash) -> error::Result<ObjMeta> {
+    pub fn try_read_obj(&self, object_hash: &ObjHash) -> error::Result<Obj> {
         self.read_obj(object_hash).and_then(|obj| {
             match obj {
                 Some(obj) => Ok(obj),
@@ -56,12 +55,13 @@ impl<Fs, Io> ObjIo<Fs, Io>
         })
     }
 
-    pub fn read_obj(&self, object_hash: &ObjHash) -> error::Result<Option<ObjMeta>> {
+
+    pub fn read_obj(&self, object_hash: &ObjHash) -> error::Result<Option<Obj>> {
         let Some(buf) = self.read(object_hash)? else {
             return Ok(None);
         };
 
-        Ok(Some(ObjMeta::expand(buf)?))
+        Ok(Some(Obj::expand(&buf)?))
     }
 
 
@@ -88,12 +88,17 @@ impl<Fs, Io> ObjIo<Fs, Io>
         Ok(Some(CompressedBuf(buf)))
     }
 
-    pub fn write_obj(&self, obj: &ObjMeta) -> error::Result<()> {
+    pub fn write_obj(&self, obj: &impl AsMeta) -> error::Result<()> {
+        let obj = obj.as_meta()?;
         self.write(&obj.hash, &obj.compressed_buf)
     }
 
     pub fn write_all(&self, objs: &[BundleObject]) -> error::Result {
-        for BundleObject{hash,  compressed_buf} in objs {
+        for BundleObject {
+            hash,
+            compressed_buf,
+        } in objs
+        {
             self.write(hash, compressed_buf)?;
         }
         Ok(())
@@ -116,11 +121,13 @@ mod tests {
     use meltos_util::compression::CompressionBuf;
     use meltos_util::compression::gz::Gz;
 
-    use crate::file_system::{FileSystem, FsIo};
+    use crate::encode::Decodable;
+    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
-    use crate::io::atomic::workspace::WorkspaceIo;
-    use crate::object::{AsMeta, ObjMeta};
+    use crate::io::workspace::WorkspaceIo;
+    use crate::object::{AsMeta, Obj, ObjMeta};
+    use crate::object::file::FileObj;
 
     #[test]
     fn write_object_file() {
@@ -132,26 +139,26 @@ mod tests {
             .unwrap();
 
         let io = ObjIo::new(mock.clone());
-        let workspace = WorkspaceIo(FsIo::new(mock.clone()));
+        let workspace = WorkspaceIo::new(mock.clone());
         let mut objs = workspace.convert_to_objs("test/hello.txt").unwrap();
         let (_, file_obj) = objs.next().unwrap().unwrap();
-        io.write_obj(&file_obj.as_meta().unwrap()).unwrap();
+        io.write_obj(&Obj::File(file_obj)).unwrap();
 
         let hello_buf = mock
             .try_read(&format!(
                 "./.meltos/objects/{}",
-                meltos_util::hash::hash(buf)
+                meltos_util::hash::hash(b"FILE\0hello world!")
             ))
             .unwrap();
-        assert_eq!(hello_buf, Gz.encode(buf).unwrap());
+        assert_eq!(hello_buf, Gz.zip(b"FILE\0hello world!").unwrap());
     }
 
     #[test]
     fn read_obj() {
         let mock = MockFileSystem::default();
         let io = ObjIo::new(mock.clone());
-        let obj = ObjMeta::compress(b"hello world!".to_vec()).unwrap();
-        io.write_obj(&obj).unwrap();
-        assert_eq!(io.read_obj(&obj.hash).unwrap(), Some(obj));
+        let obj = ObjMeta::compress(b"FILE\0hello world!".to_vec()).unwrap();
+        io.write_obj(&FileObj::decode(b"FILE\0hello world!").unwrap()).unwrap();
+        assert_eq!(io.try_read_obj(&obj.hash).unwrap().as_meta().unwrap(), obj);
     }
 }

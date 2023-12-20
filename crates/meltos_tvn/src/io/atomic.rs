@@ -6,4 +6,3 @@ pub mod object;
 pub mod staging;
 pub mod trace;
 pub mod work_branch;
-pub mod workspace;

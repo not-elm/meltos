@@ -5,9 +5,9 @@ use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
-use crate::io::atomic::workspace::WorkspaceIo;
 use crate::io::trace_tree::TraceTreeIo;
 
+use crate::io::workspace::WorkspaceIo;
 
 #[derive(Debug)]
 pub struct UnZip<Fs, Io>
@@ -33,7 +33,6 @@ where
             object: ObjIo::new(fs.clone()),
             head: HeadIo::new(fs.clone()),
             trace_tree: TraceTreeIo::new(fs),
-
         }
     }
 }
@@ -50,7 +49,7 @@ where
         let trace_tree = self.trace_tree.read(&head)?;
         for (path, hash) in trace_tree.iter() {
             self.workspace
-                .unpack(path, &self.object.try_read_obj(hash)?.buf)?;
+                .unpack(path, &self.object.try_read_obj(hash)?)?;
         }
         Ok(())
     }

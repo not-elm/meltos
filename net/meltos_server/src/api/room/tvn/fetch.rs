@@ -3,10 +3,7 @@ use crate::middleware::room::SessionRoom;
 use crate::middleware::user::SessionUser;
 
 #[tracing::instrument]
-pub async fn fetch(
-    SessionRoom(room): SessionRoom,
-    SessionUser(_): SessionUser,
-) -> HttpResult {
+pub async fn fetch(SessionRoom(room): SessionRoom, SessionUser(_): SessionUser) -> HttpResult {
     let bundle = room.create_bundle()?;
     Ok(bundle.as_success_response())
 }
@@ -27,11 +24,14 @@ mod tests {
         let mock = MockFileSystem::default();
         let (_, mut app) = logged_in_app().await;
         let room_id = http_open_room(&mut app, mock.clone()).await;
-        let response = http_call(&mut app, Request::builder()
-            .uri(format!("/room/{room_id}/tvn/fetch"))
-            .body(Body::empty())
-            .unwrap(),
-        ).await;
+        let response = http_call(
+            &mut app,
+            Request::builder()
+                .uri(format!("/user/{room_id}/tvn/fetch"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await;
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 

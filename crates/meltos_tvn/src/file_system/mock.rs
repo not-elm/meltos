@@ -10,7 +10,7 @@ pub struct MockFileSystem(pub Arc<Mutex<HashMap<String, MockIo>>>);
 
 impl MockFileSystem {
     #[cfg(test)]
-    pub fn force_write(&self, path: &str, buf: &[u8]){
+    pub fn force_write(&self, path: &str, buf: &[u8]) {
         self.write(path, buf).unwrap();
     }
 }

@@ -14,7 +14,7 @@ async fn main() {
     let command = Commands::parse();
     match command {
         Commands::Open(open) => open.execute().await.unwrap(),
-        _ => {}
+        Commands::Join(join) => join.execute().await.unwrap(),
     }
 }
 

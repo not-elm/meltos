@@ -24,7 +24,7 @@ pub async fn connect(
     //     .lock()
     //     .await
     //     .room_mut(&param.room_id)
-    //     .map(|room| room.command_receiver())
+    //     .map(|user| user.command_receiver())
     // {
     //     ws.on_upgrade(move |socket| {
     //         start_websocket(

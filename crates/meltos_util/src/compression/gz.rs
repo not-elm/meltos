@@ -7,14 +7,14 @@ use crate::compression::CompressionBuf;
 pub struct Gz;
 
 impl CompressionBuf for Gz {
-    fn encode(&self, buf: &[u8]) -> std::io::Result<Vec<u8>> {
+    fn zip(&self, buf: &[u8]) -> std::io::Result<Vec<u8>> {
         let mut gz = GzEncoder::new(buf, flate2::Compression::default());
         let mut buffer = Vec::new();
         gz.read_to_end(&mut buffer)?;
         Ok(buffer)
     }
 
-    fn decode(&self, buf: &[u8]) -> std::io::Result<Vec<u8>> {
+    fn unzip(&self, buf: &[u8]) -> std::io::Result<Vec<u8>> {
         let mut gz = GzDecoder::new(buf);
         let mut buffer = Vec::new();
         gz.read_to_end(&mut buffer)?;
@@ -35,8 +35,8 @@ mod tests {
     #[test]
     fn ascii() {
         let buff = b"hello world!";
-        let encode = Gz.encode(buff).unwrap();
-        let decode = Gz.decode(&encode).unwrap();
+        let encode = Gz.zip(buff).unwrap();
+        let decode = Gz.unzip(&encode).unwrap();
 
         assert_eq!(decode, buff);
     }
@@ -44,8 +44,8 @@ mod tests {
     #[test]
     fn japanese() {
         let buff = "日本語".as_bytes();
-        let encode = Gz.encode(buff).unwrap();
-        let decode = Gz.decode(&encode).unwrap();
+        let encode = Gz.zip(buff).unwrap();
+        let decode = Gz.unzip(&encode).unwrap();
 
         assert_eq!(decode, buff);
     }

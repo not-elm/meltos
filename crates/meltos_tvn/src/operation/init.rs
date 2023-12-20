@@ -8,9 +8,9 @@ use crate::operation::stage::Stage;
 
 #[derive(Debug, Clone)]
 pub struct Init<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     commit: Commit<Fs, Io>,
     working: WorkingIo<Fs, Io>,
@@ -20,9 +20,9 @@ pub struct Init<Fs, Io>
 
 
 impl<Fs, Io> Init<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> Init<Fs, Io> {
         Self {
@@ -36,9 +36,9 @@ impl<Fs, Io> Init<Fs, Io>
 
 
 impl<Fs, Io> Init<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     /// Initialize the project.
     ///
@@ -55,7 +55,7 @@ impl<Fs, Io> Init<Fs, Io>
         self.working.write(&BranchName::main())?;
         if self.stage.execute(".").is_ok() {
             self.commit.execute("INIT")
-        }else{
+        } else {
             self.commit.execute_null_commit()
         }
     }
@@ -76,13 +76,13 @@ impl<Fs, Io> Init<Fs, Io>
 mod tests {
     use crate::branch::BranchName;
     use crate::encode::Encodable;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::atomic::object::ObjIo;
-    use crate::object::{AsMeta, ObjHash};
     use crate::object::commit::CommitHash;
     use crate::object::tree::TreeObj;
+    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::init;
     use crate::operation::init::Init;
@@ -144,7 +144,10 @@ mod tests {
         mock.force_write("./src/test.rs", b"test");
         let init = Init::new(BranchName::main(), mock.clone());
         init.execute().unwrap();
-        assert!(ObjIo::new(mock).read(&ObjHash::new(b"FILE\0test")).unwrap().is_some());
+        assert!(ObjIo::new(mock)
+            .read(&ObjHash::new(b"FILE\0test"))
+            .unwrap()
+            .is_some());
     }
 
     fn read_head_commit_hash(mock: MockFileSystem) -> CommitHash {

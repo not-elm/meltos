@@ -15,9 +15,9 @@ pub enum CheckOutStatus {
 
 #[derive(Debug, Clone)]
 pub struct Checkout<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     working: WorkingIo<Fs, Io>,
     heads: HeadIo<Fs, Io>,
@@ -26,9 +26,9 @@ pub struct Checkout<Fs, Io>
 
 
 impl<Fs, Io> Checkout<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(fs: Fs) -> Checkout<Fs, Io> {
         Self {
@@ -41,12 +41,12 @@ impl<Fs, Io> Checkout<Fs, Io>
 
 
 impl<Fs, Io> Checkout<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn execute(&self, target_branch: &BranchName) -> error::Result<CheckOutStatus> {
-        let working = self.working.read()?;
+        let working = self.working.read()?.unwrap_or(BranchName::main());
         if &working == target_branch {
             return Ok(CheckOutStatus::AlreadyCheckedOut);
         }
@@ -74,7 +74,7 @@ mod tests {
     use crate::branch::BranchName;
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
-    use crate::operation::checkout::{Checkout, CheckOutStatus};
+    use crate::operation::checkout::{CheckOutStatus, Checkout};
     use crate::operation::new_branch::NewBranch;
     use crate::tests::init_main_branch;
 
@@ -86,7 +86,7 @@ mod tests {
             .execute(&BranchName::main())
             .unwrap();
         assert_eq!(checked, CheckOutStatus::AlreadyCheckedOut);
-        let working = WorkingIo::new(mock.clone()).read().unwrap();
+        let working = WorkingIo::new(mock.clone()).try_read().unwrap();
         assert_eq!(BranchName::main(), working);
     }
 
@@ -103,7 +103,7 @@ mod tests {
             Checkout::new(mock.clone()).execute(&second).unwrap(),
             CheckOutStatus::Checkout
         );
-        let working = WorkingIo::new(mock.clone()).read().unwrap();
+        let working = WorkingIo::new(mock.clone()).try_read().unwrap();
         assert_eq!(second, working);
     }
 
@@ -117,10 +117,9 @@ mod tests {
             Checkout::new(mock.clone()).execute(&second).unwrap(),
             CheckOutStatus::NewBranch
         );
-        let working = WorkingIo::new(mock.clone()).read().unwrap();
+        let working = WorkingIo::new(mock.clone()).try_read().unwrap();
         assert_eq!(second, working);
     }
-
 
     // #[tokio::test]
     // async fn checkout_from_remote_branch() {

@@ -3,7 +3,7 @@ use clap::Args;
 
 use meltos::room::RoomId;
 use meltos::user::UserId;
-use meltos_client::room::RoomUser;
+use meltos_client::user::RoomUser;
 use meltos_tvn::file_system::file::StdFileSystem;
 
 use crate::command::CommandExecutable;
@@ -12,7 +12,11 @@ use crate::command::CommandExecutable;
 pub struct JoinArgs {
     room_id: String,
 
-    #[arg(short, long, help = "ルーム内のユーザー名 省力された場合ランダムな名前になります")]
+    #[arg(
+        short,
+        long,
+        help = "ルーム内のユーザー名 省力された場合ランダムな名前になります"
+    )]
     user_id: Option<UserId>,
 }
 
@@ -27,6 +31,3 @@ impl CommandExecutable for JoinArgs {
         Ok(())
     }
 }
-
-
-
