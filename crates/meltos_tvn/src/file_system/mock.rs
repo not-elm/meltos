@@ -1,10 +1,11 @@
 use std::collections::HashMap;
+use std::fmt::{Debug, Formatter};
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 
 use crate::file_system::FileSystem;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct MockFileSystem(pub Arc<Mutex<HashMap<String, MockIo>>>);
 
 
@@ -77,10 +78,21 @@ impl Write for MockIo {
     }
 }
 
+
+impl Debug for MockFileSystem {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for (key, _) in self.0.lock().unwrap().iter_mut() {
+            f.write_fmt(format_args!("{key}\n"))?;
+        }
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
 
     #[test]
     fn read() {
