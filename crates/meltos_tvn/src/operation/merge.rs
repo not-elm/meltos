@@ -5,15 +5,14 @@ use crate::file_system::{FileSystem, FsIo};
 use crate::io::atomic::head::HeadIo;
 use crate::io::commit_hashes::CommitHashIo;
 use crate::io::commit_obj::CommitObjIo;
-use crate::io::trace_tree::TraceTreeIo;
 use crate::object::commit::CommitHash;
 use crate::object::tree::TreeObj;
 use crate::operation::unzip::UnZip;
 
 pub struct Merge<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     fs: FsIo<Fs, Io>,
     head: HeadIo<Fs, Io>,
@@ -23,9 +22,9 @@ where
 }
 
 impl<Fs, Io> Merge<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io> + Clone,
+        Io: std::io::Write + std::io::Read,
 {
     pub fn new(fs: Fs) -> Merge<Fs, Io> {
         Self {
@@ -47,9 +46,9 @@ pub enum MergedStatus {
 
 
 impl<Fs, Io> Merge<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
 {
     pub fn execute(
         &self,
@@ -81,9 +80,19 @@ where
         dist_hashes: Vec<CommitHash>,
     ) -> crate::error::Result {
         let merge_origin = self.merge_origin(&source_hashes, &dist_hashes)?;
-        let source = self.commit_tree(source_hashes, &merge_origin)?;
         let dist = self.commit_tree(dist_hashes, &merge_origin)?;
+        let mut source = self.commit_tree(source_hashes, &merge_origin)?;
 
+        for (path, dist_hash) in dist.iter() {
+            if !source.contains_key(path) {
+                continue;
+            }
+
+            let source_hash = source.get(path).unwrap().clone();
+            if dist_hash == &source_hash {
+                source.remove(path);
+            } else {}
+        }
         todo!();
     }
 
@@ -129,8 +138,8 @@ pub struct MergeConfig {}
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::workspace::WorkspaceIo;
     use crate::operation::checkout::Checkout;
     use crate::operation::commit::Commit;
