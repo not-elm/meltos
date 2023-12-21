@@ -10,13 +10,14 @@ use crate::io::bundle::BundleObject;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::local_commits::LocalCommitsObj;
+use crate::object::tree::TreeObj;
 use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct CommitObjIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     head: HeadIo<Fs, Io>,
     object: ObjIo<Fs, Io>,
@@ -27,9 +28,9 @@ pub struct CommitObjIo<Fs, Io>
 
 
 impl<Fs, Io> CommitObjIo<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> CommitObjIo<Fs, Io> {
         CommitObjIo {
@@ -43,9 +44,9 @@ impl<Fs, Io> CommitObjIo<Fs, Io>
 }
 
 impl<Fs, Io> CommitObjIo<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn read_local_commits(&self) -> error::Result<Vec<CommitObj>> {
         let Some(LocalCommitsObj(local_hashes)) = self.local_commits.read()? else {
@@ -69,6 +70,12 @@ impl<Fs, Io> CommitObjIo<Fs, Io>
     pub fn read(&self, commit_hash: &ObjHash) -> error::Result<CommitObj> {
         let commit = self.object.try_read_obj(commit_hash)?;
         commit.commit()
+    }
+
+    pub fn read_commit_tree(&self, commit_hash: &ObjHash) -> error::Result<TreeObj> {
+        let commit = self.read(commit_hash)?;
+        let tree = self.object.read_to_tree(&commit.committed_objs_tree)?;
+        Ok(tree)
     }
 
 
@@ -98,7 +105,7 @@ impl<Fs, Io> CommitObjIo<Fs, Io>
         let local_commits = self.local_commits.try_read()?;
         let head = self.head.read(&self.branch_name)?;
         let from = local_commits.0[local_commits.0.len() - 1].clone();
-        let mut obj_hashes = self.read_hashes(from, &head)?;
+        let mut obj_hashes = self.read_obj_hashes(from, &head)?;
 
         let mut obj_bufs = Vec::with_capacity(obj_hashes.len());
         for hash in obj_hashes {
@@ -112,10 +119,9 @@ impl<Fs, Io> CommitObjIo<Fs, Io>
         }
         Ok(obj_bufs)
     }
-    
-  
 
-    pub fn read_hashes(
+
+    pub fn read_obj_hashes(
         &self,
         from: CommitHash,
         to: &Option<CommitHash>,
@@ -179,8 +185,8 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::branch::BranchName;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::commit_obj::CommitObjIo;
     use crate::io::trace_tree::TraceTreeIo;
@@ -241,9 +247,10 @@ mod tests {
         let commit_hash2 = commit.execute("commit text").unwrap();
 
         let mut objs = commit_obj
-            .read_hashes(commit_hash2.clone(), &None)
+            .read_obj_hashes(commit_hash2.clone(), &None)
             .unwrap()
-            .into_iter().collect::<Vec<ObjHash>>();
+            .into_iter()
+            .collect::<Vec<ObjHash>>();
 
         objs.sort();
         let trace_obj = trace.read(&commit_hash2).unwrap();

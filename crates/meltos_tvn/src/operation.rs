@@ -18,13 +18,13 @@ use crate::operation::unzip::UnZip;
 pub mod checkout;
 pub mod commit;
 pub mod init;
+pub mod merge;
 pub mod new_branch;
 pub mod patch;
 pub mod push;
 pub mod save;
 pub mod stage;
 pub mod unzip;
-pub mod merge;
 
 
 #[derive(Debug)]

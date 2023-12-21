@@ -5,6 +5,7 @@ use crate::error;
 use crate::file_system::{FileSystem, FsIo};
 use crate::io::bundle::BundleObject;
 use crate::object::commit::{CommitHash, CommitObj};
+use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
 use crate::object::{AsMeta, CompressedBuf, Obj, ObjHash};
 
@@ -35,16 +36,26 @@ where
     }
 
 
+    #[inline]
     pub fn read_to_commit(&self, object_hash: &CommitHash) -> error::Result<CommitObj> {
         let obj = self.try_read_obj(&object_hash.0)?;
         obj.commit()
     }
 
 
+    #[inline]
+    pub fn read_to_file(&self, object_hash: &ObjHash) -> error::Result<FileObj> {
+        let obj = self.try_read_obj(object_hash)?;
+        obj.file()
+    }
+
+
+    #[inline]
     pub fn read_to_tree(&self, object_hash: &ObjHash) -> error::Result<TreeObj> {
         let obj = self.try_read_obj(object_hash)?;
         obj.tree()
     }
+
 
     pub fn try_read_obj(&self, object_hash: &ObjHash) -> error::Result<Obj> {
         self.read_obj(object_hash).and_then(|obj| {

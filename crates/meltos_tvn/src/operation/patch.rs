@@ -40,7 +40,10 @@ where
     pub fn execute(&self, bundle: &Bundle) -> error::Result {
         self.trace.write_all(&bundle.traces)?;
         for branch in &bundle.branches {
-            self.head.write_remote(&branch.branch_name, &branch.commits[branch.commits.len()-1])?;
+            self.head.write_remote(
+                &branch.branch_name,
+                &branch.commits[branch.commits.len() - 1],
+            )?;
         }
         self.obj.write_all(&bundle.objs)?;
         Ok(())

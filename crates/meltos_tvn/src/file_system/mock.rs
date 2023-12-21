@@ -91,8 +91,8 @@ impl Debug for MockFileSystem {
 
 #[cfg(test)]
 mod tests {
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
 
     #[test]
     fn read() {

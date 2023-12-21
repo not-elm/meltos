@@ -23,9 +23,9 @@ pub trait Pushable<Output> {
 
 #[derive(Debug, Clone)]
 pub struct Push<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     head: HeadIo<Fs, Io>,
     commit_obj: CommitObjIo<Fs, Io>,
@@ -36,9 +36,9 @@ pub struct Push<Fs, Io>
 
 
 impl<Fs, Io> Push<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> Push<Fs, Io> {
         Self {
@@ -53,9 +53,9 @@ impl<Fs, Io> Push<Fs, Io>
 
 
 impl<Fs, Io> Push<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     /// Sends the currently locally committed data to the remote.
     /// * push local commits to remote server.
@@ -108,8 +108,8 @@ mod tests {
 
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::bundle::Bundle;
     use crate::io::commit_obj::CommitObjIo;
@@ -197,6 +197,9 @@ mod tests {
         let bundle = remote.bundle.unwrap();
         let head = HeadIo::new(mock);
         let commits = &bundle.branches[0].commits;
-        assert_eq!(&commits[commits.len()-1], &head.try_read(&branch).unwrap());
+        assert_eq!(
+            &commits[commits.len() - 1],
+            &head.try_read(&branch).unwrap()
+        );
     }
 }
