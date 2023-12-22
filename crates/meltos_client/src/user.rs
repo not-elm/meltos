@@ -13,11 +13,6 @@ use crate::user::tvn::TvnClient;
 pub mod discussion;
 pub mod tvn;
 
-#[async_trait]
-pub trait RoomClientIo<E = crate::error::Error>: Sized {
-    /// Join the user.
-    async fn join(session_id: SessionId, room_id: RoomId) -> std::result::Result<Self, E>;
-}
 
 
 pub struct RoomUser<Fs, Io>

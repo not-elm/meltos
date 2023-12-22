@@ -9,6 +9,8 @@ use crate::object::commit::CommitHash;
 use crate::object::tree::TreeObj;
 use crate::operation::unzip::UnZip;
 
+
+#[derive(Debug)]
 pub struct Merge<Fs, Io>
     where
         Fs: FileSystem<Io>,

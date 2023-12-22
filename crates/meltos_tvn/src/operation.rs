@@ -9,6 +9,7 @@ use crate::io::bundle::BundleIo;
 use crate::operation::checkout::Checkout;
 use crate::operation::commit::Commit;
 use crate::operation::init::Init;
+use crate::operation::merge::Merge;
 use crate::operation::patch::Patch;
 use crate::operation::push::Push;
 use crate::operation::save::Save;
@@ -42,6 +43,7 @@ where
     pub bundle: BundleIo<Fs, Io>,
     pub checkout: Checkout<Fs, Io>,
     pub unzip: UnZip<Fs, Io>,
+    pub merge: Merge<Fs, Io>,
     fs: Fs,
     branch_name: BranchName,
 }
@@ -74,6 +76,7 @@ where
             bundle: BundleIo::new(fs.clone()),
             checkout: Checkout::new(fs.clone()),
             unzip: UnZip::new(fs.clone()),
+            merge: Merge::new(fs.clone()),
             fs,
             branch_name,
         }

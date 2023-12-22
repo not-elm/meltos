@@ -1,8 +1,8 @@
-use reqwest::Client;
+use reqwest::{Client, header};
 
 use meltos::schema::request::room::Open;
 use meltos::schema::response::room::Opened;
-use meltos::user::UserId;
+use meltos::user::{SessionId, UserId};
 use meltos_tvn::io::bundle::Bundle;
 
 use crate::error;
@@ -37,5 +37,23 @@ impl HttpClient {
             .await?;
 
         Ok(response.json().await?)
+    }
+
+
+
+     pub async fn push(
+        &self,
+        session_id: SessionId,
+        bundle: &Bundle,
+    ) -> error::Result<()> {
+        let response = self
+            .client
+            .post(format!("{}/room/tvn/push", self.base_uri))
+            .header(header::SET_COOKIE, format!("session_id={session_id}"))
+            .json(bundle)
+            .send()
+            .await?;
+
+        Ok(())
     }
 }

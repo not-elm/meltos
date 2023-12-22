@@ -5,9 +5,7 @@ use similar::{ChangeTag, DiffOp};
 use crate::io::diff::file::FileDiff;
 
 pub struct Conflict {
-    pub line_no: usize,
-    pub lhs_tag: ChangeTag,
-    pub rhs_tag: ChangeTag,
+
     pub lhs_text: String,
     pub rhs_text: String,
 }
