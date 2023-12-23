@@ -1,31 +1,31 @@
 use std::path::Path;
 
+use wasm_bindgen::prelude::wasm_bindgen;
+
 use meltos_util::impl_string_new_type;
 
 use crate::branch::BranchName;
 use crate::encode::{Decodable, Encodable};
 use crate::error;
-use crate::file_system::{FileSystem, FsIo};
+use crate::file_system::FileSystem;
 use crate::object::commit::CommitHash;
 use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
-pub struct HeadIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+pub struct HeadIo<Fs>
+    where
+        Fs: FileSystem
 {
-    fs: FsIo<Fs, Io>,
+    fs: Fs,
 }
 
-impl<Fs, Io> HeadIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> HeadIo<Fs>
+    where
+        Fs: FileSystem
 {
-    pub const fn new(fs: Fs) -> HeadIo<Fs, Io> {
+    pub const fn new(fs: Fs) -> HeadIo<Fs> {
         Self {
-            fs: FsIo::new(fs),
+            fs,
         }
     }
 
@@ -78,9 +78,9 @@ where
         let mut branches = Vec::with_capacity(files.len());
         for path in files {
             let Some(file_name) = Path::new(&path).file_name().and_then(|name| name.to_str())
-            else {
-                continue;
-            };
+                else {
+                    continue;
+                };
             let branch_name = BranchName::from(file_name);
             let commit_hash = self.try_read(&branch_name)?;
             branches.push((branch_name, commit_hash))
@@ -97,6 +97,7 @@ where
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
+#[wasm_bindgen(getter_with_clone)]
 pub struct CommitText(pub String);
 impl_string_new_type!(CommitText);
 

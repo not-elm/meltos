@@ -1,33 +1,30 @@
-use crate::file_system::{FilePath, FileSystem, FsIo};
 use std::ops::Deref;
 
+use crate::file_system::{FilePath, FileSystem, };
 use crate::object::tree::TreeIo;
 
 #[derive(Debug, Clone)]
-pub struct StagingIo<Fs, Io>(pub(crate) TreeIo<Fs, Io>)
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read;
+pub struct StagingIo<Fs>(pub(crate) TreeIo<Fs>)
+    where
+        Fs: FileSystem;
 
-impl<Fs, Io> StagingIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> StagingIo<Fs>
+    where
+        Fs: FileSystem
 {
-    pub fn new(fs: Fs) -> StagingIo<Fs, Io> {
+    pub fn new(fs: Fs) -> StagingIo<Fs> {
         Self(TreeIo::new(
             FilePath::from("./.meltos/stage"),
-            FsIo::new(fs),
+            fs,
         ))
     }
 }
 
-impl<Fs, Io> Deref for StagingIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Deref for StagingIo<Fs>
+    where
+        Fs: FileSystem
 {
-    type Target = TreeIo<Fs, Io>;
+    type Target = TreeIo<Fs>;
 
     #[inline]
     fn deref(&self) -> &Self::Target {
@@ -35,12 +32,3 @@ where
     }
 }
 
-impl<Fs, Io> Default for StagingIo<Fs, Io>
-where
-    Fs: FileSystem<Io> + Default,
-    Io: std::io::Write + std::io::Read,
-{
-    fn default() -> Self {
-        Self::new(Fs::default())
-    }
-}

@@ -5,7 +5,7 @@ pub type Result<T = ()> = std::result::Result<T, Error>;
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(transparent)]
-    Http(#[from] reqwest::Error),
+    Http(#[from] reqwest_wasm::Error),
 
     #[error(transparent)]
     Tvn(#[from] meltos_tvn::error::Error),

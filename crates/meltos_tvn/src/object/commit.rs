@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 use std::str::FromStr;
 
 use auto_delegate::Delegate;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos_util::macros::{Deref, Display};
 
@@ -9,6 +10,7 @@ use crate::io::atomic::head::CommitText;
 use crate::object::{AsMeta, Decodable, Encodable, ObjHash, ObjMeta};
 use crate::{error, impl_serialize_and_deserialize};
 
+#[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Display, Delegate, Deref, Hash)]
 #[to(Encodable)]

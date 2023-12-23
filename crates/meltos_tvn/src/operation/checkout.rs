@@ -13,22 +13,20 @@ pub enum CheckOutStatus {
 }
 
 #[derive(Debug, Clone)]
-pub struct Checkout<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+pub struct Checkout<Fs>
+    where
+        Fs: FileSystem
 {
-    working: WorkingIo<Fs, Io>,
-    heads: HeadIo<Fs, Io>,
-    new_branch: NewBranch<Fs, Io>,
+    working: WorkingIo<Fs>,
+    heads: HeadIo<Fs>,
+    new_branch: NewBranch<Fs>,
 }
 
-impl<Fs, Io> Checkout<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Checkout<Fs>
+    where
+        Fs: FileSystem + Clone
 {
-    pub fn new(fs: Fs) -> Checkout<Fs, Io> {
+    pub fn new(fs: Fs) -> Checkout<Fs> {
         Self {
             working: WorkingIo::new(fs.clone()),
             heads: HeadIo::new(fs.clone()),
@@ -37,10 +35,9 @@ where
     }
 }
 
-impl<Fs, Io> Checkout<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Checkout<Fs>
+    where
+        Fs: FileSystem
 {
     pub fn execute(&self, target_branch: &BranchName) -> error::Result<CheckOutStatus> {
         let working = self.working.read()?.unwrap_or(BranchName::main());
@@ -70,7 +67,7 @@ mod tests {
     use crate::branch::BranchName;
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
-    use crate::operation::checkout::{CheckOutStatus, Checkout};
+    use crate::operation::checkout::{Checkout, CheckOutStatus};
     use crate::operation::new_branch::NewBranch;
     use crate::tests::init_main_branch;
 

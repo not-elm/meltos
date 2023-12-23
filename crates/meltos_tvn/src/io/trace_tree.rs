@@ -7,21 +7,19 @@ use crate::object::tree::TreeObj;
 use crate::object::AsMeta;
 
 #[derive(Debug, Clone)]
-pub struct TraceTreeIo<Fs, Io>
+pub struct TraceTreeIo<Fs>
 where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    Fs: FileSystem
 {
-    trace: TraceIo<Fs, Io>,
-    object: ObjIo<Fs, Io>,
+    trace: TraceIo<Fs>,
+    object: ObjIo<Fs>,
 }
 
-impl<Fs, Io> TraceTreeIo<Fs, Io>
+impl<Fs> TraceTreeIo<Fs>
 where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    Fs: FileSystem + Clone
 {
-    pub fn new(fs: Fs) -> TraceTreeIo<Fs, Io> {
+    pub fn new(fs: Fs) -> TraceTreeIo<Fs> {
         Self {
             trace: TraceIo::new(fs.clone()),
             object: ObjIo::new(fs),
@@ -29,10 +27,9 @@ where
     }
 }
 
-impl<Fs, Io> TraceTreeIo<Fs, Io>
+impl<Fs> TraceTreeIo<Fs>
 where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    Fs: FileSystem
 {
     pub fn write(&self, trace_tree: &TreeObj, commit_hash: &CommitHash) -> error::Result {
         let meta = trace_tree.as_meta()?;

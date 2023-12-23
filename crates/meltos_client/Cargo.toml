@@ -3,16 +3,20 @@ name = "meltos_client"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 meltos = { path = "../meltos" }
 meltos_tvn = { path = "../meltos_tvn" }
-
-reqwest = { workspace = true }
-anyhow = { workspace = true }
+getrandom = { version = "0.2.11", features = ["js"] }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = "0.4.39"
+reqwest-wasm = { version = "0.11.16", features = ["json"] }
 thiserror = { workspace = true }
 async-trait = { workspace = true }
 auto-delegate = { workspace = true }
 log = "0.4.20"
 serde = { workspace = true }
 serde_json = { workspace = true }
+

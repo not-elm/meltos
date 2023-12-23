@@ -1,38 +1,28 @@
-use std::io;
+
 use std::path::Path;
 
 use crate::error;
-use crate::file_system::{FileSystem, FsIo};
+use crate::file_system::{FileSystem, };
 use crate::io::bundle::BundleObject;
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
 use crate::object::{AsMeta, CompressedBuf, Obj, ObjHash};
 
-#[derive(Debug, Clone)]
-pub struct ObjIo<Fs, Io>(FsIo<Fs, Io>)
+#[derive(Debug, Clone, Default)]
+pub struct ObjIo<Fs>(Fs)
 where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write;
+    Fs: FileSystem;
 
-impl<Fs, Io> Default for ObjIo<Fs, Io>
-where
-    Fs: FileSystem<Io> + Default,
-    Io: io::Read + io::Write,
-{
-    fn default() -> Self {
-        Self(FsIo::default())
-    }
-}
 
-impl<Fs, Io> ObjIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write,
+
+impl<Fs> ObjIo<Fs>
+    where
+        Fs: FileSystem
 {
     #[inline]
-    pub const fn new(fs: Fs) -> ObjIo<Fs, Io> {
-        Self(FsIo::new(fs))
+    pub const fn new(fs: Fs) -> ObjIo<Fs> {
+        Self(fs)
     }
 
     #[inline]
@@ -110,9 +100,7 @@ where
 
     #[inline]
     pub fn write(&self, hash: &ObjHash, compressed_buf: &CompressedBuf) -> error::Result {
-        self.0
-            .create(&format!("./.meltos/objects/{}", hash))?
-            .write_all(compressed_buf)?;
+        self.0.write(&format!("./.meltos/objects/{}", hash), compressed_buf)?;
         Ok(())
     }
 }
@@ -120,6 +108,7 @@ where
 #[cfg(test)]
 mod tests {
     use std::io::Write;
+    use tokio::io::AsyncWriteExt;
 
     use meltos_util::compression::gz::Gz;
     use meltos_util::compression::CompressionBuf;
@@ -136,10 +125,7 @@ mod tests {
     fn write_object_file() {
         let buf = b"hello world!";
         let mock = MockFileSystem::default();
-        mock.create("test/hello.txt")
-            .unwrap()
-            .write_all(buf)
-            .unwrap();
+        mock.force_write("test/hello.txt", buf);
 
         let io = ObjIo::new(mock.clone());
         let workspace = WorkspaceIo::new(mock.clone());

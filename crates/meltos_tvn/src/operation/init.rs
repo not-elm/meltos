@@ -1,42 +1,39 @@
 use crate::branch::BranchName;
 use crate::error;
-use crate::file_system::{FileSystem, FsIo};
+use crate::file_system::FileSystem;
 use crate::io::atomic::work_branch::WorkingIo;
 use crate::object::commit::CommitHash;
 use crate::operation::commit::Commit;
 use crate::operation::stage::Stage;
 
 #[derive(Debug, Clone)]
-pub struct Init<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+pub struct Init<Fs>
+    where
+        Fs: FileSystem
 {
-    commit: Commit<Fs, Io>,
-    working: WorkingIo<Fs, Io>,
-    stage: Stage<Fs, Io>,
-    fs: FsIo<Fs, Io>,
+    commit: Commit<Fs>,
+    working: WorkingIo<Fs>,
+    stage: Stage<Fs>,
+    fs: Fs,
 }
 
-impl<Fs, Io> Init<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Init<Fs>
+    where
+        Fs: FileSystem + Clone
 {
-    pub fn new(branch_name: BranchName, fs: Fs) -> Init<Fs, Io> {
+    pub fn new(branch_name: BranchName, fs: Fs) -> Init<Fs> {
         Self {
             commit: Commit::new(branch_name.clone(), fs.clone()),
             working: WorkingIo::new(fs.clone()),
             stage: Stage::new(branch_name, fs.clone()),
-            fs: FsIo::new(fs.clone()),
+            fs,
         }
     }
 }
 
-impl<Fs, Io> Init<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Init<Fs>
+    where
+        Fs: FileSystem
 {
     /// Initialize the project.
     ///
@@ -72,13 +69,13 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::encode::Encodable;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::atomic::object::ObjIo;
+    use crate::object::{AsMeta, ObjHash};
     use crate::object::commit::CommitHash;
     use crate::object::tree::TreeObj;
-    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::init;
     use crate::operation::init::Init;

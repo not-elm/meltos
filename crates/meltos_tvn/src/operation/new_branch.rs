@@ -4,21 +4,19 @@ use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
 
 #[derive(Debug, Clone)]
-pub struct NewBranch<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+pub struct NewBranch<Fs>
+    where
+        Fs: FileSystem
 {
-    head: HeadIo<Fs, Io>,
+    head: HeadIo<Fs>,
 }
 
-impl<Fs, Io> NewBranch<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> NewBranch<Fs>
+    where
+        Fs: FileSystem
 {
     #[inline]
-    pub const fn new(fs: Fs) -> NewBranch<Fs, Io> {
+    pub const fn new(fs: Fs) -> NewBranch<Fs> {
         Self {
             head: HeadIo::new(fs),
         }

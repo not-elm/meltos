@@ -1,54 +1,51 @@
 use crate::branch::BranchName;
 use crate::error;
-use crate::file_system::{FilePath, FileSystem, FsIo};
+use crate::file_system::{FilePath, FileSystem};
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::io::workspace::WorkspaceIo;
+use crate::object::{AsMeta, ObjHash};
 use crate::object::delete::DeleteObj;
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
-use crate::object::{AsMeta, ObjHash};
 
 #[derive(Debug, Clone)]
-pub struct Stage<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+pub struct Stage<Fs>
+    where
+        Fs: FileSystem
 {
-    trace_tree: TraceTreeIo<Fs, Io>,
-    staging: StagingIo<Fs, Io>,
-    object: ObjIo<Fs, Io>,
-    head: HeadIo<Fs, Io>,
-    workspace: WorkspaceIo<Fs, Io>,
-    fs: FsIo<Fs, Io>,
+    trace_tree: TraceTreeIo<Fs>,
+    staging: StagingIo<Fs>,
+    object: ObjIo<Fs>,
+    head: HeadIo<Fs>,
+    workspace: WorkspaceIo<Fs>,
+    fs: Fs,
     branch_name: BranchName,
 }
 
-impl<Fs, Io> Stage<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Stage<Fs>
+    where
+        Fs: FileSystem + Clone
 {
     #[inline]
-    pub fn new(branch_name: BranchName, fs: Fs) -> Stage<Fs, Io> {
+    pub fn new(branch_name: BranchName, fs: Fs) -> Stage<Fs> {
         Self {
             staging: StagingIo::new(fs.clone()),
             workspace: WorkspaceIo::new(fs.clone()),
             trace_tree: TraceTreeIo::new(fs.clone()),
             head: HeadIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
-            fs: FsIo::new(fs),
+            fs,
             branch_name,
         }
     }
 }
 
-impl<Fs, Io> Stage<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Stage<Fs>
+    where
+        Fs: FileSystem
 {
     pub fn execute(&self, workspace_path: &str) -> error::Result {
         let mut stage_tree = self.staging.read()?.unwrap_or_default();
@@ -145,12 +142,12 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
+    use crate::object::{AsMeta, ObjHash};
     use crate::object::delete::DeleteObj;
     use crate::object::file::FileObj;
-    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::stage;
     use crate::operation::stage::Stage;
@@ -167,7 +164,7 @@ mod tests {
             &FilePath::from_path("./src/main.rs"),
             "dasds日本語".as_bytes(),
         )
-        .unwrap();
+            .unwrap();
         stage.execute(".").unwrap();
 
         let obj = ObjIo::new(mock);

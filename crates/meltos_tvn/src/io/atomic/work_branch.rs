@@ -1,32 +1,19 @@
-use std::io;
-
 use crate::branch::BranchName;
-use crate::file_system::{FileSystem, FsIo};
+use crate::file_system::FileSystem;
 
-#[derive(Debug, Clone)]
-pub struct WorkingIo<Fs, Io>(pub(crate) FsIo<Fs, Io>)
-where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write;
+#[derive(Debug, Clone, Default)]
+pub struct WorkingIo<Fs>(pub(crate) Fs)
+    where
+        Fs: FileSystem;
 
-impl<Fs, Io> Default for WorkingIo<Fs, Io>
-where
-    Fs: FileSystem<Io> + Default,
-    Io: io::Read + io::Write,
-{
-    fn default() -> Self {
-        Self(FsIo::default())
-    }
-}
 
-impl<Fs, Io> WorkingIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write,
+impl<Fs> WorkingIo<Fs>
+    where
+        Fs: FileSystem
 {
     #[inline]
-    pub const fn new(fs: Fs) -> WorkingIo<Fs, Io> {
-        Self(FsIo::new(fs))
+    pub const fn new(fs: Fs) -> WorkingIo<Fs> {
+        Self(fs)
     }
 
     #[inline]

@@ -1,32 +1,27 @@
-use std::io;
-
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::trace_tree::TraceTreeIo;
-
 use crate::io::workspace::WorkspaceIo;
 
 #[derive(Debug)]
-pub struct UnZip<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write,
+pub struct UnZip<Fs>
+    where
+        Fs: FileSystem
 {
-    workspace: WorkspaceIo<Fs, Io>,
-    trace_tree: TraceTreeIo<Fs, Io>,
-    object: ObjIo<Fs, Io>,
-    head: HeadIo<Fs, Io>,
+    workspace: WorkspaceIo<Fs>,
+    trace_tree: TraceTreeIo<Fs>,
+    object: ObjIo<Fs>,
+    head: HeadIo<Fs>,
 }
 
-impl<Fs, Io> UnZip<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: io::Read + io::Write,
+impl<Fs> UnZip<Fs>
+    where
+        Fs: FileSystem + Clone
 {
-    pub fn new(fs: Fs) -> UnZip<Fs, Io> {
+    pub fn new(fs: Fs) -> UnZip<Fs> {
         Self {
             workspace: WorkspaceIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
@@ -36,10 +31,9 @@ where
     }
 }
 
-impl<Fs, Io> UnZip<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write,
+impl<Fs> UnZip<Fs>
+    where
+        Fs: FileSystem
 {
     /// Restore committed data into the workspace.
     pub fn execute(&self, branch_name: &BranchName) -> error::Result {
@@ -57,8 +51,8 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::operation::unzip::UnZip;

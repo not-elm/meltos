@@ -1,7 +1,7 @@
-pub struct Conflict {
-    pub lhs_text: String,
-    pub rhs_text: String,
-}
+// pub struct Conflict {
+//     pub lhs_text: String,
+//     pub rhs_text: String,
+// }
 
 //
 // pub fn all_conflicts(lhs: &FileDiff, rhs: &FileDiff) -> Vec<Conflict> {

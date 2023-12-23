@@ -8,22 +8,20 @@ use crate::io::bundle::{Bundle, BundleBranch, BundleObject, BundleTrace};
 use crate::object::commit::CommitHash;
 
 #[derive(Debug, Clone)]
-pub struct Save<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+pub struct Save<Fs>
+    where
+        Fs: FileSystem
 {
-    trace: TraceIo<Fs, Io>,
-    object: ObjIo<Fs, Io>,
-    head: HeadIo<Fs, Io>,
+    trace: TraceIo<Fs>,
+    object: ObjIo<Fs>,
+    head: HeadIo<Fs>,
 }
 
-impl<Fs, Io> Save<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Save<Fs>
+    where
+        Fs: FileSystem + Clone
 {
-    pub fn new(fs: Fs) -> Save<Fs, Io> {
+    pub fn new(fs: Fs) -> Save<Fs> {
         Self {
             trace: TraceIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
@@ -76,8 +74,8 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::encode::Encodable;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::bundle::{Bundle, BundleBranch};
     use crate::object::commit::CommitHash;
     use crate::object::ObjHash;

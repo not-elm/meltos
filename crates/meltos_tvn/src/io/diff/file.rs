@@ -20,14 +20,13 @@ impl FileDiff {
         }
     }
 
-    pub fn from_obj_hashes<Fs, Io>(
+    pub fn from_obj_hashes<Fs>(
         fs: Fs,
         lhs: &ObjHash,
         rhs: &ObjHash,
     ) -> error::Result<Option<Self>>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+        where
+            Fs: FileSystem
     {
         if lhs == rhs {
             Ok(None)

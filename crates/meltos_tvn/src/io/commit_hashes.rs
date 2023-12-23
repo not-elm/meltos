@@ -5,30 +5,28 @@ use crate::io::commit_obj::CommitObjIo;
 use crate::object::commit::CommitHash;
 
 #[derive(Debug)]
-pub struct CommitHashIo<Fs, Io>
+pub struct CommitHashIo<Fs>
 where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    Fs: FileSystem
 {
-    commit_obj: CommitObjIo<Fs, Io>,
+    commit_obj: CommitObjIo<Fs>,
 }
 
-impl<Fs, Io> CommitHashIo<Fs, Io>
+impl<Fs> CommitHashIo<Fs>
 where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    Fs: FileSystem + Clone,
+
 {
-    pub fn new(fs: Fs) -> CommitHashIo<Fs, Io> {
+    pub fn new(fs: Fs) -> CommitHashIo<Fs> {
         Self {
             commit_obj: CommitObjIo::new(BranchName::main(), fs),
         }
     }
 }
 
-impl<Fs, Io> CommitHashIo<Fs, Io>
+impl<Fs> CommitHashIo<Fs>
 where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    Fs: FileSystem
 {
     pub fn read_all(
         &self,

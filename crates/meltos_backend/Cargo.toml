@@ -11,4 +11,4 @@ meltos_util = { path = "../meltos_util" }
 auto-delegate = { workspace = true }
 async-trait = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true }
+tokio = { version = "1.34.0", features = ["full", "tracing"] }

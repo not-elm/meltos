@@ -1,7 +1,9 @@
 use std::collections::HashSet;
 
+use wasm_bindgen::prelude::wasm_bindgen;
+
 use crate::branch::BranchName;
-use crate::file_system::{FileSystem, FsIo};
+use crate::file_system::{FileSystem, };
 use crate::io::atomic::head::HeadIo;
 use crate::io::commit_hashes::CommitHashIo;
 use crate::io::commit_obj::CommitObjIo;
@@ -10,51 +12,50 @@ use crate::object::tree::TreeObj;
 use crate::operation::unzip::UnZip;
 
 #[derive(Debug)]
-pub struct Merge<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+pub struct Merge<Fs>
+    where
+        Fs: FileSystem
 {
-    fs: FsIo<Fs, Io>,
-    head: HeadIo<Fs, Io>,
-    commit_hashes: CommitHashIo<Fs, Io>,
-    commits_obj: CommitObjIo<Fs, Io>,
-    unzip: UnZip<Fs, Io>,
+    fs: Fs,
+    head: HeadIo<Fs>,
+    commit_hashes: CommitHashIo<Fs>,
+    commits_obj: CommitObjIo<Fs>,
+    unzip: UnZip<Fs>,
 }
 
-impl<Fs, Io> Merge<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Merge<Fs>
+    where
+        Fs: FileSystem + Clone
 {
-    pub fn new(fs: Fs) -> Merge<Fs, Io> {
+    pub fn new(fs: Fs) -> Merge<Fs> {
         Self {
             head: HeadIo::new(fs.clone()),
             commit_hashes: CommitHashIo::new(fs.clone()),
             commits_obj: CommitObjIo::new(BranchName::main(), fs.clone()),
             unzip: UnZip::new(fs.clone()),
-            fs: FsIo::new(fs),
+            fs,
         }
     }
 }
 
+
+#[wasm_bindgen]
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
 pub enum MergedStatus {
     FastSource,
     FastDist,
 }
 
-impl<Fs, Io> Merge<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Merge<Fs>
+    where
+        Fs: FileSystem
 {
     pub fn execute(
         &self,
         source: BranchName,
         dist: BranchName,
     ) -> crate::error::Result<MergedStatus> {
-        let source_head = self.head.try_read_remote(&source)?;
+        let source_head = self.read_source_head(&source)?;
         let dist_head = self.head.try_read(&dist)?;
         let source_hashes = self.commit_hashes.read_all(source_head.clone(), &None)?;
         let dist_hashes = self.commit_hashes.read_all(dist_head.clone(), &None)?;
@@ -70,6 +71,14 @@ where
         }
 
         todo!();
+    }
+
+    fn read_source_head(&self, source: &BranchName) -> crate::error::Result<CommitHash> {
+        if let Some(head) = self.head.read(&source)? {
+            Ok(head)
+        } else {
+            self.head.try_read_remote(&source)
+        }
     }
 
     fn commit_objs(
@@ -89,7 +98,6 @@ where
             let source_hash = source.get(path).unwrap().clone();
             if dist_hash == &source_hash {
                 source.remove(path);
-            } else {
             }
         }
         todo!();
@@ -133,8 +141,8 @@ pub struct MergeConfig {}
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::workspace::WorkspaceIo;
     use crate::operation::checkout::Checkout;
     use crate::operation::commit::Commit;

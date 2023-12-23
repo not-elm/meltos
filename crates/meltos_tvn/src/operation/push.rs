@@ -12,7 +12,7 @@ use crate::io::bundle::{Bundle, BundleBranch, BundleObject, BundleTrace};
 use crate::io::commit_obj::CommitObjIo;
 use crate::object::commit::CommitObj;
 
-#[async_trait]
+#[async_trait(?Send)]
 pub trait Pushable<Output> {
     type Error: Display;
 
@@ -20,23 +20,21 @@ pub trait Pushable<Output> {
 }
 
 #[derive(Debug, Clone)]
-pub struct Push<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+pub struct Push<Fs>
+    where
+        Fs: FileSystem
 {
-    commit_obj: CommitObjIo<Fs, Io>,
-    local_commits: LocalCommitsIo<Fs, Io>,
+    commit_obj: CommitObjIo<Fs>,
+    local_commits: LocalCommitsIo<Fs>,
     branch_name: BranchName,
-    trace: TraceIo<Fs, Io>,
+    trace: TraceIo<Fs>,
 }
 
-impl<Fs, Io> Push<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Push<Fs>
+    where
+        Fs: FileSystem + Clone
 {
-    pub fn new(branch_name: BranchName, fs: Fs) -> Push<Fs, Io> {
+    pub fn new(branch_name: BranchName, fs: Fs) -> Push<Fs> {
         Self {
             commit_obj: CommitObjIo::new(branch_name.clone(), fs.clone()),
             trace: TraceIo::new(fs.clone()),
@@ -46,10 +44,9 @@ where
     }
 }
 
-impl<Fs, Io> Push<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Push<Fs>
+    where
+        Fs: FileSystem
 {
     /// Sends the currently locally committed data to the remote.
     /// * push local commits to remote server.
@@ -95,12 +92,16 @@ pub struct PushBundle {
 
 #[cfg(test)]
 mod tests {
+    use std::cell::RefCell;
+    use std::sync::{Arc, Mutex};
+
     use async_trait::async_trait;
+    use similar::algorithms::DiffHook;
 
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::bundle::Bundle;
     use crate::io::commit_obj::CommitObjIo;
@@ -114,12 +115,16 @@ mod tests {
         pub bundle: Option<Bundle>,
     }
 
-    #[async_trait]
+    unsafe impl Send for MockRemoteClient {}
+
+    unsafe impl Sync for MockRemoteClient {}
+
+    #[async_trait(?Send)]
     impl Pushable<()> for MockRemoteClient {
         type Error = String;
 
         async fn push(&mut self, bundle: Bundle) -> Result<(), Self::Error> {
-            self.bundle = Some(bundle);
+            self.bundle.replace(bundle);
             Ok(())
         }
     }

@@ -2,28 +2,26 @@ use std::path::Path;
 
 use crate::encode::{Decodable, Encodable};
 use crate::error;
-use crate::file_system::{FileSystem, FsIo};
+use crate::file_system::FileSystem;
 use crate::io::bundle::BundleTrace;
 use crate::object::commit::CommitHash;
 use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
-pub struct TraceIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+pub struct TraceIo<Fs>
+    where
+        Fs: FileSystem
 {
-    io: FsIo<Fs, Io>,
+    fs: Fs,
 }
 
-impl<Fs, Io> TraceIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> TraceIo<Fs>
+    where
+        Fs: FileSystem
 {
-    pub fn new(fs: Fs) -> TraceIo<Fs, Io> {
+    pub fn new(fs: Fs) -> TraceIo<Fs> {
         Self {
-            io: FsIo::new(fs),
+            fs,
         }
     }
 
@@ -37,13 +35,13 @@ where
     #[inline]
     pub fn write(&self, commit_hash: &CommitHash, hash: &ObjHash) -> error::Result {
         let file_path = format!("./.meltos/traces/{commit_hash}");
-        self.io.write(&file_path, &hash.encode()?)?;
+        self.fs.write(&file_path, &hash.encode()?)?;
         Ok(())
     }
 
     #[inline]
     pub fn read_all(&self) -> error::Result<Vec<BundleTrace>> {
-        let files = self.io.all_file_path("./.meltos/traces/")?;
+        let files = self.fs.all_file_path("./.meltos/traces/")?;
         let mut traces = Vec::with_capacity(files.len());
         for file_path in files {
             let file_name = Path::new(&file_path)
@@ -54,7 +52,7 @@ where
                 .to_string();
             let commit_hash = CommitHash(ObjHash(file_name));
             let buf = self
-                .io
+                .fs
                 .read(&file_path)?
                 .ok_or(error::Error::NotfoundTrace(commit_hash.clone()))?;
             traces.push(BundleTrace {
@@ -70,7 +68,7 @@ where
     pub fn read(&self, commit_hash: &CommitHash) -> error::Result<ObjHash> {
         let file_path = format!("./.meltos/traces/{commit_hash}");
         let buf = self
-            .io
+            .fs
             .try_read(&file_path)
             .map_err(|_| error::Error::NotfoundTrace(commit_hash.clone()))?;
         ObjHash::decode(&buf)
@@ -80,8 +78,8 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::trace::TraceIo;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;

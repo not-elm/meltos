@@ -7,31 +7,29 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::commit_obj::CommitObjIo;
 use crate::io::trace_tree::TraceTreeIo;
+use crate::object::{AsMeta, ObjMeta};
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::tree::TreeObj;
-use crate::object::{AsMeta, ObjMeta};
 
 #[derive(Debug, Clone)]
-pub struct Commit<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+pub struct Commit<Fs>
+    where
+        Fs: FileSystem
 {
-    commit_obj: CommitObjIo<Fs, Io>,
-    head: HeadIo<Fs, Io>,
-    object: ObjIo<Fs, Io>,
-    staging: StagingIo<Fs, Io>,
-    trace_tree: TraceTreeIo<Fs, Io>,
-    local_commits: LocalCommitsIo<Fs, Io>,
+    commit_obj: CommitObjIo<Fs>,
+    head: HeadIo<Fs>,
+    object: ObjIo<Fs>,
+    staging: StagingIo<Fs>,
+    trace_tree: TraceTreeIo<Fs>,
+    local_commits: LocalCommitsIo<Fs>,
     branch_name: BranchName,
 }
 
-impl<Fs, Io> Commit<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Commit<Fs>
+    where
+        Fs: FileSystem + Clone
 {
-    pub fn new(branch_name: BranchName, fs: Fs) -> Commit<Fs, Io> {
+    pub fn new(branch_name: BranchName, fs: Fs) -> Commit<Fs> {
         Self {
             commit_obj: CommitObjIo::new(branch_name.clone(), fs.clone()),
             head: HeadIo::new(fs.clone()),
@@ -44,10 +42,9 @@ where
     }
 }
 
-impl<Fs, Io> Commit<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Commit<Fs>
+    where
+        Fs: FileSystem
 {
     pub fn execute(&self, commit_text: impl Into<CommitText>) -> error::Result<CommitHash> {
         let Some(stage_tree) = self.staging.read()? else {
@@ -109,16 +106,16 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::head::{CommitText, HeadIo};
     use crate::io::atomic::local_commits::LocalCommitsIo;
     use crate::io::atomic::object::ObjIo;
     use crate::io::atomic::staging::StagingIo;
+    use crate::object::{AsMeta, ObjHash};
     use crate::object::commit::CommitObj;
     use crate::object::local_commits::LocalCommitsObj;
     use crate::object::tree::TreeObj;
-    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::tests::init_main_branch;

@@ -14,24 +14,23 @@ use crate::object::tree::TreeObj;
 use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
-pub struct CommitObjIo<Fs, Io>
+pub struct CommitObjIo<Fs>
 where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    Fs: FileSystem
 {
-    head: HeadIo<Fs, Io>,
-    object: ObjIo<Fs, Io>,
-    local_commits: LocalCommitsIo<Fs, Io>,
-    trace_tree: TraceTreeIo<Fs, Io>,
+    head: HeadIo<Fs>,
+    object: ObjIo<Fs>,
+    local_commits: LocalCommitsIo<Fs>,
+    trace_tree: TraceTreeIo<Fs>,
     branch_name: BranchName,
 }
 
-impl<Fs, Io> CommitObjIo<Fs, Io>
+impl<Fs> CommitObjIo<Fs>
 where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+    Fs: FileSystem + Clone,
+
 {
-    pub fn new(branch_name: BranchName, fs: Fs) -> CommitObjIo<Fs, Io> {
+    pub fn new(branch_name: BranchName, fs: Fs) -> CommitObjIo<Fs> {
         CommitObjIo {
             head: HeadIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
@@ -42,10 +41,9 @@ where
     }
 }
 
-impl<Fs, Io> CommitObjIo<Fs, Io>
+impl<Fs> CommitObjIo<Fs>
 where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    Fs: FileSystem
 {
     pub fn read_local_commits(&self) -> error::Result<Vec<CommitObj>> {
         let Some(LocalCommitsObj(local_hashes)) = self.local_commits.read()? else {

@@ -1,31 +1,27 @@
-use std::io;
-
 use crate::branch::BranchName;
 use crate::encode::{Decodable, Encodable};
 use crate::error;
-use crate::file_system::{FileSystem, FsIo};
+use crate::file_system::FileSystem;
 use crate::object::commit::CommitHash;
 use crate::object::local_commits::LocalCommitsObj;
 
 #[derive(Debug, Clone)]
-pub struct LocalCommitsIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write,
+pub struct LocalCommitsIo<Fs>
+    where
+        Fs: FileSystem
 {
-    fs: FsIo<Fs, Io>,
+    fs: Fs,
     file_path: String,
 }
 
-impl<Fs, Io> LocalCommitsIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> LocalCommitsIo<Fs>
+    where
+        Fs: FileSystem
 {
     #[inline]
-    pub fn new(branch_name: BranchName, fs: Fs) -> LocalCommitsIo<Fs, Io> {
+    pub fn new(branch_name: BranchName, fs: Fs) -> LocalCommitsIo<Fs> {
         Self {
-            fs: FsIo::new(fs),
+            fs,
             file_path: format!("./.meltos/branches/{branch_name}/LOCAL"),
         }
     }

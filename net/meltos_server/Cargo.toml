@@ -13,9 +13,10 @@ meltos = { path = "../../crates/meltos" }
 meltos_backend = { path = "../../crates/meltos_backend" }
 meltos_tvn = { path = "../../crates/meltos_tvn" }
 axum-extra = { version = "0.9.0", features = ["cookie", "typed-routing"] }
-
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+console-subscriber = "0.2.0"
 auto-delegate = { workspace = true }
-tokio = { workspace = true }
+tokio = { version = "1.34.0", features = ["full", "tracing"] }
 tokio-tungstenite = { workspace = true }
 tower = { workspace = true }
 tracing = { workspace = true }

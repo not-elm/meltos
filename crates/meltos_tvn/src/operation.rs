@@ -1,5 +1,3 @@
-use std::fs::File;
-
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::file::StdFileSystem;
@@ -29,43 +27,41 @@ pub mod stage;
 pub mod unzip;
 
 #[derive(Debug)]
-pub struct Operations<Fs = StdFileSystem, Io = File>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+pub struct Operations<Fs = StdFileSystem>
+    where
+        Fs: FileSystem + Clone,
 {
-    pub init: Init<Fs, Io>,
-    pub patch: Patch<Fs, Io>,
-    pub stage: Stage<Fs, Io>,
-    pub commit: Commit<Fs, Io>,
-    pub push: Push<Fs, Io>,
-    pub save: Save<Fs, Io>,
-    pub bundle: BundleIo<Fs, Io>,
-    pub checkout: Checkout<Fs, Io>,
-    pub unzip: UnZip<Fs, Io>,
-    pub merge: Merge<Fs, Io>,
-    pub local_commits: LocalCommitsIo<Fs, Io>,
+    pub init: Init<Fs>,
+    pub patch: Patch<Fs>,
+    pub stage: Stage<Fs>,
+    pub commit: Commit<Fs>,
+    pub push: Push<Fs>,
+    pub save: Save<Fs>,
+    pub bundle: BundleIo<Fs>,
+    pub checkout: Checkout<Fs>,
+    pub unzip: UnZip<Fs>,
+    pub merge: Merge<Fs>,
+    pub local_commits: LocalCommitsIo<Fs>,
     fs: Fs,
     branch_name: BranchName,
 }
 
-impl<Fs, Io> Operations<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Operations<Fs>
+    where
+        Fs: FileSystem + Clone
 {
     #[inline]
-    pub fn new_main(fs: Fs) -> Operations<Fs, Io> {
+    pub fn new_main(fs: Fs) -> Operations<Fs> {
         Self::new(BranchName::main(), fs)
     }
 
     #[inline]
-    pub fn new_work(fs: Fs) -> error::Result<Operations<Fs, Io>> {
+    pub fn new_work(fs: Fs) -> error::Result<Operations<Fs>> {
         let work = WorkingIo::new(fs.clone());
         Ok(Self::new(work.try_read()?, fs))
     }
 
-    pub fn new(branch_name: BranchName, fs: Fs) -> Operations<Fs, Io> {
+    pub fn new(branch_name: BranchName, fs: Fs) -> Operations<Fs> {
         Self {
             init: Init::new(branch_name.clone(), fs.clone()),
             patch: Patch::new(fs.clone()),
@@ -84,10 +80,9 @@ where
     }
 }
 
-impl<Fs, Io> Clone for Operations<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Clone for Operations<Fs>
+    where
+        Fs: FileSystem + Clone
 {
     #[inline]
     fn clone(&self) -> Self {

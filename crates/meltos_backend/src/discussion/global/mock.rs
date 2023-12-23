@@ -4,9 +4,10 @@ use meltos::discussion::{Discussion, DiscussionMeta};
 use meltos::error;
 use meltos::user::UserId;
 use meltos_util::macros::Deref;
-use meltos_util::sync::arc_mutex::ArcHashMap;
+
 
 use crate::discussion::DiscussionIo;
+use crate::sync::arc_mutex::ArcHashMap;
 
 #[derive(Debug, Default)]
 pub struct MockGlobalDiscussionIo {

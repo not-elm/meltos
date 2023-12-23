@@ -4,12 +4,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::branch::BranchName;
 use crate::error;
-use crate::file_system::{FileSystem, FsIo};
+use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
-use crate::object::commit::CommitHash;
 use crate::object::{CompressedBuf, ObjHash};
+use crate::object::commit::CommitHash;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Bundle {
@@ -37,27 +37,25 @@ pub struct BundleBranch {
 }
 
 #[derive(Debug)]
-pub struct BundleIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+pub struct BundleIo<Fs>
+    where
+        Fs: FileSystem
 {
-    object: ObjIo<Fs, Io>,
-    trace: TraceIo<Fs, Io>,
-    fs: FsIo<Fs, Io>,
+    object: ObjIo<Fs>,
+    trace: TraceIo<Fs>,
+    fs: Fs,
 }
 
-impl<Fs, Io> BundleIo<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> BundleIo<Fs>
+    where
+        Fs: FileSystem + Clone,
 {
     #[inline]
-    pub fn new(fs: Fs) -> BundleIo<Fs, Io> {
+    pub fn new(fs: Fs) -> BundleIo<Fs> {
         Self {
             object: ObjIo::new(fs.clone()),
             trace: TraceIo::new(fs.clone()),
-            fs: FsIo::new(fs),
+            fs,
         }
     }
 
@@ -75,9 +73,9 @@ where
         let mut branches = Vec::with_capacity(head_files.len());
         for path in head_files {
             let Some(branch_name) = Path::new(&path).file_name().and_then(|name| name.to_str())
-            else {
-                continue;
-            };
+                else {
+                    continue;
+                };
 
             let branch_name = BranchName::from(branch_name);
             let head = HeadIo::new(self.fs.clone()).try_read(&branch_name)?;
@@ -99,8 +97,8 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
     use crate::io::bundle::BundleIo;
     use crate::operation::commit::Commit;

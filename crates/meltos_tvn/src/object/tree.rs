@@ -3,40 +3,38 @@ use std::str::FromStr;
 
 use meltos_util::macros::{Deref, DerefMut};
 
-use crate::file_system::{FilePath, FileSystem, FsIo};
+use crate::file_system::{FilePath, FileSystem, };
 use crate::object::{AsMeta, Decodable, Encodable, ObjHash, ObjMeta};
 use crate::{error, impl_serialize_and_deserialize};
 
 #[derive(Debug, Clone)]
-pub struct TreeIo<Fs, Io>
+pub struct TreeIo<Fs>
 where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    Fs: FileSystem
 {
-    io: FsIo<Fs, Io>,
+    fs: Fs,
     file_path: FilePath,
 }
 
-impl<Fs, Io> TreeIo<Fs, Io>
+impl<Fs> TreeIo<Fs>
 where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+    Fs: FileSystem
 {
     #[inline]
-    pub fn new(file_path: impl Into<FilePath>, io: FsIo<Fs, Io>) -> TreeIo<Fs, Io> {
+    pub fn new(file_path: impl Into<FilePath>, fs: Fs) -> TreeIo<Fs> {
         Self {
-            io,
+            fs,
             file_path: file_path.into(),
         }
     }
 
     pub fn write_tree(&self, tree: &TreeObj) -> error::Result<()> {
-        self.io.write(&self.file_path, &tree.encode()?)?;
+        self.fs.write(&self.file_path, &tree.encode()?)?;
         Ok(())
     }
 
     pub fn read(&self) -> error::Result<Option<TreeObj>> {
-        let Some(buf) = self.io.read(&self.file_path)? else {
+        let Some(buf) = self.fs.read(&self.file_path)? else {
             return Ok(None);
         };
 
@@ -44,7 +42,7 @@ where
     }
 
     pub fn reset(&self) -> error::Result<()> {
-        self.io
+        self.fs
             .write(&self.file_path, &TreeObj::default().encode()?)?;
         Ok(())
     }
@@ -63,7 +61,7 @@ where
     ) -> error::Result<()> {
         let mut tree = self.read()?.unwrap_or_default();
         tree.0.insert(target_path, object_hash);
-        self.io.write(&self.file_path, &tree.encode()?)?;
+        self.fs.write(&self.file_path, &tree.encode()?)?;
         Ok(())
     }
 }

@@ -1,6 +1,6 @@
 use meltos::discussion::id::DiscussionId;
-use meltos::schema::discussion::global::{Reply, Speak};
 use meltos::schema::discussion::global::{Closed, Created, Replied, Spoke};
+use meltos::schema::discussion::global::{Reply, Speak};
 use meltos::user::UserId;
 use meltos_backend::discussion::DiscussionIo;
 
@@ -12,8 +12,8 @@ pub struct DiscussionCommandExecutor<'a, Global: ?Sized> {
 }
 
 impl<'a, Global> DiscussionCommandExecutor<'a, Global>
-    where
-        Global: DiscussionIo + ?Sized,
+where
+    Global: DiscussionIo + ?Sized,
 {
     #[inline]
     pub const fn new(

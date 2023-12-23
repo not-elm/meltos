@@ -1,11 +1,9 @@
-use std::io;
-
 use crate::encode::Decodable;
 use crate::error;
-use crate::file_system::{FilePath, FileSystem, FsIo};
+use crate::file_system::{FilePath, FileSystem};
+use crate::object::{AsMeta, Obj, ObjHash};
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
-use crate::object::{AsMeta, Obj, ObjHash};
 
 pub struct ChangeFileMeta {
     pub path: FilePath,
@@ -19,27 +17,25 @@ pub enum ChangeFile {
 }
 
 #[derive(Debug, Clone)]
-pub struct WorkspaceIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write,
+pub struct WorkspaceIo<Fs>
+    where
+        Fs: FileSystem
 {
-    fs: FsIo<Fs, Io>,
+    fs: Fs,
 }
 
-impl<Fs, Io> WorkspaceIo<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write,
+impl<Fs> WorkspaceIo<Fs>
+    where
+        Fs: FileSystem
 {
     #[inline]
-    pub const fn new(fs: Fs) -> WorkspaceIo<Fs, Io> {
+    pub const fn new(fs: Fs) -> WorkspaceIo<Fs> {
         Self {
-            fs: FsIo::new(fs),
+            fs,
         }
     }
 
-    pub fn convert_to_objs(&self, path: &str) -> std::io::Result<ObjectIter<Fs, Io>> {
+    pub fn convert_to_objs(&self, path: &str) -> std::io::Result<ObjectIter<Fs>> {
         let files = self.fs.all_workspace_file_path(path)?;
         Ok(ObjectIter {
             files,
@@ -133,20 +129,18 @@ where
     }
 }
 
-pub struct ObjectIter<'a, Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write,
+pub struct ObjectIter<'a, Fs>
+    where
+        Fs: FileSystem
 {
     files: Vec<String>,
     index: usize,
-    io: &'a FsIo<Fs, Io>,
+    io: &'a Fs,
 }
 
-impl<'a, Fs, Io> Iterator for ObjectIter<'a, Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write,
+impl<'a, Fs> Iterator for ObjectIter<'a, Fs>
+    where
+        Fs: FileSystem
 {
     type Item = std::io::Result<(FilePath, FileObj)>;
 
@@ -161,10 +155,9 @@ where
     }
 }
 
-impl<'a, Fs, Io> ObjectIter<'a, Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: io::Read + io::Write,
+impl<'a, Fs> ObjectIter<'a, Fs>
+    where
+        Fs: FileSystem
 {
     fn read_to_obj(&self) -> std::io::Result<(FilePath, FileObj)> {
         let path = self.files.get(self.index).unwrap();
@@ -175,12 +168,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::workspace::WorkspaceIo;
-    use crate::object::file::FileObj;
     use crate::object::{AsMeta, Obj, ObjHash};
+    use crate::object::file::FileObj;
 
     #[test]
     fn read_all_objects_in_dir() {

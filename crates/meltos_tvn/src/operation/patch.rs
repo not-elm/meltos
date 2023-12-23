@@ -6,22 +6,20 @@ use crate::io::atomic::trace::TraceIo;
 use crate::io::bundle::Bundle;
 
 #[derive(Debug, Clone)]
-pub struct Patch<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+pub struct Patch<Fs>
+    where
+        Fs: FileSystem
 {
-    obj: ObjIo<Fs, Io>,
-    head: HeadIo<Fs, Io>,
-    trace: TraceIo<Fs, Io>,
+    obj: ObjIo<Fs>,
+    head: HeadIo<Fs>,
+    trace: TraceIo<Fs>,
 }
 
-impl<Fs, Io> Patch<Fs, Io>
-where
-    Fs: FileSystem<Io> + Clone,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Patch<Fs>
+    where
+        Fs: FileSystem + Clone
 {
-    pub fn new(fs: Fs) -> Patch<Fs, Io> {
+    pub fn new(fs: Fs) -> Patch<Fs> {
         Self {
             obj: ObjIo::new(fs.clone()),
             head: HeadIo::new(fs.clone()),
@@ -30,10 +28,9 @@ where
     }
 }
 
-impl<Fs, Io> Patch<Fs, Io>
-where
-    Fs: FileSystem<Io>,
-    Io: std::io::Write + std::io::Read,
+impl<Fs> Patch<Fs>
+    where
+        Fs: FileSystem
 {
     pub fn execute(&self, bundle: &Bundle) -> error::Result {
         self.trace.write_all(&bundle.traces)?;
