@@ -23,7 +23,7 @@ pub async fn reply(
 // mod tests {
 //     use meltos::discussion::message::{Message, MessageText};
 //     use meltos::schema::request::discussion::global::{Reply, Speak};
-//     use meltos::user::UserId;
+//     use meltos::room::UserId;
 //     use meltos_tvn::file_system::mock::MockFileSystem;
 //
 //     use crate::api::test_util::{
@@ -60,7 +60,7 @@ pub async fn reply(
 //             replied.reply.clone(),
 //             Message {
 //                 id: replied.reply.id,
-//                 user_id: UserId::from("user"),
+//                 user_id: UserId::from("room"),
 //                 text: MessageText::from("reply"),
 //             }
 //         )

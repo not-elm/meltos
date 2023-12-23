@@ -10,6 +10,7 @@ flate2 = { version = "1.0.28" }
 meltos_macros = { path = "../meltos_macros" }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 log = "0.4.20"
+console-subscriber = "0.2.0"
 
 thiserror = { workspace = true }
 anyhow = { workspace = true }

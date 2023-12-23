@@ -44,6 +44,7 @@ where
     }
 
     pub fn try_read(&self) -> error::Result<LocalCommitsObj> {
+
         let Some(local_commits) = self.read()? else {
             return Err(error::Error::NotfoundLocalCommits);
         };
@@ -51,6 +52,7 @@ where
     }
 
     pub fn read(&self) -> error::Result<Option<LocalCommitsObj>> {
+
         let Some(buf) = self.fs.read(&self.file_path)? else {
             return Ok(None);
         };

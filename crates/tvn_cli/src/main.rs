@@ -15,6 +15,11 @@ async fn main() {
     match command {
         Commands::Open(open) => open.execute().await.unwrap(),
         Commands::Join(join) => join.execute().await.unwrap(),
+        Commands::Fetch(fetch) => fetch.execute().await.unwrap(),
+        Commands::Stage(stage) => stage.execute().await.unwrap(),
+        Commands::Commit(commit) => commit.execute().await.unwrap(),
+        Commands::Push(push) => push.execute().await.unwrap(),
+        Commands::Merge(merge) => merge.execute().await.unwrap()
     }
 }
 

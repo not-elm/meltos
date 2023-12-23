@@ -19,7 +19,7 @@ impl SessionConfigsIo for TmpSessionConfigsIo {
     }
 
     async fn load(&self) -> crate::error::Result<SessionConfigs> {
-        let json = fs::read_to_string("./room-configs")?;
+        let json = fs::read_to_string("./.room_configs")?;
         Ok(serde_json::from_str(&json).unwrap())
     }
 }

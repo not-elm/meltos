@@ -3,7 +3,7 @@ use crate::middleware::room::SessionRoom;
 use crate::middleware::user::SessionUser;
 
 #[tracing::instrument]
-pub async fn fetch(SessionRoom(room): SessionRoom, SessionUser(_): SessionUser) -> HttpResult {
+pub async fn fetch(SessionRoom(room): SessionRoom) -> HttpResult {
     let bundle = room.create_bundle()?;
     Ok(bundle.as_success_response())
 }

@@ -1,5 +1,5 @@
 [package]
-name = "tvn_cli"
+name = "tvn"
 version = "0.1.0"
 edition = "2021"
 

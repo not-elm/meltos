@@ -144,7 +144,7 @@ mod test_util {
 
     #[allow(unused)]
     pub fn user_session_id() -> SessionId {
-        SessionId("user".to_string())
+        SessionId("room".to_string())
     }
 
 

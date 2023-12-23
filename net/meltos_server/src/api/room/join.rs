@@ -93,8 +93,8 @@ mod tests {
         let mock = MockFileSystem::default();
         mock.write("./some_text.txt", b"text file").unwrap();
         let room_id = http_open_room(&mut app, mock.clone()).await;
-        let response = http_join(&mut app, &room_id, Some(UserId::from("user"))).await;
+        let response = http_join(&mut app, &room_id, Some(UserId::from("room"))).await;
         let meta = response.deserialize::<Joined>().await;
-        assert_eq!(meta.user_id, UserId::from("user"));
+        assert_eq!(meta.user_id, UserId::from("room"));
     }
 }

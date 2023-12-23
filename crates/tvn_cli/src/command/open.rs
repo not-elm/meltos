@@ -1,12 +1,9 @@
-use std::env;
-
 use async_trait::async_trait;
 use clap::Args;
-use log::info;
+
 use meltos::user::UserId;
 use meltos_client::config::tmp_file::TmpSessionConfigsIo;
-
-use meltos_client::owner::RoomOwner;
+use meltos_client::room::RoomClient;
 use meltos_tvn::file_system::file::StdFileSystem;
 
 use crate::command::CommandExecutable;
@@ -21,9 +18,9 @@ pub struct OpenArgs {
 #[async_trait]
 impl CommandExecutable for OpenArgs {
     async fn execute(self) -> error::Result {
-        let owner = RoomOwner::open(StdFileSystem, TmpSessionConfigsIo, self.user_id).await?;
+        let owner = RoomClient::open(StdFileSystem, TmpSessionConfigsIo, self.user_id).await?;
 
-        info!("open={:?}", owner.configs());
+        println!("open={:?}", owner.configs());
 
         Ok(())
     }

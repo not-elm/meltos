@@ -57,7 +57,7 @@ where
         source: BranchName,
         dist: BranchName,
     ) -> crate::error::Result<MergedStatus> {
-        let source_head = self.head.try_read(&source)?;
+        let source_head = self.head.try_read_remote(&source)?;
         let dist_head = self.head.try_read(&dist)?;
         let source_hashes = self.commit_hashes.read_all(source_head.clone(), &None)?;
         let dist_hashes = self.commit_hashes.read_all(dist_head.clone(), &None)?;

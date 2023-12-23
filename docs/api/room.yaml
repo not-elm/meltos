@@ -6,7 +6,7 @@ servers:
   - url: https://api.server.test/
 paths:
   /open:
-    description: "open user"
+    description: "open room"
     post:
       requestBody:
         content:
@@ -99,7 +99,7 @@ paths:
                   bundle:
                     $ref: "bundle.yaml"
       security:
-        - cookieAuth: []
+        - cookieAuth: [ ]
 
 components:
   parameters:

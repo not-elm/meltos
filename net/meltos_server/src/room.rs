@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
-use std::fs::File;
 use std::future::Future;
 use std::sync::Arc;
 
@@ -14,7 +13,7 @@ use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_backend::discussion::DiscussionIo;
 use meltos_tvn::branch::BranchName;
-use meltos_tvn::file_system::file::StdFileSystem;
+use meltos_tvn::file_system::mock::{MockFileSystem, MockIo};
 use meltos_tvn::io::bundle::Bundle;
 use meltos_tvn::operation::Operations;
 use meltos_util::macros::Deref;
@@ -52,7 +51,7 @@ impl RoomMap {
                     json!({
                         "error": format!("room_id {room_id} is not exists")
                     })
-                    .to_string(),
+                        .to_string(),
                 ))
                 .unwrap(),
         )
@@ -63,7 +62,7 @@ impl RoomMap {
 pub struct Room {
     pub owner: UserId,
     pub id: RoomId,
-    pub tvn: Operations<StdFileSystem, File>,
+    pub tvn: Operations<MockFileSystem, MockIo>,
     discussion: Arc<dyn DiscussionIo>,
 }
 
@@ -74,7 +73,7 @@ impl Room {
             id: RoomId::default(),
             owner: owner.clone(),
             discussion: Arc::new(Discussion::default()),
-            tvn: Operations::new(BranchName::from(owner.to_string()), StdFileSystem),
+            tvn: Operations::new(BranchName::from(owner.to_string()), MockFileSystem::default()),
         }
     }
 
@@ -86,7 +85,7 @@ impl Room {
                     json!({
                         "error" : e.to_string()
                     })
-                    .to_string(),
+                        .to_string(),
                 ))
                 .unwrap()
         })?;
@@ -105,7 +104,7 @@ impl Room {
                         json!({
                             "error": error.to_string()
                         })
-                        .to_string(),
+                            .to_string(),
                     ))
                     .unwrap();
                 Err(response)
@@ -119,10 +118,10 @@ impl Room {
         user_id: UserId,
         f: F,
     ) -> error::Result<Response>
-    where
-        F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
-        O: Future<Output = error::Result<S>>,
-        S: Serialize,
+        where
+            F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
+            O: Future<Output=error::Result<S>>,
+            S: Serialize,
     {
         let command = f(self.as_global_discussion_executor(user_id)).await?;
         Ok(command.as_success_response())
