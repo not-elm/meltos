@@ -48,7 +48,7 @@ pub async fn close(
 //                 Request::builder()
 //                     .method(http::Method::DELETE)
 //                     .header(header::SET_COOKIE, "session_id=session_id")
-//                     .uri(format!("/user/{room_id}/discussion/global/close"))
+//                     .uri(format!("/room/{room_id}/discussion/global/close"))
 //                     .body(Body::empty())
 //                     .unwrap(),
 //             )
@@ -69,7 +69,7 @@ pub async fn close(
 //                     .method(http::Method::DELETE)
 //                     .header(header::SET_COOKIE, "session_id=session_id")
 //                     .uri(format!(
-//                         "/user/{room_id}/discussion/global/close?discussion_id=23232ada"
+//                         "/room/{room_id}/discussion/global/close?discussion_id=23232ada"
 //                     ))
 //                     .body(Body::empty())
 //                     .unwrap(),

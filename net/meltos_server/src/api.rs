@@ -13,8 +13,8 @@ pub trait AsSuccessResponse {
 }
 
 impl<D> AsSuccessResponse for D
-where
-    D: Serialize,
+    where
+        D: Serialize,
 {
     fn as_success_response(&self) -> Response {
         Response::builder()
@@ -26,11 +26,11 @@ where
 
 #[cfg(test)]
 mod test_util {
+    use axum::{async_trait, http, Router};
     use axum::body::Body;
     use axum::extract::Request;
     use axum::http::{header, StatusCode};
     use axum::response::Response;
-    use axum::{async_trait, http, Router};
     use http_body_util::BodyExt;
     use serde::de::DeserializeOwned;
     use tower::{Service, ServiceExt};
@@ -93,11 +93,11 @@ mod test_util {
                     )
                     .header(header::CONTENT_TYPE, "application/json")
                     .method(http::method::Method::POST)
-                    .uri(format!("/user/{}/tvn/push", self.room_id))
+                    .uri(format!("/room/{}/tvn/push", self.room_id))
                     .body(Body::from(serde_json::to_string(&bundle).unwrap()))
                     .unwrap(),
             )
-            .await;
+                .await;
             assert_eq!(response.status(), StatusCode::OK);
             Ok(())
         }
@@ -160,11 +160,11 @@ mod test_util {
             app,
             Request::builder()
                 .header(header::SET_COOKIE, format!("session_id={session_id}"))
-                .uri(format!("/user/{room_id}/tvn/fetch"))
+                .uri(format!("/room/{room_id}/tvn/fetch"))
                 .body(Body::empty())
                 .unwrap(),
         )
-        .await
+            .await
     }
 
     pub async fn http_create_discussion(app: &mut Router, room_id: RoomId) -> Created {
@@ -182,11 +182,11 @@ mod test_util {
                 .method(http::Method::POST)
                 .header(header::SET_COOKIE, "session_id=session_id")
                 .header("Content-Type", "application/json")
-                .uri(format!("/user/{room_id}/discussion/global/reply"))
+                .uri(format!("/room/{room_id}/discussion/global/reply"))
                 .body(Body::from(reply.as_json()))
                 .unwrap(),
         )
-        .await
+            .await
     }
 
     pub async fn http_discussion_close(
@@ -200,12 +200,12 @@ mod test_util {
                 .method(http::Method::DELETE)
                 .header(header::SET_COOKIE, "session_id=session_id")
                 .uri(format!(
-                    "/user/{room_id}/discussion/global/close?discussion_id={discussion_id}"
+                    "/room/{room_id}/discussion/global/close?discussion_id={discussion_id}"
                 ))
                 .body(Body::empty())
                 .unwrap(),
         )
-        .await
+            .await
     }
 
     pub fn open_room_request(mock: MockFileSystem) -> Request {
@@ -219,20 +219,20 @@ mod test_util {
         Request::builder()
             .method(http::Method::POST)
             .header(header::CONTENT_TYPE, "application/json")
-            .uri("/user/open")
+            .uri("/room/open")
             .body(Body::from(
                 serde_json::to_string(&Open {
                     user_id: Some(UserId::from("owner")),
                     bundle,
                 })
-                .unwrap(),
+                    .unwrap(),
             ))
             .unwrap()
     }
 
     pub fn create_discussion_request(room_id: RoomId) -> axum::http::Request<Body> {
         tokio_tungstenite::tungstenite::handshake::client::Request::builder()
-            .uri(format!("/user/{room_id}/discussion/global/create"))
+            .uri(format!("/room/{room_id}/discussion/global/create"))
             .method(http::method::Method::POST)
             .header(
                 header::SET_COOKIE,
@@ -244,7 +244,7 @@ mod test_util {
 
     pub fn speak_request(speak: Speak, room_id: &RoomId) -> axum::http::Request<Body> {
         Request::builder()
-            .uri(format!("/user/{}/discussion/global/speak", room_id))
+            .uri(format!("/room/{}/discussion/global/speak", room_id))
             .method(http::method::Method::POST)
             .header("Content-Type", "application/json")
             .header(header::SET_COOKIE, "session_id=session_id")
@@ -260,18 +260,18 @@ mod test_util {
         http_call(
             app,
             Request::builder()
-                .uri(format!("/user/{room_id}/join"))
+                .uri(format!("/room/{room_id}/join"))
                 .header("Content-Type", "application/json")
                 .method(http::method::Method::POST)
                 .body(Body::from(
                     serde_json::to_string(&Join {
                         user_id,
                     })
-                    .unwrap(),
+                        .unwrap(),
                 ))
                 .unwrap(),
         )
-        .await
+            .await
     }
 
     pub async fn http_call(app: &mut Router, request: Request) -> Response {

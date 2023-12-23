@@ -27,11 +27,11 @@ mod tests {
         let response = http_call(
             &mut app,
             Request::builder()
-                .uri(format!("/user/{room_id}/tvn/fetch"))
+                .uri(format!("/room/{room_id}/tvn/fetch"))
                 .body(Body::empty())
                 .unwrap(),
         )
-        .await;
+            .await;
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 

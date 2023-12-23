@@ -21,10 +21,14 @@ impl FileDiff {
     }
 
 
-    pub fn from_obj_hashes<Fs, Io>(fs: Fs, lhs: &ObjHash, rhs: &ObjHash) -> error::Result<Option<Self>>
-        where
-            Fs: FileSystem<Io>,
-            Io: std::io::Write + std::io::Read,
+    pub fn from_obj_hashes<Fs, Io>(
+        fs: Fs,
+        lhs: &ObjHash,
+        rhs: &ObjHash,
+    ) -> error::Result<Option<Self>>
+    where
+        Fs: FileSystem<Io>,
+        Io: std::io::Write + std::io::Read,
     {
         if lhs == rhs {
             Ok(None)
@@ -45,7 +49,6 @@ impl FileDiff {
     }
 
     pub fn diff_ops(&self) -> Vec<DiffOp> {
-
         self.diff()
             .ops()
             .iter()

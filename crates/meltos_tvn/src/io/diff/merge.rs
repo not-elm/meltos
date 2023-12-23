@@ -1,10 +1,9 @@
-use similar::{DiffableStr, DiffOp};
+use similar::{DiffOp, DiffableStr};
 
 use crate::io::diff::conflict::Conflict;
 use crate::io::diff::file::FileDiff;
 
 pub fn merge(lhs: &FileDiff, rhs: &FileDiff) -> String {
-
     let merged = merge_(lhs, rhs);
     merged.join("")
 }
@@ -26,20 +25,26 @@ pub fn merge_(lhs: &FileDiff, rhs: &FileDiff) -> Vec<String> {
         ops: rhs_diff.ops().into_iter().copied(),
     };
     let merges = Merges::new(lhs_changes, rhs_changes);
-    for status in merges{
+    for status in merges {
         match status {
             MergeStatus::Success(status) => {
                 match status {
-                    Status::Equal {text, ..} => {
+                    Status::Equal {
+                        text, ..
+                    } => {
                         texts.push(text);
                     }
-                    Status::Insert { text,.. } => {
+                    Status::Insert {
+                        text, ..
+                    } => {
                         texts.push(text);
                     }
-                    Status::Delete { .. } => {}
+                    Status::Delete {
+                        ..
+                    } => {}
                 }
-        }
-        _ => {}
+            }
+            _ => {}
         }
     }
 
@@ -56,19 +61,16 @@ struct Merges<'l, 'r, L, R> {
 }
 
 impl<'l, 'r, L, R> Merges<'l, 'r, L, R>
-    where
-        L: Iterator<Item=DiffOp>,
-        R: Iterator<Item=DiffOp>
+where
+    L: Iterator<Item = DiffOp>,
+    R: Iterator<Item = DiffOp>,
 {
-    pub fn new(
-        mut lhs: MergeFile<'l, L>,
-        mut rhs: MergeFile<'r, R>
-    ) -> Merges<'l, 'r, L, R>{
-        Self{
+    pub fn new(mut lhs: MergeFile<'l, L>, mut rhs: MergeFile<'r, R>) -> Merges<'l, 'r, L, R> {
+        Self {
             rhs_op: rhs.next(),
             lhs_op: lhs.next(),
             rhs,
-            lhs
+            lhs,
         }
     }
     fn side(&self, status: Status) -> MergeStatus {
@@ -77,9 +79,9 @@ impl<'l, 'r, L, R> Merges<'l, 'r, L, R>
 }
 
 impl<'l, 'r, L, R> Iterator for Merges<'l, 'r, L, R>
-    where
-        L: Iterator<Item=DiffOp>,
-        R: Iterator<Item=DiffOp>
+where
+    L: Iterator<Item = DiffOp>,
+    R: Iterator<Item = DiffOp>,
 {
     type Item = MergeStatus;
 
@@ -95,7 +97,7 @@ impl<'l, 'r, L, R> Iterator for Merges<'l, 'r, L, R>
         }
         if self.lhs_op.is_none() {
             let status = MergeStatus::Success(self.rhs_op.clone().unwrap());
-           self.lhs_op = self.lhs.next();
+            self.lhs_op = self.lhs.next();
             self.rhs_op = self.rhs.next();
             return Some(status);
         }
@@ -116,20 +118,19 @@ impl<'l, 'r, L, R> Iterator for Merges<'l, 'r, L, R>
 }
 
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 enum MergeStatus {
     Success(Status),
     Conflicted,
 }
 
 
-
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 enum Status {
-    Equal{
-        start:usize,
+    Equal {
+        start: usize,
         end: usize,
-        text: String
+        text: String,
     },
     Insert {
         start: usize,
@@ -157,7 +158,7 @@ impl Status {
 
     #[inline]
     pub fn conflict(&self, rhs: &Status) -> bool {
-        if self.is_equal() || rhs.is_equal(){
+        if self.is_equal() || rhs.is_equal() {
             return false;
         }
         let l = self.range();
@@ -165,21 +166,26 @@ impl Status {
         r.start <= l.end && l.start <= r.end
     }
 
-    fn is_equal(&self)->bool{
-        matches!(self, Self::Equal {..})
+    fn is_equal(&self) -> bool {
+        matches!(self, Self::Equal { .. })
     }
 
     pub fn range(&self) -> std::ops::Range<&usize> {
         match self {
-            Status::Equal {start, end, ..} => {
-                start..end
-            }
-            Status::Insert { start, end, text: _ } => {
-                start..end
-            }
-            Status::Delete { start, end } => {
-                start..end
-            }
+            Status::Equal {
+                start,
+                end,
+                ..
+            } => start..end,
+            Status::Insert {
+                start,
+                end,
+                text: _,
+            } => start..end,
+            Status::Delete {
+                start,
+                end,
+            } => start..end,
         }
     }
 }
@@ -191,7 +197,8 @@ struct MergeFile<'a, L> {
 
 
 impl<'a, L> Iterator for MergeFile<'a, L>
-    where L: Iterator<Item=DiffOp>
+where
+    L: Iterator<Item = DiffOp>,
 {
     type Item = Status;
 
@@ -200,7 +207,7 @@ impl<'a, L> Iterator for MergeFile<'a, L>
             DiffOp::Delete {
                 old_index,
                 old_len,
-                new_index: _
+                new_index: _,
             } => {
                 Some(Status::Delete {
                     start: old_index,
@@ -210,41 +217,35 @@ impl<'a, L> Iterator for MergeFile<'a, L>
             DiffOp::Insert {
                 old_index,
                 new_len,
-                new_index
+                new_index,
             } => {
                 Some(Status::Insert {
                     start: old_index,
                     end: old_index,
-                    text: self
-                        .texts[new_index..new_index + new_len]
-                        .join(""),
+                    text: self.texts[new_index..new_index + new_len].join(""),
                 })
             }
             DiffOp::Replace {
                 old_index,
                 old_len,
                 new_index,
-                new_len
+                new_len,
             } => {
                 Some(Status::Insert {
                     start: old_index,
                     end: old_index + old_len,
-                    text: self
-                        .texts[new_index..new_index + new_len]
-                        .join(""),
+                    text: self.texts[new_index..new_index + new_len].join(""),
                 })
             }
             DiffOp::Equal {
                 old_index,
                 len,
-                new_index
+                new_index,
             } => {
-                 Some(Status::Equal {
+                Some(Status::Equal {
                     start: old_index,
                     end: old_index + len,
-                    text: self
-                        .texts[new_index..new_index + len]
-                        .join(""),
+                    text: self.texts[new_index..new_index + len].join(""),
                 })
             }
         }
@@ -260,18 +261,11 @@ mod tests {
     use crate::io::diff::merge::merge;
 
 
-
     #[test]
     fn simple_inserted() {
         const ORIGINAL: &str = "LINE0\nLINE1\nLINE2";
-        let diff1 = FileDiff::from_strings(
-            ORIGINAL,
-            "LINE0\nLINE1\nLINE2\nLINE3",
-        );
-        let diff2 = FileDiff::from_strings(
-            ORIGINAL,
-            "LINE0\nLINE3\nLINE1\nLINE2",
-        );
+        let diff1 = FileDiff::from_strings(ORIGINAL, "LINE0\nLINE1\nLINE2\nLINE3");
+        let diff2 = FileDiff::from_strings(ORIGINAL, "LINE0\nLINE3\nLINE1\nLINE2");
         let merged = merge(&diff1, &diff2);
         assert_eq!(merged, "LINE0\nLINE3\nLINE1\nLINE2\nLINE3\n");
     }
@@ -280,14 +274,8 @@ mod tests {
     #[test]
     fn merge2() {
         const ORIGINAL: &str = "hello\nworld\ntext";
-        let diff1 = FileDiff::from_strings(
-            ORIGINAL,
-            "hello\ntext",
-        );
-        let diff2 = FileDiff::from_strings(
-            ORIGINAL,
-            "hello\nworld\nyes\ntext",
-        );
+        let diff1 = FileDiff::from_strings(ORIGINAL, "hello\ntext");
+        let diff2 = FileDiff::from_strings(ORIGINAL, "hello\nworld\nyes\ntext");
         let merged = merge(&diff1, &diff2);
         assert_eq!(merged, "hello\nyes\ntext");
     }
@@ -296,14 +284,8 @@ mod tests {
     #[test]
     fn merge3() {
         const ORIGINAL: &str = "hello1\nworld2\nrust3\ntext4";
-        let diff1 = FileDiff::from_strings(
-            ORIGINAL,
-            "hello1\ntext4",
-        );
-        let diff2 = FileDiff::from_strings(
-            ORIGINAL,
-            "hello1\nworld2\nyes3\ntext4",
-        );
+        let diff1 = FileDiff::from_strings(ORIGINAL, "hello1\ntext4");
+        let diff2 = FileDiff::from_strings(ORIGINAL, "hello1\nworld2\nyes3\ntext4");
         let merged = merge(&diff1, &diff2);
         assert_eq!(merged, "hello1\nyes3\ntext4");
     }
@@ -312,14 +294,8 @@ mod tests {
     #[test]
     fn merge4() {
         const ORIGINAL: &str = "hello1\nworld2\nrust3\ntext4";
-        let diff1 = FileDiff::from_strings(
-            ORIGINAL,
-            "hello1\nstring5\ntext4",
-        );
-        let diff2 = FileDiff::from_strings(
-            ORIGINAL,
-            "hello1\nworld2\nyes3\ntext4",
-        );
+        let diff1 = FileDiff::from_strings(ORIGINAL, "hello1\nstring5\ntext4");
+        let diff2 = FileDiff::from_strings(ORIGINAL, "hello1\nworld2\nyes3\ntext4");
         let merged = merge(&diff1, &diff2);
         assert_eq!(merged, "hello1\nyes3\nstring5text4");
     }

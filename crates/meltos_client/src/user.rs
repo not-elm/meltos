@@ -1,18 +1,19 @@
-use async_trait::async_trait;
 use reqwest::Client;
 
 use meltos::room::RoomId;
 use meltos::schema::request::room::{Join, Joined};
-use meltos::user::{SessionId, UserId};
+use meltos::user::UserId;
 use meltos_tvn::branch::BranchName;
 use meltos_tvn::file_system::FileSystem;
+use meltos_tvn::io::atomic::head::CommitText;
+use meltos_tvn::object::commit::CommitHash;
+use meltos_tvn::operation::Operations;
 
+use crate::config::{SessionConfigs, SessionConfigsIo};
 use crate::http::HttpClient;
-use crate::user::tvn::TvnClient;
 
 pub mod discussion;
 pub mod tvn;
-
 
 
 pub struct RoomUser<Fs, Io>
@@ -20,11 +21,9 @@ where
     Fs: FileSystem<Io> + Clone,
     Io: std::io::Write + std::io::Read,
 {
-    pub room_id: RoomId,
-    pub session_id: SessionId,
-    pub user_id: UserId,
     client: HttpClient,
-    tvn: TvnClient<Fs, Io>,
+    operations: Operations<Fs, Io>,
+    configs: SessionConfigs,
 }
 
 
@@ -33,41 +32,47 @@ where
     Fs: FileSystem<Io> + Clone,
     Io: std::io::Write + std::io::Read,
 {
-    pub async fn join(
+    pub async fn join<Config: SessionConfigsIo>(
+        session: Config,
+        fs: Fs,
         room_id: RoomId,
         user_id: Option<UserId>,
-        fs: Fs,
     ) -> Result<Self, crate::error::Error> {
-        let client = Client::new();
-        let joined = http_join(&client, user_id, &room_id).await?;
+        let (client, joined) = HttpClient::join("http://localhost:3000", &room_id, user_id).await?;
 
-        let tvn = TvnClient::new(room_id.clone(), joined.session_id.clone(), fs);
-        tvn.init(&BranchName(joined.user_id.to_string()), joined.bundle)?;
+        let branch_name = BranchName::from(joined.user_id.to_string());
+        let operations = Operations::new(branch_name.clone(), fs);
+        operations.save.execute(joined.bundle)?;
+        operations.checkout.execute(&branch_name)?;
+        operations.unzip.execute(&branch_name)?;
 
-        let client = HttpClient::new("http://localhost:3000");
+        let configs = SessionConfigs::new(joined.session_id, room_id, joined.user_id);
+        session.save(configs.clone()).await?;
 
         Ok(Self {
             client,
-            tvn,
-            room_id,
-            session_id: joined.session_id,
-            user_id: joined.user_id,
+            configs,
+            operations,
         })
     }
-}
 
 
-async fn http_join(
-    client: &Client,
-    user_id: Option<UserId>,
-    room_id: &RoomId,
-) -> crate::error::Result<Joined> {
-    let response = client
-        .post(format!("http://localhost:3000/room/{room_id}/join"))
-        .json(&Join {
-            user_id,
-        })
-        .send()
-        .await?;
-    Ok(response.json().await?)
+    #[inline(always)]
+    pub fn stage(&self, workspace_path: &str) -> meltos_tvn::error::Result {
+        self.operations.stage.execute(workspace_path)
+    }
+
+
+    #[inline(always)]
+    pub fn commit(
+        &self,
+        commit_text: impl Into<CommitText>,
+    ) -> meltos_tvn::error::Result<CommitHash> {
+        self.operations.commit.execute(commit_text)
+    }
+
+
+    pub async fn push(&mut self) -> meltos_tvn::error::Result {
+        self.operations.push.execute(&mut self.client).await
+    }
 }

@@ -9,4 +9,7 @@ pub enum Error {
 
     #[error(transparent)]
     Tvn(#[from] meltos_tvn::error::Error),
+
+    #[error(transparent)]
+    Io(#[from] std::io::Error)
 }

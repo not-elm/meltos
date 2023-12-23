@@ -4,6 +4,7 @@ use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::file::StdFileSystem;
 use crate::file_system::FileSystem;
+use crate::io::atomic::local_commits::LocalCommitsIo;
 use crate::io::atomic::work_branch::WorkingIo;
 use crate::io::bundle::BundleIo;
 use crate::operation::checkout::Checkout;
@@ -44,6 +45,7 @@ where
     pub checkout: Checkout<Fs, Io>,
     pub unzip: UnZip<Fs, Io>,
     pub merge: Merge<Fs, Io>,
+    pub local_commits: LocalCommitsIo<Fs, Io>,
     fs: Fs,
     branch_name: BranchName,
 }
@@ -77,6 +79,7 @@ where
             checkout: Checkout::new(fs.clone()),
             unzip: UnZip::new(fs.clone()),
             merge: Merge::new(fs.clone()),
+            local_commits: LocalCommitsIo::new(branch_name.clone(), fs.clone()),
             fs,
             branch_name,
         }

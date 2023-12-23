@@ -24,10 +24,10 @@ pub struct JoinArgs {
 #[async_trait]
 impl CommandExecutable for JoinArgs {
     async fn execute(self) -> crate::error::Result {
-        let user = RoomUser::join(RoomId(self.room_id), self.user_id, StdFileSystem).await?;
-        std::env::set_var("ROOM_ID", user.room_id.0);
-        std::env::set_var("USER_ID", user.user_id.to_string());
-        std::env::set_var("SESSION_ID", user.session_id.to_string());
+        // let user = RoomUser::join(RoomId(self.room_id), self.user_id, StdFileSystem).await?;
+        // std::env::set_var("ROOM_ID", user.room_id.0);
+        // std::env::set_var("USER_ID", user.user_id.to_string());
+        // std::env::set_var("SESSION_ID", user.session_id.to_string());
         Ok(())
     }
 }

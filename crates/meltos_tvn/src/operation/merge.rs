@@ -12,9 +12,9 @@ use crate::operation::unzip::UnZip;
 
 #[derive(Debug)]
 pub struct Merge<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     fs: FsIo<Fs, Io>,
     head: HeadIo<Fs, Io>,
@@ -24,9 +24,9 @@ pub struct Merge<Fs, Io>
 }
 
 impl<Fs, Io> Merge<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn new(fs: Fs) -> Merge<Fs, Io> {
         Self {
@@ -48,9 +48,9 @@ pub enum MergedStatus {
 
 
 impl<Fs, Io> Merge<Fs, Io>
-    where
-        Fs: FileSystem<Io>,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io>,
+    Io: std::io::Write + std::io::Read,
 {
     pub fn execute(
         &self,
@@ -93,7 +93,8 @@ impl<Fs, Io> Merge<Fs, Io>
             let source_hash = source.get(path).unwrap().clone();
             if dist_hash == &source_hash {
                 source.remove(path);
-            } else {}
+            } else {
+            }
         }
         todo!();
     }
@@ -140,8 +141,8 @@ pub struct MergeConfig {}
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::{FilePath, FileSystem};
     use crate::io::workspace::WorkspaceIo;
     use crate::operation::checkout::Checkout;
     use crate::operation::commit::Commit;

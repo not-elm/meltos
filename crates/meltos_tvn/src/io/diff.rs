@@ -1,7 +1,7 @@
 use crate::file_system::FileSystem;
 
-mod file;
 mod conflict;
+mod file;
 mod merge;
 
 #[derive(Debug, Clone)]
@@ -11,6 +11,3 @@ pub struct ObjDiff {
 }
 
 impl ObjDiff {}
-
-
-

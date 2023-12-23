@@ -18,7 +18,7 @@ use crate::state::AppState;
 pub struct SessionRoom(pub Room);
 
 #[derive(TypedPath, Deserialize, Serialize)]
-#[typed_path("/user/:room_id")]
+#[typed_path("/room/:room_id")]
 struct PathParam {
     pub room_id: RoomId,
 }
@@ -37,7 +37,7 @@ impl PathParam {
                         json!({
                             "error" : e.to_string()
                         })
-                        .to_string(),
+                            .to_string(),
                     ))
                     .unwrap()
             })?;
@@ -47,8 +47,8 @@ impl PathParam {
 
 #[async_trait]
 impl<Session> FromRequestParts<AppState<Session>> for SessionRoom
-where
-    Session: SessionIo,
+    where
+        Session: SessionIo,
 {
     type Rejection = Response;
 
