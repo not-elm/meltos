@@ -14,11 +14,11 @@ use meltos_util::tracing::tracing_init;
 use crate::state::AppState;
 
 mod api;
+mod channel;
 mod error;
 mod middleware;
 mod room;
 mod state;
-
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -50,7 +50,6 @@ where
         .with_state(AppState::<Session>::new(session))
 }
 
-
 fn room_operations_router<Session>() -> Router<AppState<Session>>
 where
     Session: SessionIo + Clone + Debug + 'static,
@@ -60,7 +59,6 @@ where
         .nest("/tvn", tvn_routes())
         .nest("/discussion/global", global_discussion_route())
 }
-
 
 fn tvn_routes<Session>() -> Router<AppState<Session>>
 where

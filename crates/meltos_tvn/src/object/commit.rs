@@ -22,7 +22,6 @@ impl Decodable for CommitHash {
     }
 }
 
-
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct CommitObj {
     pub parents: Vec<CommitHash>,
@@ -31,11 +30,9 @@ pub struct CommitObj {
 }
 impl_serialize_and_deserialize!(CommitObj);
 
-
 impl CommitObj {
     pub const HEADER: &'static [u8] = b"COMMIT\0";
 }
-
 
 impl AsMeta for CommitObj {
     #[inline]
@@ -43,7 +40,6 @@ impl AsMeta for CommitObj {
         Ok(ObjMeta::compress(self.encode()?)?)
     }
 }
-
 
 impl TryFrom<ObjMeta> for CommitObj {
     type Error = error::Error;
@@ -53,7 +49,6 @@ impl TryFrom<ObjMeta> for CommitObj {
         CommitObj::decode(&meta.buf)
     }
 }
-
 
 impl Encodable for CommitObj {
     fn encode(&self) -> error::Result<Vec<u8>> {
@@ -73,7 +68,6 @@ impl Encodable for CommitObj {
         Ok(buf)
     }
 }
-
 
 impl Decodable for CommitObj {
     fn decode(buf: &[u8]) -> error::Result<Self> {
@@ -102,7 +96,6 @@ fn decode_parents(buf: &mut VecDeque<&[u8]>) -> error::Result<Vec<CommitHash>> {
     Ok(parents)
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::io::atomic::head::CommitText;
@@ -128,7 +121,6 @@ mod tests {
         assert_eq!(&buf[h + 2..h + 2 + 40], hash1.encode().unwrap());
         assert_eq!(&buf[h + 2 + 41..h + 2 + 41 + 40], hash2.encode().unwrap());
     }
-
 
     #[test]
     fn decode() {

@@ -12,13 +12,11 @@ pub struct ChangeFileMeta {
     pub change: ChangeFile,
 }
 
-
 pub enum ChangeFile {
     Create(FileObj),
     Update(FileObj),
     Delete,
 }
-
 
 #[derive(Debug, Clone)]
 pub struct WorkspaceIo<Fs, Io>
@@ -28,7 +26,6 @@ where
 {
     fs: FsIo<Fs, Io>,
 }
-
 
 impl<Fs, Io> WorkspaceIo<Fs, Io>
 where
@@ -63,7 +60,6 @@ where
         Ok(changed_files)
     }
 
-
     fn compare_trace(
         &self,
         trace_tree: &mut TreeObj,
@@ -85,7 +81,6 @@ where
         Ok(())
     }
 
-
     fn diff(
         &self,
         changed_files: &mut Vec<ChangeFileMeta>,
@@ -105,7 +100,6 @@ where
         }
     }
 
-
     pub fn try_read(&self, file_path: &FilePath) -> error::Result<FileObj> {
         match self.read(file_path)? {
             Some(file_obj) => Ok(file_obj),
@@ -117,14 +111,12 @@ where
         }
     }
 
-
     pub fn read(&self, file_path: &FilePath) -> error::Result<Option<FileObj>> {
         let Some(buf) = self.fs.read(file_path)? else {
             return Ok(None);
         };
         Ok(Some(FileObj::decode(&buf)?))
     }
-
 
     pub fn unpack(&self, file_path: &FilePath, obj: &Obj) -> error::Result<()> {
         match obj {
@@ -140,7 +132,6 @@ where
         }
     }
 }
-
 
 pub struct ObjectIter<'a, Fs, Io>
 where

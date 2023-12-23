@@ -18,13 +18,11 @@ pub struct Bundle {
     pub branches: Vec<BundleBranch>,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BundleTrace {
     pub commit_hash: CommitHash,
     pub obj_hash: ObjHash,
 }
-
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BundleObject {
@@ -32,13 +30,11 @@ pub struct BundleObject {
     pub compressed_buf: CompressedBuf,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BundleBranch {
     pub branch_name: BranchName,
     pub commits: Vec<CommitHash>,
 }
-
 
 #[derive(Debug)]
 pub struct BundleIo<Fs, Io>
@@ -50,7 +46,6 @@ where
     trace: TraceIo<Fs, Io>,
     fs: FsIo<Fs, Io>,
 }
-
 
 impl<Fs, Io> BundleIo<Fs, Io>
 where
@@ -66,7 +61,6 @@ where
         }
     }
 
-
     pub fn create(&self) -> error::Result<Bundle> {
         let branches = self.read_branch_heads()?;
         Ok(Bundle {
@@ -75,7 +69,6 @@ where
             traces: self.trace.read_all()?,
         })
     }
-
 
     fn read_branch_heads(&self) -> error::Result<Vec<BundleBranch>> {
         let head_files = self.read_all_branch_head_path()?;
@@ -97,13 +90,11 @@ where
         Ok(branches)
     }
 
-
     #[inline]
     fn read_all_branch_head_path(&self) -> error::Result<Vec<String>> {
         Ok(self.fs.all_file_path(".meltos/refs/heads")?)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -169,7 +160,6 @@ mod tests {
         assert_eq!(&bundle.branches[0].commits[0], &commit_hash);
         assert_eq!(&bundle.branches[1].commits[0], &null_commit);
     }
-
 
     #[test]
     fn read_all_objs() {

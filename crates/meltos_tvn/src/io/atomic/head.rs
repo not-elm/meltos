@@ -18,7 +18,6 @@ where
     fs: FsIo<Fs, Io>,
 }
 
-
 impl<Fs, Io> HeadIo<Fs, Io>
 where
     Fs: FileSystem<Io>,
@@ -29,7 +28,6 @@ where
             fs: FsIo::new(fs),
         }
     }
-
 
     #[inline]
     pub fn write_remote(
@@ -44,7 +42,6 @@ where
         Ok(())
     }
 
-
     #[inline]
     pub fn write(&self, branch_name: &BranchName, commit_hash: &CommitHash) -> error::Result<()> {
         self.fs.write(
@@ -54,19 +51,16 @@ where
         Ok(())
     }
 
-
     #[inline]
     pub fn try_read_remote(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
         self.read_remote(branch_name)?
             .ok_or_else(|| error::Error::NotfoundHead(branch_name.clone()))
     }
 
-
     #[inline]
     pub fn read_remote(&self, branch_name: &BranchName) -> error::Result<Option<CommitHash>> {
         self._read(".meltos/refs/remotes/", branch_name)
     }
-
 
     #[inline]
     pub fn try_read(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
@@ -74,12 +68,10 @@ where
             .ok_or_else(|| error::Error::NotfoundHead(branch_name.clone()))
     }
 
-
     #[inline]
     pub fn read(&self, branch_name: &BranchName) -> error::Result<Option<CommitHash>> {
         self._read(".meltos/refs/heads/", branch_name)
     }
-
 
     pub fn read_all(&self) -> error::Result<Vec<(BranchName, CommitHash)>> {
         let files = self.fs.all_file_path(".meltos/refs/heads/")?;
@@ -96,7 +88,6 @@ where
         Ok(branches)
     }
 
-
     fn _read(&self, dir: &str, branch_name: &BranchName) -> error::Result<Option<CommitHash>> {
         let Some(buf) = self.fs.read(&format!("{dir}{branch_name}"))? else {
             return Ok(None);
@@ -104,7 +95,6 @@ where
         Ok(Some(CommitHash(ObjHash::decode(&buf)?)))
     }
 }
-
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct CommitText(pub String);
@@ -116,7 +106,6 @@ impl Encodable for CommitText {
         Ok(self.0.as_bytes().to_vec())
     }
 }
-
 
 impl Decodable for CommitText {
     fn decode(buf: &[u8]) -> error::Result<Self> {

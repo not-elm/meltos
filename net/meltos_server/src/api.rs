@@ -23,7 +23,6 @@ impl<D> AsSuccessResponse for D
     }
 }
 
-
 #[cfg(test)]
 mod test_util {
     use axum::{async_trait, http, Router};
@@ -37,10 +36,10 @@ mod test_util {
 
     use meltos::discussion::id::DiscussionId;
     use meltos::room::RoomId;
-    use meltos::schema::request::discussion::global::{Reply, Speak};
-    use meltos::schema::request::room::{Join, Open};
-    use meltos::schema::response::discussion::global::{Closed, Created, Replied, Spoke};
-    use meltos::schema::response::room::Opened;
+    use meltos::schema::discussion::global::{Reply, Speak};
+    use meltos::schema::discussion::global::{Closed, Created, Replied, Spoke};
+    use meltos::schema::room::{Join, Open};
+    use meltos::schema::room::Opened;
     use meltos::user::{SessionId, UserId};
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
@@ -77,7 +76,6 @@ mod test_util {
     unsafe impl<'a> Send for MockServerClient<'a> {}
 
     unsafe impl<'a> Sync for MockServerClient<'a> {}
-
 
     #[async_trait]
     impl<'a> Pushable<()> for MockServerClient<'a> {
@@ -147,13 +145,11 @@ mod test_util {
         SessionId("room".to_string())
     }
 
-
     pub async fn http_open_room(app: &mut Router, mock: MockFileSystem) -> RoomId {
         http_call_with_deserialize::<Opened>(app, open_room_request(mock))
             .await
             .room_id
     }
-
 
     pub async fn http_fetch(app: &mut Router, room_id: &RoomId, session_id: &SessionId) -> Bundle {
         http_call_with_deserialize::<Bundle>(
@@ -282,7 +278,6 @@ mod test_util {
             .await
             .unwrap()
     }
-
 
     pub async fn http_call_with_deserialize<D: DeserializeOwned>(
         app: &mut Router,

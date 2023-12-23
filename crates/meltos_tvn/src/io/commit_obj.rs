@@ -26,7 +26,6 @@ where
     branch_name: BranchName,
 }
 
-
 impl<Fs, Io> CommitObjIo<Fs, Io>
 where
     Fs: FileSystem<Io> + Clone,
@@ -60,12 +59,10 @@ where
         Ok(commit_objs)
     }
 
-
     pub fn read_head(&self) -> error::Result<CommitObj> {
         let hash = self.head.try_read(&self.branch_name)?;
         self.read(&hash)
     }
-
 
     pub fn read(&self, commit_hash: &ObjHash) -> error::Result<CommitObj> {
         let commit = self.object.try_read_obj(commit_hash)?;
@@ -77,7 +74,6 @@ where
         let tree = self.object.read_to_tree(&commit.committed_objs_tree)?;
         Ok(tree)
     }
-
 
     pub fn create(
         &self,
@@ -95,7 +91,6 @@ where
         })
     }
 
-
     #[inline]
     pub fn reset_local_commits(&self) -> error::Result {
         self.local_commits.write(&LocalCommitsObj::default())
@@ -105,8 +100,7 @@ where
         let local_commits = self.local_commits.try_read()?;
         let head = self.head.read(&self.branch_name)?;
         let from = local_commits.0[local_commits.0.len() - 1].clone();
-        let mut obj_hashes = self.read_obj_hashes(from, &head)?;
-
+        let obj_hashes = self.read_obj_hashes(from, &head)?;
         let mut obj_bufs = Vec::with_capacity(obj_hashes.len());
         for hash in obj_hashes {
             let Some(compressed_buf) = self.object.read(&hash)? else {
@@ -120,7 +114,6 @@ where
         Ok(obj_bufs)
     }
 
-
     pub fn read_obj_hashes(
         &self,
         from: CommitHash,
@@ -130,7 +123,6 @@ where
         self._read_hashes(&mut obj_hashes, from, to)?;
         Ok(obj_hashes)
     }
-
 
     fn _read_hashes(
         &self,
@@ -179,7 +171,6 @@ where
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
@@ -203,7 +194,6 @@ mod tests {
         assert_eq!(local_commit_objs, vec![]);
     }
 
-
     #[test]
     fn local_commit_count_is_2() {
         let mock = MockFileSystem::default();
@@ -224,7 +214,6 @@ mod tests {
         let local_commits = commit_obj.read_local_commits().unwrap();
         assert_eq!(local_commits.len(), 3);
     }
-
 
     #[test]
     fn read_objs_associated_with_all_commits() {

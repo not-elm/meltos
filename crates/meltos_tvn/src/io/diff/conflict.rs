@@ -1,9 +1,3 @@
-use std::ops::Range;
-
-use similar::{ChangeTag, DiffOp};
-
-use crate::io::diff::file::FileDiff;
-
 pub struct Conflict {
     pub lhs_text: String,
     pub rhs_text: String,

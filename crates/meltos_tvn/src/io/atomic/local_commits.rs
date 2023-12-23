@@ -17,7 +17,6 @@ where
     file_path: String,
 }
 
-
 impl<Fs, Io> LocalCommitsIo<Fs, Io>
 where
     Fs: FileSystem<Io>,
@@ -36,7 +35,6 @@ where
         Ok(())
     }
 
-
     pub fn append(&self, commit_hash: CommitHash) -> error::Result {
         let mut local_commits = self.read()?.unwrap_or_default();
         local_commits.push(commit_hash);
@@ -44,7 +42,6 @@ where
     }
 
     pub fn try_read(&self) -> error::Result<LocalCommitsObj> {
-
         let Some(local_commits) = self.read()? else {
             return Err(error::Error::NotfoundLocalCommits);
         };
@@ -52,7 +49,6 @@ where
     }
 
     pub fn read(&self) -> error::Result<Option<LocalCommitsObj>> {
-
         let Some(buf) = self.fs.read(&self.file_path)? else {
             return Ok(None);
         };
@@ -60,7 +56,6 @@ where
         Ok(Some(LocalCommitsObj::decode(&buf)?))
     }
 }
-
 
 #[cfg(test)]
 mod tests {

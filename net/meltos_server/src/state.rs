@@ -48,7 +48,6 @@ where
         })
     }
 
-
     pub async fn register(
         &self,
         user_id: Option<UserId>,
@@ -69,7 +68,6 @@ where
         }
     }
 }
-
 
 impl<Session> FromRef<AppState<Session>> for Rooms {
     fn from_ref(input: &AppState<Session>) -> Self {

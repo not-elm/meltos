@@ -3,7 +3,8 @@ pub mod tmp_file;
 use crate::error;
 use async_trait::async_trait;
 use meltos::room::RoomId;
-use meltos::schema::response::room::Opened;
+
+use meltos::schema::room::Opened;
 use meltos::user::{SessionId, UserId};
 use serde::{Deserialize, Serialize};
 
@@ -24,7 +25,6 @@ impl SessionConfigs {
         }
     }
 }
-
 
 impl From<Opened> for SessionConfigs {
     fn from(value: Opened) -> Self {

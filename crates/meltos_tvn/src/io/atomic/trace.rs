@@ -27,7 +27,6 @@ where
         }
     }
 
-
     pub fn write_all(&self, traces: &[BundleTrace]) -> error::Result {
         for trace in traces {
             self.write(&trace.commit_hash, &trace.obj_hash)?;
@@ -41,7 +40,6 @@ where
         self.io.write(&file_path, &hash.encode()?)?;
         Ok(())
     }
-
 
     #[inline]
     pub fn read_all(&self) -> error::Result<Vec<BundleTrace>> {
@@ -68,7 +66,6 @@ where
         Ok(traces)
     }
 
-
     #[inline]
     pub fn read(&self, commit_hash: &CommitHash) -> error::Result<ObjHash> {
         let file_path = format!("./.meltos/traces/{commit_hash}");
@@ -79,7 +76,6 @@ where
         ObjHash::decode(&buf)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

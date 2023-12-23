@@ -12,6 +12,5 @@ pub mod mock;
 pub trait SessionIo: Send + Sync {
     async fn register(&self, user_id: Option<UserId>) -> error::Result<(UserId, SessionId)>;
 
-
     async fn fetch(&self, session_id: SessionId) -> error::Result<UserId>;
 }

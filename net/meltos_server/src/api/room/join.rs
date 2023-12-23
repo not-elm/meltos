@@ -5,7 +5,7 @@ use axum::extract::State;
 use axum::http::Response;
 use axum::Json;
 
-use meltos::schema::request::room::{Join, Joined};
+use meltos::schema::room::{Join, Joined};
 use meltos_backend::user::SessionIo;
 
 use crate::api::HttpResult;
@@ -36,13 +36,12 @@ pub async fn join<Session: SessionIo + Debug>(
         .unwrap())
 }
 
-
 #[cfg(test)]
 mod tests {
     use axum::http::StatusCode;
 
     use meltos::room::RoomId;
-    use meltos::schema::request::room::Joined;
+    use meltos::schema::room::Joined;
     use meltos::user::UserId;
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
@@ -72,7 +71,6 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
     }
 
-
     #[tokio::test]
     async fn return_tvn_meta() {
         let session = MockUserSessionIo::default();
@@ -84,7 +82,6 @@ mod tests {
         let meta = response.deserialize::<Joined>().await;
         assert_eq!(meta.bundle.branches.len(), 1);
     }
-
 
     #[tokio::test]
     async fn return_user_id() {

@@ -21,7 +21,6 @@ where
     head: HeadIo<Fs, Io>,
 }
 
-
 impl<Fs, Io> UnZip<Fs, Io>
 where
     Fs: FileSystem<Io> + Clone,
@@ -36,7 +35,6 @@ where
         }
     }
 }
-
 
 impl<Fs, Io> UnZip<Fs, Io>
 where
@@ -54,7 +52,6 @@ where
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {

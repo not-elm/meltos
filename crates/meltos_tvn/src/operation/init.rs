@@ -18,7 +18,6 @@ where
     fs: FsIo<Fs, Io>,
 }
 
-
 impl<Fs, Io> Init<Fs, Io>
 where
     Fs: FileSystem<Io> + Clone,
@@ -33,7 +32,6 @@ where
         }
     }
 }
-
 
 impl<Fs, Io> Init<Fs, Io>
 where
@@ -60,7 +58,6 @@ where
         }
     }
 
-
     fn check_branch_not_initialized(&self) -> error::Result {
         println!("{:?}", self.fs.all_file_path("./.meltos")?);
         if self.fs.all_file_path("./.meltos")?.is_empty() {
@@ -70,7 +67,6 @@ where
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -102,7 +98,6 @@ mod tests {
         assert!(init.execute().is_err());
     }
 
-
     #[test]
     fn created_head_file() {
         let mock = MockFileSystem::default();
@@ -118,7 +113,6 @@ mod tests {
             CommitHash(null_commit.as_meta().unwrap().hash)
         );
     }
-
 
     #[test]
     fn created_trace_file_named_null_commit_hash() {

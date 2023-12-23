@@ -1,4 +1,3 @@
-use log::error;
 use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_tvn::branch::BranchName;
@@ -13,23 +12,20 @@ use crate::config::{SessionConfigs, SessionConfigsIo};
 use crate::http::HttpClient;
 
 pub mod discussion;
-pub mod tvn;
-
 
 pub struct RoomClient<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     client: HttpClient,
     operations: Operations<Fs, Io>,
 }
 
-
 impl<Fs, Io> RoomClient<Fs, Io>
-    where
-        Fs: FileSystem<Io> + Clone,
-        Io: std::io::Write + std::io::Read,
+where
+    Fs: FileSystem<Io> + Clone,
+    Io: std::io::Write + std::io::Read,
 {
     const BASE: &'static str = "http://127.0.0.1:3000";
     pub fn new(fs: Fs, configs: SessionConfigs) -> RoomClient<Fs, Io> {
@@ -38,7 +34,6 @@ impl<Fs, Io> RoomClient<Fs, Io>
             client: HttpClient::new(Self::BASE, configs),
         }
     }
-
 
     pub async fn open<Config: SessionConfigsIo>(
         fs: Fs,
@@ -51,7 +46,7 @@ impl<Fs, Io> RoomClient<Fs, Io>
         operations
             .local_commits
             .write(&LocalCommitsObj::default())?;
-        let client= HttpClient::open(Self::BASE, bundle, user_id).await?;
+        let client = HttpClient::open(Self::BASE, bundle, user_id).await?;
         session.save(client.configs().clone()).await?;
 
         Ok(Self {
@@ -59,7 +54,6 @@ impl<Fs, Io> RoomClient<Fs, Io>
             operations,
         })
     }
-
 
     pub async fn join<Config: SessionConfigsIo>(
         session: Config,
@@ -83,9 +77,8 @@ impl<Fs, Io> RoomClient<Fs, Io>
         })
     }
 
-
     #[inline]
-    pub async fn fetch(&self) -> crate::error::Result{
+    pub async fn fetch(&self) -> crate::error::Result {
         let bundle = self.client.fetch().await?;
         self.operations.patch.execute(&bundle)?;
         Ok(())
@@ -93,14 +86,15 @@ impl<Fs, Io> RoomClient<Fs, Io>
 
     #[inline(always)]
     pub fn merge(&self, source: BranchName) -> meltos_tvn::error::Result<MergedStatus> {
-        self.operations.merge.execute(source, BranchName::from(self.configs().user_id.to_string()))
+        self.operations
+            .merge
+            .execute(source, BranchName::from(self.configs().user_id.to_string()))
     }
 
     #[inline(always)]
     pub fn stage(&self, workspace_path: &str) -> meltos_tvn::error::Result {
         self.operations.stage.execute(workspace_path)
     }
-
 
     #[inline(always)]
     pub fn commit(
@@ -110,11 +104,9 @@ impl<Fs, Io> RoomClient<Fs, Io>
         self.operations.commit.execute(commit_text)
     }
 
-
     pub async fn push(&mut self) -> meltos_tvn::error::Result {
         self.operations.push.execute(&mut self.client).await
     }
-
 
     #[inline(always)]
     pub const fn configs(&self) -> &SessionConfigs {

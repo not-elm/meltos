@@ -1,11 +1,11 @@
 use async_trait::async_trait;
-use reqwest::{Client, header, Response};
+use reqwest::{header, Client, Response};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use meltos::room::RoomId;
-use meltos::schema::request::room::{Join, Joined, Open};
-use meltos::schema::response::room::Opened;
+use meltos::schema::room::Opened;
+use meltos::schema::room::{Join, Joined, Open};
 use meltos::user::UserId;
 use meltos_tvn::io::bundle::Bundle;
 use meltos_tvn::operation::push::Pushable;
@@ -20,7 +20,6 @@ pub struct HttpClient {
     base_uri: String,
 }
 
-
 impl HttpClient {
     pub fn new(base_uri: impl Into<String>, configs: SessionConfigs) -> Self {
         Self {
@@ -30,12 +29,10 @@ impl HttpClient {
         }
     }
 
-
     #[inline(always)]
     pub const fn configs(&self) -> &SessionConfigs {
         &self.configs
     }
-
 
     pub async fn join(
         base_uri: &str,
@@ -51,17 +48,19 @@ impl HttpClient {
             .send()
             .await?;
         let joined: Joined = response_to_json(response).await?;
-        Ok((Self {
-            configs: SessionConfigs {
-                session_id: joined.session_id.clone(),
-                user_id: joined.user_id.clone(),
-                room_id,
+        Ok((
+            Self {
+                configs: SessionConfigs {
+                    session_id: joined.session_id.clone(),
+                    user_id: joined.user_id.clone(),
+                    room_id,
+                },
+                client,
+                base_uri: base_uri.to_string(),
             },
-            client,
-            base_uri: base_uri.to_string(),
-        }, joined.bundle))
+            joined.bundle,
+        ))
     }
-
 
     pub async fn open(
         base_uri: &str,
@@ -85,21 +84,21 @@ impl HttpClient {
         })
     }
 
-
     #[inline]
     pub async fn fetch(&self) -> error::Result<Bundle> {
         self.get("tvn/fetch").await
     }
 
-
     async fn get<D>(&self, path: &str) -> error::Result<D>
-        where
-            D: DeserializeOwned,
+    where
+        D: DeserializeOwned,
     {
-        println!("uri = {}", format!("{}/room/{}/{path}", self.base_uri, self.configs.room_id));
         let response = self
             .client
-            .get(format!("http://localhost:3000/room/{}/tvn/fetch", self.configs.room_id))
+            .get(format!(
+                "http://localhost:3000/room/{}/tvn/fetch",
+                self.configs.room_id
+            ))
             .header(header::CONTENT_TYPE, "application/json")
             .header(
                 header::SET_COOKIE,
@@ -111,9 +110,9 @@ impl HttpClient {
     }
 
     async fn post<S, D>(&self, path: &str, body: &S) -> error::Result<D>
-        where
-            S: Serialize,
-            D: DeserializeOwned,
+    where
+        S: Serialize,
+        D: DeserializeOwned,
     {
         let response = self
             .client
@@ -129,7 +128,6 @@ impl HttpClient {
     }
 }
 
-
 #[async_trait]
 impl Pushable<()> for HttpClient {
     type Error = error::Error;
@@ -137,7 +135,10 @@ impl Pushable<()> for HttpClient {
     async fn push(&mut self, bundle: Bundle) -> error::Result<()> {
         let response = self
             .client
-            .post(format!("{}/room/{}/tvn/push", self.base_uri, self.configs.room_id))
+            .post(format!(
+                "{}/room/{}/tvn/push",
+                self.base_uri, self.configs.room_id
+            ))
             .header(
                 header::SET_COOKIE,
                 format!("session_id={}", self.configs.session_id),
@@ -151,9 +152,8 @@ impl Pushable<()> for HttpClient {
 }
 
 async fn response_to_json<D>(response: Response) -> error::Result<D>
-    where
-        D: DeserializeOwned,
+where
+    D: DeserializeOwned,
 {
-
     Ok(response.error_for_status()?.json().await?)
 }

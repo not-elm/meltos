@@ -29,14 +29,12 @@ where
         Self(FsIo::new(fs))
     }
 
-
     #[inline]
     pub fn write(&self, branch_name: &BranchName) -> std::io::Result<()> {
         self.0
             .write(".meltos/WORKING", &serde_json::to_vec(branch_name)?)?;
         Ok(())
     }
-
 
     #[inline]
     pub fn try_read(&self) -> std::io::Result<BranchName> {

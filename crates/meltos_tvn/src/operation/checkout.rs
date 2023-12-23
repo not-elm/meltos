@@ -12,7 +12,6 @@ pub enum CheckOutStatus {
     NewBranch,
 }
 
-
 #[derive(Debug, Clone)]
 pub struct Checkout<Fs, Io>
 where
@@ -23,7 +22,6 @@ where
     heads: HeadIo<Fs, Io>,
     new_branch: NewBranch<Fs, Io>,
 }
-
 
 impl<Fs, Io> Checkout<Fs, Io>
 where
@@ -38,7 +36,6 @@ where
         }
     }
 }
-
 
 impl<Fs, Io> Checkout<Fs, Io>
 where
@@ -68,7 +65,6 @@ where
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
@@ -90,7 +86,6 @@ mod tests {
         assert_eq!(BranchName::main(), working);
     }
 
-
     #[test]
     fn checkout_if_exists_local() {
         let mock = MockFileSystem::default();
@@ -106,7 +101,6 @@ mod tests {
         let working = WorkingIo::new(mock.clone()).try_read().unwrap();
         assert_eq!(second, working);
     }
-
 
     #[test]
     fn create_new_branch_if_not_exists() {

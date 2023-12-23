@@ -9,7 +9,6 @@ use crate::object::commit::CommitHash;
 use crate::object::tree::TreeObj;
 use crate::operation::unzip::UnZip;
 
-
 #[derive(Debug)]
 pub struct Merge<Fs, Io>
 where
@@ -39,13 +38,11 @@ where
     }
 }
 
-
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
 pub enum MergedStatus {
     FastSource,
     FastDist,
 }
-
 
 impl<Fs, Io> Merge<Fs, Io>
 where
@@ -75,7 +72,6 @@ where
         todo!();
     }
 
-
     fn commit_objs(
         &self,
         source_hashes: Vec<CommitHash>,
@@ -99,7 +95,6 @@ where
         todo!();
     }
 
-
     fn commit_tree(
         &self,
         mut commit_hashes: Vec<CommitHash>,
@@ -115,7 +110,6 @@ where
         }
         Ok(tree)
     }
-
 
     fn merge_origin(
         &self,
@@ -133,10 +127,8 @@ where
     }
 }
 
-
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct MergeConfig {}
-
 
 #[cfg(test)]
 mod tests {
@@ -179,7 +171,6 @@ mod tests {
             .unwrap();
         assert!(file.is_some());
     }
-
 
     #[test]
     fn fast_merge_from_dist() {

@@ -20,7 +20,6 @@ impl FileDiff {
         }
     }
 
-
     pub fn from_obj_hashes<Fs, Io>(
         fs: Fs,
         lhs: &ObjHash,
@@ -42,7 +41,6 @@ impl FileDiff {
             }))
         }
     }
-
 
     pub fn diff(&self) -> TextDiff<str> {
         TextDiff::from_lines(&self.old, &self.new)

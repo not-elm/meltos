@@ -18,7 +18,6 @@ where
     head: HeadIo<Fs, Io>,
 }
 
-
 impl<Fs, Io> Save<Fs, Io>
 where
     Fs: FileSystem<Io> + Clone,
@@ -32,7 +31,6 @@ where
         }
     }
 
-
     /// * write objs.
     /// * write head.
     /// * write traces related to commits.
@@ -42,7 +40,6 @@ where
         self.write_traces(bundle.traces)
     }
 
-
     fn write_objs(&self, objs: Vec<BundleObject>) -> error::Result {
         for obj in objs {
             self.object.write(&obj.hash, &obj.compressed_buf)?;
@@ -50,7 +47,6 @@ where
 
         Ok(())
     }
-
 
     fn write_branches(&self, branches: &[BundleBranch]) -> error::Result {
         for branch in branches {
@@ -75,7 +71,6 @@ where
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {

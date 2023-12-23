@@ -7,7 +7,6 @@ pub mod operation;
 
 pub mod encode;
 
-
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;

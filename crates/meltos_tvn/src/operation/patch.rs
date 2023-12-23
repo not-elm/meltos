@@ -16,7 +16,6 @@ where
     trace: TraceIo<Fs, Io>,
 }
 
-
 impl<Fs, Io> Patch<Fs, Io>
 where
     Fs: FileSystem<Io> + Clone,
@@ -30,7 +29,6 @@ where
         }
     }
 }
-
 
 impl<Fs, Io> Patch<Fs, Io>
 where
@@ -49,7 +47,6 @@ where
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {

@@ -68,12 +68,10 @@ where
     }
 }
 
-
 #[repr(transparent)]
 #[derive(Default, Clone, Deref, DerefMut, Debug, Eq, PartialEq)]
 pub struct TreeObj(pub HashMap<FilePath, ObjHash>);
 impl_serialize_and_deserialize!(TreeObj);
-
 
 impl TreeObj {
     pub const HEADER: &'static [u8] = b"TREE\0";
@@ -86,7 +84,6 @@ impl TreeObj {
         }
     }
 
-
     pub fn replace_by(&mut self, tree: TreeObj) {
         for (file_path, hash) in tree.0.into_iter() {
             self.0.insert(file_path, hash);
@@ -94,14 +91,12 @@ impl TreeObj {
     }
 }
 
-
 impl AsMeta for TreeObj {
     fn as_meta(&self) -> error::Result<ObjMeta> {
         let buf = self.encode()?;
         Ok(ObjMeta::compress(buf)?)
     }
 }
-
 
 impl Encodable for TreeObj {
     fn encode(&self) -> error::Result<Vec<u8>> {
@@ -133,7 +128,6 @@ impl Encodable for TreeObj {
     }
 }
 
-
 impl Decodable for TreeObj {
     fn decode(buf: &[u8]) -> error::Result<Self> {
         let mut buf = buf[TreeObj::HEADER.len()..]
@@ -153,13 +147,11 @@ impl Decodable for TreeObj {
     }
 }
 
-
 fn decode_entry_count(buf: &mut VecDeque<&[u8]>) -> error::Result<usize> {
     let entry_count_buf = buf.pop_front().unwrap();
     let entry_count_str = std::str::from_utf8(entry_count_buf)?;
     Ok(usize::from_str(entry_count_str)?)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -189,7 +181,6 @@ mod tests {
         assert_eq!(&buf[i..], format!("{p1}\0{h1}\0").as_bytes());
     }
 
-
     #[test]
     fn decode() {
         let mut tree = TreeObj::default();
@@ -204,7 +195,6 @@ mod tests {
         let decoded = TreeObj::decode(&buf).unwrap();
         assert_eq!(decoded, tree);
     }
-
 
     #[test]
     fn deserialize() {

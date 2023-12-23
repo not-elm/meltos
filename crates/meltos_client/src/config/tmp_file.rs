@@ -7,7 +7,6 @@ use crate::config::{SessionConfigs, SessionConfigsIo};
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Default)]
 pub struct TmpSessionConfigsIo;
 
-
 #[async_trait]
 impl SessionConfigsIo for TmpSessionConfigsIo {
     async fn save(&self, session_configs: SessionConfigs) -> crate::error::Result {

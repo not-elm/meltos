@@ -23,12 +23,10 @@ pub mod file;
 pub mod local_commits;
 pub mod tree;
 
-
 #[delegate]
 pub trait AsMeta {
     fn as_meta(&self) -> error::Result<ObjMeta>;
 }
-
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct ObjMeta {
@@ -37,13 +35,11 @@ pub struct ObjMeta {
     pub buf: Vec<u8>,
 }
 
-
 impl ObjMeta {
     #[inline]
     pub fn deserialize<D: DeserializeOwned>(&self) -> error::Result<D> {
         Ok(serde_json::from_slice(&self.buf)?)
     }
-
 
     pub fn compress(buf: Vec<u8>) -> io::Result<Self> {
         Ok(Self {
@@ -63,7 +59,6 @@ impl ObjMeta {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub enum Obj {
     File(FileObj),
@@ -72,7 +67,6 @@ pub enum Obj {
     Commit(CommitObj),
     LocalCommits(LocalCommitsObj),
 }
-
 
 impl Obj {
     pub fn expand(buf: &CompressedBuf) -> error::Result<Self> {
@@ -104,7 +98,6 @@ impl Obj {
         }
     }
 
-
     pub fn commit(self) -> error::Result<CommitObj> {
         match self {
             Self::Commit(commit) => Ok(commit),
@@ -130,7 +123,6 @@ impl Obj {
     }
 }
 
-
 impl Display for Obj {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -142,7 +134,6 @@ impl Display for Obj {
         }
     }
 }
-
 
 impl AsMeta for Obj {
     #[inline]
@@ -162,7 +153,6 @@ impl AsMeta for Obj {
 pub struct ObjHash(pub String);
 impl_serialize_and_deserialize!(ObjHash);
 
-
 impl ObjHash {
     #[inline]
     pub fn new(buf: &[u8]) -> Self {
@@ -170,14 +160,12 @@ impl ObjHash {
     }
 }
 
-
 impl Encodable for ObjHash {
     #[inline]
     fn encode(&self) -> error::Result<Vec<u8>> {
         Ok(self.0.as_bytes().to_vec())
     }
 }
-
 
 impl Decodable for ObjHash {
     #[inline]
@@ -187,7 +175,6 @@ impl Decodable for ObjHash {
         Ok(Self(hash))
     }
 }
-
 
 #[repr(transparent)]
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Ord, PartialOrd, Deref, Serialize, Deserialize)]

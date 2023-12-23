@@ -26,7 +26,6 @@ where
     branch_name: BranchName,
 }
 
-
 impl<Fs, Io> Stage<Fs, Io>
 where
     Fs: FileSystem<Io> + Clone,
@@ -45,7 +44,6 @@ where
         }
     }
 }
-
 
 impl<Fs, Io> Stage<Fs, Io>
 where
@@ -86,7 +84,6 @@ where
         Ok(())
     }
 
-
     fn stage_file(
         &self,
         stage: &mut TreeObj,
@@ -108,7 +105,6 @@ where
         Ok(())
     }
 
-
     fn add_delete_objs_into_staging(
         &self,
         staging: &mut TreeObj,
@@ -125,7 +121,6 @@ where
         }
         Ok(())
     }
-
 
     fn scan_deleted_files(
         &self,
@@ -145,7 +140,6 @@ where
             .collect())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -197,7 +191,6 @@ mod tests {
         assert_eq!(obj2, "dasds日本語".as_bytes());
     }
 
-
     #[test]
     fn create_delete_obj() {
         let mock = MockFileSystem::default();
@@ -227,7 +220,6 @@ mod tests {
             .buf;
         assert_eq!(buf, delete_hello.buf);
     }
-
 
     #[test]
     fn no_moved_if_not_changed_file() {

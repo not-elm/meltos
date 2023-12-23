@@ -16,7 +16,6 @@ where
     object: ObjIo<Fs, Io>,
 }
 
-
 impl<Fs, Io> TraceTreeIo<Fs, Io>
 where
     Fs: FileSystem<Io> + Clone,
@@ -42,14 +41,12 @@ where
         Ok(())
     }
 
-
     pub fn read(&self, commit_hash: &CommitHash) -> error::Result<TreeObj> {
         let trace_hash = self.trace.read(commit_hash)?;
         let trace_tree = self.object.read_to_tree(&trace_hash)?;
         Ok(trace_tree)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -83,7 +80,6 @@ mod tests {
         .unwrap();
         trace_tree.read(&commit_hash).unwrap();
     }
-
 
     #[test]
     fn read_tree_after_wrote() {

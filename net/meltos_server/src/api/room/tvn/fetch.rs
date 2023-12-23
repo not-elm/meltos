@@ -3,11 +3,10 @@ use crate::middleware::room::SessionRoom;
 use crate::middleware::user::SessionUser;
 
 #[tracing::instrument]
-pub async fn fetch(SessionRoom(room): SessionRoom) -> HttpResult {
+pub async fn fetch(SessionRoom(room): SessionRoom, SessionUser(_): SessionUser) -> HttpResult {
     let bundle = room.create_bundle()?;
     Ok(bundle.as_success_response())
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -31,10 +30,9 @@ mod tests {
                 .body(Body::empty())
                 .unwrap(),
         )
-            .await;
+        .await;
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
-
 
     #[tokio::test]
     async fn fetch() {

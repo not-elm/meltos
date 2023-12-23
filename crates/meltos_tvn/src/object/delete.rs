@@ -6,11 +6,9 @@ use crate::object::{AsMeta, Decodable, Encodable, ObjHash, ObjMeta};
 #[derive(Debug, Clone, Hash, Ord, PartialOrd, Eq, PartialEq)]
 pub struct DeleteObj(pub ObjHash);
 
-
 impl DeleteObj {
     pub const HEADER: &'static [u8] = b"DELETE\0";
 }
-
 
 impl AsMeta for DeleteObj {
     #[inline]
@@ -18,7 +16,6 @@ impl AsMeta for DeleteObj {
         Ok(ObjMeta::compress(self.encode()?)?)
     }
 }
-
 
 impl Encodable for DeleteObj {
     #[inline]
@@ -29,14 +26,12 @@ impl Encodable for DeleteObj {
     }
 }
 
-
 impl Decodable for DeleteObj {
     #[inline]
     fn decode(buf: &[u8]) -> error::Result<Self> {
         Ok(Self(ObjHash::decode(&buf[DeleteObj::HEADER.len()..])?))
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -51,7 +46,6 @@ mod tests {
         expect.extend(delete_obj.0.encode().unwrap());
         assert_eq!(buf, expect);
     }
-
 
     #[test]
     fn decode() {

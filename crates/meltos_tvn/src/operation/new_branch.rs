@@ -12,7 +12,6 @@ where
     head: HeadIo<Fs, Io>,
 }
 
-
 impl<Fs, Io> NewBranch<Fs, Io>
 where
     Fs: FileSystem<Io>,
@@ -25,7 +24,6 @@ where
         }
     }
 
-
     ///
     ///
     /// * copy `head file` from old branch
@@ -36,7 +34,6 @@ where
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {

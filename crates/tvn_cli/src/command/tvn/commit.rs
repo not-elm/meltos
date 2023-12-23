@@ -12,7 +12,6 @@ pub struct CommitArgs {
     commit_text: String,
 }
 
-
 #[async_trait]
 impl CommandExecutable for CommitArgs {
     async fn execute(self) -> crate::error::Result {

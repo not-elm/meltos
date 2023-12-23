@@ -44,7 +44,6 @@ where
     }
 }
 
-
 impl<Fs, Io> Commit<Fs, Io>
 where
     Fs: FileSystem<Io>,
@@ -88,14 +87,12 @@ where
         }
     }
 
-
     fn update_trace(&self, staging_tree: TreeObj, commit_hash: &CommitHash) -> error::Result {
         let mut trace_tree = self.trace_tree.read(commit_hash).unwrap_or_default();
         trace_tree.replace_by(staging_tree);
         self.trace_tree.write(&trace_tree, commit_hash)?;
         Ok(())
     }
-
 
     fn commit(&self, commit: CommitObj) -> error::Result<CommitHash> {
         let commit_meta = commit.as_meta()?;
@@ -107,7 +104,6 @@ where
         Ok(CommitHash(commit_meta.hash.clone()))
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -137,7 +133,6 @@ mod tests {
         }
     }
 
-
     #[test]
     fn reset_staging_after_committed() {
         let mock = MockFileSystem::default();
@@ -152,7 +147,6 @@ mod tests {
 
         assert_eq!(staging_tree.len(), 0);
     }
-
 
     #[test]
     fn update_head_commit_hash() {
@@ -193,7 +187,6 @@ mod tests {
         let local = local_commits.read().unwrap().unwrap();
         assert_eq!(local, LocalCommitsObj(vec![null_commit_hash, commit_hash]))
     }
-
 
     #[test]
     fn exists_2_local_commits() {

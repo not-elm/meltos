@@ -1,6 +1,6 @@
 use axum::Json;
 
-use meltos::schema::request::discussion::global::Speak;
+use meltos::schema::discussion::global::Speak;
 
 use crate::api::HttpResult;
 use crate::middleware::room::SessionRoom;

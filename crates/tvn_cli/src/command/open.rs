@@ -14,7 +14,6 @@ pub struct OpenArgs {
     user_id: Option<UserId>,
 }
 
-
 #[async_trait]
 impl CommandExecutable for OpenArgs {
     async fn execute(self) -> error::Result {

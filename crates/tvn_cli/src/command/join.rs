@@ -14,18 +14,23 @@ pub struct JoinArgs {
     room_id: String,
 
     #[arg(
-    short,
-    long,
-    help = "ルーム内のユーザー名 省力された場合ランダムな名前になります"
+        short,
+        long,
+        help = "ルーム内のユーザー名 省力された場合ランダムな名前になります"
     )]
     user_id: Option<UserId>,
 }
 
-
 #[async_trait]
 impl CommandExecutable for JoinArgs {
     async fn execute(self) -> crate::error::Result {
-        let user = RoomClient::join(TmpSessionConfigsIo, StdFileSystem, RoomId(self.room_id), self.user_id).await?;
+        let user = RoomClient::join(
+            TmpSessionConfigsIo,
+            StdFileSystem,
+            RoomId(self.room_id),
+            self.user_id,
+        )
+        .await?;
         println!("room = {:?}", user.configs());
         Ok(())
     }

@@ -6,8 +6,8 @@ use axum::response::Response;
 use axum::Json;
 
 use meltos::room::RoomId;
-use meltos::schema::request::room::Open;
-use meltos::schema::response::room::Opened;
+use meltos::schema::room::Open;
+use meltos::schema::room::Opened;
 use meltos::user::{SessionId, UserId};
 use meltos_backend::discussion::DiscussionIo;
 use meltos_backend::user::SessionIo;
@@ -36,7 +36,6 @@ where
     Ok(response_success_create_room(room_id, user_id, session_id))
 }
 
-
 fn response_success_create_room(
     room_id: RoomId,
     user_id: UserId,
@@ -58,7 +57,7 @@ fn response_success_create_room(
 mod tests {
     use tower::ServiceExt;
 
-    use meltos::schema::response::room::Opened;
+    use meltos::schema::room::Opened;
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
     use meltos_tvn::file_system::mock::MockFileSystem;

@@ -11,5 +11,5 @@ pub enum Error {
     Tvn(#[from] meltos_tvn::error::Error),
 
     #[error(transparent)]
-    Io(#[from] std::io::Error)
+    Io(#[from] std::io::Error),
 }

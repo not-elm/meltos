@@ -6,7 +6,6 @@ use crate::api::HttpResult;
 use crate::middleware::room::SessionRoom;
 use crate::middleware::user::SessionUser;
 
-
 ///
 /// * save pushed data related to commits.
 #[tracing::instrument]
@@ -18,7 +17,6 @@ pub async fn push(
     room.save_bundle(bundle)?;
     Ok(Response::default())
 }
-
 
 #[cfg(test)]
 mod tests {

@@ -37,7 +37,7 @@ impl PathParam {
                         json!({
                             "error" : e.to_string()
                         })
-                            .to_string(),
+                        .to_string(),
                     ))
                     .unwrap()
             })?;
@@ -47,8 +47,8 @@ impl PathParam {
 
 #[async_trait]
 impl<Session> FromRequestParts<AppState<Session>> for SessionRoom
-    where
-        Session: SessionIo,
+where
+    Session: SessionIo,
 {
     type Rejection = Response;
 

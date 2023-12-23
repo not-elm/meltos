@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
-use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::local_commits::LocalCommitsIo;
 use crate::io::atomic::trace::TraceIo;
 use crate::io::bundle::{Bundle, BundleBranch, BundleObject, BundleTrace};
@@ -20,20 +19,17 @@ pub trait Pushable<Output> {
     async fn push(&mut self, bundle: Bundle) -> std::result::Result<Output, Self::Error>;
 }
 
-
 #[derive(Debug, Clone)]
 pub struct Push<Fs, Io>
 where
     Fs: FileSystem<Io>,
     Io: std::io::Write + std::io::Read,
 {
-    head: HeadIo<Fs, Io>,
     commit_obj: CommitObjIo<Fs, Io>,
     local_commits: LocalCommitsIo<Fs, Io>,
     branch_name: BranchName,
     trace: TraceIo<Fs, Io>,
 }
-
 
 impl<Fs, Io> Push<Fs, Io>
 where
@@ -43,14 +39,12 @@ where
     pub fn new(branch_name: BranchName, fs: Fs) -> Push<Fs, Io> {
         Self {
             commit_obj: CommitObjIo::new(branch_name.clone(), fs.clone()),
-            head: HeadIo::new(fs.clone()),
             trace: TraceIo::new(fs.clone()),
             local_commits: LocalCommitsIo::new(branch_name.clone(), fs),
             branch_name,
         }
     }
 }
-
 
 impl<Fs, Io> Push<Fs, Io>
 where
@@ -73,7 +67,6 @@ where
         Ok(output)
     }
 
-
     pub fn create_push_bundle(&self) -> error::Result<Bundle> {
         let local_commits = self.local_commits.read()?.unwrap_or_default();
         if local_commits.is_empty() {
@@ -92,7 +85,6 @@ where
     }
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub struct PushBundle {
     pub traces: Vec<BundleTrace>,
@@ -100,7 +92,6 @@ pub struct PushBundle {
     pub branch_name: BranchName,
     pub commits: Vec<CommitObj>,
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -122,7 +113,6 @@ mod tests {
     struct MockRemoteClient {
         pub bundle: Option<Bundle>,
     }
-
 
     #[async_trait]
     impl Pushable<()> for MockRemoteClient {
@@ -159,7 +149,6 @@ mod tests {
         assert!(push.execute(&mut MockRemoteClient::default()).await.is_ok());
     }
 
-
     #[tokio::test]
     async fn local_commits_is_cleared_if_succeed() {
         let mock = MockFileSystem::default();
@@ -178,7 +167,6 @@ mod tests {
 
         assert_eq!(commit_obj.read_local_commits().unwrap().len(), 0);
     }
-
 
     #[tokio::test]
     async fn push_param() {

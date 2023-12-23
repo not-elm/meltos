@@ -7,11 +7,9 @@ pub trait Encodable {
     fn encode(&self) -> error::Result<Vec<u8>>;
 }
 
-
 pub trait Decodable: Sized {
     fn decode(buf: &[u8]) -> error::Result<Self>;
 }
-
 
 #[macro_export]
 macro_rules! impl_serialize_and_deserialize {

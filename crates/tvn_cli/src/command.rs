@@ -28,5 +28,5 @@ pub enum Commands {
     Stage(StageArgs),
     Commit(CommitArgs),
     Push(PushArgs),
-    Merge(MergeArgs)
+    Merge(MergeArgs),
 }

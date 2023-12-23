@@ -8,7 +8,6 @@ pub fn merge(lhs: &FileDiff, rhs: &FileDiff) -> String {
     merged.join("")
 }
 
-
 pub fn merge_(lhs: &FileDiff, rhs: &FileDiff) -> Vec<String> {
     let lhs_diff = lhs.diff();
     let rhs_diff = rhs.diff();
@@ -48,10 +47,8 @@ pub fn merge_(lhs: &FileDiff, rhs: &FileDiff) -> Vec<String> {
         }
     }
 
-
     texts
 }
-
 
 struct Merges<'l, 'r, L, R> {
     lhs: MergeFile<'l, L>,
@@ -117,13 +114,11 @@ where
     }
 }
 
-
 #[derive(Debug, Clone)]
 enum MergeStatus {
     Success(Status),
     Conflicted,
 }
-
 
 #[derive(Debug, Clone)]
 enum Status {
@@ -142,7 +137,6 @@ enum Status {
         end: usize,
     },
 }
-
 
 impl Status {
     #[inline]
@@ -194,7 +188,6 @@ struct MergeFile<'a, L> {
     texts: &'a [&'a str],
     ops: L,
 }
-
 
 impl<'a, L> Iterator for MergeFile<'a, L>
 where
@@ -252,14 +245,12 @@ where
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use similar::{DiffOp, TextDiff};
 
     use crate::io::diff::file::FileDiff;
     use crate::io::diff::merge::merge;
-
 
     #[test]
     fn simple_inserted() {
@@ -270,7 +261,6 @@ mod tests {
         assert_eq!(merged, "LINE0\nLINE3\nLINE1\nLINE2\nLINE3\n");
     }
 
-
     #[test]
     fn merge2() {
         const ORIGINAL: &str = "hello\nworld\ntext";
@@ -280,7 +270,6 @@ mod tests {
         assert_eq!(merged, "hello\nyes\ntext");
     }
 
-
     #[test]
     fn merge3() {
         const ORIGINAL: &str = "hello1\nworld2\nrust3\ntext4";
@@ -289,7 +278,6 @@ mod tests {
         let merged = merge(&diff1, &diff2);
         assert_eq!(merged, "hello1\nyes3\ntext4");
     }
-
 
     #[test]
     fn merge4() {

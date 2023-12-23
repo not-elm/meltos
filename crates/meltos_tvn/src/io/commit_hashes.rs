@@ -13,7 +13,6 @@ where
     commit_obj: CommitObjIo<Fs, Io>,
 }
 
-
 impl<Fs, Io> CommitHashIo<Fs, Io>
 where
     Fs: FileSystem<Io> + Clone,
@@ -25,7 +24,6 @@ where
         }
     }
 }
-
 
 impl<Fs, Io> CommitHashIo<Fs, Io>
 where
@@ -59,7 +57,6 @@ where
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
@@ -76,7 +73,6 @@ mod tests {
         let hashes = commit_hashes.read_all(null_commit.clone(), &None).unwrap();
         assert_eq!(hashes, vec![null_commit]);
     }
-
 
     #[test]
     fn read_with_parents() {

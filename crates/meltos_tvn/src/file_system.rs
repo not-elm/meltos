@@ -51,7 +51,6 @@ pub trait FileSystem<Io: std::io::Read + std::io::Write> {
         Ok(!files.is_empty())
     }
 
-
     fn write(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
         self.create(path)?.write_all(buf)
     }
@@ -129,7 +128,6 @@ where
         self.fs.delete(path)
     }
 }
-
 
 #[repr(transparent)]
 #[derive(Eq, PartialEq, Debug, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd)]

@@ -19,10 +19,9 @@ async fn main() {
         Commands::Stage(stage) => stage.execute().await.unwrap(),
         Commands::Commit(commit) => commit.execute().await.unwrap(),
         Commands::Push(push) => push.execute().await.unwrap(),
-        Commands::Merge(merge) => merge.execute().await.unwrap()
+        Commands::Merge(merge) => merge.execute().await.unwrap(),
     }
 }
-
 
 #[allow(unused)]
 fn read_session_id() -> error::Result<SessionId> {

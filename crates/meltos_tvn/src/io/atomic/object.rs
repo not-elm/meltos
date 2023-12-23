@@ -35,13 +35,11 @@ where
         Self(FsIo::new(fs))
     }
 
-
     #[inline]
     pub fn read_to_commit(&self, object_hash: &CommitHash) -> error::Result<CommitObj> {
         let obj = self.try_read_obj(&object_hash.0)?;
         obj.commit()
     }
-
 
     #[inline]
     pub fn read_to_file(&self, object_hash: &ObjHash) -> error::Result<FileObj> {
@@ -49,13 +47,11 @@ where
         obj.file()
     }
 
-
     #[inline]
     pub fn read_to_tree(&self, object_hash: &ObjHash) -> error::Result<TreeObj> {
         let obj = self.try_read_obj(object_hash)?;
         obj.tree()
     }
-
 
     pub fn try_read_obj(&self, object_hash: &ObjHash) -> error::Result<Obj> {
         self.read_obj(object_hash).and_then(|obj| {
@@ -66,7 +62,6 @@ where
         })
     }
 
-
     pub fn read_obj(&self, object_hash: &ObjHash) -> error::Result<Option<Obj>> {
         let Some(buf) = self.read(object_hash)? else {
             return Ok(None);
@@ -74,7 +69,6 @@ where
 
         Ok(Some(Obj::expand(&buf)?))
     }
-
 
     pub fn read_all(&self) -> error::Result<Vec<BundleObject>> {
         let files = self.0.all_file_path("./.meltos/objects/")?;
@@ -89,7 +83,6 @@ where
         }
         Ok(objs)
     }
-
 
     pub fn read(&self, object_hash: &ObjHash) -> error::Result<Option<CompressedBuf>> {
         let Some(buf) = self.0.read(&format!("./.meltos/objects/{}", object_hash))? else {
@@ -114,7 +107,6 @@ where
         }
         Ok(())
     }
-
 
     #[inline]
     pub fn write(&self, hash: &ObjHash, compressed_buf: &CompressedBuf) -> error::Result {

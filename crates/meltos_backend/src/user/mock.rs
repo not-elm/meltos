@@ -11,7 +11,6 @@ use crate::user::SessionIo;
 #[derive(Debug, Default, Clone)]
 pub struct MockUserSessionIo(ArcMutex<HashMap<SessionId, UserId>>);
 
-
 impl MockUserSessionIo {
     pub async fn with_mock_users() -> Self {
         let me = Self::default();
@@ -26,7 +25,6 @@ impl MockUserSessionIo {
         self.0.lock().await.insert(session_id, user_id);
     }
 }
-
 
 impl MockUserSessionIo {
     async fn generate_session_id(&self) -> SessionId {

@@ -8,7 +8,6 @@ use meltos::discussion::DiscussionMeta;
 pub trait ClientDiscussionIo: Send + Sync {
     type Error: std::error::Error;
 
-
     async fn created(&self, discussion_meta: DiscussionMeta) -> Result<(), Self::Error>;
 
     async fn spoke(

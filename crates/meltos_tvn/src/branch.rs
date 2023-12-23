@@ -9,13 +9,11 @@ use crate::io::atomic::work_branch::WorkingIo;
 pub struct BranchName(pub String);
 impl_string_new_type!(BranchName);
 
-
 impl BranchName {
     #[inline]
     pub fn main() -> Self {
         Self::from("main")
     }
-
 
     pub fn working<Fs, Io>(fs: Fs) -> std::io::Result<Self>
     where

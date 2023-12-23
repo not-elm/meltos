@@ -8,7 +8,6 @@ use crate::file_system::FileSystem;
 #[derive(Clone, Default)]
 pub struct MockFileSystem(pub Arc<Mutex<HashMap<String, MockIo>>>);
 
-
 impl MockFileSystem {
     #[cfg(test)]
     pub fn force_write(&self, path: &str, buf: &[u8]) {
@@ -77,7 +76,6 @@ impl Write for MockIo {
         Ok(())
     }
 }
-
 
 impl Debug for MockFileSystem {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

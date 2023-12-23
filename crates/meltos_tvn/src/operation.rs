@@ -28,7 +28,6 @@ pub mod save;
 pub mod stage;
 pub mod unzip;
 
-
 #[derive(Debug)]
 pub struct Operations<Fs = StdFileSystem, Io = File>
 where
@@ -49,7 +48,6 @@ where
     fs: Fs,
     branch_name: BranchName,
 }
-
 
 impl<Fs, Io> Operations<Fs, Io>
 where
@@ -85,7 +83,6 @@ where
         }
     }
 }
-
 
 impl<Fs, Io> Clone for Operations<Fs, Io>
 where

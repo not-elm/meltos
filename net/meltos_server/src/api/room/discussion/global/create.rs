@@ -18,7 +18,7 @@ pub async fn create(
 //     use http_body_util::BodyExt;
 //     use tower::ServiceExt;
 //
-//     use meltos::schema::response::discussion::global::Created;
+//     use meltos::schema::discussion::global::Created;
 //     use meltos_tvn::file_system::mock::MockFileSystem;
 //
 //     use crate::api::test_util::{create_discussion_request, http_open_room, logged_in_app};
