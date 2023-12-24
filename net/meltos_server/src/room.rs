@@ -8,6 +8,8 @@ use axum::http::StatusCode;
 use axum::response::Response;
 use serde::Serialize;
 use serde_json::json;
+use tokio::sync::Mutex;
+use meltos::channel::ChannelMessageSendable;
 
 use meltos::room::RoomId;
 use meltos::user::UserId;
@@ -24,6 +26,7 @@ use crate::error;
 use crate::room::executor::discussion::DiscussionCommandExecutor;
 
 mod executor;
+pub mod channel;
 
 #[derive(Default, Clone, Debug, Deref)]
 pub struct Rooms(ArcMutex<RoomMap>);
@@ -64,6 +67,7 @@ pub struct Room {
     pub id: RoomId,
     pub tvn: Operations<MockFileSystem>,
     discussion: Arc<dyn DiscussionIo>,
+    channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error = error::Error>>>>>
 }
 
 impl Room {
@@ -76,8 +80,15 @@ impl Room {
                 BranchName::from(owner.to_string()),
                 MockFileSystem::default(),
             ),
+            channels: Arc::new(Mutex::new(Vec::new()))
         }
     }
+    
+    pub async fn insert_channel(&self, channel: impl ChannelMessageSendable<Error = error::Error> + 'static){
+        let mut channels = self.channels.lock().await;
+        channels.push(Box::new(channel));
+    }
+
 
     pub fn save_bundle(&self, bundle: Bundle) -> std::result::Result<(), Response> {
         self.tvn.save.execute(bundle).map_err(|e| {

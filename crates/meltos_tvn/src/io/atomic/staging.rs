@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::file_system::{FilePath, FileSystem, };
+use crate::file_system::{FilePath, FileSystem};
 use crate::object::tree::TreeIo;
 
 #[derive(Debug, Clone)]
@@ -14,7 +14,7 @@ impl<Fs> StagingIo<Fs>
 {
     pub fn new(fs: Fs) -> StagingIo<Fs> {
         Self(TreeIo::new(
-            FilePath::from("./.meltos/stage"),
+            FilePath::from(".meltos/stage"),
             fs,
         ))
     }

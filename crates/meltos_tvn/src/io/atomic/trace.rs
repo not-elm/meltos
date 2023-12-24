@@ -34,14 +34,14 @@ impl<Fs> TraceIo<Fs>
 
     #[inline]
     pub fn write(&self, commit_hash: &CommitHash, hash: &ObjHash) -> error::Result {
-        let file_path = format!("./.meltos/traces/{commit_hash}");
+        let file_path = format!(".meltos/traces/{commit_hash}");
         self.fs.write(&file_path, &hash.encode()?)?;
         Ok(())
     }
 
     #[inline]
     pub fn read_all(&self) -> error::Result<Vec<BundleTrace>> {
-        let files = self.fs.all_file_path("./.meltos/traces/")?;
+        let files = self.fs.all_file_path(".meltos/traces/")?;
         let mut traces = Vec::with_capacity(files.len());
         for file_path in files {
             let file_name = Path::new(&file_path)
@@ -66,7 +66,7 @@ impl<Fs> TraceIo<Fs>
 
     #[inline]
     pub fn read(&self, commit_hash: &CommitHash) -> error::Result<ObjHash> {
-        let file_path = format!("./.meltos/traces/{commit_hash}");
+        let file_path = format!(".meltos/traces/{commit_hash}");
         let buf = self
             .fs
             .try_read(&file_path)

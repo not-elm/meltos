@@ -1,4 +1,4 @@
-mod channel;
+pub mod channel;
 pub mod discussion;
 pub mod error;
 pub mod room;

@@ -12,7 +12,7 @@ use crate::io::bundle::{Bundle, BundleBranch, BundleObject, BundleTrace};
 use crate::io::commit_obj::CommitObjIo;
 use crate::object::commit::CommitObj;
 
-#[async_trait(?Send)]
+#[async_trait(? Send)]
 pub trait Pushable<Output> {
     type Error: Display;
 
@@ -92,11 +92,7 @@ pub struct PushBundle {
 
 #[cfg(test)]
 mod tests {
-    use std::cell::RefCell;
-    use std::sync::{Arc, Mutex};
-
     use async_trait::async_trait;
-    use similar::algorithms::DiffHook;
 
     use crate::branch::BranchName;
     use crate::error;
@@ -119,7 +115,7 @@ mod tests {
 
     unsafe impl Sync for MockRemoteClient {}
 
-    #[async_trait(?Send)]
+    #[async_trait(? Send)]
     impl Pushable<()> for MockRemoteClient {
         type Error = String;
 

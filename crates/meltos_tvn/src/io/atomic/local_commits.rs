@@ -22,7 +22,7 @@ impl<Fs> LocalCommitsIo<Fs>
     pub fn new(branch_name: BranchName, fs: Fs) -> LocalCommitsIo<Fs> {
         Self {
             fs,
-            file_path: format!("./.meltos/branches/{branch_name}/LOCAL"),
+            file_path: format!(".meltos/branches/{branch_name}/LOCAL"),
         }
     }
 

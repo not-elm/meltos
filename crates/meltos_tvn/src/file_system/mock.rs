@@ -43,37 +43,6 @@ impl FileSystem for MockFileSystem {
     }
 }
 
-// #[derive(Default, Debug, Clone)]
-// pub struct MockIo(Arc<Mutex<Vec<u8>>>);
-//
-// impl Read for MockIo {
-//     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-//         let b = self.0.lock().unwrap();
-//         buf[0..b.len()].copy_from_slice(b.as_slice());
-//         Ok(b.len())
-//     }
-//
-//     fn read_to_end(&mut self, buf: &mut Vec<u8>) -> std::io::Result<usize> {
-//         *buf = self.0.lock().unwrap().to_vec();
-//         Ok(buf.len())
-//     }
-// }
-//
-// impl Write for MockIo {
-//     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-//         self.0.lock().unwrap().write(buf)
-//     }
-//
-//     fn flush(&mut self) -> std::io::Result<()> {
-//         self.0.lock().unwrap().flush()
-//     }
-//
-//     fn write_all(&mut self, buf: &[u8]) -> std::io::Result<()> {
-//         *self.0.lock().unwrap() = buf.to_vec();
-//         Ok(())
-//     }
-// }
-
 impl Debug for MockFileSystem {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for (key, _) in self.0.lock().unwrap().iter_mut() {

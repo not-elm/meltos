@@ -48,6 +48,9 @@ pub enum Error {
     #[error("session not exists: session id = {0}")]
     SessionNotExists(RoomId),
 
+    #[error("failed to send channel message : {0}")]
+    FailedSendChannelMessage(String),
+
     #[error("websocket message invalid schema")]
     InvalidOrder,
 }

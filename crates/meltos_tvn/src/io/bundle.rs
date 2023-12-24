@@ -172,7 +172,7 @@ mod tests {
             .execute("commit")
             .unwrap();
         let bundle = BundleIo::new(mock.clone()).create().unwrap();
-        let objs_count = mock.all_file_path("./.meltos/objects/").unwrap().len();
+        let objs_count = mock.all_file_path(".meltos/objects/").unwrap().len();
 
         assert_eq!(objs_count, bundle.objs.len());
     }

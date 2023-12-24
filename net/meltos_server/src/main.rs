@@ -4,6 +4,8 @@ use std::net::SocketAddr;
 
 use axum::Router;
 use axum::routing::{delete, get, post};
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 use meltos_backend::discussion::DiscussionIo;
 use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
@@ -19,17 +21,18 @@ mod middleware;
 mod room;
 mod state;
 
-// pub fn tracing_init() {
-//     tracing_subscriber::registry()
-//         .with(console_subscriber::spawn())
-//         .with(tracing_subscriber::fmt::layer())
-//         .init();
-// }
+pub fn tracing_init() {
+    tracing_subscriber::registry()
+        .with(console_subscriber::spawn())
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+}
 
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     env::set_var("RUST_LOG", "DEBUG");
+    tracing_init();
     let listener = tokio::net::TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 3000))).await?;
 
     axum::serve(
@@ -50,7 +53,7 @@ fn app<Session, Discussion>(session: Session, _: Discussion) -> Router
 {
     Router::new()
         .route("/room/open", post(api::room::open::<Session, Discussion>))
-        .route("/room/connect", get(api::room::connect))
+        .route("/room/channel", get(api::room::channel))
         .nest("/room/:room_id", room_operations_router())
         .with_state(AppState::<Session>::new(session))
 }

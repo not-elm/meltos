@@ -1,14 +1,15 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
-use meltos::room::RoomId;
 
+use meltos::room::RoomId;
 use meltos::schema::room::Opened;
 use meltos::user::{SessionId, UserId};
 
 use crate::error;
 
 pub mod tmp_file;
+mod node;
 
 
 #[wasm_bindgen(getter_with_clone)]

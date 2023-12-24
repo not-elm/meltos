@@ -1,19 +1,17 @@
-
 use std::path::Path;
 
 use crate::error;
-use crate::file_system::{FileSystem, };
+use crate::file_system::FileSystem;
 use crate::io::bundle::BundleObject;
+use crate::object::{AsMeta, CompressedBuf, Obj, ObjHash};
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
-use crate::object::{AsMeta, CompressedBuf, Obj, ObjHash};
 
 #[derive(Debug, Clone, Default)]
 pub struct ObjIo<Fs>(Fs)
-where
-    Fs: FileSystem;
-
+    where
+        Fs: FileSystem;
 
 
 impl<Fs> ObjIo<Fs>
@@ -61,7 +59,7 @@ impl<Fs> ObjIo<Fs>
     }
 
     pub fn read_all(&self) -> error::Result<Vec<BundleObject>> {
-        let files = self.0.all_file_path("./.meltos/objects/")?;
+        let files = self.0.all_file_path(".meltos/objects")?;
         let mut objs = Vec::with_capacity(files.len());
         for path in files {
             let buf = self.0.try_read(&path)?;
@@ -75,7 +73,7 @@ impl<Fs> ObjIo<Fs>
     }
 
     pub fn read(&self, object_hash: &ObjHash) -> error::Result<Option<CompressedBuf>> {
-        let Some(buf) = self.0.read(&format!("./.meltos/objects/{}", object_hash))? else {
+        let Some(buf) = self.0.read(&format!(".meltos/objects/{}", object_hash))? else {
             return Ok(None);
         };
 
@@ -100,26 +98,23 @@ impl<Fs> ObjIo<Fs>
 
     #[inline]
     pub fn write(&self, hash: &ObjHash, compressed_buf: &CompressedBuf) -> error::Result {
-        self.0.write(&format!("./.meltos/objects/{}", hash), compressed_buf)?;
+        self.0.write(&format!(".meltos/objects/{}", hash), compressed_buf)?;
         Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::io::Write;
-    use tokio::io::AsyncWriteExt;
-
-    use meltos_util::compression::gz::Gz;
     use meltos_util::compression::CompressionBuf;
+    use meltos_util::compression::gz::Gz;
 
     use crate::encode::Decodable;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::workspace::WorkspaceIo;
-    use crate::object::file::FileObj;
     use crate::object::{AsMeta, Obj, ObjMeta};
+    use crate::object::file::FileObj;
 
     #[test]
     fn write_object_file() {
@@ -135,7 +130,7 @@ mod tests {
 
         let hello_buf = mock
             .try_read(&format!(
-                "./.meltos/objects/{}",
+                ".meltos/objects/{}",
                 meltos_util::hash::hash(b"FILE\0hello world!")
             ))
             .unwrap();

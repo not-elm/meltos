@@ -56,8 +56,7 @@ impl<Fs> Init<Fs>
     }
 
     fn check_branch_not_initialized(&self) -> error::Result {
-        println!("{:?}", self.fs.all_file_path("./.meltos")?);
-        if self.fs.all_file_path("./.meltos")?.is_empty() {
+        if self.fs.all_file_path(".meltos")?.is_empty() {
             Ok(())
         } else {
             Err(error::Error::RepositoryAlreadyInitialized)
@@ -121,7 +120,7 @@ mod tests {
 
         let head_commit_hash = read_head_commit_hash(mock.clone());
         let trace_tree_hash = mock
-            .read(&format!("./.meltos/traces/{head_commit_hash}"))
+            .read(&format!(".meltos/traces/{head_commit_hash}"))
             .unwrap();
         assert_eq!(
             trace_tree_hash,

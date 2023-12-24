@@ -6,7 +6,6 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_tvn::branch::BranchName;
-use meltos_tvn::file_system::file::StdFileSystem;
 use meltos_tvn::object::commit::CommitHash;
 use meltos_tvn::object::local_commits::LocalCommitsObj;
 use meltos_tvn::operation::merge::MergedStatus;
@@ -15,14 +14,15 @@ use meltos_tvn::operation::Operations;
 use crate::config::{SessionConfigs, SessionConfigsIo};
 use crate::config::tmp_file::TmpSessionConfigsIo;
 use crate::http::HttpClient;
+use crate::room::file_system::NodeFileSystem;
 
 pub mod discussion;
-mod file_system;
+pub mod file_system;
 
 #[wasm_bindgen(getter_with_clone)]
 pub struct RoomClient {
     client: HttpClient,
-    operations: Operations<StdFileSystem>,
+    operations: Operations<NodeFileSystem>,
 }
 
 const BASE: &str = "http://127.0.0.1:3000";
@@ -30,9 +30,9 @@ const BASE: &str = "http://127.0.0.1:3000";
 #[wasm_bindgen]
 impl RoomClient {
     #[wasm_bindgen(constructor)]
-    pub fn new(configs: SessionConfigs) -> RoomClient {
+    pub fn new(workspace_dir: String, configs: SessionConfigs) -> RoomClient {
         Self {
-            operations: Operations::new(BranchName::from(configs.user_id.to_string()), StdFileSystem),
+            operations: Operations::new(BranchName::from(configs.user_id.to_string()), NodeFileSystem::new(workspace_dir)),
             client: HttpClient::new(BASE, configs),
         }
     }
@@ -80,22 +80,35 @@ impl RoomClient {
 
 #[wasm_bindgen]
 extern "C" {
-    // Use `js_namespace` here to bind `console.log(..)` instead of just
-    // `log(..)`
     #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
+    pub fn log(s: &str);
+}
+
+
+#[macro_export]
+macro_rules! console_log {
+    () => {
+       $crate::room::log("\n")
+    };
+    ($($arg:tt)*) => {{
+        $crate::room::log(&format!($($arg)*));
+    }};
 }
 
 #[wasm_bindgen]
-pub async fn open_room(user_id: Option<String>) -> Result<RoomClient, JsValue> {
-    let operations = Operations::new_main(StdFileSystem);
+pub async fn open_room(
+    workspace_dir: String,
+    user_id: Option<String>,
+) -> Result<RoomClient, JsValue> {
+    let fs = NodeFileSystem::new(workspace_dir);
+    let operations = Operations::new_main(fs.clone());
     to_js_result(operations.init.execute())?;
     let bundle = to_js_result(operations.bundle.create())?;
     to_js_result(operations
         .local_commits
         .write(&LocalCommitsObj::default()))?;
     let client = to_js_result(HttpClient::open(BASE, bundle, user_id.map(UserId::from)).await)?;
-    to_js_result(TmpSessionConfigsIo.save(client.configs().clone()).await)?;
+    to_js_result(fs.save(client.configs().clone()).await)?;
 
     Ok(RoomClient {
         client,
@@ -106,15 +119,17 @@ pub async fn open_room(user_id: Option<String>) -> Result<RoomClient, JsValue> {
 
 #[wasm_bindgen]
 pub async fn join(
+    workspace_dir: String,
     room_id: String,
     user_id: Option<String>,
 ) -> Result<RoomClient, JsValue> {
     let (client, bundle) = to_js_result(HttpClient::join(BASE, RoomId(room_id.clone()), user_id.map(UserId::from)).await)?;
+    let fs = NodeFileSystem::new(workspace_dir);
     let configs = client.configs();
-    to_js_result(TmpSessionConfigsIo.save(configs.clone()).await)?;
+    to_js_result(fs.save(configs.clone()).await)?;
 
     let branch_name = BranchName::from(configs.user_id.to_string());
-    let operations = Operations::new(branch_name.clone(), StdFileSystem);
+    let operations = Operations::new(branch_name.clone(), fs);
     to_js_result(operations.save.execute(bundle))?;
     to_js_result(operations.checkout.execute(&branch_name))?;
     to_js_result(operations.unzip.execute(&branch_name))?;
