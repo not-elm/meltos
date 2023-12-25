@@ -7,7 +7,7 @@ use meltos_util::macros::{Display, Sha1};
 #[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]
 #[derive(Eq, PartialEq, Debug, Serialize, Deserialize, Clone, Hash, Sha1)]
-pub struct UserId(String);
+pub struct UserId(pub String);
 impl_string_new_type!(UserId);
 
 #[wasm_bindgen(getter_with_clone)]

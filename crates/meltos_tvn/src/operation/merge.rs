@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::branch::BranchName;
-use crate::file_system::{FileSystem, };
+use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
 use crate::io::commit_hashes::CommitHashIo;
 use crate::io::commit_obj::CommitObjIo;
@@ -16,7 +16,6 @@ pub struct Merge<Fs>
     where
         Fs: FileSystem
 {
-    fs: Fs,
     head: HeadIo<Fs>,
     commit_hashes: CommitHashIo<Fs>,
     commits_obj: CommitObjIo<Fs>,
@@ -33,7 +32,7 @@ impl<Fs> Merge<Fs>
             commit_hashes: CommitHashIo::new(fs.clone()),
             commits_obj: CommitObjIo::new(BranchName::main(), fs.clone()),
             unzip: UnZip::new(fs.clone()),
-            fs,
+
         }
     }
 }
@@ -74,10 +73,10 @@ impl<Fs> Merge<Fs>
     }
 
     fn read_source_head(&self, source: &BranchName) -> crate::error::Result<CommitHash> {
-        if let Some(head) = self.head.read(&source)? {
+        if let Some(head) = self.head.read(source)? {
             Ok(head)
         } else {
-            self.head.try_read_remote(&source)
+            self.head.try_read_remote(source)
         }
     }
 

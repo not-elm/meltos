@@ -53,7 +53,6 @@ fn app<Session, Discussion>(session: Session, _: Discussion) -> Router
 {
     Router::new()
         .route("/room/open", post(api::room::open::<Session, Discussion>))
-        .route("/room/channel", get(api::room::channel))
         .nest("/room/:room_id", room_operations_router())
         .with_state(AppState::<Session>::new(session))
 }
@@ -63,6 +62,7 @@ fn room_operations_router<Session>() -> Router<AppState<Session>>
         Session: SessionIo + Clone + Debug + 'static,
 {
     Router::new()
+        .route("/channel", get(api::room::channel))
         .route("/join", post(api::room::join))
         .nest("/tvn", tvn_routes())
         .nest("/discussion/global", global_discussion_route())

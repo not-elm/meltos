@@ -7,8 +7,8 @@ use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct FileDiff {
-    old: String,
-    new: String,
+    pub old: String,
+    pub new: String,
 }
 
 impl FileDiff {

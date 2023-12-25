@@ -1,14 +1,13 @@
 use std::fmt::Debug;
 
-use axum::body::Body;
 use axum::extract::State;
-use axum::http::Response;
 use axum::Json;
 
+use meltos::channel::{ChannelMessage, MessageData};
 use meltos::schema::room::{Join, Joined};
 use meltos_backend::user::SessionIo;
 
-use crate::api::HttpResult;
+use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
 use crate::state::SessionState;
 
@@ -25,15 +24,20 @@ pub async fn join<Session: SessionIo + Debug>(
     let (user_id, session_id) = session.register(join.user_id).await?;
     let bundle = room.create_bundle()?;
     let joined = Joined {
-        user_id,
+        user_id: user_id.clone(),
         session_id,
         bundle,
     };
-    Ok(Response::builder()
-        .body(Body::from(
-            serde_json::to_string(&joined).unwrap().to_string(),
-        ))
-        .unwrap())
+    room
+        .send_all_users(ChannelMessage {
+            message: MessageData::Joined{
+                user_id: user_id.to_string()
+            },
+            from: user_id
+        })
+        .await?;
+
+    Ok(joined.as_success_response())
 }
 
 #[cfg(test)]
@@ -45,8 +49,8 @@ mod tests {
     use meltos::user::UserId;
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
-    use meltos_tvn::file_system::mock::MockFileSystem;
     use meltos_tvn::file_system::FileSystem;
+    use meltos_tvn::file_system::mock::MockFileSystem;
 
     use crate::api::test_util::{http_join, http_open_room, logged_in_app, ResponseConvertable};
     use crate::app;

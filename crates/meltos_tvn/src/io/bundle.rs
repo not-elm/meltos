@@ -11,7 +11,7 @@ use crate::io::atomic::trace::TraceIo;
 use crate::object::{CompressedBuf, ObjHash};
 use crate::object::commit::CommitHash;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Default)]
 pub struct Bundle {
     pub traces: Vec<BundleTrace>,
     pub objs: Vec<BundleObject>,

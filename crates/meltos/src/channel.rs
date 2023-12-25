@@ -1,8 +1,7 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
-use crate::error;
-use crate::schema::room::Joined;
+use crate::schema::discussion::global::{Closed, Created, Replied, Spoke};
 use crate::user::UserId;
 
 #[async_trait]
@@ -26,11 +25,38 @@ pub trait ChannelMessageReadable {
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ChannelMessage {
     pub from: UserId,
-    pub message: Message,
+    pub message: MessageData,
 }
 
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub enum Message {
-    Joined(Joined),
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum MessageData {
+    Joined {
+        user_id: String
+    },
+    DiscussionCreated(Created),
+    DiscussionSpoke(Spoke),
+    DiscussionReplied(Replied),
+    DiscussionClosed(Closed),
+}
+
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use crate::channel::MessageData;
+
+    #[test]
+    fn json_type() {
+        let message = MessageData::Joined {
+            user_id: "user".to_string(),
+        };
+        let json = json!(message);
+        let ty = json
+            .get("type")
+            .unwrap();
+        assert_eq!(ty.as_str(), Some("joined"))
+    }
 }

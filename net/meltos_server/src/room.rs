@@ -9,8 +9,8 @@ use axum::response::Response;
 use serde::Serialize;
 use serde_json::json;
 use tokio::sync::Mutex;
-use meltos::channel::ChannelMessageSendable;
 
+use meltos::channel::{ChannelMessage, ChannelMessageSendable};
 use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_backend::discussion::DiscussionIo;
@@ -67,7 +67,7 @@ pub struct Room {
     pub id: RoomId,
     pub tvn: Operations<MockFileSystem>,
     discussion: Arc<dyn DiscussionIo>,
-    channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error = error::Error>>>>>
+    channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error=error::Error>>>>>,
 }
 
 impl Room {
@@ -80,13 +80,21 @@ impl Room {
                 BranchName::from(owner.to_string()),
                 MockFileSystem::default(),
             ),
-            channels: Arc::new(Mutex::new(Vec::new()))
+            channels: Arc::new(Mutex::new(Vec::new())),
         }
     }
-    
-    pub async fn insert_channel(&self, channel: impl ChannelMessageSendable<Error = error::Error> + 'static){
+
+    pub async fn insert_channel(&self, channel: impl ChannelMessageSendable<Error=error::Error> + 'static) {
         let mut channels = self.channels.lock().await;
         channels.push(Box::new(channel));
+    }
+
+    pub async fn send_all_users(&self, message: ChannelMessage) -> std::result::Result<(), Response> {
+        let mut channels = self.channels.lock().await;
+        for sender in channels.iter_mut() {
+            sender.send(message.clone()).await?;
+        }
+        Ok(())
     }
 
 
