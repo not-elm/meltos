@@ -14,8 +14,8 @@ pub enum CheckOutStatus {
 
 #[derive(Debug, Clone)]
 pub struct Checkout<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     working: WorkingIo<Fs>,
     heads: HeadIo<Fs>,
@@ -23,8 +23,8 @@ pub struct Checkout<Fs>
 }
 
 impl<Fs> Checkout<Fs>
-    where
-        Fs: FileSystem + Clone
+where
+    Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Checkout<Fs> {
         Self {
@@ -36,8 +36,8 @@ impl<Fs> Checkout<Fs>
 }
 
 impl<Fs> Checkout<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     pub fn execute(&self, target_branch: &BranchName) -> error::Result<CheckOutStatus> {
         let working = self.working.read()?.unwrap_or(BranchName::main());
@@ -67,7 +67,7 @@ mod tests {
     use crate::branch::BranchName;
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
-    use crate::operation::checkout::{Checkout, CheckOutStatus};
+    use crate::operation::checkout::{CheckOutStatus, Checkout};
     use crate::operation::new_branch::NewBranch;
     use crate::tests::init_main_branch;
 

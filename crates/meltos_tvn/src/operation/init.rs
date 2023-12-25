@@ -8,8 +8,8 @@ use crate::operation::stage::Stage;
 
 #[derive(Debug, Clone)]
 pub struct Init<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     commit: Commit<Fs>,
     working: WorkingIo<Fs>,
@@ -18,8 +18,8 @@ pub struct Init<Fs>
 }
 
 impl<Fs> Init<Fs>
-    where
-        Fs: FileSystem + Clone
+where
+    Fs: FileSystem + Clone,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> Init<Fs> {
         Self {
@@ -32,8 +32,8 @@ impl<Fs> Init<Fs>
 }
 
 impl<Fs> Init<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     /// Initialize the project.
     ///
@@ -68,13 +68,13 @@ impl<Fs> Init<Fs>
 mod tests {
     use crate::branch::BranchName;
     use crate::encode::Encodable;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::atomic::object::ObjIo;
-    use crate::object::{AsMeta, ObjHash};
     use crate::object::commit::CommitHash;
     use crate::object::tree::TreeObj;
+    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::init;
     use crate::operation::init::Init;

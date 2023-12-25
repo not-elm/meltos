@@ -13,8 +13,8 @@ use crate::operation::unzip::UnZip;
 
 #[derive(Debug)]
 pub struct Merge<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     head: HeadIo<Fs>,
     commit_hashes: CommitHashIo<Fs>,
@@ -23,8 +23,8 @@ pub struct Merge<Fs>
 }
 
 impl<Fs> Merge<Fs>
-    where
-        Fs: FileSystem + Clone
+where
+    Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Merge<Fs> {
         Self {
@@ -32,11 +32,9 @@ impl<Fs> Merge<Fs>
             commit_hashes: CommitHashIo::new(fs.clone()),
             commits_obj: CommitObjIo::new(BranchName::main(), fs.clone()),
             unzip: UnZip::new(fs.clone()),
-
         }
     }
 }
-
 
 #[wasm_bindgen]
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
@@ -46,8 +44,8 @@ pub enum MergedStatus {
 }
 
 impl<Fs> Merge<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     pub fn execute(
         &self,
@@ -140,8 +138,8 @@ pub struct MergeConfig {}
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::{FilePath, FileSystem};
     use crate::io::workspace::WorkspaceIo;
     use crate::operation::checkout::Checkout;
     use crate::operation::commit::Commit;

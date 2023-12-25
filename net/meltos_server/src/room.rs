@@ -21,12 +21,11 @@ use meltos_tvn::io::bundle::Bundle;
 use meltos_tvn::operation::Operations;
 use meltos_util::macros::Deref;
 
-use crate::api::AsSuccessResponse;
 use crate::error;
 use crate::room::executor::discussion::DiscussionCommandExecutor;
 
-mod executor;
 pub mod channel;
+mod executor;
 
 #[derive(Default, Clone, Debug, Deref)]
 pub struct Rooms(ArcMutex<RoomMap>);
@@ -54,7 +53,7 @@ impl RoomMap {
                     json!({
                         "error": format!("room_id {room_id} is not exists")
                     })
-                        .to_string(),
+                    .to_string(),
                 ))
                 .unwrap(),
         )
@@ -67,7 +66,7 @@ pub struct Room {
     pub id: RoomId,
     pub tvn: Operations<MockFileSystem>,
     discussion: Arc<dyn DiscussionIo>,
-    channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error=error::Error>>>>>,
+    channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error = error::Error>>>>>,
 }
 
 impl Room {
@@ -84,19 +83,24 @@ impl Room {
         }
     }
 
-    pub async fn insert_channel(&self, channel: impl ChannelMessageSendable<Error=error::Error> + 'static) {
+    pub async fn insert_channel(
+        &self,
+        channel: impl ChannelMessageSendable<Error = error::Error> + 'static,
+    ) {
         let mut channels = self.channels.lock().await;
         channels.push(Box::new(channel));
     }
 
-    pub async fn send_all_users(&self, message: ChannelMessage) -> std::result::Result<(), Response> {
+    pub async fn send_all_users(
+        &self,
+        message: ChannelMessage,
+    ) -> std::result::Result<(), Response> {
         let mut channels = self.channels.lock().await;
         for sender in channels.iter_mut() {
             sender.send(message.clone()).await?;
         }
         Ok(())
     }
-
 
     pub fn save_bundle(&self, bundle: Bundle) -> std::result::Result<(), Response> {
         self.tvn.save.execute(bundle).map_err(|e| {
@@ -106,7 +110,7 @@ impl Room {
                     json!({
                         "error" : e.to_string()
                     })
-                        .to_string(),
+                    .to_string(),
                 ))
                 .unwrap()
         })?;
@@ -124,7 +128,7 @@ impl Room {
                         json!({
                             "error": error.to_string()
                         })
-                            .to_string(),
+                        .to_string(),
                     ))
                     .unwrap();
                 Err(response)
@@ -132,18 +136,14 @@ impl Room {
         }
     }
 
-    pub async fn global_discussion<'a, F, O, S>(
-        &'a self,
-        user_id: UserId,
-        f: F,
-    ) -> error::Result<Response>
-        where
-            F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
-            O: Future<Output=error::Result<S>>,
-            S: Serialize,
+    pub async fn global_discussion<'a, F, O, S>(&'a self, user_id: UserId, f: F) -> error::Result<S>
+    where
+        F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
+        O: Future<Output = error::Result<S>>,
+        S: Serialize,
     {
         let command = f(self.as_global_discussion_executor(user_id)).await?;
-        Ok(command.as_success_response())
+        Ok(command)
     }
 
     fn as_global_discussion_executor(

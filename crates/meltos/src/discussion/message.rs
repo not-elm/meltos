@@ -14,9 +14,8 @@ pub struct Message {
     pub text: MessageText,
 }
 
-#[wasm_bindgen(getter_with_clone)]
+#[wasm_bindgen]
 impl Message {
-
     #[wasm_bindgen(constructor)]
     #[inline(always)]
     pub fn new(user_id: UserId, text: MessageText) -> Message {
@@ -28,13 +27,11 @@ impl Message {
     }
 }
 
-
 #[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]
 #[derive(Eq, PartialEq, Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct MessageText(pub String);
 impl_string_new_type!(MessageText);
-
 
 #[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]

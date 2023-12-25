@@ -9,15 +9,15 @@ use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct TraceIo<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     fs: Fs,
 }
 
 impl<Fs> TraceIo<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     pub fn new(fs: Fs) -> TraceIo<Fs> {
         Self {
@@ -78,8 +78,8 @@ impl<Fs> TraceIo<Fs>
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::trace::TraceIo;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;

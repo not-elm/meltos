@@ -8,9 +8,8 @@ use meltos::user::{SessionId, UserId};
 
 use crate::error;
 
-pub mod tmp_file;
 mod node;
-
+pub mod tmp_file;
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -19,7 +18,6 @@ pub struct SessionConfigs {
     pub session_id: SessionId,
     pub user_id: UserId,
 }
-
 
 #[wasm_bindgen]
 impl SessionConfigs {

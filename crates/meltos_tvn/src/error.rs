@@ -76,4 +76,3 @@ pub enum Error {
     #[error("failed connect server : detail={0}")]
     FailedConnectServer(String),
 }
-

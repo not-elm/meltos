@@ -21,7 +21,7 @@ pub enum Error {
 
     #[error("discussion not exists id = {0}")]
     DiscussionNotExists(DiscussionId),
-    
+
     #[error("message not exists id = {0}")]
     MessageNotExists(MessageId),
 

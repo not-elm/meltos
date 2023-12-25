@@ -28,14 +28,13 @@ pub async fn join<Session: SessionIo + Debug>(
         session_id,
         bundle,
     };
-    room
-        .send_all_users(ChannelMessage {
-            message: MessageData::Joined{
-                user_id: user_id.to_string()
-            },
-            from: user_id
-        })
-        .await?;
+    room.send_all_users(ChannelMessage {
+        message: MessageData::Joined {
+            user_id: user_id.to_string(),
+        },
+        from: user_id,
+    })
+    .await?;
 
     Ok(joined.as_success_response())
 }
@@ -49,8 +48,8 @@ mod tests {
     use meltos::user::UserId;
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
-    use meltos_tvn::file_system::FileSystem;
     use meltos_tvn::file_system::mock::MockFileSystem;
+    use meltos_tvn::file_system::FileSystem;
 
     use crate::api::test_util::{http_join, http_open_room, logged_in_app, ResponseConvertable};
     use crate::app;

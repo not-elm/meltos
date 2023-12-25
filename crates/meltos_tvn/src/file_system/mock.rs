@@ -22,9 +22,8 @@ impl FileSystem for MockFileSystem {
         Ok(())
     }
 
-
     fn read(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
-        let  map = self.0.lock().unwrap();
+        let map = self.0.lock().unwrap();
         Ok(map.get(path).cloned())
     }
 
@@ -55,8 +54,8 @@ impl Debug for MockFileSystem {
 
 #[cfg(test)]
 mod tests {
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
 
     #[test]
     fn read() {

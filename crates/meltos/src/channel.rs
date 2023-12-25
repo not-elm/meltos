@@ -21,26 +21,21 @@ pub trait ChannelMessageReadable {
     async fn read(&mut self) -> std::result::Result<ChannelMessage, Self::Error>;
 }
 
-
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ChannelMessage {
     pub from: UserId,
     pub message: MessageData,
 }
 
-
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum MessageData {
-    Joined {
-        user_id: String
-    },
+    Joined { user_id: String },
     DiscussionCreated(Created),
     DiscussionSpoke(Spoke),
     DiscussionReplied(Replied),
     DiscussionClosed(Closed),
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -54,9 +49,7 @@ mod tests {
             user_id: "user".to_string(),
         };
         let json = json!(message);
-        let ty = json
-            .get("type")
-            .unwrap();
+        let ty = json.get("type").unwrap();
         assert_eq!(ty.as_str(), Some("joined"))
     }
 }

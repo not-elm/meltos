@@ -7,16 +7,16 @@ use crate::object::local_commits::LocalCommitsObj;
 
 #[derive(Debug, Clone)]
 pub struct LocalCommitsIo<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     fs: Fs,
     file_path: String,
 }
 
 impl<Fs> LocalCommitsIo<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     #[inline]
     pub fn new(branch_name: BranchName, fs: Fs) -> LocalCommitsIo<Fs> {

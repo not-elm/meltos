@@ -19,7 +19,7 @@ impl BranchName {
 
     pub fn working<Fs>(fs: Fs) -> std::io::Result<Self>
     where
-        Fs: FileSystem
+        Fs: FileSystem,
     {
         WorkingIo::new(fs).try_read()
     }

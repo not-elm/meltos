@@ -28,8 +28,8 @@ pub mod unzip;
 
 #[derive(Debug)]
 pub struct Operations<Fs = StdFileSystem>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     pub init: Init<Fs>,
     pub patch: Patch<Fs>,
@@ -47,8 +47,8 @@ pub struct Operations<Fs = StdFileSystem>
 }
 
 impl<Fs> Operations<Fs>
-    where
-        Fs: FileSystem + Clone
+where
+    Fs: FileSystem + Clone,
 {
     #[inline]
     pub fn new_main(fs: Fs) -> Operations<Fs> {
@@ -81,8 +81,8 @@ impl<Fs> Operations<Fs>
 }
 
 impl<Fs> Clone for Operations<Fs>
-    where
-        Fs: FileSystem + Clone
+where
+    Fs: FileSystem + Clone,
 {
     #[inline]
     fn clone(&self) -> Self {

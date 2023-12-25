@@ -1,4 +1,9 @@
-use crate::api::HttpResult;
+use axum::Json;
+
+use meltos::channel::{ChannelMessage, MessageData};
+use meltos::schema::discussion::global::Create;
+
+use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
 use crate::middleware::user::SessionUser;
 
@@ -6,35 +11,44 @@ use crate::middleware::user::SessionUser;
 pub async fn create(
     SessionRoom(room): SessionRoom,
     SessionUser(user_id): SessionUser,
+    Json(create): Json<Create>,
 ) -> HttpResult {
-    let created = room.global_discussion(user_id, |exe| exe.create()).await?;
+    let created = room
+        .global_discussion(user_id.clone(), |exe| exe.create(create.title))
+        .await?;
 
-    Ok(created)
+    room.send_all_users(ChannelMessage {
+        from: user_id,
+        message: MessageData::DiscussionCreated(created.clone()),
+    })
+    .await?;
+
+    Ok(created.as_success_response())
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use axum::http::StatusCode;
-//     use http_body_util::BodyExt;
-//     use tower::ServiceExt;
-//
-//     use meltos::schema::discussion::global::Created;
-//     use meltos_tvn::file_system::mock::MockFileSystem;
-//
-//     use crate::api::test_util::{create_discussion_request, http_open_room, logged_in_app};
-//     use crate::error;
-//
-//     #[tokio::test]
-//     async fn return_created_command() -> error::Result {
-//         let (user_token, mut app) = logged_in_app().await;
-//         let mock = MockFileSystem::default();
-//         let room_id = http_open_room(&mut app, mock).await;
-//         let request = create_discussion_request(room_id);
-//         let response = app.oneshot(request).await.unwrap();
-//         assert_eq!(response.status(), StatusCode::OK);
-//         let bytes = response.into_body().collect().await?.to_bytes();
-//         serde_json::from_slice::<Created>(&bytes)?;
-//
-//         Ok(())
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use axum::http::StatusCode;
+    use http_body_util::BodyExt;
+    use tower::ServiceExt;
+
+    use meltos::schema::discussion::global::Created;
+    use meltos_tvn::file_system::mock::MockFileSystem;
+
+    use crate::api::test_util::{create_discussion_request, http_open_room, logged_in_app};
+    use crate::error;
+
+    #[tokio::test]
+    async fn return_created_command() -> error::Result {
+        let (session_id, mut app) = logged_in_app().await;
+        let mock = MockFileSystem::default();
+        let room_id = http_open_room(&mut app, mock).await;
+        let request = create_discussion_request("title".to_string(), room_id, &session_id);
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let bytes = response.into_body().collect().await?.to_bytes();
+        serde_json::from_slice::<Created>(&bytes)?;
+
+        Ok(())
+    }
+}

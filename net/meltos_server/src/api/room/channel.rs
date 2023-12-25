@@ -12,10 +12,11 @@ pub async fn channel(
     SessionRoom(room): SessionRoom,
     SessionUser(user_id): SessionUser,
 ) -> Response {
-    ws.on_upgrade(|socket| async move {
-        let (tx, _) = socket.split();
-        let sender = WebsocketSender::new(user_id.clone(), tx);
-        room.insert_channel(sender).await;
+    ws.on_upgrade(|socket| {
+        async move {
+            let (tx, _) = socket.split();
+            let sender = WebsocketSender::new(user_id.clone(), tx);
+            room.insert_channel(sender).await;
+        }
     })
 }
-

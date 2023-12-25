@@ -5,7 +5,6 @@ use meltos::error;
 use meltos::user::UserId;
 use meltos_util::macros::Deref;
 
-
 use crate::discussion::DiscussionIo;
 use crate::sync::arc_mutex::ArcHashMap;
 
@@ -18,8 +17,12 @@ pub struct MockGlobalDiscussionIo {
 
 #[async_trait::async_trait]
 impl DiscussionIo for MockGlobalDiscussionIo {
-    async fn new_discussion(&self, creator: UserId) -> error::Result<DiscussionMeta> {
-        let discussion = Discussion::new(creator);
+    async fn new_discussion(
+        &self,
+        title: String,
+        creator: UserId,
+    ) -> error::Result<DiscussionMeta> {
+        let discussion = Discussion::new(title, creator);
         let mut discussions = self.discussions.lock().await;
         let meta = discussion.meta.clone();
         discussions.insert(meta.id.clone(), discussion);

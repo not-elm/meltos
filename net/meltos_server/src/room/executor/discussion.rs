@@ -27,8 +27,8 @@ where
     }
 
     #[inline]
-    pub async fn create(self) -> error::Result<Created> {
-        let discussion_meta = self.global_io.new_discussion(self.user_id).await?;
+    pub async fn create(self, title: String) -> error::Result<Created> {
+        let discussion_meta = self.global_io.new_discussion(title, self.user_id).await?;
         Ok(Created {
             meta: discussion_meta,
         })

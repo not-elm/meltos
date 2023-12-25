@@ -20,13 +20,9 @@ impl FileDiff {
         }
     }
 
-    pub fn from_obj_hashes<Fs>(
-        fs: Fs,
-        lhs: &ObjHash,
-        rhs: &ObjHash,
-    ) -> error::Result<Option<Self>>
-        where
-            Fs: FileSystem
+    pub fn from_obj_hashes<Fs>(fs: Fs, lhs: &ObjHash, rhs: &ObjHash) -> error::Result<Option<Self>>
+    where
+        Fs: FileSystem,
     {
         if lhs == rhs {
             Ok(None)

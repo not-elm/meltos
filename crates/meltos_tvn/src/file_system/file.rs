@@ -51,7 +51,6 @@ impl FileSystem for StdFileSystem {
         }
     }
 
-
     fn delete(&self, path: &str) -> std::io::Result<()> {
         let path: &Path = path.as_ref();
         if path.is_dir() {

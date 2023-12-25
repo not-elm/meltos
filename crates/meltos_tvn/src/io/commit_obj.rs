@@ -16,7 +16,7 @@ use crate::object::ObjHash;
 #[derive(Debug, Clone)]
 pub struct CommitObjIo<Fs>
 where
-    Fs: FileSystem
+    Fs: FileSystem,
 {
     head: HeadIo<Fs>,
     object: ObjIo<Fs>,
@@ -28,7 +28,6 @@ where
 impl<Fs> CommitObjIo<Fs>
 where
     Fs: FileSystem + Clone,
-
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> CommitObjIo<Fs> {
         CommitObjIo {
@@ -43,7 +42,7 @@ where
 
 impl<Fs> CommitObjIo<Fs>
 where
-    Fs: FileSystem
+    Fs: FileSystem,
 {
     pub fn read_local_commits(&self) -> error::Result<Vec<CommitObj>> {
         let Some(LocalCommitsObj(local_hashes)) = self.local_commits.read()? else {

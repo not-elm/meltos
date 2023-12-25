@@ -34,13 +34,11 @@ pub trait FileSystem {
         })
     }
 
-
     fn project_already_initialized(&self) -> std::io::Result<bool> {
         let files = self.all_file_path("./.meltos")?;
         Ok(!files.is_empty())
     }
 }
-
 
 #[repr(transparent)]
 #[derive(Eq, PartialEq, Debug, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd)]

@@ -13,15 +13,15 @@ use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct HeadIo<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     fs: Fs,
 }
 
 impl<Fs> HeadIo<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     pub const fn new(fs: Fs) -> HeadIo<Fs> {
         Self {
@@ -78,9 +78,9 @@ impl<Fs> HeadIo<Fs>
         let mut branches = Vec::with_capacity(files.len());
         for path in files {
             let Some(file_name) = Path::new(&path).file_name().and_then(|name| name.to_str())
-                else {
-                    continue;
-                };
+            else {
+                continue;
+            };
             let branch_name = BranchName::from(file_name);
             let commit_hash = self.try_read(&branch_name)?;
             branches.push((branch_name, commit_hash))

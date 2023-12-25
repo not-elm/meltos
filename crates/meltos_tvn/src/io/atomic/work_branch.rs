@@ -3,13 +3,12 @@ use crate::file_system::FileSystem;
 
 #[derive(Debug, Clone, Default)]
 pub struct WorkingIo<Fs>(pub(crate) Fs)
-    where
-        Fs: FileSystem;
-
+where
+    Fs: FileSystem;
 
 impl<Fs> WorkingIo<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     #[inline]
     pub const fn new(fs: Fs) -> WorkingIo<Fs> {

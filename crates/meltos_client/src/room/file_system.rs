@@ -1,7 +1,7 @@
 use std::path::Path;
 
-use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::js_sys::{Object, Uint8Array};
 
 use meltos_tvn::file_system::FileSystem;
@@ -39,7 +39,6 @@ extern "C" {
     fn lstat_sync(path: &str) -> Stats;
 }
 
-
 #[wasm_bindgen]
 extern "C" {
     type Buffer;
@@ -54,18 +53,16 @@ extern "C" {
     fn length(this: &Buffer) -> u32;
 }
 
-
 #[derive(Default, Debug, Clone, Eq, PartialEq)]
 pub struct NodeFileSystem {
     pub workspace_folder: String,
 }
 
-
 impl NodeFileSystem {
     #[inline(always)]
     pub const fn new(workspace_folder: String) -> Self {
         Self {
-            workspace_folder
+            workspace_folder,
         }
     }
 
@@ -80,7 +77,6 @@ impl NodeFileSystem {
         }
     }
 }
-
 
 impl NodeFileSystem {
     fn read_files(&self, files: &mut Vec<String>, dir_path: &str) {
@@ -98,7 +94,6 @@ impl NodeFileSystem {
     }
 }
 
-
 #[derive(serde::Serialize, serde::Deserialize)]
 struct MkdirOptions {
     recursive: bool,
@@ -112,8 +107,9 @@ impl FileSystem for NodeFileSystem {
             let dir = dir.to_str().unwrap();
             if !exists_sync(dir) {
                 let options = serde_wasm_bindgen::to_value(&MkdirOptions {
-                    recursive: true
-                }).unwrap();
+                    recursive: true,
+                })
+                .unwrap();
                 mkdir_sync(dir, &options);
             }
         }
@@ -165,5 +161,3 @@ impl FileSystem for NodeFileSystem {
         Ok(())
     }
 }
-
-

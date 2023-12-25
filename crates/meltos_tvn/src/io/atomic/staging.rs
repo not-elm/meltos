@@ -5,24 +5,21 @@ use crate::object::tree::TreeIo;
 
 #[derive(Debug, Clone)]
 pub struct StagingIo<Fs>(pub(crate) TreeIo<Fs>)
-    where
-        Fs: FileSystem;
+where
+    Fs: FileSystem;
 
 impl<Fs> StagingIo<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     pub fn new(fs: Fs) -> StagingIo<Fs> {
-        Self(TreeIo::new(
-            FilePath::from(".meltos/stage"),
-            fs,
-        ))
+        Self(TreeIo::new(FilePath::from(".meltos/stage"), fs))
     }
 }
 
 impl<Fs> Deref for StagingIo<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     type Target = TreeIo<Fs>;
 
@@ -31,4 +28,3 @@ impl<Fs> Deref for StagingIo<Fs>
         &self.0
     }
 }
-

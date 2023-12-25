@@ -3,14 +3,14 @@ use std::str::FromStr;
 
 use meltos_util::macros::{Deref, DerefMut};
 
-use crate::file_system::{FilePath, FileSystem, };
+use crate::file_system::{FilePath, FileSystem};
 use crate::object::{AsMeta, Decodable, Encodable, ObjHash, ObjMeta};
 use crate::{error, impl_serialize_and_deserialize};
 
 #[derive(Debug, Clone)]
 pub struct TreeIo<Fs>
 where
-    Fs: FileSystem
+    Fs: FileSystem,
 {
     fs: Fs,
     file_path: FilePath,
@@ -18,7 +18,7 @@ where
 
 impl<Fs> TreeIo<Fs>
 where
-    Fs: FileSystem
+    Fs: FileSystem,
 {
     #[inline]
     pub fn new(file_path: impl Into<FilePath>, fs: Fs) -> TreeIo<Fs> {

@@ -21,8 +21,8 @@ pub trait Pushable<Output> {
 
 #[derive(Debug, Clone)]
 pub struct Push<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     commit_obj: CommitObjIo<Fs>,
     local_commits: LocalCommitsIo<Fs>,
@@ -31,8 +31,8 @@ pub struct Push<Fs>
 }
 
 impl<Fs> Push<Fs>
-    where
-        Fs: FileSystem + Clone
+where
+    Fs: FileSystem + Clone,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> Push<Fs> {
         Self {
@@ -45,8 +45,8 @@ impl<Fs> Push<Fs>
 }
 
 impl<Fs> Push<Fs>
-    where
-        Fs: FileSystem
+where
+    Fs: FileSystem,
 {
     /// Sends the currently locally committed data to the remote.
     /// * push local commits to remote server.
@@ -96,8 +96,8 @@ mod tests {
 
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::bundle::Bundle;
     use crate::io::commit_obj::CommitObjIo;
