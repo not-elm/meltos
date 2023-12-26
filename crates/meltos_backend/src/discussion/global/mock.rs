@@ -35,7 +35,7 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         user_id: UserId,
         text: MessageText,
     ) -> error::Result<Message> {
-        let message = Message::new(user_id, text);
+        let message = Message::new(user_id.0, text.0);
 
         let mut discussions = self.discussions.lock().await;
         let discussion = discussions
@@ -55,7 +55,7 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         message_id: MessageId,
         text: MessageText,
     ) -> error::Result<Message> {
-        let reply = Message::new(user_id, text);
+        let reply = Message::new(user_id.0, text.0);
         let mut discussion = self.reply_discussions.lock().await;
         if !discussion.contains_key(&message_id) {
             discussion.insert(message_id.clone(), vec![]);

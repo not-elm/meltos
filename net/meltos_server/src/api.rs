@@ -13,8 +13,8 @@ pub trait AsSuccessResponse {
 }
 
 impl<D> AsSuccessResponse for D
-where
-    D: Serialize,
+    where
+        D: Serialize,
 {
     fn as_success_response(&self) -> Response {
         Response::builder()
@@ -25,11 +25,11 @@ where
 
 #[cfg(test)]
 mod test_util {
+    use axum::{async_trait, http, Router};
     use axum::body::Body;
     use axum::extract::Request;
     use axum::http::{header, StatusCode};
     use axum::response::Response;
-    use axum::{async_trait, http, Router};
     use http_body_util::BodyExt;
     use serde::de::DeserializeOwned;
     use tower::{Service, ServiceExt};
@@ -38,8 +38,8 @@ mod test_util {
     use meltos::room::RoomId;
     use meltos::schema::discussion::global::{Closed, Create, Created, Replied, Spoke};
     use meltos::schema::discussion::global::{Reply, Speak};
-    use meltos::schema::room::Opened;
     use meltos::schema::room::{Join, Open};
+    use meltos::schema::room::Opened;
     use meltos::user::{SessionId, UserId};
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
@@ -48,7 +48,7 @@ mod test_util {
     use meltos_tvn::file_system::mock::MockFileSystem;
     use meltos_tvn::io::bundle::Bundle;
     use meltos_tvn::operation::init::Init;
-    use meltos_tvn::operation::push::{Push, Pushable};
+    use meltos_tvn::operation::push::Pushable;
     use meltos_util::serde::SerializeJson;
 
     use crate::app;
@@ -95,7 +95,7 @@ mod test_util {
                     .body(Body::from(serde_json::to_string(&bundle).unwrap()))
                     .unwrap(),
             )
-            .await;
+                .await;
             assert_eq!(response.status(), StatusCode::OK);
             Ok(())
         }
@@ -156,7 +156,7 @@ mod test_util {
                 .body(Body::empty())
                 .unwrap(),
         )
-        .await
+            .await
     }
 
     pub async fn http_create_discussion(
@@ -193,7 +193,7 @@ mod test_util {
                 .body(Body::from(reply.as_json()))
                 .unwrap(),
         )
-        .await
+            .await
     }
 
     pub async fn http_discussion_close(
@@ -213,15 +213,12 @@ mod test_util {
                 .body(Body::empty())
                 .unwrap(),
         )
-        .await
+            .await
     }
 
     pub fn open_room_request(mock: MockFileSystem) -> Request {
         Init::new(BranchName::main(), mock.clone())
             .execute()
-            .unwrap();
-        let bundle = Push::new(BranchName::main(), mock)
-            .create_push_bundle()
             .unwrap();
 
         Request::builder()
@@ -231,9 +228,9 @@ mod test_util {
             .body(Body::from(
                 serde_json::to_string(&Open {
                     user_id: Some(UserId::from("owner")),
-                    bundle,
+                    bundle: None
                 })
-                .unwrap(),
+                    .unwrap(),
             ))
             .unwrap()
     }
@@ -252,7 +249,7 @@ mod test_util {
                 serde_json::to_string(&Create {
                     title,
                 })
-                .unwrap(),
+                    .unwrap(),
             ))
             .unwrap()
     }
@@ -286,11 +283,11 @@ mod test_util {
                     serde_json::to_string(&Join {
                         user_id,
                     })
-                    .unwrap(),
+                        .unwrap(),
                 ))
                 .unwrap(),
         )
-        .await
+            .await
     }
 
     pub async fn http_call(app: &mut Router, request: Request) -> Response {

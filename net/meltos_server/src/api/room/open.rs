@@ -2,8 +2,8 @@ use std::fmt::Debug;
 
 use axum::body::Body;
 use axum::extract::State;
-use axum::response::Response;
 use axum::Json;
+use axum::response::Response;
 
 use meltos::room::RoomId;
 use meltos::schema::room::Open;
@@ -23,14 +23,18 @@ pub async fn open<Session, Discussion>(
     State(session): State<SessionState<Session>>,
     Json(param): Json<Open>,
 ) -> HttpResult
-where
-    Discussion: DiscussionIo + Default + 'static,
-    Session: SessionIo + Debug,
+    where
+        Discussion: DiscussionIo + Default + 'static,
+        Session: SessionIo + Debug,
 {
     let (user_id, session_id) = session.register(param.user_id.clone()).await?;
     let room = Room::open::<Discussion>(user_id.clone());
     let room_id = room.id.clone();
-    room.save_bundle(param.bundle)?;
+
+    if let Some(bundle) = param.bundle {
+        room.save_bundle(bundle)?;
+    }
+
     rooms.insert_room(room).await;
 
     Ok(response_success_create_room(room_id, user_id, session_id))
@@ -48,7 +52,7 @@ fn response_success_create_room(
                 user_id,
                 session_id,
             }
-            .as_json(),
+                .as_json(),
         ))
         .unwrap()
 }
@@ -62,8 +66,8 @@ mod tests {
     use meltos_backend::user::mock::MockUserSessionIo;
     use meltos_tvn::file_system::mock::MockFileSystem;
 
-    use crate::api::test_util::{open_room_request, ResponseConvertable};
     use crate::{app, error};
+    use crate::api::test_util::{open_room_request, ResponseConvertable};
 
     #[tokio::test]
     async fn return_room_id_and_session_id() -> error::Result {

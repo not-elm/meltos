@@ -85,7 +85,7 @@ impl NodeFileSystem {
             console_log!("[entry] : {path}");
             if lstat_sync(&path).is_file() {
                 console_log!("{path} is file");
-                files.push(path);
+                files.push(path.trim_start_matches(&self.workspace_folder).to_string());
             } else {
                 console_log!("{path} is dir");
                 self.read_files(files, &path);

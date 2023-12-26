@@ -6,7 +6,7 @@ use meltos_util::macros::{Display, Sha1};
 
 use crate::user::UserId;
 
-#[wasm_bindgen(getter_with_clone)]
+#[wasm_bindgen(getter_with_clone, inspectable)]
 #[derive(Eq, PartialEq, Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct Message {
     pub id: MessageId,
@@ -18,11 +18,11 @@ pub struct Message {
 impl Message {
     #[wasm_bindgen(constructor)]
     #[inline(always)]
-    pub fn new(user_id: UserId, text: MessageText) -> Message {
+    pub fn new(user_id: String, text: String) -> Message {
         Message {
             id: MessageId::new(),
-            user_id,
-            text,
+            user_id: UserId(user_id),
+            text: MessageText(text),
         }
     }
 }
@@ -33,7 +33,24 @@ impl Message {
 pub struct MessageText(pub String);
 impl_string_new_type!(MessageText);
 
+#[wasm_bindgen]
+impl MessageText {
+    #[wasm_bindgen(js_name = toString)]
+    pub fn js_to_string(&self) -> String {
+        self.0.clone()
+    }
+}
+
+
 #[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]
 #[derive(Eq, PartialEq, Clone, Debug, Hash, Serialize, Deserialize, Display, Sha1)]
 pub struct MessageId(pub String);
+
+#[wasm_bindgen]
+impl MessageId {
+    #[wasm_bindgen(js_name = toString)]
+    pub fn js_to_string(&self) -> String {
+        self.0.clone()
+    }
+}

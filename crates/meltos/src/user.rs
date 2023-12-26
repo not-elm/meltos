@@ -16,6 +16,11 @@ impl UserId {
     pub fn from_string(id: String) -> Self {
         Self(id)
     }
+
+    #[wasm_bindgen(js_name = toString)]
+    pub fn js_to_string(&self) -> String {
+        self.0.clone()
+    }
 }
 
 #[wasm_bindgen(getter_with_clone)]

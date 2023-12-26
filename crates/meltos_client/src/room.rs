@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display};
 
-use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsValue;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos::room::RoomId;
 use meltos::schema::discussion::global::{Create, Created};
@@ -12,17 +12,18 @@ use meltos_tvn::object::local_commits::LocalCommitsObj;
 use meltos_tvn::operation::merge::MergedStatus;
 use meltos_tvn::operation::Operations;
 
-use crate::config::{SessionConfigs, SessionConfigsIo};
+use crate::config::SessionConfigs;
 use crate::http::HttpClient;
-use crate::room::file_system::NodeFileSystem;
+use crate::room::in_memory::MemFs;
 
 pub mod discussion;
 pub mod file_system;
+mod in_memory;
 
 #[wasm_bindgen(getter_with_clone)]
 pub struct RoomClient {
     client: HttpClient,
-    operations: Operations<NodeFileSystem>,
+    operations: Operations<MemFs>,
 }
 
 const BASE: &str = "http://127.0.0.1:3000";
@@ -34,7 +35,7 @@ impl RoomClient {
         Self {
             operations: Operations::new(
                 BranchName::from(configs.user_id.to_string()),
-                NodeFileSystem::new(workspace_dir),
+                MemFs::new(),
             ),
             client: HttpClient::new(BASE, configs),
         }
@@ -104,13 +105,13 @@ pub async fn open_room(
     workspace_dir: String,
     user_id: Option<String>,
 ) -> Result<RoomClient, JsValue> {
-    let fs = NodeFileSystem::new(workspace_dir);
+    let fs = MemFs::new();
     let operations = Operations::new_main(fs.clone());
     to_js_result(operations.init.execute())?;
     let bundle = to_js_result(operations.bundle.create())?;
     to_js_result(operations.local_commits.write(&LocalCommitsObj::default()))?;
     let client = to_js_result(HttpClient::open(BASE, bundle, user_id.map(UserId::from)).await)?;
-    to_js_result(fs.save(client.configs().clone()).await)?;
+    // to_js_result(fs.save(client.configs().clone()).await)?;
 
     Ok(RoomClient {
         client,
@@ -127,9 +128,9 @@ pub async fn join(
     let (client, bundle) = to_js_result(
         HttpClient::join(BASE, RoomId(room_id.clone()), user_id.map(UserId::from)).await,
     )?;
-    let fs = NodeFileSystem::new(workspace_dir);
+    let fs = MemFs::new();
     let configs = client.configs();
-    to_js_result(fs.save(configs.clone()).await)?;
+    // to_js_result(fs.save(configs.clone()).await)?;
 
     let branch_name = BranchName::from(configs.user_id.to_string());
     let operations = Operations::new(branch_name.clone(), fs);

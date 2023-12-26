@@ -8,12 +8,12 @@ use crate::user::{SessionId, UserId};
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub struct Open {
     pub user_id: Option<UserId>,
-    pub bundle: Bundle,
+    pub bundle: Option<Bundle>,
 }
 
 impl Open {
     #[inline]
-    pub const fn new(bundle: Bundle, user_id: Option<UserId>) -> Self {
+    pub const fn new(user_id: Option<UserId>, bundle: Option<Bundle>) -> Self {
         Self {
             user_id,
             bundle,
