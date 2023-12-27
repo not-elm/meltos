@@ -41,23 +41,23 @@ impl Created {
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Speak {
     pub discussion_id: DiscussionId,
-    pub message: MessageText,
+    pub text: MessageText,
 }
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Spoke {
     pub discussion_id: DiscussionId,
-    pub message: Message,
+    pub text: Message,
 }
 
 #[wasm_bindgen]
 impl Spoke {
     #[wasm_bindgen(constructor)]
-    pub fn new(discussion_id: String, message: Message) -> Self {
+    pub fn new(discussion_id: String, text: Message) -> Self {
         Self {
             discussion_id: DiscussionId(discussion_id),
-            message,
+            text,
         }
     }
 }
@@ -65,7 +65,7 @@ impl Spoke {
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Reply {
-    pub target_id: MessageId,
+    pub to: MessageId,
     pub text: MessageText,
 }
 
@@ -75,7 +75,7 @@ impl Reply {
     #[wasm_bindgen(constructor)]
     pub fn wasm_new(target_id: String, text: String) -> Self {
         Self {
-            target_id: MessageId(target_id),
+            to: MessageId(target_id),
             text: MessageText(text),
         }
     }
@@ -84,7 +84,7 @@ impl Reply {
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Replied {
-    pub reply_message_id: MessageId,
+    pub to: MessageId,
     pub reply: Message,
 }
 
@@ -94,7 +94,7 @@ impl Replied {
     #[wasm_bindgen(constructor)]
     pub fn wasm_new(target_id: String, reply: Message) -> Self {
         Self {
-            reply_message_id: MessageId(target_id),
+            to: MessageId(target_id),
             reply,
         }
     }

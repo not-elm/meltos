@@ -52,7 +52,7 @@ mod tests {
             &session_id,
             Speak {
                 discussion_id: created.meta.id.clone(),
-                message: MessageText::from("message"),
+                text: MessageText::from("message"),
             },
         )
         .await;
@@ -61,13 +61,13 @@ mod tests {
             &room_id,
             &session_id,
             Reply {
-                target_id: spoke.message.id.clone(),
+                to: spoke.text.id.clone(),
                 text: MessageText::from("reply"),
             },
         )
         .await;
 
-        assert_eq!(&replied.reply_message_id, &spoke.message.id);
+        assert_eq!(&replied.to, &spoke.text.id);
         assert_eq!(
             replied.reply.clone(),
             Message {

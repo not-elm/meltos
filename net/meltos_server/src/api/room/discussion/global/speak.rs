@@ -50,12 +50,12 @@ mod tests {
             &session_id,
             Speak {
                 discussion_id: created.meta.id.clone(),
-                message: MessageText::from("Message"),
+                text: MessageText::from("Message"),
             },
         )
         .await;
 
-        assert_eq!(&spoke.message.text, &MessageText::from("Message"));
+        assert_eq!(&spoke.text.text, &MessageText::from("Message"));
         assert_eq!(&spoke.discussion_id, &created.meta.id);
     }
 }

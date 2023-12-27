@@ -36,13 +36,13 @@ where
 
     #[inline]
     pub async fn speak(self, speak: Speak) -> error::Result<Spoke> {
-        let message = self
+        let text = self
             .global_io
-            .speak(&speak.discussion_id, self.user_id, speak.message)
+            .speak(&speak.discussion_id, self.user_id, speak.text)
             .await?;
         Ok(Spoke {
             discussion_id: speak.discussion_id,
-            message,
+            text,
         })
     }
 
@@ -50,11 +50,11 @@ where
     pub async fn reply(self, reply: Reply) -> error::Result<Replied> {
         let reply_message = self
             .global_io
-            .reply(self.user_id, reply.target_id.clone(), reply.text)
+            .reply(self.user_id, reply.to.clone(), reply.text)
             .await?;
 
         Ok(Replied {
-            reply_message_id: reply.target_id,
+            to: reply.to,
             reply: reply_message,
         })
     }

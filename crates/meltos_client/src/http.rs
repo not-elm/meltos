@@ -69,7 +69,7 @@ impl HttpClient {
 
     pub async fn open(
         base_uri: &str,
-        bundle: Bundle,
+        bundle: Option<Bundle>,
         user_id: Option<UserId>,
     ) -> error::Result<Self> {
         let client = Client::new();

@@ -110,7 +110,7 @@ pub async fn open_room(
     to_js_result(operations.init.execute())?;
     let bundle = to_js_result(operations.bundle.create())?;
     to_js_result(operations.local_commits.write(&LocalCommitsObj::default()))?;
-    let client = to_js_result(HttpClient::open(BASE, bundle, user_id.map(UserId::from)).await)?;
+    let client = to_js_result(HttpClient::open(BASE, Some(bundle), user_id.map(UserId::from)).await)?;
     // to_js_result(fs.save(client.configs().clone()).await)?;
 
     Ok(RoomClient {
