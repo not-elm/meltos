@@ -85,17 +85,17 @@ impl Reply {
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Replied {
     pub to: MessageId,
-    pub reply: Message,
+    pub message: Message,
 }
 
 
 #[wasm_bindgen]
 impl Replied {
     #[wasm_bindgen(constructor)]
-    pub fn wasm_new(target_id: String, reply: Message) -> Self {
+    pub fn wasm_new(target_id: String, message: Message) -> Self {
         Self {
             to: MessageId(target_id),
-            reply,
+            message,
         }
     }
 }

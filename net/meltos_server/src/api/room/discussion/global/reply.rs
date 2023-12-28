@@ -69,9 +69,9 @@ mod tests {
 
         assert_eq!(&replied.to, &spoke.text.id);
         assert_eq!(
-            replied.reply.clone(),
+            replied.message.clone(),
             Message {
-                id: replied.reply.id,
+                id: replied.message.id,
                 user_id: UserId::from("owner"),
                 text: MessageText::from("reply"),
             }

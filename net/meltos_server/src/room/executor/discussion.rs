@@ -55,7 +55,7 @@ where
 
         Ok(Replied {
             to: reply.to,
-            reply: reply_message,
+            message: reply_message,
         })
     }
 
