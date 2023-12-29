@@ -1,3 +1,3 @@
-mod conflict;
-mod file;
-mod merge;
+pub mod conflict;
+pub mod file;
+pub mod merge;

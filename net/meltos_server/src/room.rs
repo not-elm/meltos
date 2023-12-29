@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::future::Future;
 use std::sync::Arc;
+use std::time::Duration;
 
 use axum::body::Body;
 use axum::http::StatusCode;
@@ -31,7 +32,14 @@ mod executor;
 pub struct Rooms(ArcMutex<RoomMap>);
 
 impl Rooms {
-    pub async fn insert_room(&self, room: Room) {
+    pub async fn insert_room(&self, room: Room, life_time: Duration) {
+        let rooms = self.0.clone();
+        let room_id = room.id.clone();
+        tokio::spawn(async move{
+            tokio::time::sleep(life_time).await;
+            rooms.lock().await.0.remove(&room_id);
+        });
+
         let mut rooms = self.0.lock().await;
         rooms.0.insert(room.id.clone(), room);
     }

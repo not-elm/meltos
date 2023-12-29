@@ -3,12 +3,10 @@ use std::fmt::{Debug, Display};
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use meltos::room::RoomId;
 use meltos::schema::discussion::global::{Create, Created};
-use meltos::user::UserId;
 use meltos_tvn::branch::BranchName;
+use meltos_tvn::file_system::FileSystem;
 use meltos_tvn::object::commit::CommitHash;
-use meltos_tvn::object::local_commits::LocalCommitsObj;
 use meltos_tvn::operation::merge::MergedStatus;
 use meltos_tvn::operation::Operations;
 
@@ -31,7 +29,7 @@ const BASE: &str = "http://127.0.0.1:3000";
 #[wasm_bindgen]
 impl RoomClient {
     #[wasm_bindgen(constructor)]
-    pub fn new(workspace_dir: String, configs: SessionConfigs) -> RoomClient {
+    pub fn new(configs: SessionConfigs) -> RoomClient {
         Self {
             operations: Operations::new(
                 BranchName::from(configs.user_id.to_string()),
@@ -100,49 +98,49 @@ macro_rules! console_log {
     }};
 }
 
-#[wasm_bindgen]
-pub async fn open_room(
-    workspace_dir: String,
-    user_id: Option<String>,
-) -> Result<RoomClient, JsValue> {
-    let fs = MemFs::new();
-    let operations = Operations::new_main(fs.clone());
-    to_js_result(operations.init.execute())?;
-    let bundle = to_js_result(operations.bundle.create())?;
-    to_js_result(operations.local_commits.write(&LocalCommitsObj::default()))?;
-    let client = to_js_result(HttpClient::open(BASE, Some(bundle), user_id.map(UserId::from)).await)?;
-    // to_js_result(fs.save(client.configs().clone()).await)?;
-
-    Ok(RoomClient {
-        client,
-        operations,
-    })
-}
-
-#[wasm_bindgen]
-pub async fn join(
-    workspace_dir: String,
-    room_id: String,
-    user_id: Option<String>,
-) -> Result<RoomClient, JsValue> {
-    let (client, bundle) = to_js_result(
-        HttpClient::join(BASE, RoomId(room_id.clone()), user_id.map(UserId::from)).await,
-    )?;
-    let fs = MemFs::new();
-    let configs = client.configs();
-    // to_js_result(fs.save(configs.clone()).await)?;
-
-    let branch_name = BranchName::from(configs.user_id.to_string());
-    let operations = Operations::new(branch_name.clone(), fs);
-    to_js_result(operations.save.execute(bundle))?;
-    to_js_result(operations.checkout.execute(&branch_name))?;
-    to_js_result(operations.unzip.execute(&branch_name))?;
-
-    Ok(RoomClient {
-        client,
-        operations,
-    })
-}
+// #[wasm_bindgen]
+// pub async fn open_room(
+//     workspace_dir: String,
+//     user_id: Option<String>,
+// ) -> Result<RoomClient, JsValue> {
+//     let fs = MemFs::new();
+//     let operations = Operations::new_main(fs.clone());
+//     to_js_result(operations.init.execute())?;
+//     let bundle = to_js_result(operations.bundle.create())?;
+//     to_js_result(operations.local_commits.write(&LocalCommitsObj::default()))?;
+//     let client = to_js_result(HttpClient::open(BASE, Some(bundle), user_id.map(UserId::from)).await)?;
+//     // to_js_result(fs.save(client.configs().clone()).await)?;
+//
+//     Ok(RoomClient {
+//         client,
+//         operations,
+//     })
+// }
+//
+// #[wasm_bindgen]
+// pub async fn join(
+//     workspace_dir: String,
+//     room_id: String,
+//     user_id: Option<String>,
+// ) -> Result<RoomClient, JsValue> {
+//     let (client, bundle) = to_js_result(
+//         HttpClient::join(BASE, RoomId(room_id.clone()), user_id.map(UserId::from)).await,
+//     )?;
+//     let fs = MemFs::new();
+//     let configs = client.configs();
+//     // to_js_result(fs.save(configs.clone()).await)?;
+//
+//     let branch_name = BranchName::from(configs.user_id.to_string());
+//     let operations = Operations::new(branch_name.clone(), fs);
+//     to_js_result(operations.save.execute(bundle))?;
+//     to_js_result(operations.checkout.execute(&branch_name))?;
+//     to_js_result(operations.unzip.execute(&branch_name))?;
+//
+//     Ok(RoomClient {
+//         client,
+//         operations,
+//     })
+// }
 
 #[inline]
 fn to_js_result<Out: Debug, D: Display + Debug>(result: Result<Out, D>) -> Result<Out, JsValue> {
@@ -151,4 +149,10 @@ fn to_js_result<Out: Debug, D: Display + Debug>(result: Result<Out, D>) -> Resul
         Ok(out) => Ok(out),
         Err(e) => Err(JsValue::from_str(&e.to_string())),
     }
+}
+
+
+#[wasm_bindgen]
+pub fn test_write_memfs(fs: MemFs) {
+    fs.write("test.hello.txt", b"hello");
 }

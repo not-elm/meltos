@@ -1,36 +1,30 @@
-use std::collections::HashSet;
-
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::branch::BranchName;
 use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
 use crate::io::commit_hashes::CommitHashIo;
-use crate::io::commit_obj::CommitObjIo;
 use crate::object::commit::CommitHash;
-use crate::object::tree::TreeObj;
 use crate::operation::unzip::UnZip;
 
 #[derive(Debug)]
 pub struct Merge<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     head: HeadIo<Fs>,
     commit_hashes: CommitHashIo<Fs>,
-    commits_obj: CommitObjIo<Fs>,
     unzip: UnZip<Fs>,
 }
 
 impl<Fs> Merge<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Merge<Fs> {
         Self {
             head: HeadIo::new(fs.clone()),
             commit_hashes: CommitHashIo::new(fs.clone()),
-            commits_obj: CommitObjIo::new(BranchName::main(), fs.clone()),
             unzip: UnZip::new(fs.clone()),
         }
     }
@@ -44,8 +38,8 @@ pub enum MergedStatus {
 }
 
 impl<Fs> Merge<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     pub fn execute(
         &self,
@@ -78,58 +72,58 @@ where
         }
     }
 
-    fn commit_objs(
-        &self,
-        source_hashes: Vec<CommitHash>,
-        dist_hashes: Vec<CommitHash>,
-    ) -> crate::error::Result {
-        let merge_origin = self.merge_origin(&source_hashes, &dist_hashes)?;
-        let dist = self.commit_tree(dist_hashes, &merge_origin)?;
-        let mut source = self.commit_tree(source_hashes, &merge_origin)?;
-
-        for (path, dist_hash) in dist.iter() {
-            if !source.contains_key(path) {
-                continue;
-            }
-
-            let source_hash = source.get(path).unwrap().clone();
-            if dist_hash == &source_hash {
-                source.remove(path);
-            }
-        }
-        todo!();
-    }
-
-    fn commit_tree(
-        &self,
-        mut commit_hashes: Vec<CommitHash>,
-        merge_origin: &CommitHash,
-    ) -> crate::error::Result<TreeObj> {
-        let mut tree = TreeObj::default();
-        while let Some(hash) = commit_hashes.pop() {
-            if merge_origin == &hash {
-                break;
-            }
-            let commit_tree = self.commits_obj.read_commit_tree(&hash)?;
-            tree.replace_by(commit_tree);
-        }
-        Ok(tree)
-    }
-
-    fn merge_origin(
-        &self,
-        source_hashes: &[CommitHash],
-        dist_hashes: &[CommitHash],
-    ) -> crate::error::Result<CommitHash> {
-        let s = source_hashes.iter().collect::<HashSet<&CommitHash>>();
-        let d = dist_hashes.iter().collect::<HashSet<&CommitHash>>();
-        let same_commits = s.intersection(&d).collect::<Vec<&&CommitHash>>();
-        let merge_origin = source_hashes
-            .iter()
-            .find(|hash| same_commits.contains(&hash))
-            .unwrap();
-        Ok(merge_origin.clone())
-    }
+    // fn commit_objs(
+    //     &self,
+    //     source_hashes: Vec<CommitHash>,
+    //     dist_hashes: Vec<CommitHash>,
+    // ) -> crate::error::Result {
+    //     let merge_origin = self.merge_origin(&source_hashes, &dist_hashes)?;
+    //     let dist = self.commit_tree(dist_hashes, &merge_origin)?;
+    //     let mut source = self.commit_tree(source_hashes, &merge_origin)?;
+    //
+    //     for (path, dist_hash) in dist.iter() {
+    //         if !source.contains_key(path) {
+    //             continue;
+    //         }
+    //
+    //         let source_hash = source.get(path).unwrap().clone();
+    //         if dist_hash == &source_hash {
+    //             source.remove(path);
+    //         }
+    //     }
+    //     todo!();
+    // }
+    //
+    // fn commit_tree(
+    //     &self,
+    //     mut commit_hashes: Vec<CommitHash>,
+    //     merge_origin: &CommitHash,
+    // ) -> crate::error::Result<TreeObj> {
+    //     let mut tree = TreeObj::default();
+    //     while let Some(hash) = commit_hashes.pop() {
+    //         if merge_origin == &hash {
+    //             break;
+    //         }
+    //         let commit_tree = self.commits_obj.read_commit_tree(&hash)?;
+    //         tree.replace_by(commit_tree);
+    //     }
+    //     Ok(tree)
+    // }
+    //
+    // fn merge_origin(
+    //     &self,
+    //     source_hashes: &[CommitHash],
+    //     dist_hashes: &[CommitHash],
+    // ) -> crate::error::Result<CommitHash> {
+    //     let s = source_hashes.iter().collect::<HashSet<&CommitHash>>();
+    //     let d = dist_hashes.iter().collect::<HashSet<&CommitHash>>();
+    //     let same_commits = s.intersection(&d).collect::<Vec<&&CommitHash>>();
+    //     let merge_origin = source_hashes
+    //         .iter()
+    //         .find(|hash| same_commits.contains(&hash))
+    //         .unwrap();
+    //     Ok(merge_origin.clone())
+    // }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -138,8 +132,8 @@ pub struct MergeConfig {}
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::workspace::WorkspaceIo;
     use crate::operation::checkout::Checkout;
     use crate::operation::commit::Commit;

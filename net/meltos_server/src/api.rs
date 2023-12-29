@@ -228,12 +228,34 @@ mod test_util {
             .body(Body::from(
                 serde_json::to_string(&Open {
                     user_id: Some(UserId::from("owner")),
-                    bundle: None
+                    bundle: None,
+                    life_time_secs: None
                 })
                     .unwrap(),
             ))
             .unwrap()
     }
+
+    pub fn open_room_request_with_options(
+        bundle: Option<Bundle>,
+        life_time_minute: Option<u64>
+    ) -> Request {
+
+        Request::builder()
+            .method(http::Method::POST)
+            .header(header::CONTENT_TYPE, "application/json")
+            .uri("/room/open")
+            .body(Body::from(
+                serde_json::to_string(&Open {
+                    user_id: Some(UserId::from("owner")),
+                    bundle,
+                    life_time_secs: life_time_minute
+                })
+                    .unwrap(),
+            ))
+            .unwrap()
+    }
+
 
     pub fn create_discussion_request(
         title: String,

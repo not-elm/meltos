@@ -71,12 +71,14 @@ impl HttpClient {
         base_uri: &str,
         bundle: Option<Bundle>,
         user_id: Option<UserId>,
+        life_time_minute: Option<u64>
     ) -> error::Result<Self> {
         let client = Client::new();
         let response = client
             .post(format!("{base_uri}/room/open"))
             .json(&Open {
                 user_id,
+                life_time_secs: life_time_minute,
                 bundle,
             })
             .send()

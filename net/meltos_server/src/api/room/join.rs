@@ -44,14 +44,17 @@ mod tests {
     use axum::http::StatusCode;
 
     use meltos::room::RoomId;
-    use meltos::schema::room::Joined;
+    use meltos::schema::room::{Joined, Opened};
     use meltos::user::UserId;
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
+    use meltos_tvn::branch::BranchName;
     use meltos_tvn::file_system::mock::MockFileSystem;
     use meltos_tvn::file_system::FileSystem;
+    use meltos_tvn::io::bundle::BundleIo;
+    use meltos_tvn::operation::init::Init;
 
-    use crate::api::test_util::{http_join, http_open_room, logged_in_app, ResponseConvertable};
+    use crate::api::test_util::{http_call_with_deserialize, http_join, http_open_room, logged_in_app, open_room_request_with_options, ResponseConvertable};
     use crate::app;
 
     #[tokio::test]
@@ -80,7 +83,12 @@ mod tests {
         let mut app = app(session, MockGlobalDiscussionIo::default());
         let mock = MockFileSystem::default();
         mock.write("./some_text.txt", b"text file").unwrap();
-        let room_id = http_open_room(&mut app, mock.clone()).await;
+        Init::new(BranchName::main(), mock.clone()).execute().unwrap();
+        let bundle = BundleIo::new(mock.clone()).create().unwrap();
+        let open_request = open_room_request_with_options(Some(bundle), None);
+        let room_id =  http_call_with_deserialize::<Opened>(&mut app, open_request)
+            .await
+            .room_id;
         let response = http_join(&mut app, &room_id, None).await;
         let meta = response.deserialize::<Joined>().await;
         assert_eq!(meta.bundle.branches.len(), 1);
