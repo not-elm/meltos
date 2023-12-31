@@ -4,12 +4,11 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use meltos::schema::discussion::global::{Create, Created};
 use meltos_tvn::branch::BranchName;
 use meltos_tvn::operation::Operations;
-use meltos_tvn::operation::push::Pushable;
 
 use crate::config::SessionConfigs;
 use crate::error::JsResult;
 use crate::http::HttpClient;
-use crate::room::in_memory::MemFs;
+use crate::room::in_memory::StorageFs;
 
 pub mod discussion;
 pub mod file_system;
@@ -18,7 +17,7 @@ mod in_memory;
 #[wasm_bindgen(getter_with_clone)]
 pub struct RoomClient {
     client: HttpClient,
-    operations: Operations<MemFs>,
+    operations: Operations<StorageFs>,
 }
 
 const BASE: &str = "http://127.0.0.1:3000";
@@ -30,7 +29,7 @@ impl RoomClient {
         Self {
             operations: Operations::new(
                 BranchName::from(configs.user_id.to_string()),
-                MemFs::new(),
+                StorageFs::new(),
             ),
             client: HttpClient::new(BASE, configs),
         }
@@ -93,8 +92,7 @@ macro_rules! console_log {
 
 #[wasm_bindgen]
 pub struct TvnClient {
-    operations: Operations<MemFs>,
-    http: HttpClient,
+    operations: Operations<StorageFs>,
 }
 
 
@@ -103,13 +101,10 @@ impl TvnClient {
     #[wasm_bindgen(constructor)]
     pub fn wasm_new(
         branch_name: String,
-        fs: MemFs,
-        base_uri: String,
-        session_configs: SessionConfigs,
+        fs: StorageFs,
     ) -> Self {
         Self {
             operations: Operations::new(BranchName::from(branch_name), fs),
-            http: HttpClient::new(base_uri, session_configs),
         }
     }
 
@@ -119,28 +114,28 @@ impl TvnClient {
     }
 
 
-    #[inline]
-    pub async fn fetch(&self) -> JsResult {
-        let bundle = self.http.fetch().await?;
-        self.operations.patch.execute(&bundle)?;
-        Ok(())
-    }
+    // #[inline]
+    // pub async fn fetch(&self) -> JsResult {
+    //     let bundle = self.http.fetch().await?;
+    //     self.operations.patch.execute(&bundle)?;
+    //     Ok(())
+    // }
 
 
-    pub fn stage(&self, path: String) -> JsResult{
+    pub fn stage(&self, path: String) -> JsResult {
         self.operations.stage.execute(&path)?;
         Ok(())
     }
 
-    pub fn commit(&self, commit_text: String) -> JsResult{
+    pub fn commit(&self, commit_text: String) -> JsResult {
         self.operations.commit.execute(commit_text)?;
         Ok(())
     }
 
-    pub async fn push(&mut self) -> JsResult{
-        let bundle = self.operations.push.create_push_bundle()?;
-        self.http.push(bundle).await?;
-        Ok(())
-    }
+    // pub async fn push(&mut self) -> JsResult {
+    //     let bundle = self.operations.push.create_push_bundle()?;
+    //     self.http.push(bundle).await?;
+    //     Ok(())
+    // }
 }
 

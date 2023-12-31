@@ -7,26 +7,26 @@ use crate::console_log;
 #[wasm_bindgen]
 extern "C" {
     #[derive(Clone, Debug)]
-    pub type MemFs;
+    pub type StorageFs;
 
     #[wasm_bindgen(constructor)]
-    pub fn new() -> MemFs;
+    pub fn new() -> StorageFs;
 
     #[wasm_bindgen(method, js_name = "readApi")]
-    fn read_api(this: &MemFs, uri: String) -> Option<Uint8Array>;
+    fn read_api(this: &StorageFs, uri: String) -> Option<Uint8Array>;
 
     #[wasm_bindgen(method, js_name = "deleteApi")]
-    fn delete_api(this: &MemFs, uri: String);
+    fn delete_api(this: &StorageFs, uri: String);
 
     #[wasm_bindgen(method, js_name = "writeApi")]
-    fn write_api(this: &MemFs, uri: String, buf: Uint8Array);
+    fn write_api(this: &StorageFs, uri: String, buf: Uint8Array);
 
     #[wasm_bindgen(method, js_name = "allPathApi")]
-    fn all_path_api(this: &MemFs, path: String) -> Vec<String>;
+    fn all_path_api(this: &StorageFs, path: String) -> Vec<String>;
 }
 
 
-impl FileSystem for MemFs {
+impl FileSystem for StorageFs {
     fn write(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
         console_log!("write = {path}");
         self.write_api(path.to_string(), Uint8Array::from(buf));
