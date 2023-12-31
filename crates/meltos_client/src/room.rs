@@ -1,9 +1,14 @@
+use async_trait::async_trait;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos::schema::discussion::global::{Create, Created};
+use meltos::schema::room::Opened;
+use meltos::user::UserId;
 use meltos_tvn::branch::BranchName;
+use meltos_tvn::io::bundle::Bundle;
 use meltos_tvn::operation::Operations;
+use meltos_tvn::operation::push::Pushable;
 
 use crate::config::SessionConfigs;
 use crate::error::JsResult;
@@ -93,6 +98,7 @@ macro_rules! console_log {
 #[wasm_bindgen]
 pub struct TvnClient {
     operations: Operations<StorageFs>,
+    branch_name: String
 }
 
 
@@ -104,14 +110,23 @@ impl TvnClient {
         fs: StorageFs,
     ) -> Self {
         Self {
-            operations: Operations::new(BranchName::from(branch_name), fs),
+            operations: Operations::new(BranchName::from(branch_name.clone()), fs),
+            branch_name
         }
     }
 
-    pub fn init(&self) -> JsResult {
+    pub async fn open_room(&self, lifetime_sec: Option<u64>) -> JsResult<SessionConfigs> {
         self.operations.init.execute()?;
-        Ok(())
+        let mut sender = OpenSender{
+            user_id: Some(self.branch_name.clone()),
+            lifetime_sec
+        };
+        let session_configs = self.operations.push.execute(&mut sender).await?;
+        Ok(session_configs)
     }
+
+
+
 
 
     // #[inline]
@@ -137,5 +152,28 @@ impl TvnClient {
     //     self.http.push(bundle).await?;
     //     Ok(())
     // }
+}
+
+
+struct OpenSender{
+    user_id: Option<String>,
+    lifetime_sec: Option<u64>
+}
+
+
+
+#[async_trait(? Send)]
+impl Pushable<SessionConfigs> for OpenSender  {
+    type Error = crate::error::Error;
+
+    async fn push(&mut self, bundle: Bundle) -> Result<SessionConfigs, Self::Error> {
+        let http = HttpClient::open(
+            "http://localhost:3000",
+            Some(bundle),
+            self.user_id.clone().map(UserId::from),
+            self.lifetime_sec
+        ).await?;
+        Ok(http.configs().clone())
+    }
 }
 
