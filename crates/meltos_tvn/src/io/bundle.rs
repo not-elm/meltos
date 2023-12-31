@@ -144,7 +144,7 @@ mod tests {
         let stage = Stage::new(BranchName::from("branch2"), mock.clone());
         let commit = Commit::new(BranchName::from("branch2"), mock.clone());
         working.write(&BranchName::from("branch2")).unwrap();
-        mock.write("./hello.txt", b"hello").unwrap();
+        mock.write("./workspace/hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
         let commit_hash = commit.execute("text").unwrap();
         let mut bundle = bundle_io.create().unwrap();
@@ -163,7 +163,7 @@ mod tests {
     fn read_all_objs() {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
-        mock.write("./hello.txt", b"hello").unwrap();
+        mock.write("./workspace/hello.txt", b"hello").unwrap();
 
         Stage::new(BranchName::main(), mock.clone())
             .execute(".")

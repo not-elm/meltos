@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use reqwest_wasm::{header, Client, Response};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use wasm_bindgen::JsValue;
 
 use meltos::room::RoomId;
 use meltos::schema::discussion::global::{Create, Created};
@@ -52,6 +53,7 @@ impl HttpClient {
             })
             .send()
             .await?;
+
         let joined: Joined = response_to_json(response).await?;
         Ok((
             Self {
@@ -78,11 +80,12 @@ impl HttpClient {
             .post(format!("{base_uri}/room/open"))
             .json(&Open {
                 user_id,
-                life_time_secs: life_time_minute,
+                lifetime_secs: life_time_minute,
                 bundle,
             })
             .send()
             .await?;
+
         let opened: Opened = response.error_for_status()?.json().await?;
         Ok(Self {
             configs: SessionConfigs::from(opened),
@@ -118,6 +121,7 @@ impl HttpClient {
             )
             .send()
             .await?;
+
         response_to_json(response).await
     }
 
@@ -144,9 +148,9 @@ impl HttpClient {
 
 #[async_trait(? Send)]
 impl Pushable<()> for HttpClient {
-    type Error = error::Error;
+    type Error = crate::error::Error;
 
-    async fn push(&mut self, bundle: Bundle) -> Result<(), error::Error> {
+    async fn push(&mut self, bundle: Bundle) -> Result<(), Self::Error> {
         let base = &self.base_uri;
 
         let response = self

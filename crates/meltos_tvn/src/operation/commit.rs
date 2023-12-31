@@ -137,7 +137,7 @@ mod tests {
         let stage = Stage::new(BranchName::main(), mock.clone());
         let commit = Commit::new(BranchName::main(), mock.clone());
         let staging = StagingIo::new(mock.clone());
-        mock.write("./hello", b"hello").unwrap();
+        mock.write("./workspace/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("test").unwrap();
         let staging_tree = staging.read().unwrap().unwrap();
@@ -151,7 +151,7 @@ mod tests {
         let null_commit_hash = init_main_branch(mock.clone());
         let stage = Stage::new(BranchName::main(), mock.clone());
         let commit = Commit::new(BranchName::main(), mock.clone());
-        mock.write("./hello", b"hello").unwrap();
+        mock.write("./workspace/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("test").unwrap();
 
@@ -160,7 +160,7 @@ mod tests {
         let commit = ObjIo::new(mock).read_to_commit(&head_hash).unwrap();
 
         let mut tree = TreeObj::default();
-        tree.insert(FilePath::from_path("./hello"), ObjHash::new(b"FILE\0hello"));
+        tree.insert(FilePath::from_path("./workspace/hello"), ObjHash::new(b"FILE\0hello"));
         assert_eq!(
             commit,
             CommitObj {
@@ -178,7 +178,7 @@ mod tests {
         let stage = Stage::new(BranchName::main(), mock.clone());
         let commit = Commit::new(BranchName::main(), mock.clone());
         let local_commits = LocalCommitsIo::new(BranchName::main(), mock.clone());
-        mock.write("./hello", b"hello").unwrap();
+        mock.write("./workspace/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         let commit_hash = commit.execute("test").unwrap();
         let local = local_commits.read().unwrap().unwrap();
@@ -192,11 +192,11 @@ mod tests {
         let stage = Stage::new(BranchName::main(), mock.clone());
         let commit = Commit::new(BranchName::main(), mock.clone());
         let local_commits = LocalCommitsIo::new(BranchName::main(), mock.clone());
-        mock.write("./hello", b"hello").unwrap();
+        mock.write("./workspace/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         let commit_hash1 = commit.execute("1").unwrap();
 
-        mock.write("./hello2", b"hello2").unwrap();
+        mock.write("./workspace/hello2", b"hello2").unwrap();
         println!("{mock:?}");
         stage.execute(".").unwrap();
         let commit_hash2 = commit.execute("2").unwrap();

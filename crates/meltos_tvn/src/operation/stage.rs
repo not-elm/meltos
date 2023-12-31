@@ -21,7 +21,6 @@ where
     object: ObjIo<Fs>,
     head: HeadIo<Fs>,
     workspace: WorkspaceIo<Fs>,
-    fs: Fs,
     branch_name: BranchName,
 }
 
@@ -37,7 +36,6 @@ where
             trace_tree: TraceTreeIo::new(fs.clone()),
             head: HeadIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
-            fs,
             branch_name,
         }
     }
@@ -124,7 +122,7 @@ where
         trace_tree: &TreeObj,
         workspace_path: &str,
     ) -> error::Result<Vec<(FilePath, ObjHash)>> {
-        let work_space_files = self.fs.all_workspace_file_path(workspace_path)?;
+        let work_space_files = self.workspace.files(workspace_path)?;
         Ok(trace_tree
             .iter()
             .filter_map(|(path, hash)| {
@@ -158,10 +156,10 @@ mod tests {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
         let stage = Stage::new(BranchName::main(), mock.clone());
-        mock.write(&FilePath::from_path("./hello"), b"hello")
+        mock.write(&FilePath::from_path("./workspace/hello"), b"hello")
             .unwrap();
         mock.write(
-            &FilePath::from_path("./src/main.rs"),
+            &FilePath::from_path("./workspace/src/main.rs"),
             "dasds日本語".as_bytes(),
         )
         .unwrap();
@@ -196,12 +194,12 @@ mod tests {
         let stage = Stage::new(BranchName::main(), mock.clone());
         let commit = Commit::new(BranchName::main(), mock.clone());
 
-        mock.write("./hello.txt", b"hello").unwrap();
-        stage.execute("./hello.txt").unwrap();
+        mock.write("./workspace/hello.txt", b"hello").unwrap();
+        stage.execute("hello.txt").unwrap();
         commit.execute("add hello.txt").unwrap();
 
-        mock.delete("./hello.txt").unwrap();
-        stage.execute("./hello.txt").unwrap();
+        mock.delete("./workspace/hello.txt").unwrap();
+        stage.execute("hello.txt").unwrap();
         commit.execute("delete hello.txt").unwrap();
 
         let hello_hash = FileObj(b"hello".to_vec()).as_meta().unwrap().hash;
@@ -225,7 +223,7 @@ mod tests {
 
         let stage = stage::Stage::new(BranchName::main(), mock.clone());
 
-        mock.write("./hello.txt", b"hello").unwrap();
+        mock.write("./workspace/hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
 
         match stage.execute(".") {

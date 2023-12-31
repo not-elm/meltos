@@ -22,11 +22,11 @@ pub struct SessionConfigs {
 #[wasm_bindgen]
 impl SessionConfigs {
     #[wasm_bindgen(constructor)]
-    pub fn new(session_id: SessionId, room_id: RoomId, user_id: UserId) -> Self {
+    pub fn wasm_new(session_id: String, room_id: String, user_id: String) -> Self {
         Self {
-            session_id,
-            room_id,
-            user_id,
+            session_id: SessionId::from_string(session_id),
+            room_id: RoomId(room_id),
+            user_id: UserId(user_id),
         }
     }
 }

@@ -1,16 +1,13 @@
-use std::fmt::{Debug, Display};
-
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos::schema::discussion::global::{Create, Created};
 use meltos_tvn::branch::BranchName;
-use meltos_tvn::file_system::FileSystem;
-use meltos_tvn::object::commit::CommitHash;
-use meltos_tvn::operation::merge::MergedStatus;
 use meltos_tvn::operation::Operations;
+use meltos_tvn::operation::push::Pushable;
 
 use crate::config::SessionConfigs;
+use crate::error::JsResult;
 use crate::http::HttpClient;
 use crate::room::in_memory::MemFs;
 
@@ -39,40 +36,34 @@ impl RoomClient {
         }
     }
 
-    #[inline]
-    pub async fn fetch(&self) -> Result<(), JsValue> {
-        let bundle = to_js_result(self.client.fetch().await)?;
-        to_js_result(self.operations.patch.execute(&bundle))?;
-        Ok(())
-    }
-
-    #[inline(always)]
-    pub fn merge(&self, source: BranchName) -> Result<MergedStatus, JsValue> {
-        let result = self
-            .operations
-            .merge
-            .execute(source, BranchName::from(self.configs().user_id.to_string()));
-        to_js_result(result)
-    }
-
-    #[inline(always)]
-    pub fn stage(&self, workspace_path: &str) -> Result<(), JsValue> {
-        to_js_result(self.operations.stage.execute(workspace_path))
-    }
-
-    #[inline(always)]
-    pub fn commit(&self, commit_text: String) -> Result<CommitHash, JsValue> {
-        to_js_result(self.operations.commit.execute(commit_text))
-    }
-
-    #[inline(always)]
-    pub async fn push(&mut self) -> Result<(), JsValue> {
-        to_js_result(self.operations.push.execute(&mut self.client).await)
-    }
+    //
+    // #[inline(always)]
+    // pub fn merge(&self, source: BranchName) -> Result<MergedStatus, JsValue> {
+    //     let result = self
+    //         .operations
+    //         .merge
+    //         .execute(source, BranchName::from(self.configs().user_id.to_string()));
+    //     to_js_result(result)
+    // }
+    //
+    // #[inline(always)]
+    // pub fn stage(&self, workspace_path: &str) -> Result<(), JsValue> {
+    //     to_js_result(self.operations.stage.execute(workspace_path))
+    // }
+    //
+    // #[inline(always)]
+    // pub fn commit(&self, commit_text: String) -> Result<CommitHash, JsValue> {
+    //     to_js_result(self.operations.commit.execute(commit_text))
+    // }
+    //
+    // #[inline(always)]
+    // pub async fn push(&mut self) -> Result<(), JsValue> {
+    //     to_js_result(self.operations.push.execute(&mut self.client).await)
+    // }
 
     #[inline(always)]
     pub async fn create_discussion(&self, title: String) -> Result<Created, JsValue> {
-        let created = to_js_result(self.client.create_discussion(&Create::new(title)).await)?;
+        let created = self.client.create_discussion(&Create::new(title)).await?;
         Ok(created)
     }
 
@@ -98,61 +89,58 @@ macro_rules! console_log {
     }};
 }
 
-// #[wasm_bindgen]
-// pub async fn open_room(
-//     workspace_dir: String,
-//     user_id: Option<String>,
-// ) -> Result<RoomClient, JsValue> {
-//     let fs = MemFs::new();
-//     let operations = Operations::new_main(fs.clone());
-//     to_js_result(operations.init.execute())?;
-//     let bundle = to_js_result(operations.bundle.create())?;
-//     to_js_result(operations.local_commits.write(&LocalCommitsObj::default()))?;
-//     let client = to_js_result(HttpClient::open(BASE, Some(bundle), user_id.map(UserId::from)).await)?;
-//     // to_js_result(fs.save(client.configs().clone()).await)?;
-//
-//     Ok(RoomClient {
-//         client,
-//         operations,
-//     })
-// }
-//
-// #[wasm_bindgen]
-// pub async fn join(
-//     workspace_dir: String,
-//     room_id: String,
-//     user_id: Option<String>,
-// ) -> Result<RoomClient, JsValue> {
-//     let (client, bundle) = to_js_result(
-//         HttpClient::join(BASE, RoomId(room_id.clone()), user_id.map(UserId::from)).await,
-//     )?;
-//     let fs = MemFs::new();
-//     let configs = client.configs();
-//     // to_js_result(fs.save(configs.clone()).await)?;
-//
-//     let branch_name = BranchName::from(configs.user_id.to_string());
-//     let operations = Operations::new(branch_name.clone(), fs);
-//     to_js_result(operations.save.execute(bundle))?;
-//     to_js_result(operations.checkout.execute(&branch_name))?;
-//     to_js_result(operations.unzip.execute(&branch_name))?;
-//
-//     Ok(RoomClient {
-//         client,
-//         operations,
-//     })
-// }
 
-#[inline]
-fn to_js_result<Out: Debug, D: Display + Debug>(result: Result<Out, D>) -> Result<Out, JsValue> {
-    log(format!("{result:?}").as_str());
-    match result {
-        Ok(out) => Ok(out),
-        Err(e) => Err(JsValue::from_str(&e.to_string())),
-    }
+
+#[wasm_bindgen]
+pub struct TvnClient {
+    operations: Operations<MemFs>,
+    http: HttpClient,
 }
 
 
 #[wasm_bindgen]
-pub fn test_write_memfs(fs: MemFs) {
-    fs.write("test.hello.txt", b"hello");
+impl TvnClient {
+    #[wasm_bindgen(constructor)]
+    pub fn wasm_new(
+        branch_name: String,
+        fs: MemFs,
+        base_uri: String,
+        session_configs: SessionConfigs,
+    ) -> Self {
+        Self {
+            operations: Operations::new(BranchName::from(branch_name), fs),
+            http: HttpClient::new(base_uri, session_configs),
+        }
+    }
+
+    pub fn init(&self) -> JsResult {
+        self.operations.init.execute()?;
+        Ok(())
+    }
+
+
+    #[inline]
+    pub async fn fetch(&self) -> JsResult {
+        let bundle = self.http.fetch().await?;
+        self.operations.patch.execute(&bundle)?;
+        Ok(())
+    }
+
+
+    pub fn stage(&self, path: String) -> JsResult{
+        self.operations.stage.execute(&path)?;
+        Ok(())
+    }
+
+    pub fn commit(&self, commit_text: String) -> JsResult{
+        self.operations.commit.execute(commit_text)?;
+        Ok(())
+    }
+
+    pub async fn push(&mut self) -> JsResult{
+        let bundle = self.operations.push.create_push_bundle()?;
+        self.http.push(bundle).await?;
+        Ok(())
+    }
 }
+

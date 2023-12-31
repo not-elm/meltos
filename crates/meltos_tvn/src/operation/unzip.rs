@@ -68,13 +68,13 @@ mod tests {
         let commit = Commit::new(branch.clone(), mock.clone());
         let unzip = UnZip::new(mock.clone());
 
-        mock.write("hello", b"hello")?;
+        mock.write("./workspace/hello", b"hello")?;
         stage.execute("hello")?;
         commit.execute("commit text")?;
-        mock.delete("hello")?;
+        mock.delete("./workspace/hello")?;
 
         unzip.execute(&branch)?;
-        assert_eq!(mock.try_read("hello")?, b"hello");
+        assert_eq!(mock.try_read("./workspace/hello")?, b"hello");
         Ok(())
     }
 }

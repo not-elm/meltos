@@ -2,6 +2,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen_futures::js_sys::Uint8Array;
 
 use meltos_tvn::file_system::FileSystem;
+use crate::console_log;
 
 #[wasm_bindgen]
 extern "C" {
@@ -27,6 +28,7 @@ extern "C" {
 
 impl FileSystem for MemFs {
     fn write(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
+        console_log!("write = {path}");
         self.write_api(path.to_string(), Uint8Array::from(buf));
         Ok(())
     }
@@ -39,7 +41,9 @@ impl FileSystem for MemFs {
 
     #[inline]
     fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>> {
-        Ok(self.all_path_api(path.to_string()))
+        let files = self.all_path_api(path.to_string());
+        console_log!("{files:?}");
+        Ok(files)
     }
 
     fn delete(&self, path: &str) -> std::io::Result<()> {

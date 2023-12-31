@@ -120,7 +120,7 @@ mod tests {
     fn write_object_file() {
         let buf = b"hello world!";
         let mock = MockFileSystem::default();
-        mock.force_write("test/hello.txt", buf);
+        mock.force_write("workspace/test/hello.txt", buf);
 
         let io = ObjIo::new(mock.clone());
         let workspace = WorkspaceIo::new(mock.clone());

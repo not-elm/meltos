@@ -229,7 +229,7 @@ mod test_util {
                 serde_json::to_string(&Open {
                     user_id: Some(UserId::from("owner")),
                     bundle: None,
-                    life_time_secs: None
+                    lifetime_secs: None
                 })
                     .unwrap(),
             ))
@@ -249,7 +249,7 @@ mod test_util {
                 serde_json::to_string(&Open {
                     user_id: Some(UserId::from("owner")),
                     bundle,
-                    life_time_secs: life_time_minute
+                    lifetime_secs: life_time_minute
                 })
                     .unwrap(),
             ))

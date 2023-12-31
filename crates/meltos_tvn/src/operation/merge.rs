@@ -149,14 +149,14 @@ mod tests {
         let second = BranchName::from("second");
         Checkout::new(mock.clone()).execute(&second).unwrap();
 
-        mock.force_write("./hello.txt", b"hello");
+        mock.force_write("./workspace/hello.txt", b"hello");
         Stage::new(second.clone(), mock.clone())
             .execute(".")
             .unwrap();
         Commit::new(second.clone(), mock.clone())
             .execute("commit text")
             .unwrap();
-        mock.delete("./hello.txt").unwrap();
+        mock.delete("./workspace/hello.txt").unwrap();
 
         Checkout::new(mock.clone())
             .execute(&BranchName::main())
@@ -166,7 +166,7 @@ mod tests {
             .unwrap();
         assert_eq!(status, MergedStatus::FastSource);
         let file = WorkspaceIo::new(mock.clone())
-            .read(&FilePath::from_path("./hello.txt"))
+            .read(&FilePath::from_path("hello.txt"))
             .unwrap();
         assert!(file.is_some());
     }
@@ -182,7 +182,7 @@ mod tests {
 
         Checkout::new(mock.clone()).execute(&main).unwrap();
 
-        mock.force_write("./hello.txt", b"hello");
+        mock.force_write("./workspace/hello.txt", b"hello");
         Stage::new(main.clone(), mock.clone()).execute(".").unwrap();
         Commit::new(main.clone(), mock.clone())
             .execute("commit text")
@@ -193,7 +193,7 @@ mod tests {
             .unwrap();
         assert_eq!(status, MergedStatus::FastDist);
         let file = WorkspaceIo::new(mock.clone())
-            .read(&FilePath::from_path("./hello.txt"))
+            .read(&FilePath::from_path("hello.txt"))
             .unwrap();
         assert!(file.is_some());
     }

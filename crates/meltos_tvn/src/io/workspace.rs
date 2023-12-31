@@ -1,9 +1,9 @@
 use crate::encode::Decodable;
 use crate::error;
 use crate::file_system::{FilePath, FileSystem};
+use crate::object::{AsMeta, Obj, ObjHash};
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
-use crate::object::{AsMeta, Obj, ObjHash};
 
 pub struct ChangeFileMeta {
     pub path: FilePath,
@@ -18,15 +18,15 @@ pub enum ChangeFile {
 
 #[derive(Debug, Clone)]
 pub struct WorkspaceIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     fs: Fs,
 }
 
 impl<Fs> WorkspaceIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     #[inline]
     pub const fn new(fs: Fs) -> WorkspaceIo<Fs> {
@@ -35,13 +35,23 @@ where
         }
     }
 
-    pub fn convert_to_objs(&self, path: &str) -> std::io::Result<ObjectIter<Fs>> {
-        let files = self.fs.all_workspace_file_path(path)?;
+    pub fn convert_to_objs(&self, path: &str) -> error::Result<ObjectIter<Fs>> {
+        let files = self.files(path)?;
         Ok(ObjectIter {
             files,
             index: 0,
             io: &self.fs,
         })
+    }
+
+
+    #[inline(always)]
+    pub fn files(&self, path: &str) -> error::Result<Vec<String>> {
+        let path = match path {
+            "." | "./" => "workspace".to_string(),
+            path => format!("workspace/{path}")
+        };
+        Ok(self.fs.all_file_path(&path)?)
     }
 
     pub fn changed_files(&self, mut trace_tree: TreeObj) -> error::Result<Vec<ChangeFileMeta>> {
@@ -61,7 +71,7 @@ where
         trace_tree: &mut TreeObj,
         changed_files: &mut Vec<ChangeFileMeta>,
     ) -> error::Result {
-        let files = self.fs.all_workspace_file_path(".")?;
+        let files = self.files(".")?;
         for file_path in files {
             let path = FilePath(file_path);
             let file_obj = self.try_read(&path)?;
@@ -108,7 +118,7 @@ where
     }
 
     pub fn read(&self, file_path: &FilePath) -> error::Result<Option<FileObj>> {
-        let Some(buf) = self.fs.read(file_path)? else {
+        let Some(buf) = self.fs.read(&self.as_path(file_path))? else {
             return Ok(None);
         };
         Ok(Some(FileObj::decode(&buf)?))
@@ -127,11 +137,17 @@ where
             _ => Err(crate::error::Error::InvalidWorkspaceObj),
         }
     }
+
+
+    #[inline(always)]
+    fn as_path(&self, path: &str) -> String {
+        format!("/workspace/{path}")
+    }
 }
 
 pub struct ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     files: Vec<String>,
     index: usize,
@@ -139,8 +155,8 @@ where
 }
 
 impl<'a, Fs> Iterator for ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     type Item = std::io::Result<(FilePath, FileObj)>;
 
@@ -156,8 +172,8 @@ where
 }
 
 impl<'a, Fs> ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     fn read_to_obj(&self) -> std::io::Result<(FilePath, FileObj)> {
         let path = self.files.get(self.index).unwrap();
@@ -168,20 +184,21 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::file_system::mock::MockFileSystem;
+    use std::collections::HashSet;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::workspace::WorkspaceIo;
-    use crate::object::file::FileObj;
     use crate::object::{AsMeta, Obj, ObjHash};
+    use crate::object::file::FileObj;
 
     #[test]
     fn read_all_objects_in_dir() {
         let mock = MockFileSystem::default();
         let workspace = WorkspaceIo::new(mock.clone());
-        mock.write("hello/hello.txt", b"hello").unwrap();
-        mock.write("hello/world", b"world").unwrap();
-        mock.write("hello/dir/main.sh", b"echo hi ").unwrap();
+        mock.write("workspace/hello/hello.txt", b"hello").unwrap();
+        mock.write("workspace/hello/world", b"world").unwrap();
+        mock.write("workspace/hello/dir/main.sh", b"echo hi ").unwrap();
         let mut hashes = workspace
             .convert_to_objs("hello")
             .unwrap()
@@ -210,5 +227,20 @@ mod tests {
             .unpack(&FilePath::from_path("hello.txt"), &Obj::File(obj))
             .unwrap();
         assert_eq!(mock.try_read("hello.txt").unwrap(), b"hello");
+    }
+
+
+    #[test]
+    fn read_all_files(){
+        let mock = MockFileSystem::default();
+
+        let workspace = WorkspaceIo::new(mock.clone());
+        mock.force_write("workspace/hello.txt", b"hello");
+        mock.force_write("workspace/dist/index.js", b"index");
+        let files = workspace.files(".").unwrap();
+        assert_eq!(files.into_iter().collect::<HashSet<String>>(), vec![
+            "./workspace/hello.txt".to_string(),
+            "./workspace/dist/index.js".to_string()
+        ].into_iter().collect::<HashSet<String>>());
     }
 }

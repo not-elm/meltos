@@ -10,7 +10,7 @@ use crate::user::{SessionId, UserId};
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub struct Open {
     pub user_id: Option<UserId>,
-    pub life_time_secs: Option<u64>,
+    pub lifetime_secs: Option<u64>,
     pub bundle: Option<Bundle>,
 }
 
@@ -18,19 +18,19 @@ impl Open {
     #[inline]
     pub const fn new(
         user_id: Option<UserId>,
-        life_time_minute: Option<u64>,
+        lifetime_secs: Option<u64>,
         bundle: Option<Bundle>,
     ) -> Self {
         Self {
             user_id,
-            life_time_secs: life_time_minute,
+            lifetime_secs,
             bundle,
         }
     }
 
 
     pub fn life_time_duration(&self) -> Duration {
-        self.life_time_secs
+        self.lifetime_secs
             .map(Duration::from_secs)
             .unwrap_or(Duration::from_secs(60 * 60 * 6))
     }

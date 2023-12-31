@@ -79,11 +79,11 @@ mod tests {
         let commit = Commit::new(BranchName::main(), mock.clone());
         let commit0 = init_main_branch(mock.clone());
 
-        mock.force_write("./test.txt", b"hello");
+        mock.force_write("./workspace/test.txt", b"hello");
         stage.execute(".").unwrap();
         let commit1 = commit.execute("commit").unwrap();
 
-        mock.force_write("./test2.txt", b"hello2");
+        mock.force_write("./workspace/test2.txt", b"hello2");
         stage.execute(".").unwrap();
         let commit2 = commit.execute("commit").unwrap();
 

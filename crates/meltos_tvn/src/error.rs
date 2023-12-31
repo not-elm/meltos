@@ -3,6 +3,7 @@ use std::str::Utf8Error;
 use std::string::FromUtf8Error;
 
 use thiserror::Error;
+use wasm_bindgen::JsValue;
 
 use crate::branch::BranchName;
 use crate::file_system::FilePath;
@@ -75,4 +76,13 @@ pub enum Error {
 
     #[error("failed connect server : detail={0}")]
     FailedConnectServer(String),
+}
+
+
+
+impl From<crate::error::Error> for JsValue {
+    #[inline(always)]
+    fn from(error: Error) -> Self {
+        JsValue::from_str(&error.to_string())
+    }
 }

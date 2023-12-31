@@ -15,23 +15,40 @@ impl MockFileSystem {
     }
 }
 
+
+
+fn insert_suffix(path: &str) -> String{
+    match path {
+        "." | "./" => path.to_string(),
+        _ =>   {
+            if path.starts_with("./"){
+                path.to_string()
+            }else{
+                format!("./{}", path.trim_start_matches("/"))
+            }
+        }
+    }
+
+}
+
 impl FileSystem for MockFileSystem {
     fn write(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
         let mut map = self.0.lock().unwrap();
-        map.insert(path.to_string(), buf.to_vec());
+        map.insert(insert_suffix(path), buf.to_vec());
         Ok(())
     }
 
     fn read(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
         let map = self.0.lock().unwrap();
-        Ok(map.get(path).cloned())
+        Ok(map.get(&insert_suffix(path)).cloned())
     }
 
     fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>> {
         let map = self.0.lock().unwrap();
+        let path = insert_suffix(path);
         Ok(map
             .keys()
-            .filter(|key| key.starts_with(path))
+            .filter(|key| key.starts_with(&path))
             .cloned()
             .collect())
     }
