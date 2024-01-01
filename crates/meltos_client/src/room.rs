@@ -3,7 +3,6 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos::schema::discussion::global::{Create, Created};
-use meltos::schema::room::Opened;
 use meltos::user::UserId;
 use meltos_tvn::branch::BranchName;
 use meltos_tvn::io::bundle::Bundle;
@@ -98,7 +97,7 @@ macro_rules! console_log {
 #[wasm_bindgen]
 pub struct TvnClient {
     operations: Operations<StorageFs>,
-    branch_name: String
+    branch_name: String,
 }
 
 
@@ -111,31 +110,26 @@ impl TvnClient {
     ) -> Self {
         Self {
             operations: Operations::new(BranchName::from(branch_name.clone()), fs),
-            branch_name
+            branch_name,
         }
     }
 
     pub async fn open_room(&self, lifetime_sec: Option<u64>) -> JsResult<SessionConfigs> {
         self.operations.init.execute()?;
-        let mut sender = OpenSender{
+        let mut sender = OpenSender {
             user_id: Some(self.branch_name.clone()),
-            lifetime_sec
+            lifetime_sec,
         };
         let session_configs = self.operations.push.execute(&mut sender).await?;
         Ok(session_configs)
     }
 
-
-
-
-
-    // #[inline]
-    // pub async fn fetch(&self) -> JsResult {
-    //     let bundle = self.http.fetch().await?;
-    //     self.operations.patch.execute(&bundle)?;
-    //     Ok(())
-    // }
-
+    #[inline]
+    pub async fn fetch(&self, session_config: SessionConfigs) -> JsResult<Bundle> {
+        let http = HttpClient::new(BASE, session_config);
+        let bundle = http.fetch().await?;
+        Ok(bundle)
+    }
 
     pub fn stage(&self, path: String) -> JsResult {
         self.operations.stage.execute(&path)?;
@@ -147,23 +141,24 @@ impl TvnClient {
         Ok(())
     }
 
-    // pub async fn push(&mut self) -> JsResult {
-    //     let bundle = self.operations.push.create_push_bundle()?;
-    //     self.http.push(bundle).await?;
-    //     Ok(())
-    // }
+    pub async fn push(&mut self, session_configs: SessionConfigs) -> JsResult {
+        let mut sender = PushSender {
+            session_configs
+        };
+        self.operations.push.execute(&mut sender).await?;
+        Ok(())
+    }
 }
 
 
-struct OpenSender{
+struct OpenSender {
     user_id: Option<String>,
-    lifetime_sec: Option<u64>
+    lifetime_sec: Option<u64>,
 }
-
 
 
 #[async_trait(? Send)]
-impl Pushable<SessionConfigs> for OpenSender  {
+impl Pushable<SessionConfigs> for OpenSender {
     type Error = crate::error::Error;
 
     async fn push(&mut self, bundle: Bundle) -> Result<SessionConfigs, Self::Error> {
@@ -171,9 +166,30 @@ impl Pushable<SessionConfigs> for OpenSender  {
             "http://localhost:3000",
             Some(bundle),
             self.user_id.clone().map(UserId::from),
-            self.lifetime_sec
+            self.lifetime_sec,
         ).await?;
         Ok(http.configs().clone())
+    }
+}
+
+
+struct PushSender {
+    session_configs: SessionConfigs,
+}
+
+
+#[async_trait(? Send)]
+impl Pushable<()> for PushSender {
+    type Error = crate::error::Error;
+
+    async fn push(&mut self, bundle: Bundle) -> Result<(), Self::Error> {
+        let mut http = HttpClient::new(
+            "http://localhost:3000",
+            self.session_configs.clone(),
+        );
+        http.push(bundle).await?;
+
+        Ok(())
     }
 }
 

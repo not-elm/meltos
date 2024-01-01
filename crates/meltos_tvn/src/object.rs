@@ -178,6 +178,7 @@ impl Decodable for ObjHash {
     }
 }
 
+#[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Ord, PartialOrd, Deref, Serialize, Deserialize)]
 pub struct CompressedBuf(pub Vec<u8>);

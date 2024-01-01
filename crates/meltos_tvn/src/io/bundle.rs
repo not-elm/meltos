@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::branch::BranchName;
 use crate::error;
@@ -8,9 +9,10 @@ use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
-use crate::object::commit::CommitHash;
 use crate::object::{CompressedBuf, ObjHash};
+use crate::object::commit::CommitHash;
 
+#[wasm_bindgen(getter_with_clone)]
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Default)]
 pub struct Bundle {
     pub traces: Vec<BundleTrace>,
@@ -18,18 +20,21 @@ pub struct Bundle {
     pub branches: Vec<BundleBranch>,
 }
 
+#[wasm_bindgen(getter_with_clone)]
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BundleTrace {
     pub commit_hash: CommitHash,
     pub obj_hash: ObjHash,
 }
 
+#[wasm_bindgen(getter_with_clone)]
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BundleObject {
     pub hash: ObjHash,
     pub compressed_buf: CompressedBuf,
 }
 
+#[wasm_bindgen(getter_with_clone)]
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BundleBranch {
     pub branch_name: BranchName,
@@ -38,8 +43,8 @@ pub struct BundleBranch {
 
 #[derive(Debug)]
 pub struct BundleIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     object: ObjIo<Fs>,
     trace: TraceIo<Fs>,
@@ -47,8 +52,8 @@ where
 }
 
 impl<Fs> BundleIo<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     #[inline]
     pub fn new(fs: Fs) -> BundleIo<Fs> {
@@ -73,9 +78,9 @@ where
         let mut branches = Vec::with_capacity(head_files.len());
         for path in head_files {
             let Some(branch_name) = Path::new(&path).file_name().and_then(|name| name.to_str())
-            else {
-                continue;
-            };
+                else {
+                    continue;
+                };
 
             let branch_name = BranchName::from(branch_name);
             let head = HeadIo::new(self.fs.clone()).try_read(&branch_name)?;
@@ -97,8 +102,8 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
     use crate::io::bundle::BundleIo;
     use crate::operation::commit::Commit;
