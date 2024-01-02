@@ -64,14 +64,13 @@ impl TvnClient {
 
     pub async fn open_room(&self, lifetime_sec: Option<u64>) -> JsResult<SessionConfigs> {
         self.operations.init.execute()?;
-        console_log!("INIT");
+
         let mut sender = OpenSender {
             user_id: Some(BranchName::owner().0),
             lifetime_sec,
         };
-        console_log!("BEFORE PUSH");
+
         let session_configs = self.operations.push.execute(&mut sender).await?;
-        console_log!("PUSHED");
         Ok(session_configs)
     }
 
@@ -85,6 +84,8 @@ impl TvnClient {
 
         self.operations.save.execute(bundle)?;
         self.operations.checkout.execute(&BranchName(user_id))?;
+        self.operations.unzip.execute(&BranchName(self.branch_name.clone()))?;
+
         Ok(http.configs().clone())
     }
 
