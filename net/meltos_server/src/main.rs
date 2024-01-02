@@ -30,7 +30,7 @@ pub fn tracing_init() {
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    env::set_var("RUST_LOG", "DEBUG");
+    // env::set_var("RUST_LOG", "DEBUG");
     tracing_init();
     let listener = tokio::net::TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 3000))).await?;
 

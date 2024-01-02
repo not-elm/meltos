@@ -40,7 +40,7 @@ where
     Fs: FileSystem,
 {
     pub fn execute(&self, target_branch: &BranchName) -> error::Result<CheckOutStatus> {
-        let working = self.working.read()?.unwrap_or(BranchName::main());
+        let working = self.working.read()?.unwrap_or(BranchName::owner());
         if &working == target_branch {
             return Ok(CheckOutStatus::AlreadyCheckedOut);
         }
@@ -76,11 +76,11 @@ mod tests {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
         let checked = Checkout::new(mock.clone())
-            .execute(&BranchName::main())
+            .execute(&BranchName::owner())
             .unwrap();
         assert_eq!(checked, CheckOutStatus::AlreadyCheckedOut);
         let working = WorkingIo::new(mock.clone()).try_read().unwrap();
-        assert_eq!(BranchName::main(), working);
+        assert_eq!(BranchName::owner(), working);
     }
 
     #[test]
@@ -89,7 +89,7 @@ mod tests {
         init_main_branch(mock.clone());
         let second = BranchName::from("second");
         NewBranch::new(mock.clone())
-            .execute(BranchName::main(), second.clone())
+            .execute(BranchName::owner(), second.clone())
             .unwrap();
         assert_eq!(
             Checkout::new(mock.clone()).execute(&second).unwrap(),

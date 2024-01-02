@@ -39,14 +39,14 @@ mod tests {
         let mut app = app(session, MockGlobalDiscussionIo::default());
         let room_id = http_open_room(&mut app, mock.clone()).await;
         mock.write("./workspace/src/hello.txt", b"hello").unwrap();
-        stage::Stage::new(BranchName::main(), mock.clone())
+        stage::Stage::new(BranchName::owner(), mock.clone())
             .execute(".")
             .unwrap();
-        Commit::new(BranchName::main(), mock.clone())
+        Commit::new(BranchName::owner(), mock.clone())
             .execute("commit")
             .unwrap();
         let mut sender = MockServerClient::new(&mut app, room_id, owner_session_id());
-        operation::push::Push::new(BranchName::main(), mock.clone())
+        operation::push::Push::new(BranchName::owner(), mock.clone())
             .execute(&mut sender)
             .await
             .unwrap();

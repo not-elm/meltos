@@ -90,7 +90,7 @@ mod tests {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
 
-        let branch = BranchName::main();
+        let branch = BranchName::owner();
         let stage = Stage::new(branch.clone(), mock.clone());
         let trace = TraceIo::new(mock.clone());
         let commit = Commit::new(branch, mock.clone());

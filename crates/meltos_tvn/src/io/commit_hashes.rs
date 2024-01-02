@@ -18,7 +18,7 @@ where
 {
     pub fn new(fs: Fs) -> CommitHashIo<Fs> {
         Self {
-            commit_obj: CommitObjIo::new(BranchName::main(), fs),
+            commit_obj: CommitObjIo::new(BranchName::owner(), fs),
         }
     }
 }
@@ -75,8 +75,8 @@ mod tests {
     fn read_with_parents() {
         let mock = MockFileSystem::default();
         let commit_hashes = crate::io::commit_hashes::CommitHashIo::new(mock.clone());
-        let stage = Stage::new(BranchName::main(), mock.clone());
-        let commit = Commit::new(BranchName::main(), mock.clone());
+        let stage = Stage::new(BranchName::owner(), mock.clone());
+        let commit = Commit::new(BranchName::owner(), mock.clone());
         let commit0 = init_main_branch(mock.clone());
 
         mock.force_write("./workspace/test.txt", b"hello");

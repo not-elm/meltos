@@ -65,7 +65,7 @@ mod tests {
     #[test]
     fn append_one_commit() {
         let hash = CommitHash(ObjHash::new(b"commit hash"));
-        let io = LocalCommitsIo::new(BranchName::main(), MockFileSystem::default());
+        let io = LocalCommitsIo::new(BranchName::owner(), MockFileSystem::default());
         io.append(hash.clone()).unwrap();
         let local_commits = io.read().unwrap().unwrap();
         assert_eq!(local_commits, LocalCommitsObj(vec![hash]));

@@ -42,7 +42,6 @@ impl FileSystem for StorageFs {
     #[inline]
     fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>> {
         let files = self.all_path_api(path.to_string());
-        console_log!("{files:?}");
         Ok(files)
     }
 

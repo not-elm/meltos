@@ -66,6 +66,7 @@ impl<Fs> BundleIo<Fs>
 
     pub fn create(&self) -> error::Result<Bundle> {
         let branches = self.read_branch_heads()?;
+        println!("{branches:?}");
         Ok(Bundle {
             branches,
             objs: self.object.read_all()?,
@@ -118,7 +119,7 @@ mod tests {
         let null_commit_hash = init_main_branch(mock.clone());
         let bundle = bundle_io.create().unwrap();
         assert_eq!(bundle.branches.len(), 1);
-        assert_eq!(&bundle.branches[0].branch_name, &BranchName::main());
+        assert_eq!(&bundle.branches[0].branch_name, &BranchName::owner());
         assert_eq!(&bundle.branches[0].commits[0], &null_commit_hash);
     }
 
@@ -130,7 +131,7 @@ mod tests {
 
         let null_commit = init_main_branch(mock.clone());
         new_branch
-            .execute(BranchName::main(), BranchName::from("branch2"))
+            .execute(BranchName::owner(), BranchName::from("branch2"))
             .unwrap();
 
         let mut bundle = bundle_io.create().unwrap();
@@ -140,7 +141,7 @@ mod tests {
             &bundle.branches[0].branch_name,
             &BranchName::from("branch2")
         );
-        assert_eq!(&bundle.branches[1].branch_name, &BranchName::main());
+        assert_eq!(&bundle.branches[1].branch_name, &BranchName::owner());
 
         assert_eq!(&bundle.branches[0].commits[0], &null_commit);
         assert_eq!(&bundle.branches[1].commits[0], &null_commit);
@@ -158,7 +159,7 @@ mod tests {
             &bundle.branches[0].branch_name,
             &BranchName::from("branch2")
         );
-        assert_eq!(&bundle.branches[1].branch_name, &BranchName::main());
+        assert_eq!(&bundle.branches[1].branch_name, &BranchName::owner());
 
         assert_eq!(&bundle.branches[0].commits[0], &commit_hash);
         assert_eq!(&bundle.branches[1].commits[0], &null_commit);
@@ -170,10 +171,10 @@ mod tests {
         init_main_branch(mock.clone());
         mock.write("./workspace/hello.txt", b"hello").unwrap();
 
-        Stage::new(BranchName::main(), mock.clone())
+        Stage::new(BranchName::owner(), mock.clone())
             .execute(".")
             .unwrap();
-        Commit::new(BranchName::main(), mock.clone())
+        Commit::new(BranchName::owner(), mock.clone())
             .execute("commit")
             .unwrap();
         let bundle = BundleIo::new(mock.clone()).create().unwrap();

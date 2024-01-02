@@ -128,7 +128,7 @@ mod tests {
     #[tokio::test]
     async fn failed_if_no_commit() {
         let mock = MockFileSystem::default();
-        let push = Push::new(BranchName::main(), mock);
+        let push = Push::new(BranchName::owner(), mock);
         match push.execute(&mut MockRemoteClient::default()).await {
             Err(error::Error::NotfoundLocalCommits) => {}
             _ => panic!("expected return error::Error::NotfoundLocalCommits bad was"),
@@ -139,7 +139,7 @@ mod tests {
     async fn success_if_committed() {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
-        let branch = BranchName::main();
+        let branch = BranchName::owner();
         let stage = Stage::new(branch.clone(), mock.clone());
         let commit = Commit::new(branch.clone(), mock.clone());
         let push = Push::new(branch, mock.clone());
@@ -154,7 +154,7 @@ mod tests {
     async fn local_commits_is_cleared_if_succeed() {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
-        let branch = BranchName::main();
+        let branch = BranchName::owner();
         let commit_obj = CommitObjIo::new(branch.clone(), mock.clone());
         let stage = Stage::new(branch.clone(), mock.clone());
         let commit = Commit::new(branch.clone(), mock.clone());
@@ -173,7 +173,7 @@ mod tests {
     async fn push_param() {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
-        let branch = BranchName::main();
+        let branch = BranchName::owner();
         let stage = Stage::new(branch.clone(), mock.clone());
         let commit = Commit::new(branch.clone(), mock.clone());
         let push = Push::new(branch.clone(), mock.clone());

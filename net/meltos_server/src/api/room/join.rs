@@ -83,7 +83,7 @@ mod tests {
         let mut app = app(session, MockGlobalDiscussionIo::default());
         let mock = MockFileSystem::default();
         mock.write("./workspace/some_text.txt", b"text file").unwrap();
-        Init::new(BranchName::main(), mock.clone()).execute().unwrap();
+        Init::new(BranchName::owner(), mock.clone()).execute().unwrap();
         let bundle = BundleIo::new(mock.clone()).create().unwrap();
         let open_request = open_room_request_with_options(Some(bundle), None);
         let room_id =  http_call_with_deserialize::<Opened>(&mut app, open_request)

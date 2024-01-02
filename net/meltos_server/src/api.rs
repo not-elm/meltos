@@ -217,7 +217,7 @@ mod test_util {
     }
 
     pub fn open_room_request(mock: MockFileSystem) -> Request {
-        Init::new(BranchName::main(), mock.clone())
+        Init::new(BranchName::owner(), mock.clone())
             .execute()
             .unwrap();
 

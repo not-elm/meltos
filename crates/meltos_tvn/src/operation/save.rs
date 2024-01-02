@@ -89,14 +89,14 @@ mod tests {
         let head = CommitHash(ObjHash::new(b"commit hash"));
         let bundle = Bundle {
             branches: vec![BundleBranch {
-                branch_name: BranchName::main(),
+                branch_name: BranchName::owner(),
                 commits: vec![head.clone()],
             }],
             traces: Vec::with_capacity(0),
             objs: Vec::with_capacity(0),
         };
         save.execute(bundle).unwrap();
-        let actual = mock.try_read(".meltos/refs/heads/main").unwrap();
+        let actual = mock.try_read(".meltos/refs/heads/owner").unwrap();
         assert_eq!(actual, head.encode().unwrap());
     }
 }

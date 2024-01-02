@@ -185,7 +185,7 @@ mod tests {
 
     #[test]
     fn local_commits_is_empty_if_not_committed() {
-        let local_commit_objs = CommitObjIo::new(BranchName::main(), MockFileSystem::default())
+        let local_commit_objs = CommitObjIo::new(BranchName::owner(), MockFileSystem::default())
             .read_local_commits()
             .unwrap();
         assert_eq!(local_commit_objs, vec![]);
@@ -195,7 +195,7 @@ mod tests {
     fn local_commit_count_is_2() {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
-        let branch = BranchName::main();
+        let branch = BranchName::owner();
         let stage = Stage::new(branch.clone(), mock.clone());
         let commit = Commit::new(branch.clone(), mock.clone());
         let commit_obj = CommitObjIo::new(branch, mock.clone());
@@ -216,7 +216,7 @@ mod tests {
     fn read_objs_associated_with_all_commits() {
         let mock = MockFileSystem::default();
         let null_commit_hash = init_main_branch(mock.clone());
-        let branch = BranchName::main();
+        let branch = BranchName::owner();
         let stage = Stage::new(branch.clone(), mock.clone());
         let trace = TraceTreeIo::new(mock.clone());
         let commit = Commit::new(branch.clone(), mock.clone());

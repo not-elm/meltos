@@ -42,6 +42,7 @@ where
     pub unzip: UnZip<Fs>,
     pub merge: Merge<Fs>,
     pub local_commits: LocalCommitsIo<Fs>,
+    pub working: WorkingIo<Fs>,
     fs: Fs,
     branch_name: BranchName,
 }
@@ -52,7 +53,7 @@ where
 {
     #[inline]
     pub fn new_main(fs: Fs) -> Operations<Fs> {
-        Self::new(BranchName::main(), fs)
+        Self::new(BranchName::owner(), fs)
     }
 
     #[inline]
@@ -74,6 +75,7 @@ where
             unzip: UnZip::new(fs.clone()),
             merge: Merge::new(fs.clone()),
             local_commits: LocalCommitsIo::new(branch_name.clone(), fs.clone()),
+            working: WorkingIo::new(fs.clone()),
             fs,
             branch_name,
         }

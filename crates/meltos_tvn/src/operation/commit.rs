@@ -123,7 +123,7 @@ mod tests {
     #[test]
     fn failed_if_never_staged() {
         let mock = MockFileSystem::default();
-        let commit = Commit::new(BranchName::main(), mock);
+        let commit = Commit::new(BranchName::owner(), mock);
         match commit.execute("") {
             Err(error::Error::NotfoundStages) => {}
             _ => panic!("expect return error::Error::NotfoundStages bad none"),
@@ -134,8 +134,8 @@ mod tests {
     fn reset_staging_after_committed() {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
-        let stage = Stage::new(BranchName::main(), mock.clone());
-        let commit = Commit::new(BranchName::main(), mock.clone());
+        let stage = Stage::new(BranchName::owner(), mock.clone());
+        let commit = Commit::new(BranchName::owner(), mock.clone());
         let staging = StagingIo::new(mock.clone());
         mock.write("./workspace/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
@@ -149,14 +149,14 @@ mod tests {
     fn update_head_commit_hash() {
         let mock = MockFileSystem::default();
         let null_commit_hash = init_main_branch(mock.clone());
-        let stage = Stage::new(BranchName::main(), mock.clone());
-        let commit = Commit::new(BranchName::main(), mock.clone());
+        let stage = Stage::new(BranchName::owner(), mock.clone());
+        let commit = Commit::new(BranchName::owner(), mock.clone());
         mock.write("./workspace/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("test").unwrap();
 
         let head = HeadIo::new(mock.clone());
-        let head_hash = head.try_read(&BranchName::main()).unwrap();
+        let head_hash = head.try_read(&BranchName::owner()).unwrap();
         let commit = ObjIo::new(mock).read_to_commit(&head_hash).unwrap();
 
         let mut tree = TreeObj::default();
@@ -175,9 +175,9 @@ mod tests {
     fn append_to_local_commit() {
         let mock = MockFileSystem::default();
         let null_commit_hash = init_main_branch(mock.clone());
-        let stage = Stage::new(BranchName::main(), mock.clone());
-        let commit = Commit::new(BranchName::main(), mock.clone());
-        let local_commits = LocalCommitsIo::new(BranchName::main(), mock.clone());
+        let stage = Stage::new(BranchName::owner(), mock.clone());
+        let commit = Commit::new(BranchName::owner(), mock.clone());
+        let local_commits = LocalCommitsIo::new(BranchName::owner(), mock.clone());
         mock.write("./workspace/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         let commit_hash = commit.execute("test").unwrap();
@@ -189,9 +189,9 @@ mod tests {
     fn exists_2_local_commits() {
         let mock = MockFileSystem::default();
         let null_commit_hash = init_main_branch(mock.clone());
-        let stage = Stage::new(BranchName::main(), mock.clone());
-        let commit = Commit::new(BranchName::main(), mock.clone());
-        let local_commits = LocalCommitsIo::new(BranchName::main(), mock.clone());
+        let stage = Stage::new(BranchName::owner(), mock.clone());
+        let commit = Commit::new(BranchName::owner(), mock.clone());
+        let local_commits = LocalCommitsIo::new(BranchName::owner(), mock.clone());
         mock.write("./workspace/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         let commit_hash1 = commit.execute("1").unwrap();

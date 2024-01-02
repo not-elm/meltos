@@ -62,7 +62,7 @@ mod tests {
     fn success_if_committed() -> error::Result {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
-        let branch = BranchName::main();
+        let branch = BranchName::owner();
 
         let stage = Stage::new(branch.clone(), mock.clone());
         let commit = Commit::new(branch.clone(), mock.clone());

@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos_util::impl_string_new_type;
+use crate::error;
 
 use crate::file_system::FileSystem;
 use crate::io::atomic::work_branch::WorkingIo;
@@ -13,11 +14,11 @@ impl_string_new_type!(BranchName);
 
 impl BranchName {
     #[inline]
-    pub fn main() -> Self {
-        Self::from("main")
+    pub fn owner() -> Self {
+        Self::from("owner")
     }
 
-    pub fn working<Fs>(fs: Fs) -> std::io::Result<Self>
+    pub fn working<Fs>(fs: Fs) -> error::Result<Self>
     where
         Fs: FileSystem,
     {

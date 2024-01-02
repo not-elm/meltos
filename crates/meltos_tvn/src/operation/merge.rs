@@ -159,10 +159,10 @@ mod tests {
         mock.delete("./workspace/hello.txt").unwrap();
 
         Checkout::new(mock.clone())
-            .execute(&BranchName::main())
+            .execute(&BranchName::owner())
             .unwrap();
         let status = Merge::new(mock.clone())
-            .execute(second, BranchName::main())
+            .execute(second, BranchName::owner())
             .unwrap();
         assert_eq!(status, MergedStatus::FastSource);
         let file = WorkspaceIo::new(mock.clone())
@@ -176,7 +176,7 @@ mod tests {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
 
-        let main = BranchName::main();
+        let main = BranchName::owner();
         let second = BranchName::from("second");
         Checkout::new(mock.clone()).execute(&second).unwrap();
 
@@ -189,7 +189,7 @@ mod tests {
             .unwrap();
 
         let status = Merge::new(mock.clone())
-            .execute(second, BranchName::main())
+            .execute(second, BranchName::owner())
             .unwrap();
         assert_eq!(status, MergedStatus::FastDist);
         let file = WorkspaceIo::new(mock.clone())

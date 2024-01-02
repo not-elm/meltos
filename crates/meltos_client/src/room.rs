@@ -2,10 +2,13 @@ use async_trait::async_trait;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::wasm_bindgen;
 
+use meltos::room::RoomId;
 use meltos::schema::discussion::global::{Create, Created};
 use meltos::user::UserId;
 use meltos_tvn::branch::BranchName;
+use meltos_tvn::io::atomic::work_branch::WorkingIo;
 use meltos_tvn::io::bundle::Bundle;
+use meltos_tvn::operation::merge::MergedStatus;
 use meltos_tvn::operation::Operations;
 use meltos_tvn::operation::push::Pushable;
 
@@ -114,21 +117,40 @@ impl TvnClient {
         }
     }
 
+
     pub async fn open_room(&self, lifetime_sec: Option<u64>) -> JsResult<SessionConfigs> {
         self.operations.init.execute()?;
+        console_log!("INIT");
         let mut sender = OpenSender {
-            user_id: Some(self.branch_name.clone()),
+            user_id: Some(BranchName::owner().0),
             lifetime_sec,
         };
+        console_log!("BEFORE PUSH");
         let session_configs = self.operations.push.execute(&mut sender).await?;
+        console_log!("PUSHED");
         Ok(session_configs)
     }
 
+
+    pub async fn join_room(&self, room_id: String, user_id: String) -> JsResult<SessionConfigs> {
+        let (http, bundle) = HttpClient::join(
+            BASE,
+            RoomId(room_id),
+            Some(UserId(user_id.clone())),
+        ).await?;
+
+        self.operations.save.execute(bundle)?;
+        self.operations.checkout.execute(&BranchName(user_id))?;
+        self.operations.wo
+        Ok(http.configs().clone())
+    }
+
     #[inline]
-    pub async fn fetch(&self, session_config: SessionConfigs) -> JsResult<Bundle> {
+    pub async fn fetch(&self, session_config: SessionConfigs) -> JsResult {
         let http = HttpClient::new(BASE, session_config);
         let bundle = http.fetch().await?;
-        Ok(bundle)
+        self.operations.save.execute(bundle)?;
+        Ok(())
     }
 
     pub fn stage(&self, path: String) -> JsResult {
@@ -147,6 +169,13 @@ impl TvnClient {
         };
         self.operations.push.execute(&mut sender).await?;
         Ok(())
+    }
+
+    pub async fn merge(&mut self, source: String) -> JsResult<MergedStatus> {
+        let source = BranchName(source);
+        let dist = BranchName(self.branch_name.clone());
+        let status = self.operations.merge.execute(source, dist)?;
+        Ok(status)
     }
 }
 
@@ -168,6 +197,7 @@ impl Pushable<SessionConfigs> for OpenSender {
             self.user_id.clone().map(UserId::from),
             self.lifetime_sec,
         ).await?;
+        console_log!("CONNECTED");
         Ok(http.configs().clone())
     }
 }

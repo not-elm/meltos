@@ -155,7 +155,7 @@ mod tests {
     fn create_obj_file_after_staged() {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
-        let stage = Stage::new(BranchName::main(), mock.clone());
+        let stage = Stage::new(BranchName::owner(), mock.clone());
         mock.write(&FilePath::from_path("./workspace/hello"), b"hello")
             .unwrap();
         mock.write(
@@ -191,8 +191,8 @@ mod tests {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
 
-        let stage = Stage::new(BranchName::main(), mock.clone());
-        let commit = Commit::new(BranchName::main(), mock.clone());
+        let stage = Stage::new(BranchName::owner(), mock.clone());
+        let commit = Commit::new(BranchName::owner(), mock.clone());
 
         mock.write("./workspace/hello.txt", b"hello").unwrap();
         stage.execute("hello.txt").unwrap();
@@ -221,7 +221,7 @@ mod tests {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
 
-        let stage = stage::Stage::new(BranchName::main(), mock.clone());
+        let stage = stage::Stage::new(BranchName::owner(), mock.clone());
 
         mock.write("./workspace/hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();

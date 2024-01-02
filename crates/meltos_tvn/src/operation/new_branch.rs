@@ -49,7 +49,7 @@ mod tests {
         let new_branch = NewBranch::new(mock.clone());
         let head = HeadIo::new(mock);
         new_branch
-            .execute(BranchName::main(), BranchName::from("second"))
+            .execute(BranchName::owner(), BranchName::from("second"))
             .unwrap();
 
         let head = head.try_read(&BranchName::from("second")).unwrap();
