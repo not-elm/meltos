@@ -8,10 +8,10 @@ edition = "2021"
 http-body-util = "0.1.0"
 
 log = "0.4.20"
-meltos_util = { path = "../../crates/meltos_util" }
-meltos = { path = "../../crates/meltos" }
-meltos_backend = { path = "../../crates/meltos_backend" }
-meltos_tvn = { path = "../../crates/meltos_tvn" }
+meltos_util = { path = "../crates/meltos_util" }
+meltos = { path = "../crates/meltos" }
+meltos_backend = { path = "../crates/meltos_backend" }
+meltos_tvn = { path = "../crates/meltos_tvn" }
 axum-extra = { version = "0.9.0", features = ["cookie", "typed-routing"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 console-subscriber = "0.2.0"

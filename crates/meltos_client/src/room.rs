@@ -141,7 +141,6 @@ impl TvnClient {
 
         self.operations.save.execute(bundle)?;
         self.operations.checkout.execute(&BranchName(user_id))?;
-        self.operations.wo
         Ok(http.configs().clone())
     }
 
