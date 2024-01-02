@@ -1,12 +1,10 @@
 use async_trait::async_trait;
-use wasm_bindgen::JsValue;
+
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos::room::RoomId;
-use meltos::schema::discussion::global::{Create, Created};
 use meltos::user::UserId;
 use meltos_tvn::branch::BranchName;
-use meltos_tvn::io::atomic::work_branch::WorkingIo;
 use meltos_tvn::io::bundle::Bundle;
 use meltos_tvn::operation::merge::MergedStatus;
 use meltos_tvn::operation::Operations;
@@ -21,63 +19,9 @@ pub mod discussion;
 pub mod file_system;
 mod in_memory;
 
-#[wasm_bindgen(getter_with_clone)]
-pub struct RoomClient {
-    client: HttpClient,
-    operations: Operations<StorageFs>,
-}
 
 const BASE: &str = "http://127.0.0.1:3000";
 
-#[wasm_bindgen]
-impl RoomClient {
-    #[wasm_bindgen(constructor)]
-    pub fn new(configs: SessionConfigs) -> RoomClient {
-        Self {
-            operations: Operations::new(
-                BranchName::from(configs.user_id.to_string()),
-                StorageFs::new(),
-            ),
-            client: HttpClient::new(BASE, configs),
-        }
-    }
-
-    //
-    // #[inline(always)]
-    // pub fn merge(&self, source: BranchName) -> Result<MergedStatus, JsValue> {
-    //     let result = self
-    //         .operations
-    //         .merge
-    //         .execute(source, BranchName::from(self.configs().user_id.to_string()));
-    //     to_js_result(result)
-    // }
-    //
-    // #[inline(always)]
-    // pub fn stage(&self, workspace_path: &str) -> Result<(), JsValue> {
-    //     to_js_result(self.operations.stage.execute(workspace_path))
-    // }
-    //
-    // #[inline(always)]
-    // pub fn commit(&self, commit_text: String) -> Result<CommitHash, JsValue> {
-    //     to_js_result(self.operations.commit.execute(commit_text))
-    // }
-    //
-    // #[inline(always)]
-    // pub async fn push(&mut self) -> Result<(), JsValue> {
-    //     to_js_result(self.operations.push.execute(&mut self.client).await)
-    // }
-
-    #[inline(always)]
-    pub async fn create_discussion(&self, title: String) -> Result<Created, JsValue> {
-        let created = self.client.create_discussion(&Create::new(title)).await?;
-        Ok(created)
-    }
-
-    #[inline(always)]
-    pub fn configs(&self) -> SessionConfigs {
-        self.client.configs().clone()
-    }
-}
 
 #[wasm_bindgen]
 extern "C" {

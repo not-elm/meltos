@@ -1,13 +1,12 @@
 use async_trait::async_trait;
-use reqwest_wasm::{header, Client, Response};
+use reqwest_wasm::{Client, header, Response};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use wasm_bindgen::JsValue;
 
 use meltos::room::RoomId;
 use meltos::schema::discussion::global::{Create, Created};
-use meltos::schema::room::Opened;
 use meltos::schema::room::{Join, Joined, Open};
+use meltos::schema::room::Opened;
 use meltos::user::UserId;
 use meltos_tvn::io::bundle::Bundle;
 use meltos_tvn::operation::push::Pushable;
@@ -73,7 +72,7 @@ impl HttpClient {
         base_uri: &str,
         bundle: Option<Bundle>,
         user_id: Option<UserId>,
-        life_time_minute: Option<u64>
+        life_time_minute: Option<u64>,
     ) -> error::Result<Self> {
         let client = Client::new();
         let response = client
@@ -96,7 +95,7 @@ impl HttpClient {
 
     #[inline]
     pub async fn fetch(&self) -> error::Result<Bundle> {
-        self.get("tvn/fetch").await
+        self.get().await
     }
 
     #[inline]
@@ -104,9 +103,9 @@ impl HttpClient {
         self.post("discussion/global/create", Some(create)).await
     }
 
-    async fn get<D>(&self, path: &str) -> error::Result<D>
-    where
-        D: DeserializeOwned,
+    async fn get<D>(&self) -> error::Result<D>
+        where
+            D: DeserializeOwned,
     {
         let response = self
             .client
@@ -126,9 +125,9 @@ impl HttpClient {
     }
 
     async fn post<S, D>(&self, path: &str, body: Option<&S>) -> error::Result<D>
-    where
-        S: Serialize,
-        D: DeserializeOwned,
+        where
+            S: Serialize,
+            D: DeserializeOwned,
     {
         let mut request = self
             .client
@@ -169,8 +168,8 @@ impl Pushable<()> for HttpClient {
 }
 
 async fn response_to_json<D>(response: Response) -> error::Result<D>
-where
-    D: DeserializeOwned,
+    where
+        D: DeserializeOwned,
 {
     Ok(response.error_for_status()?.json().await?)
 }

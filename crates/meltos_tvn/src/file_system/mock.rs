@@ -24,7 +24,7 @@ fn insert_suffix(path: &str) -> String{
             if path.starts_with("./"){
                 path.to_string()
             }else{
-                format!("./{}", path.trim_start_matches("/"))
+                format!("./{}", path.trim_start_matches('/'))
             }
         }
     }
