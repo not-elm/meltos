@@ -16,7 +16,7 @@ impl MockUserSessionIo {
         let me = Self::default();
         me.force_register(SessionId("owner".to_string()), UserId::from("owner"))
             .await;
-        me.force_register(SessionId("room".to_string()), UserId::from("owner"))
+        me.force_register(SessionId("tvc".to_string()), UserId::from("owner"))
             .await;
         me
     }

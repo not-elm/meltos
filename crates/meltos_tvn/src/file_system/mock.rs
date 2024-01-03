@@ -53,7 +53,7 @@ impl FileSystem for MockFileSystem {
             .collect())
     }
 
-    fn delete(&self, path: &str) -> std::io::Result<()> {
+    fn delete_file(&self, path: &str) -> std::io::Result<()> {
         self.0.lock().unwrap().remove(path);
         Ok(())
     }

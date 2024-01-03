@@ -131,7 +131,7 @@ impl<Fs> WorkspaceIo<Fs>
                 Ok(())
             }
             Obj::Delete(_) => {
-                self.fs.delete(file_path)?;
+                self.fs.delete_file(file_path)?;
                 Ok(())
             }
             _ => Err(crate::error::Error::InvalidWorkspaceObj),

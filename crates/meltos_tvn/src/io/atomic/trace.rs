@@ -99,7 +99,7 @@ mod tests {
         stage.execute(".").unwrap();
         let commit_hash1 = commit.execute("text").unwrap();
 
-        mock.delete("./workspace/hello.txt").unwrap();
+        mock.delete_file("./workspace/hello.txt").unwrap();
         stage.execute(".").unwrap();
         let commit_hash2 = commit.execute("text").unwrap();
 

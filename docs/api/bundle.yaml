@@ -1,0 +1,44 @@
+type: object
+name: bundle
+description: "TVCのデータ構造をまとめたバンドルデータ これを元に.meltos配下にデータ構造を構築し、そのデータ構造を元にワークスペースにデータを展開する"
+required:
+  - "traces"
+  - "objs"
+  - "branches"
+properties:
+  traces:
+    type: array
+    items:
+      type: array
+      items:
+        type: object
+        properties:
+          commit_hash:
+            type: string
+          obj_hash:
+            type: string
+
+  objs:
+    type: array
+    items:
+      type: array
+      items:
+        type: object
+        properties:
+          hash:
+            type: string
+          compressed_buf:
+            type: array
+            items:
+              type: integer
+                      
+  branches:
+    type: array
+    items:
+      type: object
+      properties:
+        branch_name:
+          type: string
+        head:
+          type: string
+      

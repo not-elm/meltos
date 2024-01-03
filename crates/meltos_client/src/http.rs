@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use reqwest_wasm::{Client, header, Response};
+
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -13,6 +13,12 @@ use meltos_tvn::operation::push::Pushable;
 
 use crate::config::SessionConfigs;
 use crate::error;
+
+#[cfg(feature = "wasm")]
+use reqwest_wasm::{Client, header, Response};
+
+#[cfg(not(feature = "wasm"))]
+use reqwest::{Client, header, Response};
 
 #[derive(Debug, Clone)]
 pub struct HttpClient {
@@ -145,9 +151,9 @@ impl HttpClient {
     }
 }
 
-#[async_trait(? Send)]
+#[async_trait]
 impl Pushable<()> for HttpClient {
-    type Error = crate::error::Error;
+    type Error =  String;
 
     async fn push(&mut self, bundle: Bundle) -> Result<(), Self::Error> {
         let base = &self.base_uri;
@@ -161,8 +167,11 @@ impl Pushable<()> for HttpClient {
             )
             .json(&bundle)
             .send()
-            .await?;
-        response.error_for_status()?;
+            .await
+            .map_err(|e|e.to_string())?;
+        response
+            .error_for_status()
+            .map_err(|e|e.to_string())?;
         Ok(())
     }
 }

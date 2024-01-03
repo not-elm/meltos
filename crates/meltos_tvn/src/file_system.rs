@@ -2,11 +2,19 @@ use std::io::ErrorKind;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos_util::impl_string_new_type;
 
 pub mod file;
 pub mod mock;
+
+
+
+
+
+
+
 
 pub trait FileSystem {
     fn write(&self, path: &str, buf: &[u8]) -> std::io::Result<()>;
@@ -15,8 +23,14 @@ pub trait FileSystem {
 
     fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>>;
 
-    fn delete(&self, path: &str) -> std::io::Result<()>;
+    fn delete_file(&self, path: &str) -> std::io::Result<()>;
 
+    fn delete_dir(&self, path: &str) -> std::io::Result<()>{
+        for file in self.all_file_path(path)?{
+            self.delete_file(&file)?;
+        }
+        Ok(())
+    }
 
 
     fn try_read(&self, path: &str) -> std::io::Result<Vec<u8>> {
@@ -34,6 +48,7 @@ pub trait FileSystem {
     }
 }
 
+#[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]
 #[derive(Eq, PartialEq, Debug, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd)]
 pub struct FilePath(pub String);

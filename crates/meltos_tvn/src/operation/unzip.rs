@@ -6,7 +6,7 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::io::workspace::WorkspaceIo;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnZip<Fs>
 where
     Fs: FileSystem,
@@ -15,6 +15,7 @@ where
     trace_tree: TraceTreeIo<Fs>,
     object: ObjIo<Fs>,
     head: HeadIo<Fs>,
+    fs: Fs
 }
 
 impl<Fs> UnZip<Fs>
@@ -26,7 +27,8 @@ where
             workspace: WorkspaceIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
             head: HeadIo::new(fs.clone()),
-            trace_tree: TraceTreeIo::new(fs),
+            trace_tree: TraceTreeIo::new(fs.clone()),
+            fs
         }
     }
 }
@@ -37,6 +39,7 @@ where
 {
     /// Restore committed data into the workspace.
     pub fn execute(&self, branch_name: &BranchName) -> error::Result {
+        self.fs.delete_dir("workspace")?;
         let head = self.head.try_read(branch_name)?;
         let trace_tree = self.trace_tree.read(&head)?;
         for (path, hash) in trace_tree.iter() {
@@ -71,7 +74,7 @@ mod tests {
         mock.write("./workspace/hello", b"hello")?;
         stage.execute("hello")?;
         commit.execute("commit text")?;
-        mock.delete("./workspace/hello")?;
+        mock.delete_file("./workspace/hello")?;
 
         unzip.execute(&branch)?;
         assert_eq!(mock.try_read("./workspace/hello")?, b"hello");

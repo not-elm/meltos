@@ -91,7 +91,7 @@ mod test_util {
                     )
                     .header(header::CONTENT_TYPE, "application/json")
                     .method(http::method::Method::POST)
-                    .uri(format!("/room/{}/tvn/push", self.room_id))
+                    .uri(format!("/tvc/{}/tvn/push", self.room_id))
                     .body(Body::from(serde_json::to_string(&bundle).unwrap()))
                     .unwrap(),
             )
@@ -138,7 +138,7 @@ mod test_util {
 
     #[allow(unused)]
     pub fn user_session_id() -> SessionId {
-        SessionId("room".to_string())
+        SessionId("tvc".to_string())
     }
 
     pub async fn http_open_room(app: &mut Router, mock: MockFileSystem) -> RoomId {
@@ -152,7 +152,7 @@ mod test_util {
             app,
             Request::builder()
                 .header(header::SET_COOKIE, format!("session_id={session_id}"))
-                .uri(format!("/room/{room_id}/tvn/fetch"))
+                .uri(format!("/tvc/{room_id}/tvn/fetch"))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -189,7 +189,7 @@ mod test_util {
                 .method(http::Method::POST)
                 .header(header::SET_COOKIE, format!("session_id={session_id}"))
                 .header("Content-Type", "application/json")
-                .uri(format!("/room/{room_id}/discussion/global/reply"))
+                .uri(format!("/tvc/{room_id}/discussion/global/reply"))
                 .body(Body::from(reply.as_json()))
                 .unwrap(),
         )
@@ -208,7 +208,7 @@ mod test_util {
                 .method(http::Method::DELETE)
                 .header(header::SET_COOKIE, format!("session_id={session_id}"))
                 .uri(format!(
-                    "/room/{room_id}/discussion/global/close?discussion_id={discussion_id}"
+                    "/tvc/{room_id}/discussion/global/close?discussion_id={discussion_id}"
                 ))
                 .body(Body::empty())
                 .unwrap(),
@@ -224,7 +224,7 @@ mod test_util {
         Request::builder()
             .method(http::Method::POST)
             .header(header::CONTENT_TYPE, "application/json")
-            .uri("/room/open")
+            .uri("/tvc/open")
             .body(Body::from(
                 serde_json::to_string(&Open {
                     user_id: Some(UserId::from("owner")),
@@ -244,7 +244,7 @@ mod test_util {
         Request::builder()
             .method(http::Method::POST)
             .header(header::CONTENT_TYPE, "application/json")
-            .uri("/room/open")
+            .uri("/tvc/open")
             .body(Body::from(
                 serde_json::to_string(&Open {
                     user_id: Some(UserId::from("owner")),
@@ -263,7 +263,7 @@ mod test_util {
         session_id: &SessionId,
     ) -> axum::http::Request<Body> {
         tokio_tungstenite::tungstenite::handshake::client::Request::builder()
-            .uri(format!("/room/{room_id}/discussion/global/create"))
+            .uri(format!("/tvc/{room_id}/discussion/global/create"))
             .method(http::method::Method::POST)
             .header(header::CONTENT_TYPE, "application/json")
             .header(header::SET_COOKIE, format!("session_id={session_id}"))
@@ -282,7 +282,7 @@ mod test_util {
         session_id: &SessionId,
     ) -> axum::http::Request<Body> {
         Request::builder()
-            .uri(format!("/room/{}/discussion/global/speak", room_id))
+            .uri(format!("/tvc/{}/discussion/global/speak", room_id))
             .method(http::method::Method::POST)
             .header("Content-Type", "application/json")
             .header(header::SET_COOKIE, format!("session_id={session_id}"))
@@ -298,7 +298,7 @@ mod test_util {
         http_call(
             app,
             Request::builder()
-                .uri(format!("/room/{room_id}/join"))
+                .uri(format!("/tvc/{room_id}/join"))
                 .header("Content-Type", "application/json")
                 .method(http::method::Method::POST)
                 .body(Body::from(

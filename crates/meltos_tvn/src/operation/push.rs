@@ -12,7 +12,7 @@ use crate::io::bundle::{Bundle, BundleBranch, BundleObject, BundleTrace};
 use crate::io::commit_obj::CommitObjIo;
 use crate::object::commit::CommitObj;
 
-#[async_trait(? Send)]
+#[async_trait]
 pub trait Pushable<Output> {
     type Error: Display;
 
@@ -115,7 +115,7 @@ mod tests {
 
     unsafe impl Sync for MockRemoteClient {}
 
-    #[async_trait(? Send)]
+    #[async_trait]
     impl Pushable<()> for MockRemoteClient {
         type Error = String;
 

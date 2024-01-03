@@ -1,6 +1,7 @@
 [workspace]
 members = [
-    "crates/*",
+    "crates/*", "meltos_cli",
+    "meltos_cli",
     "meltos_server",
 ]
 resolver = "2"

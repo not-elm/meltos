@@ -198,7 +198,7 @@ mod tests {
         stage.execute("hello.txt").unwrap();
         commit.execute("add hello.txt").unwrap();
 
-        mock.delete("./workspace/hello.txt").unwrap();
+        mock.delete_file("./workspace/hello.txt").unwrap();
         stage.execute("hello.txt").unwrap();
         commit.execute("delete hello.txt").unwrap();
 

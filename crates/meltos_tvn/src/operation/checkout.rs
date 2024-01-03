@@ -4,6 +4,7 @@ use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::work_branch::WorkingIo;
 use crate::operation::new_branch::NewBranch;
+use crate::operation::unzip::UnZip;
 
 #[derive(Eq, PartialEq, Debug, Clone, Copy, Hash)]
 pub enum CheckOutStatus {
@@ -14,30 +15,32 @@ pub enum CheckOutStatus {
 
 #[derive(Debug, Clone)]
 pub struct Checkout<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     working: WorkingIo<Fs>,
     heads: HeadIo<Fs>,
     new_branch: NewBranch<Fs>,
+    unzip: UnZip<Fs>
 }
 
 impl<Fs> Checkout<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Checkout<Fs> {
         Self {
             working: WorkingIo::new(fs.clone()),
             heads: HeadIo::new(fs.clone()),
-            new_branch: NewBranch::new(fs),
+            new_branch: NewBranch::new(fs.clone()),
+            unzip: UnZip::new(fs)
         }
     }
 }
 
 impl<Fs> Checkout<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     pub fn execute(&self, target_branch: &BranchName) -> error::Result<CheckOutStatus> {
         let working = self.working.read()?.unwrap_or(BranchName::owner());
@@ -47,12 +50,14 @@ where
 
         if self.heads.read(target_branch)?.is_some() {
             self.working.write(target_branch)?;
+            self.unzip.execute(target_branch)?;
             return Ok(CheckOutStatus::Checkout);
         }
 
         if let Some(branch_hash) = self.heads.read_remote(target_branch)? {
             self.heads.write(target_branch, &branch_hash)?;
             self.working.write(target_branch)?;
+            self.unzip.execute(target_branch)?;
             return Ok(CheckOutStatus::Checkout);
         }
 
@@ -60,15 +65,19 @@ where
         self.working.write(target_branch)?;
         Ok(CheckOutStatus::NewBranch)
     }
+
 }
 
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
+    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
-    use crate::operation::checkout::{CheckOutStatus, Checkout};
+    use crate::operation::checkout::{Checkout, CheckOutStatus};
+    use crate::operation::commit::Commit;
     use crate::operation::new_branch::NewBranch;
+    use crate::operation::stage::Stage;
     use crate::tests::init_main_branch;
 
     #[test]
@@ -110,6 +119,27 @@ mod tests {
         );
         let working = WorkingIo::new(mock.clone()).try_read().unwrap();
         assert_eq!(second, working);
+    }
+
+
+    #[test]
+    fn remote_hello_txt() {
+        let mock = MockFileSystem::default();
+        init_main_branch(mock.clone());
+        let checkout = Checkout::new(mock.clone());
+        let b1 = BranchName::owner();
+        let b2 = BranchName::from("user");
+        checkout.execute(&b2).unwrap();
+        checkout.execute(&b1).unwrap();
+
+        mock.force_write("workspace/hello.txt", b"hello");
+        Stage::new(b1.clone(), mock.clone()).execute("hello.txt").unwrap();
+        Commit::new(b1.clone(), mock.clone()).execute("commit text").unwrap();
+
+        checkout.execute(&b2).unwrap();
+
+        let hello_txt = mock.read("workspace/hello.txt").unwrap();
+        assert!(hello_txt.is_none());
     }
 
     // #[tokio::test]

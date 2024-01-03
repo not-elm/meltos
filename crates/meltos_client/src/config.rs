@@ -8,6 +8,8 @@ use meltos::user::{SessionId, UserId};
 
 use crate::error;
 
+
+#[cfg(feature = "wasm")]
 mod node;
 pub mod tmp_file;
 

@@ -57,7 +57,7 @@ mod tests {
                 Request::builder()
                     .method(http::Method::DELETE)
                     .header(header::SET_COOKIE, format!("session_id={session_id}"))
-                    .uri(format!("/room/{room_id}/discussion/global/close"))
+                    .uri(format!("/tvc/{room_id}/discussion/global/close"))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -78,7 +78,7 @@ mod tests {
                     .method(http::Method::DELETE)
                     .header(header::SET_COOKIE, format!("session_id={session_id}"))
                     .uri(format!(
-                        "/room/{room_id}/discussion/global/close?discussion_id=23232ada"
+                        "/tvc/{room_id}/discussion/global/close?discussion_id=23232ada"
                     ))
                     .body(Body::empty())
                     .unwrap(),

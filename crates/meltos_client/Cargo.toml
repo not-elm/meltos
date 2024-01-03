@@ -10,13 +10,28 @@ crate-type = ["cdylib", "rlib"]
 meltos = { path = "../meltos" }
 meltos_tvn = { path = "../meltos_tvn" }
 getrandom = { version = "0.2.11", features = ["js"] }
-wasm-bindgen = { workspace = true }
-wasm-bindgen-futures = "0.4.39"
-reqwest-wasm = { version = "0.11.16", features = ["json"] }
-serde-wasm-bindgen = "0.6.3"
+
 thiserror = { workspace = true }
 async-trait = { workspace = true }
 auto-delegate = { workspace = true }
 log = "0.4.20"
 serde = { workspace = true }
 serde_json = { workspace = true }
+reqwest = { version = "0.11.23", features = ["json"] }
+
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { version = "0.4.39", optional = true }
+reqwest-wasm = { version = "0.11.16", features = ["json"], optional = true }
+serde-wasm-bindgen = { version = "0.6.3", optional = true }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.39"
+directories = "5.0.1"
+
+[features]
+default = []
+wasm = [
+    "dep:wasm-bindgen-futures",
+    "dep:reqwest-wasm",
+    "dep:serde-wasm-bindgen"
+]
