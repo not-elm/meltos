@@ -27,7 +27,8 @@ where
     }
 
     pub fn write(&self, local_commits: &LocalCommitsObj) -> error::Result {
-        self.fs.write_file(&self.file_path, &local_commits.encode()?)?;
+        self.fs
+            .write_file(&self.file_path, &local_commits.encode()?)?;
         Ok(())
     }
 

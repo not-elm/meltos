@@ -2,7 +2,7 @@ use crate::commands::{load_branch_name, CommandExecutable};
 use async_trait::async_trait;
 use clap::Args;
 use meltos_client::tvc::TvcClient;
-use meltos_tvc::file_system::file::StdFileSystem;
+use meltos_tvc::file_system::std_fs::StdFileSystem;
 
 #[derive(Debug, Clone, Args)]
 pub struct CommitArgs {

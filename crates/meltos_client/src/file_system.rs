@@ -8,7 +8,6 @@ use meltos_tvc::file_system::FileSystem;
 
 use crate::console_log;
 
-
 #[wasm_bindgen(module = "fs")]
 extern "C" {
     #[derive(Debug)]

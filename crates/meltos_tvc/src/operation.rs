@@ -1,6 +1,6 @@
 use crate::branch::BranchName;
 use crate::error;
-use crate::file_system::file::StdFileSystem;
+use crate::file_system::std_fs::StdFileSystem;
 use crate::file_system::FileSystem;
 use crate::io::atomic::local_commits::LocalCommitsIo;
 use crate::io::atomic::work_branch::WorkingIo;

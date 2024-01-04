@@ -2,9 +2,9 @@ use std::collections::{HashMap, VecDeque};
 use std::fmt::{Debug, Formatter};
 use std::io::ErrorKind;
 
-use crate::file_system::{Stat, StatType};
-use crate::file_system::mock::{entry_name, MockEntry, MockEntryMut, parent_path};
 use crate::file_system::mock::file::MockFile;
+use crate::file_system::mock::{entry_name, parent_path, MockEntry, MockEntryMut};
+use crate::file_system::{Stat, StatType};
 use crate::time::since_epoch_secs;
 
 #[derive(Eq, PartialEq, Clone)]
@@ -13,7 +13,6 @@ pub struct MockDir {
     update_time: u64,
     pub(crate) entries: HashMap<String, MockEntry>,
 }
-
 
 impl MockDir {
     #[inline(always)]
@@ -26,13 +25,11 @@ impl MockDir {
         }
     }
 
-
     pub fn try_read(&mut self, path: &str) -> std::io::Result<MockEntryMut> {
-        self
-            .read(path)
-            .ok_or_else(|| std::io::Error::new(ErrorKind::NotFound, format!("not found path={path}")))
+        self.read(path).ok_or_else(|| {
+            std::io::Error::new(ErrorKind::NotFound, format!("not found path={path}"))
+        })
     }
-
 
     pub fn read(&mut self, path: &str) -> Option<MockEntryMut> {
         if path.is_empty() || path == "." || path == "./" {
@@ -52,7 +49,6 @@ impl MockDir {
         }
     }
 
-
     pub fn lookup_parent_dir(&mut self, path: &str) -> Option<&mut MockDir> {
         let parent_dir = parent_path(path)?;
         if self.exists(&parent_dir) {
@@ -62,7 +58,6 @@ impl MockDir {
         }
     }
 
-
     pub fn create_dir(&mut self, path: &str) -> &mut MockDir {
         let path = path.trim_start_matches("./");
         let mut ps: VecDeque<&str> = path.split('/').collect();
@@ -70,10 +65,7 @@ impl MockDir {
         let mut dir = self;
         while let Some(name) = ps.pop_front() {
             if dir.entries.contains_key(name) {
-                dir = dir
-                    .read(name)
-                    .and_then(|entry| entry.dir().ok())
-                    .unwrap();
+                dir = dir.read(name).and_then(|entry| entry.dir().ok()).unwrap();
             } else {
                 dir = dir._create_dir(name);
             }
@@ -81,7 +73,6 @@ impl MockDir {
 
         dir
     }
-
 
     pub fn write_file(&mut self, path: impl Into<String>, buf: &[u8]) {
         let path: String = path.into();
@@ -98,14 +89,12 @@ impl MockDir {
         self.update_time_recursive(&path);
     }
 
-
     #[inline(always)]
     fn update_time_recursive(&mut self, path: &str) {
         let ps: Vec<&str> = path.split('/').collect();
         let update_time = since_epoch_secs();
         self._update_time_recursive(update_time, &ps);
     }
-
 
     #[inline(always)]
     fn _update_time_recursive(&mut self, update_time: u64, path: &[&str]) {
@@ -128,7 +117,6 @@ impl MockDir {
         }
     }
 
-
     #[inline(always)]
     fn _write_file(&mut self, entry_name: String, buf: Vec<u8>) {
         if let Some(file) = self
@@ -138,10 +126,10 @@ impl MockDir {
         {
             file.buf = buf;
         } else {
-            self.entries.insert(entry_name, MockEntry::File(MockFile::new(buf)));
+            self.entries
+                .insert(entry_name, MockEntry::File(MockFile::new(buf)));
         }
     }
-
 
     pub fn all_files(&self, parent_path: Option<String>) -> Vec<String> {
         let mut files = Vec::new();
@@ -165,12 +153,11 @@ impl MockDir {
         files
     }
 
-
     fn _create_dir(&mut self, path: &str) -> &mut MockDir {
-        self.entries.insert(path.to_string(), MockEntry::Dir(MockDir::new()));
+        self.entries
+            .insert(path.to_string(), MockEntry::Dir(MockDir::new()));
         self.entries.get_mut(path).unwrap().dir_mut().unwrap()
     }
-
 
     #[inline(always)]
     pub fn exists(&mut self, path: &str) -> bool {
@@ -188,7 +175,6 @@ impl MockDir {
         dir.read_recursive(&path[1..])
     }
 
-
     fn read_entry(&mut self, name: &str) -> Option<MockEntryMut> {
         if name == "./" || name == "." {
             return Some(MockEntryMut::Dir(self));
@@ -196,13 +182,16 @@ impl MockDir {
 
         let entry = self.entries.get(name)?.clone();
         if entry.stat().is_file() {
-            Some(MockEntryMut::File(self.entries.get_mut(name)?.file_mut().unwrap()))
+            Some(MockEntryMut::File(
+                self.entries.get_mut(name)?.file_mut().unwrap(),
+            ))
         } else {
-            Some(MockEntryMut::Dir(self.entries.get_mut(name)?.dir_mut().unwrap()))
+            Some(MockEntryMut::Dir(
+                self.entries.get_mut(name)?.dir_mut().unwrap(),
+            ))
         }
     }
 }
-
 
 impl Debug for MockDir {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -212,7 +201,6 @@ impl Debug for MockDir {
         Ok(())
     }
 }
-
 
 impl Default for MockDir {
     #[inline(always)]

@@ -73,7 +73,10 @@ where
     }
 
     pub fn read(&self, object_hash: &ObjHash) -> error::Result<Option<CompressedBuf>> {
-        let Some(buf) = self.0.read_file(&format!(".meltos/objects/{}", object_hash))? else {
+        let Some(buf) = self
+            .0
+            .read_file(&format!(".meltos/objects/{}", object_hash))?
+        else {
             return Ok(None);
         };
 

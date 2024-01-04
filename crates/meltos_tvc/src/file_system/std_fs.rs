@@ -16,12 +16,28 @@ impl FileSystem for StdFileSystem {
         }
         let meta_data = path.metadata()?;
         Ok(Some(Stat {
-            ty: if meta_data.is_file() { StatType::File } else { StatType::Dir },
-            create_time: meta_data.created()?.duration_since(UNIX_EPOCH).unwrap().as_secs(),
-            update_time: meta_data.modified()?.duration_since(UNIX_EPOCH).unwrap().as_secs(),
-            size: if meta_data.is_file() {meta_data.len()} else {
-                std::fs::read_dir(path)?.collect::<Vec<std::io::Result<DirEntry>>>().len() as u64
-            }
+            ty: if meta_data.is_file() {
+                StatType::File
+            } else {
+                StatType::Dir
+            },
+            create_time: meta_data
+                .created()?
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
+            update_time: meta_data
+                .modified()?
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
+            size: if meta_data.is_file() {
+                meta_data.len()
+            } else {
+                std::fs::read_dir(path)?
+                    .collect::<Vec<std::io::Result<DirEntry>>>()
+                    .len() as u64
+            },
         }))
     }
 
@@ -97,22 +113,22 @@ impl FileSystem for StdFileSystem {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
+    use crate::file_system::std_fs::StdFileSystem;
     use crate::file_system::{FileSystem, StatType};
-    use crate::file_system::file::StdFileSystem;
 
     fn tmp_dir() -> String {
-        let path = directories::BaseDirs::new().unwrap().data_local_dir().to_path_buf();
+        let path = directories::BaseDirs::new()
+            .unwrap()
+            .data_local_dir()
+            .to_path_buf();
         path.join("meltos_tmp").to_str().unwrap().to_string()
     }
-
 
     fn as_path(path: &str) -> String {
         format!("{}/{path}", tmp_dir())
     }
-
 
     #[test]
     #[ignore]
@@ -132,7 +148,6 @@ mod tests {
         assert_eq!(fs.read_dir(&as_path("dir")).unwrap().unwrap().len(), 0);
     }
 
-
     #[test]
     #[ignore]
     fn create_parent_dirs_when_write_file() {
@@ -142,7 +157,6 @@ mod tests {
         fs.write_file(&path, b"hello").unwrap();
         assert_eq!(fs.read_file(&path).unwrap().unwrap(), b"hello");
     }
-
 
     #[test]
     #[ignore]
@@ -154,7 +168,6 @@ mod tests {
         assert!(fs.read_file(&path).unwrap().is_none());
     }
 
-
     #[test]
     #[ignore]
     fn stat_file() {
@@ -165,7 +178,6 @@ mod tests {
         assert_eq!(stat.ty, StatType::File);
         assert_eq!(stat.size, b"hello".len() as u64);
     }
-
 
     #[test]
     #[ignore]

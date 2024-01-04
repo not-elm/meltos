@@ -194,7 +194,8 @@ mod tests {
     fn read_all_objects_in_dir() {
         let mock = MockFileSystem::default();
         let workspace = WorkspaceIo::new(mock.clone());
-        mock.write_file("workspace/hello/hello.txt", b"hello").unwrap();
+        mock.write_file("workspace/hello/hello.txt", b"hello")
+            .unwrap();
         mock.write_file("workspace/hello/world", b"world").unwrap();
         mock.write_file("workspace/hello/dir/main.sh", b"echo hi ")
             .unwrap();

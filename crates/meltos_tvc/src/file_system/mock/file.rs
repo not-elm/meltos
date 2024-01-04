@@ -11,7 +11,6 @@ pub struct MockFile {
     pub buf: Vec<u8>,
 }
 
-
 impl MockFile {
     #[inline]
     pub fn new(buf: Vec<u8>) -> Self {
@@ -22,7 +21,6 @@ impl MockFile {
             buf,
         }
     }
-
 
     #[inline(always)]
     pub fn stat(&self) -> Stat {
