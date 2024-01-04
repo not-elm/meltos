@@ -96,7 +96,7 @@ mod tests {
             objs: Vec::with_capacity(0),
         };
         save.execute(bundle).unwrap();
-        let actual = mock.try_read(".meltos/refs/heads/owner").unwrap();
+        let actual = mock.try_read_file(".meltos/refs/heads/owner").unwrap();
         assert_eq!(actual, head.encode().unwrap());
     }
 }

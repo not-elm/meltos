@@ -2,13 +2,17 @@ use std::fs::File;
 use std::io::{ErrorKind, Read, Write};
 use std::path::Path;
 
-use crate::file_system::FileSystem;
+use crate::file_system::{FileSystem, Stat};
 
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct StdFileSystem;
 
 impl FileSystem for StdFileSystem {
-    fn write(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
+    fn stat(&self, path: &str) -> std::io::Result<Option<Stat>> {
+        todo!()
+    }
+
+    fn write_file(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
         let path: &Path = path.as_ref();
         if path.is_dir() {
             return Err(std::io::Error::other("path type should be file"));
@@ -20,7 +24,11 @@ impl FileSystem for StdFileSystem {
         File::create(path)?.write_all(buf)
     }
 
-    fn read(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
+    fn create_dir(&self, path: &str) -> std::io::Result<()> {
+        todo!()
+    }
+
+    fn read_file(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
         println!("path={path}");
         match File::open(path) {
             Ok(mut file) => {
@@ -40,12 +48,15 @@ impl FileSystem for StdFileSystem {
         }
     }
 
-    fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>> {
+    fn read_dir(&self, path: &str) -> std::io::Result<Option<Vec<String>>> {
+        todo!()
+    }
+
+    fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
         if Path::new(path).is_dir() {
             let mut p = Vec::new();
             for entry in std::fs::read_dir(path)? {
-                println!("{entry:?}");
-                p.extend(self.all_file_path(entry?.path().to_str().unwrap())?);
+                p.extend(self.all_files_in(entry?.path().to_str().unwrap())?);
             }
             Ok(p)
         } else if std::fs::File::open(path).is_ok() {
@@ -55,7 +66,7 @@ impl FileSystem for StdFileSystem {
         }
     }
 
-    fn delete_file(&self, path: &str) -> std::io::Result<()> {
+    fn delete(&self, path: &str) -> std::io::Result<()> {
         let path: &Path = path.as_ref();
         if !path.exists() {
             return Ok(());
@@ -66,4 +77,5 @@ impl FileSystem for StdFileSystem {
             std::fs::remove_file(path)
         }
     }
+
 }

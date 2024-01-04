@@ -58,10 +58,10 @@ where
     }
 
     pub fn read_all(&self) -> error::Result<Vec<BundleObject>> {
-        let files = self.0.all_file_path(".meltos/objects")?;
+        let files = self.0.all_files_in(".meltos/objects")?;
         let mut objs = Vec::with_capacity(files.len());
         for path in files {
-            let buf = self.0.try_read(&path)?;
+            let buf = self.0.try_read_file(&path)?;
             let file_name = Path::new(&path).file_name().unwrap().to_str().unwrap();
             objs.push(BundleObject {
                 hash: ObjHash(file_name.to_string()),
@@ -72,7 +72,7 @@ where
     }
 
     pub fn read(&self, object_hash: &ObjHash) -> error::Result<Option<CompressedBuf>> {
-        let Some(buf) = self.0.read(&format!(".meltos/objects/{}", object_hash))? else {
+        let Some(buf) = self.0.read_file(&format!(".meltos/objects/{}", object_hash))? else {
             return Ok(None);
         };
 
@@ -98,7 +98,7 @@ where
     #[inline]
     pub fn write(&self, hash: &ObjHash, compressed_buf: &CompressedBuf) -> error::Result {
         self.0
-            .write(&format!(".meltos/objects/{}", hash), compressed_buf)?;
+            .write_file(&format!(".meltos/objects/{}", hash), compressed_buf)?;
         Ok(())
     }
 }
@@ -129,7 +129,7 @@ mod tests {
         io.write_obj(&Obj::File(file_obj)).unwrap();
 
         let hello_buf = mock
-            .try_read(&format!(
+            .try_read_file(&format!(
                 ".meltos/objects/{}",
                 meltos_util::hash::hash(b"FILE\0hello world!")
             ))

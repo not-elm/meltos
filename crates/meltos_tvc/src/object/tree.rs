@@ -29,12 +29,12 @@ where
     }
 
     pub fn write_tree(&self, tree: &TreeObj) -> error::Result<()> {
-        self.fs.write(&self.file_path, &tree.encode()?)?;
+        self.fs.write_file(&self.file_path, &tree.encode()?)?;
         Ok(())
     }
 
     pub fn read(&self) -> error::Result<Option<TreeObj>> {
-        let Some(buf) = self.fs.read(&self.file_path)? else {
+        let Some(buf) = self.fs.read_file(&self.file_path)? else {
             return Ok(None);
         };
 
@@ -43,7 +43,7 @@ where
 
     pub fn reset(&self) -> error::Result<()> {
         self.fs
-            .write(&self.file_path, &TreeObj::default().encode()?)?;
+            .write_file(&self.file_path, &TreeObj::default().encode()?)?;
         Ok(())
     }
 
@@ -61,7 +61,7 @@ where
     ) -> error::Result<()> {
         let mut tree = self.read()?.unwrap_or_default();
         tree.0.insert(target_path, object_hash);
-        self.fs.write(&self.file_path, &tree.encode()?)?;
+        self.fs.write_file(&self.file_path, &tree.encode()?)?;
         Ok(())
     }
 }

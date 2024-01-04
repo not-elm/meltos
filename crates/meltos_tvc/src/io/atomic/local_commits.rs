@@ -27,7 +27,7 @@ where
     }
 
     pub fn write(&self, local_commits: &LocalCommitsObj) -> error::Result {
-        self.fs.write(&self.file_path, &local_commits.encode()?)?;
+        self.fs.write_file(&self.file_path, &local_commits.encode()?)?;
         Ok(())
     }
 
@@ -45,7 +45,7 @@ where
     }
 
     pub fn read(&self) -> error::Result<Option<LocalCommitsObj>> {
-        let Some(buf) = self.fs.read(&self.file_path)? else {
+        let Some(buf) = self.fs.read_file(&self.file_path)? else {
             return Ok(None);
         };
 

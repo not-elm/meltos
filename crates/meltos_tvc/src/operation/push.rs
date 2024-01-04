@@ -144,7 +144,7 @@ mod tests {
         let commit = Commit::new(branch.clone(), mock.clone());
         let push = Push::new(branch, mock.clone());
 
-        mock.write("./workspace/hello.txt", b"hello").unwrap();
+        mock.write_file("./workspace/hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
         assert!(push.execute(&mut MockRemoteClient::default()).await.is_ok());
@@ -159,7 +159,7 @@ mod tests {
         let stage = Stage::new(branch.clone(), mock.clone());
         let commit = Commit::new(branch.clone(), mock.clone());
         let push = Push::new(branch, mock.clone());
-        mock.write("./workspace/hello", b"hello").unwrap();
+        mock.write_file("./workspace/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
         push.execute(&mut MockRemoteClient::default())
@@ -178,7 +178,7 @@ mod tests {
         let commit = Commit::new(branch.clone(), mock.clone());
         let push = Push::new(branch.clone(), mock.clone());
 
-        mock.write("./workspace/hello.txt", b"hello").unwrap();
+        mock.write_file("./workspace/hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
         let mut remote = MockRemoteClient::default();

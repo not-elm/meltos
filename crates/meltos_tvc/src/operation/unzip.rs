@@ -39,7 +39,7 @@ where
 {
     /// Restore committed data into the workspace.
     pub fn execute(&self, branch_name: &BranchName) -> error::Result {
-        self.fs.delete_dir("workspace")?;
+        self.fs.delete("workspace")?;
         let head = self.head.try_read(branch_name)?;
         let trace_tree = self.trace_tree.read(&head)?;
         for (path, hash) in trace_tree.iter() {
@@ -71,13 +71,13 @@ mod tests {
         let commit = Commit::new(branch.clone(), mock.clone());
         let unzip = UnZip::new(mock.clone());
 
-        mock.write("./workspace/hello", b"hello")?;
+        mock.write_file("./workspace/hello", b"hello")?;
         stage.execute("hello")?;
         commit.execute("commit text")?;
-        mock.delete_file("./workspace/hello")?;
+        mock.delete("./workspace/hello")?;
 
         unzip.execute(&branch)?;
-        assert_eq!(mock.try_read("./workspace/hello")?, b"hello");
+        assert_eq!(mock.try_read_file("./workspace/hello")?, b"hello");
         Ok(())
     }
 }

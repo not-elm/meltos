@@ -209,7 +209,7 @@ mod tests {
         Commit::new(second.clone(), mock.clone())
             .execute("commit text")
             .unwrap();
-        mock.delete_file("./workspace/hello.txt").unwrap();
+        mock.delete("./workspace/hello.txt").unwrap();
 
         Checkout::new(mock.clone())
             .execute(&BranchName::owner())
@@ -279,8 +279,8 @@ mod tests {
         let status = merge.execute(b1, b2).unwrap();
         assert!(matches!(status, MergedStatus::Merged));
 
-        assert!(mock.read("workspace/hello.txt").unwrap().is_some());
-        assert!(mock.read("workspace/test.txt").unwrap().is_some());
+        assert!(mock.read_file("workspace/hello.txt").unwrap().is_some());
+        assert!(mock.read_file("workspace/test.txt").unwrap().is_some());
     }
 
     // TODO: 現状はコンフリクト関連が未実装のため実装された際にこのテストも展開します。

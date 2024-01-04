@@ -200,11 +200,11 @@ mod tests {
         let commit = Commit::new(branch.clone(), mock.clone());
         let commit_obj = CommitObjIo::new(branch, mock.clone());
 
-        mock.write("./workspace/hello.txt", b"hello").unwrap();
+        mock.write_file("./workspace/hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
 
-        mock.write("./workspace/hello.txt", b"hello2").unwrap();
+        mock.write_file("./workspace/hello.txt", b"hello2").unwrap();
         stage.execute(".").unwrap();
         commit.execute("commit text").unwrap();
 
@@ -223,12 +223,12 @@ mod tests {
         let obj = ObjIo::new(mock.clone());
         let commit_obj = CommitObjIo::new(branch, mock.clone());
 
-        mock.write("./workspace/hello/hello", b"hello").unwrap();
+        mock.write_file("./workspace/hello/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         let commit_hash1 = commit.execute("commit text").unwrap();
 
-        mock.write("./workspace/src/sample", b"sample").unwrap();
-        mock.write("./workspace/t", b"t").unwrap();
+        mock.write_file("./workspace/src/sample", b"sample").unwrap();
+        mock.write_file("./workspace/t", b"t").unwrap();
         stage.execute(".").unwrap();
         let commit_hash2 = commit.execute("commit text").unwrap();
 

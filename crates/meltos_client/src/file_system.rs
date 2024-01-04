@@ -103,7 +103,7 @@ struct MkdirOptions {
 }
 
 impl FileSystem for NodeFileSystem {
-    fn write(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
+    fn write_file(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
         let path = self.path(path);
         console_log!("call write file path={path}");
         if let Some(dir) = Path::new(&path).parent() {
@@ -120,7 +120,7 @@ impl FileSystem for NodeFileSystem {
         Ok(())
     }
 
-    fn read(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
+    fn read_file(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
         let path = self.path(path);
         console_log!("call read file path={path}");
         if exists_sync(&path) {
@@ -143,7 +143,7 @@ impl FileSystem for NodeFileSystem {
     }
 
     #[inline]
-    fn all_file_path(&self, path: &str) -> std::io::Result<Vec<String>> {
+    fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
         let path = self.path(path);
         console_log!("call all_file_path! = {path}");
         let files = if exists_sync(&path) {
@@ -157,7 +157,7 @@ impl FileSystem for NodeFileSystem {
         Ok(files)
     }
 
-    fn delete_file(&self, path: &str) -> std::io::Result<()> {
+    fn delete(&self, path: &str) -> std::io::Result<()> {
         console_log!("call delete");
         let path = self.path(path);
         unlink_sync(&path);

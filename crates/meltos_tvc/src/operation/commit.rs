@@ -148,7 +148,7 @@ mod tests {
         let stage = Stage::new(BranchName::owner(), mock.clone());
         let commit = Commit::new(BranchName::owner(), mock.clone());
         let staging = StagingIo::new(mock.clone());
-        mock.write("./workspace/hello", b"hello").unwrap();
+        mock.write_file("./workspace/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("test").unwrap();
         let staging_tree = staging.read().unwrap().unwrap();
@@ -162,7 +162,7 @@ mod tests {
         let null_commit_hash = init_main_branch(mock.clone());
         let stage = Stage::new(BranchName::owner(), mock.clone());
         let commit = Commit::new(BranchName::owner(), mock.clone());
-        mock.write("./workspace/hello", b"hello").unwrap();
+        mock.write_file("./workspace/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         commit.execute("test").unwrap();
 
@@ -192,7 +192,7 @@ mod tests {
         let stage = Stage::new(BranchName::owner(), mock.clone());
         let commit = Commit::new(BranchName::owner(), mock.clone());
         let local_commits = LocalCommitsIo::new(BranchName::owner(), mock.clone());
-        mock.write("./workspace/hello", b"hello").unwrap();
+        mock.write_file("./workspace/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         let commit_hash = commit.execute("test").unwrap();
         let local = local_commits.read().unwrap().unwrap();
@@ -206,10 +206,10 @@ mod tests {
         let stage = Stage::new(BranchName::owner(), mock.clone());
         let commit = Commit::new(BranchName::owner(), mock.clone());
         let local_commits = LocalCommitsIo::new(BranchName::owner(), mock.clone());
-        mock.write("./workspace/hello", b"hello").unwrap();
+        mock.write_file("./workspace/hello", b"hello").unwrap();
         stage.execute(".").unwrap();
         let commit_hash1 = commit.execute("1").unwrap();
-        mock.write("./workspace/hello2", b"hello2").unwrap();
+        mock.write_file("./workspace/hello2", b"hello2").unwrap();
         stage.execute(".").unwrap();
         let commit_hash2 = commit.execute("2").unwrap();
 

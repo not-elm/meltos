@@ -50,7 +50,7 @@ where
             "." | "./" => "workspace".to_string(),
             path => format!("workspace/{path}"),
         };
-        Ok(self.fs.all_file_path(&path)?)
+        Ok(self.fs.all_files_in(&path)?)
     }
 
     pub fn changed_files(&self, mut trace_tree: TreeObj) -> error::Result<Vec<ChangeFileMeta>> {
@@ -117,7 +117,7 @@ where
     }
 
     pub fn read(&self, file_path: &FilePath) -> error::Result<Option<FileObj>> {
-        let Some(buf) = self.fs.read(&self.as_path(file_path))? else {
+        let Some(buf) = self.fs.read_file(&self.as_path(file_path))? else {
             return Ok(None);
         };
         Ok(Some(FileObj::decode(&buf)?))
@@ -126,11 +126,11 @@ where
     pub fn unpack(&self, file_path: &FilePath, obj: &Obj) -> error::Result<()> {
         match obj {
             Obj::File(file) => {
-                self.fs.write(file_path, &file.0)?;
+                self.fs.write_file(file_path, &file.0)?;
                 Ok(())
             }
             Obj::Delete(_) => {
-                self.fs.delete_file(file_path)?;
+                self.fs.delete(file_path)?;
                 Ok(())
             }
             _ => Err(crate::error::Error::InvalidWorkspaceObj),
@@ -175,7 +175,7 @@ where
 {
     fn read_to_obj(&self) -> std::io::Result<(FilePath, FileObj)> {
         let path = self.files.get(self.index).unwrap();
-        let buf = self.io.try_read(path.as_ref())?;
+        let buf = self.io.try_read_file(path.as_ref())?;
         Ok((FilePath::from_path(path), FileObj(buf)))
     }
 }
@@ -194,9 +194,9 @@ mod tests {
     fn read_all_objects_in_dir() {
         let mock = MockFileSystem::default();
         let workspace = WorkspaceIo::new(mock.clone());
-        mock.write("workspace/hello/hello.txt", b"hello").unwrap();
-        mock.write("workspace/hello/world", b"world").unwrap();
-        mock.write("workspace/hello/dir/main.sh", b"echo hi ")
+        mock.write_file("workspace/hello/hello.txt", b"hello").unwrap();
+        mock.write_file("workspace/hello/world", b"world").unwrap();
+        mock.write_file("workspace/hello/dir/main.sh", b"echo hi ")
             .unwrap();
         let mut hashes = workspace
             .convert_to_objs("hello")
@@ -225,7 +225,7 @@ mod tests {
         workspace
             .unpack(&FilePath::from_path("hello.txt"), &Obj::File(obj))
             .unwrap();
-        assert_eq!(mock.try_read("hello.txt").unwrap(), b"hello");
+        assert_eq!(mock.try_read_file("hello.txt").unwrap(), b"hello");
     }
 
     #[test]

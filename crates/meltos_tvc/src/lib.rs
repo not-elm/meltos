@@ -6,6 +6,7 @@ pub mod object;
 pub mod operation;
 
 pub mod encode;
+mod time;
 
 #[cfg(test)]
 mod tests {

@@ -140,7 +140,7 @@ mod tests {
 
         checkout.execute(&b2).unwrap();
 
-        let hello_txt = mock.read("workspace/hello.txt").unwrap();
+        let hello_txt = mock.read_file("workspace/hello.txt").unwrap();
         assert!(hello_txt.is_none());
     }
 

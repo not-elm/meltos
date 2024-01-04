@@ -35,13 +35,13 @@ where
     #[inline]
     pub fn write(&self, commit_hash: &CommitHash, hash: &ObjHash) -> error::Result {
         let file_path = format!(".meltos/traces/{commit_hash}");
-        self.fs.write(&file_path, &hash.encode()?)?;
+        self.fs.write_file(&file_path, &hash.encode()?)?;
         Ok(())
     }
 
     #[inline]
     pub fn read_all(&self) -> error::Result<Vec<BundleTrace>> {
-        let files = self.fs.all_file_path(".meltos/traces/")?;
+        let files = self.fs.all_files_in(".meltos/traces/")?;
         let mut traces = Vec::with_capacity(files.len());
         for file_path in files {
             let file_name = Path::new(&file_path)
@@ -53,7 +53,7 @@ where
             let commit_hash = CommitHash(ObjHash(file_name));
             let buf = self
                 .fs
-                .read(&file_path)?
+                .read_file(&file_path)?
                 .ok_or(error::Error::NotfoundTrace(commit_hash.clone()))?;
             traces.push(BundleTrace {
                 commit_hash,
@@ -69,7 +69,7 @@ where
         let file_path = format!(".meltos/traces/{commit_hash}");
         let buf = self
             .fs
-            .try_read(&file_path)
+            .try_read_file(&file_path)
             .map_err(|_| error::Error::NotfoundTrace(commit_hash.clone()))?;
         ObjHash::decode(&buf)
     }
@@ -95,11 +95,11 @@ mod tests {
         let trace = TraceIo::new(mock.clone());
         let commit = Commit::new(branch, mock.clone());
 
-        mock.write("./workspace/hello.txt", b"hello").unwrap();
+        mock.write_file("./workspace/hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
         let commit_hash1 = commit.execute("text").unwrap();
 
-        mock.delete_file("./workspace/hello.txt").unwrap();
+        mock.delete("./workspace/hello.txt").unwrap();
         stage.execute(".").unwrap();
         let commit_hash2 = commit.execute("text").unwrap();
 

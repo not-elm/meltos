@@ -35,7 +35,7 @@ where
         branch_name: &BranchName,
         commit_hash: &CommitHash,
     ) -> error::Result {
-        self.fs.write(
+        self.fs.write_file(
             &format!(".meltos/refs/remotes/{branch_name}"),
             &commit_hash.encode()?,
         )?;
@@ -44,7 +44,7 @@ where
 
     #[inline]
     pub fn write(&self, branch_name: &BranchName, commit_hash: &CommitHash) -> error::Result<()> {
-        self.fs.write(
+        self.fs.write_file(
             &format!(".meltos/refs/heads/{branch_name}"),
             &commit_hash.encode()?,
         )?;
@@ -74,7 +74,7 @@ where
     }
 
     pub fn read_all(&self) -> error::Result<Vec<(BranchName, CommitHash)>> {
-        let files = self.fs.all_file_path(".meltos/refs/heads/")?;
+        let files = self.fs.all_files_in(".meltos/refs/heads/")?;
         let mut branches = Vec::with_capacity(files.len());
         for path in files {
             let Some(file_name) = Path::new(&path).file_name().and_then(|name| name.to_str())
@@ -89,7 +89,7 @@ where
     }
 
     fn _read(&self, dir: &str, branch_name: &BranchName) -> error::Result<Option<CommitHash>> {
-        let Some(buf) = self.fs.read(&format!("{dir}{branch_name}"))? else {
+        let Some(buf) = self.fs.read_file(&format!("{dir}{branch_name}"))? else {
             return Ok(None);
         };
         Ok(Some(CommitHash(ObjHash::decode(&buf)?)))

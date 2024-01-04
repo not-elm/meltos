@@ -96,7 +96,7 @@ where
 
     #[inline]
     fn read_all_branch_head_path(&self) -> error::Result<Vec<String>> {
-        Ok(self.fs.all_file_path(".meltos/refs/heads")?)
+        Ok(self.fs.all_files_in(".meltos/refs/heads")?)
     }
 }
 
@@ -150,7 +150,7 @@ mod tests {
         let stage = Stage::new(BranchName::from("branch2"), mock.clone());
         let commit = Commit::new(BranchName::from("branch2"), mock.clone());
         working.write(&BranchName::from("branch2")).unwrap();
-        mock.write("./workspace/hello.txt", b"hello").unwrap();
+        mock.write_file("./workspace/hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
         let commit_hash = commit.execute("text").unwrap();
         let mut bundle = bundle_io.create().unwrap();
@@ -169,7 +169,7 @@ mod tests {
     fn read_all_objs() {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
-        mock.write("./workspace/hello.txt", b"hello").unwrap();
+        mock.write_file("./workspace/hello.txt", b"hello").unwrap();
 
         Stage::new(BranchName::owner(), mock.clone())
             .execute(".")
@@ -178,7 +178,7 @@ mod tests {
             .execute("commit")
             .unwrap();
         let bundle = BundleIo::new(mock.clone()).create().unwrap();
-        let objs_count = mock.all_file_path(".meltos/objects/").unwrap().len();
+        let objs_count = mock.all_files_in(".meltos/objects/").unwrap().len();
 
         assert_eq!(objs_count, bundle.objs.len());
     }
