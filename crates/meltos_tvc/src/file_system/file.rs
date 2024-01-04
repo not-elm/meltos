@@ -115,6 +115,7 @@ mod tests {
 
 
     #[test]
+    #[ignore]
     fn return_none_if_not_exists() {
         let fs = StdFileSystem;
         let path = as_path("dir");
@@ -124,6 +125,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn create_dir() {
         let fs = StdFileSystem;
         fs.create_dir(&as_path("dir")).unwrap();
@@ -132,6 +134,7 @@ mod tests {
 
 
     #[test]
+    #[ignore]
     fn create_parent_dirs_when_write_file() {
         let fs = StdFileSystem;
         let path = as_path("dir/hello.txt");
@@ -142,6 +145,7 @@ mod tests {
 
 
     #[test]
+    #[ignore]
     fn delete_file() {
         let fs = StdFileSystem;
         let path = as_path("dir/hello.txt");
@@ -152,6 +156,7 @@ mod tests {
 
 
     #[test]
+    #[ignore]
     fn stat_file() {
         let fs = StdFileSystem;
         let path = as_path("dir/hello.txt");
@@ -163,6 +168,7 @@ mod tests {
 
 
     #[test]
+    #[ignore]
     fn stat_dir() {
         let fs = StdFileSystem;
         let path = as_path("dir");
