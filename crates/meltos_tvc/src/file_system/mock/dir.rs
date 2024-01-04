@@ -64,8 +64,9 @@ impl MockDir {
 
 
     pub fn create_dir(&mut self, path: &str) -> &mut MockDir {
-        let mut ps: VecDeque<&str> = path.split("/").collect();
-        self.update_time_recursive(&path);
+        let path = path.trim_start_matches("./");
+        let mut ps: VecDeque<&str> = path.split('/').collect();
+        self.update_time_recursive(path);
         let mut dir = self;
         while let Some(name) = ps.pop_front() {
             if dir.entries.contains_key(name) {

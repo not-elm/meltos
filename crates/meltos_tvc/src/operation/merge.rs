@@ -202,14 +202,14 @@ mod tests {
         let second = BranchName::from("second");
         Checkout::new(mock.clone()).execute(&second).unwrap();
 
-        mock.force_write("./workspace/hello.txt", b"hello");
+        mock.force_write("workspace/hello.txt", b"hello");
         Stage::new(second.clone(), mock.clone())
             .execute(".")
             .unwrap();
         Commit::new(second.clone(), mock.clone())
             .execute("commit text")
             .unwrap();
-        mock.delete("./workspace/hello.txt").unwrap();
+        mock.delete("workspace/hello.txt").unwrap();
 
         Checkout::new(mock.clone())
             .execute(&BranchName::owner())
@@ -235,7 +235,7 @@ mod tests {
 
         Checkout::new(mock.clone()).execute(&main).unwrap();
 
-        mock.force_write("./workspace/hello.txt", b"hello");
+        mock.force_write("workspace/hello.txt", b"hello");
         Stage::new(main.clone(), mock.clone()).execute(".").unwrap();
         Commit::new(main.clone(), mock.clone())
             .execute("commit text")

@@ -139,7 +139,7 @@ where
 
     #[inline(always)]
     fn as_path(&self, path: &str) -> String {
-        format!("/workspace/{path}")
+        format!("workspace/{path}")
     }
 }
 
@@ -239,8 +239,8 @@ mod tests {
         assert_eq!(
             files.into_iter().collect::<HashSet<String>>(),
             vec![
-                "./workspace/hello.txt".to_string(),
-                "./workspace/dist/index.js".to_string()
+                "workspace/hello.txt".to_string(),
+                "workspace/dist/index.js".to_string()
             ]
             .into_iter()
             .collect::<HashSet<String>>()

@@ -133,7 +133,7 @@ mod tests {
     #[test]
     fn staged_workspace_files() {
         let mock = MockFileSystem::default();
-        mock.force_write("./workspace/src/test.rs", b"test");
+        mock.force_write("workspace/src/test.rs", b"test");
         let init = Init::new(BranchName::owner(), mock.clone());
         init.execute().unwrap();
         assert!(ObjIo::new(mock)

@@ -156,10 +156,10 @@ mod tests {
         let mock = MockFileSystem::default();
         init_main_branch(mock.clone());
         let stage = Stage::new(BranchName::owner(), mock.clone());
-        mock.write_file(&FilePath::from_path("./workspace/hello"), b"hello")
+        mock.write_file(&FilePath::from_path("workspace/hello"), b"hello")
             .unwrap();
         mock.write_file(
-            &FilePath::from_path("./workspace/src/main.rs"),
+            &FilePath::from_path("workspace/src/main.rs"),
             "dasds日本語".as_bytes(),
         )
         .unwrap();
@@ -194,11 +194,11 @@ mod tests {
         let stage = Stage::new(BranchName::owner(), mock.clone());
         let commit = Commit::new(BranchName::owner(), mock.clone());
 
-        mock.write_file("./workspace/hello.txt", b"hello").unwrap();
+        mock.write_file("workspace/hello.txt", b"hello").unwrap();
         stage.execute("hello.txt").unwrap();
         commit.execute("add hello.txt").unwrap();
 
-        mock.delete("./workspace/hello.txt").unwrap();
+        mock.delete("workspace/hello.txt").unwrap();
         stage.execute("hello.txt").unwrap();
         commit.execute("delete hello.txt").unwrap();
 
@@ -223,7 +223,7 @@ mod tests {
 
         let stage = stage::Stage::new(BranchName::owner(), mock.clone());
 
-        mock.write_file("./workspace/hello.txt", b"hello").unwrap();
+        mock.write_file("workspace/hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
 
         match stage.execute(".") {

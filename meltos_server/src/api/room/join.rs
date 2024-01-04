@@ -85,7 +85,7 @@ mod tests {
         let session = MockUserSessionIo::default();
         let mut app = app(session, MockGlobalDiscussionIo::default());
         let mock = MockFileSystem::default();
-        mock.write_file("./workspace/some_text.txt", b"text file")
+        mock.write_file("workspace/some_text.txt", b"text file")
             .unwrap();
         Init::new(BranchName::owner(), mock.clone())
             .execute()

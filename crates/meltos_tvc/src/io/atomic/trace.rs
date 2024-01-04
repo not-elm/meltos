@@ -95,11 +95,11 @@ mod tests {
         let trace = TraceIo::new(mock.clone());
         let commit = Commit::new(branch, mock.clone());
 
-        mock.write_file("./workspace/hello.txt", b"hello").unwrap();
+        mock.write_file("workspace/hello.txt", b"hello").unwrap();
         stage.execute(".").unwrap();
         let commit_hash1 = commit.execute("text").unwrap();
 
-        mock.delete("./workspace/hello.txt").unwrap();
+        mock.delete("workspace/hello.txt").unwrap();
         stage.execute(".").unwrap();
         let commit_hash2 = commit.execute("text").unwrap();
 

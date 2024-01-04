@@ -161,13 +161,14 @@ impl FileSystem for MockFileSystem {
     #[inline]
     fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
         let mut root = self.0.lock().unwrap();
+        let path = path.trim_start_matches("./").trim_end_matches("/");
         let Some(entry) = root.read(path) else {
             return Ok(Vec::with_capacity(0));
         };
         if let Ok(relative) = entry.dir() {
             let parent_path = if path == "." || path == "./"
             { None } else {
-                Some(path.trim_start_matches("./").to_string())
+                Some(path.to_string())
             };
             Ok(relative.all_files(parent_path))
         } else {
