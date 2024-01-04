@@ -59,6 +59,7 @@ where
 
     pub fn read_all(&self) -> error::Result<Vec<BundleObject>> {
         let files = self.0.all_files_in(".meltos/objects")?;
+        println!("{:?}", files.join("\n"));
         let mut objs = Vec::with_capacity(files.len());
         for path in files {
             let buf = self.0.try_read_file(&path)?;

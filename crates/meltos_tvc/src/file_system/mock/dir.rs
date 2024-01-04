@@ -88,10 +88,10 @@ impl MockDir {
         if let Some(parent) = self.lookup_parent_dir(&path) {
             let name = ps.pop().unwrap();
             parent._write_file(name.to_string(), buf.to_vec());
-        } else if let Some(parent) = parent_path(&path){
+        } else if let Some(parent) = parent_path(&path) {
             let parent = self.create_dir(&parent);
             parent._write_file(entry_name(&path), buf.to_vec());
-        }else{
+        } else {
             self._write_file(entry_name(&path), buf.to_vec());
         }
         self.update_time_recursive(&path);
@@ -108,7 +108,6 @@ impl MockDir {
 
     #[inline(always)]
     fn _update_time_recursive(&mut self, update_time: u64, path: &[&str]) {
-         println!("_update_time_recursive {path:?}");
         self.update_time = update_time;
         if path.is_empty() {
             return;
@@ -116,12 +115,10 @@ impl MockDir {
         let next_name = path[0];
 
         let Some(entry) = self.read(next_name) else {
-            println!("RETURN");
             return;
         };
         match entry {
             MockEntryMut::File(file) => {
-                println!("DDDD");
                 file.update_time = update_time;
             }
             MockEntryMut::Dir(dir) => {
@@ -196,10 +193,7 @@ impl MockDir {
             return Some(MockEntryMut::Dir(self));
         }
 
-        println!("entry name = {name}\n {self:?}");
-
         let entry = self.entries.get(name)?.clone();
-         println!("dadadad entry name = {name}");
         if entry.stat().is_file() {
             Some(MockEntryMut::File(self.entries.get_mut(name)?.file_mut().unwrap()))
         } else {

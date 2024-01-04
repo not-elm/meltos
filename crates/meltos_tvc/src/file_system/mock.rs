@@ -121,7 +121,6 @@ impl FileSystem for MockFileSystem {
             else {
                 return Ok(None);
             };
-        println!("entry = {entry:?}");
 
         Ok(Some(entry.stat()))
     }
@@ -168,7 +167,7 @@ impl FileSystem for MockFileSystem {
         if let Ok(relative) = entry.dir() {
             let parent_path = if path == "." || path == "./"
             { None } else {
-                Some(path.trim_start_matches("./").trim_start_matches(".").to_string())
+                Some(path.trim_start_matches("./").to_string())
             };
             Ok(relative.all_files(parent_path))
         } else {

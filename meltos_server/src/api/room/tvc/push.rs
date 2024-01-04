@@ -38,7 +38,7 @@ mod tests {
         let mock = MockFileSystem::default();
         let mut app = app(session, MockGlobalDiscussionIo::default());
         let room_id = http_open_room(&mut app, mock.clone()).await;
-        mock.write_file("./workspace/src/hello.txt", b"hello").unwrap();
+        mock.write_file("workspace/src/hello.txt", b"hello").unwrap();
         stage::Stage::new(BranchName::owner(), mock.clone())
             .execute(".")
             .unwrap();
