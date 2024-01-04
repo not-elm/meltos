@@ -16,12 +16,11 @@ pub enum Error {
     Http(#[from] reqwest::Error),
 
     #[error(transparent)]
-    Tvn(#[from] meltos_tvn::error::Error),
+    Tvc(#[from] meltos_tvc::error::Error),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
 }
-
 
 impl From<crate::error::Error> for JsValue {
     #[inline(always)]

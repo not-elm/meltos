@@ -14,7 +14,7 @@ mod tests {
     use axum::extract::Request;
     use axum::http::StatusCode;
 
-    use meltos_tvn::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::mock::MockFileSystem;
 
     use crate::api::test_util::{http_call, http_fetch, http_open_room, logged_in_app};
 
@@ -26,7 +26,7 @@ mod tests {
         let response = http_call(
             &mut app,
             Request::builder()
-                .uri(format!("/room/{room_id}/tvn/fetch"))
+                .uri(format!("/room/{room_id}/tvc/fetch"))
                 .body(Body::empty())
                 .unwrap(),
         )

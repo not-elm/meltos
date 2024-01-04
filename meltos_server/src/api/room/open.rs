@@ -2,8 +2,8 @@ use std::fmt::Debug;
 
 use axum::body::Body;
 use axum::extract::State;
-use axum::Json;
 use axum::response::Response;
+use axum::Json;
 
 use meltos::room::RoomId;
 use meltos::schema::room::Open;
@@ -23,9 +23,9 @@ pub async fn open<Session, Discussion>(
     State(session): State<SessionState<Session>>,
     Json(param): Json<Open>,
 ) -> HttpResult
-    where
-        Discussion: DiscussionIo + Default + 'static,
-        Session: SessionIo + Debug,
+where
+    Discussion: DiscussionIo + Default + 'static,
+    Session: SessionIo + Debug,
 {
     let (user_id, session_id) = session.register(param.user_id.clone()).await?;
     let room = Room::open::<Discussion>(user_id.clone());
@@ -52,24 +52,27 @@ fn response_success_create_room(
                 user_id,
                 session_id,
             }
-                .as_json(),
+            .as_json(),
         ))
         .unwrap()
 }
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
     use axum::http::StatusCode;
+    use std::time::Duration;
     use tower::ServiceExt;
 
     use meltos::schema::room::Opened;
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
-    use meltos_tvn::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::mock::MockFileSystem;
 
+    use crate::api::test_util::{
+        create_discussion_request, http_call, open_room_request, open_room_request_with_options,
+        ResponseConvertable,
+    };
     use crate::{app, error};
-    use crate::api::test_util::{create_discussion_request, http_call, open_room_request, open_room_request_with_options, ResponseConvertable};
 
     #[tokio::test]
     async fn return_room_id_and_session_id() -> error::Result {
@@ -95,7 +98,11 @@ mod tests {
         tokio::time::sleep(Duration::from_secs(2)).await;
         let opened = response.deserialize::<Opened>().await;
         let response = app
-            .oneshot(create_discussion_request("title".to_string(), opened.room_id, &opened.session_id))
+            .oneshot(create_discussion_request(
+                "title".to_string(),
+                opened.room_id,
+                &opened.session_id,
+            ))
             .await
             .unwrap();
 

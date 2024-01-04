@@ -8,7 +8,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 meltos = { path = "../meltos" }
-meltos_tvn = { path = "../meltos_tvn" }
+meltos_tvc = { path = "../meltos_tvc" }
 getrandom = { version = "0.2.11", features = ["js"] }
 
 thiserror = { workspace = true }

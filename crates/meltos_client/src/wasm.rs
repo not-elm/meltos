@@ -8,14 +8,12 @@ extern "C" {
     pub fn log(s: &str);
 }
 
-
 #[macro_export]
 macro_rules! console_log {
     () => {
-       $crate::tvc::log("\n")
+       $crate::wasm::log("\n")
     };
     ($($arg:tt)*) => {{
-        $crate::tvc::log(&format!($($arg)*));
+        $crate::wasm::log(&format!($($arg)*));
     }};
 }
-

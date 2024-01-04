@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-use meltos_tvn::io::bundle::Bundle;
+use meltos_tvc::io::bundle::Bundle;
 
 use crate::room::RoomId;
 use crate::user::{SessionId, UserId};
@@ -28,7 +28,6 @@ impl Open {
         }
     }
 
-
     pub fn life_time_duration(&self) -> Duration {
         self.lifetime_secs
             .map(Duration::from_secs)
@@ -42,7 +41,6 @@ pub struct Opened {
     pub user_id: UserId,
     pub session_id: SessionId,
 }
-
 
 #[cfg(test)]
 mod tests {

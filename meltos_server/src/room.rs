@@ -16,10 +16,10 @@ use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_backend::discussion::DiscussionIo;
 use meltos_backend::sync::arc_mutex::ArcMutex;
-use meltos_tvn::branch::BranchName;
-use meltos_tvn::file_system::mock::MockFileSystem;
-use meltos_tvn::io::bundle::Bundle;
-use meltos_tvn::operation::Operations;
+use meltos_tvc::branch::BranchName;
+use meltos_tvc::file_system::mock::MockFileSystem;
+use meltos_tvc::io::bundle::Bundle;
+use meltos_tvc::operation::Operations;
 use meltos_util::macros::Deref;
 
 use crate::error;
@@ -35,7 +35,7 @@ impl Rooms {
     pub async fn insert_room(&self, room: Room, life_time: Duration) {
         let rooms = self.0.clone();
         let room_id = room.id.clone();
-        tokio::spawn(async move{
+        tokio::spawn(async move {
             tokio::time::sleep(life_time).await;
             rooms.lock().await.0.remove(&room_id);
         });
@@ -72,7 +72,7 @@ impl RoomMap {
 pub struct Room {
     pub owner: UserId,
     pub id: RoomId,
-    pub tvn: Operations<MockFileSystem>,
+    pub tvc: Operations<MockFileSystem>,
     discussion: Arc<dyn DiscussionIo>,
     channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error = error::Error>>>>>,
 }
@@ -83,7 +83,7 @@ impl Room {
             id: RoomId::default(),
             owner: owner.clone(),
             discussion: Arc::new(Discussion::default()),
-            tvn: Operations::new(
+            tvc: Operations::new(
                 BranchName::from(owner.to_string()),
                 MockFileSystem::default(),
             ),
@@ -111,7 +111,7 @@ impl Room {
     }
 
     pub fn save_bundle(&self, bundle: Bundle) -> std::result::Result<(), Response> {
-        self.tvn.save.execute(bundle).map_err(|e| {
+        self.tvc.save.execute(bundle).map_err(|e| {
             Response::builder()
                 .status(StatusCode::INTERNAL_SERVER_ERROR)
                 .body(Body::from(
@@ -127,7 +127,7 @@ impl Room {
     }
 
     pub fn create_bundle(&self) -> std::result::Result<Bundle, Response> {
-        match self.tvn.bundle.create() {
+        match self.tvc.bundle.create() {
             Ok(bundle) => Ok(bundle),
             Err(error) => {
                 let response = Response::builder()

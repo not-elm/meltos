@@ -1,16 +1,15 @@
-use wasm_bindgen::prelude::wasm_bindgen;
 use crate::file_system::NodeFileSystem;
-use crate::tvc::TvnClient;
+use crate::tvc::TvcClient;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen]
-pub struct WasmTvnClient(TvnClient<NodeFileSystem>);
-
+pub struct WasmtvcClient(TvcClient<NodeFileSystem>);
 
 #[wasm_bindgen]
-impl WasmTvnClient {
+impl WasmtvcClient {
     #[wasm_bindgen(constructor)]
     #[inline]
     pub fn new(branch_name: String, fs: NodeFileSystem) -> Self {
-        Self(TvnClient::new(branch_name, fs))
+        Self(TvcClient::new(branch_name, fs))
     }
 }

@@ -40,7 +40,7 @@ mod tests {
     use axum::http::{header, StatusCode};
     use tower::ServiceExt;
 
-    use meltos_tvn::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::mock::MockFileSystem;
 
     use crate::api::test_util::{
         http_create_discussion, http_discussion_close, http_open_room, logged_in_app,

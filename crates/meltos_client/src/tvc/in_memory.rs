@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen_futures::js_sys::Uint8Array;
 
-use meltos_tvn::file_system::FileSystem;
+use meltos_tvc::file_system::FileSystem;
 use crate::console_log;
 
 #[wasm_bindgen]

@@ -87,7 +87,7 @@ paths:
         "200":
           description: "Roomに正常に削除された"
 
-  /{room_id}/tvn/fetch:
+  /{room_id}/tvc/fetch:
     get:
       parameters:
         - $ref: "#/components/parameters/room_id"
@@ -101,7 +101,7 @@ paths:
 
       responses:
         "200":
-          description: 取得対象のブランチに関連するTvnデータ
+          description: 取得対象のブランチに関連するtvcデータ
           content:
             application/json:
               schema:

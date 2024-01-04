@@ -1,6 +1,6 @@
 use axum::http::Response;
 use axum::Json;
-use meltos_tvn::io::bundle::Bundle;
+use meltos_tvc::io::bundle::Bundle;
 
 use crate::api::HttpResult;
 use crate::middleware::room::SessionRoom;
@@ -22,12 +22,12 @@ pub async fn push(
 mod tests {
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
-    use meltos_tvn::branch::BranchName;
-    use meltos_tvn::file_system::mock::MockFileSystem;
-    use meltos_tvn::file_system::FileSystem;
-    use meltos_tvn::operation;
-    use meltos_tvn::operation::commit::Commit;
-    use meltos_tvn::operation::stage;
+    use meltos_tvc::branch::BranchName;
+    use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::FileSystem;
+    use meltos_tvc::operation;
+    use meltos_tvc::operation::commit::Commit;
+    use meltos_tvc::operation::stage;
 
     use crate::api::test_util::{http_open_room, owner_session_id, MockServerClient};
     use crate::app;

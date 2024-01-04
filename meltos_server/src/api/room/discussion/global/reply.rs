@@ -32,7 +32,7 @@ mod tests {
     use meltos::schema::discussion::global::{Reply, Speak};
     use meltos::user::UserId;
 
-    use meltos_tvn::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::mock::MockFileSystem;
 
     use crate::api::test_util::{
         http_create_discussion, http_open_room, http_reply, http_speak, logged_in_app,

@@ -2,39 +2,31 @@ use async_trait::async_trait;
 
 use meltos::room::RoomId;
 use meltos::user::UserId;
-use meltos_tvn::branch::BranchName;
-use meltos_tvn::file_system::FileSystem;
-use meltos_tvn::io::bundle::Bundle;
-use meltos_tvn::operation::merge::MergedStatus;
-use meltos_tvn::operation::Operations;
-use meltos_tvn::operation::push::Pushable;
+use meltos_tvc::branch::BranchName;
+use meltos_tvc::file_system::FileSystem;
+use meltos_tvc::io::bundle::Bundle;
+use meltos_tvc::operation::merge::MergedStatus;
+use meltos_tvc::operation::push::Pushable;
+use meltos_tvc::operation::Operations;
 
 use crate::config::SessionConfigs;
 use crate::error;
 use crate::http::HttpClient;
 
-
-
 const BASE: &str = "http://127.0.0.1:3000";
 
-
-pub struct TvnClient<Fs: FileSystem + Clone> {
+pub struct TvcClient<Fs: FileSystem + Clone> {
     operations: Operations<Fs>,
     branch_name: String,
 }
 
-
-impl<Fs: FileSystem + Clone> TvnClient<Fs> {
-    pub fn new(
-        branch_name: String,
-        fs: Fs,
-    ) -> Self {
+impl<Fs: FileSystem + Clone> TvcClient<Fs> {
+    pub fn new(branch_name: String, fs: Fs) -> Self {
         Self {
             operations: Operations::new(BranchName::from(branch_name.clone()), fs),
             branch_name,
         }
     }
-
 
     pub async fn open_room(&self, lifetime_sec: Option<u64>) -> error::Result<SessionConfigs> {
         self.operations.init.execute()?;
@@ -47,17 +39,19 @@ impl<Fs: FileSystem + Clone> TvnClient<Fs> {
         Ok(session_configs)
     }
 
-
-    pub async fn join_room(&self, room_id: String, user_id: String) -> error::Result<SessionConfigs> {
-        let (http, bundle) = HttpClient::join(
-            BASE,
-            RoomId(room_id),
-            Some(UserId(user_id.clone())),
-        ).await?;
+    pub async fn join_room(
+        &self,
+        room_id: String,
+        user_id: String,
+    ) -> error::Result<SessionConfigs> {
+        let (http, bundle) =
+            HttpClient::join(BASE, RoomId(room_id), Some(UserId(user_id.clone()))).await?;
 
         self.operations.save.execute(bundle)?;
         self.operations.checkout.execute(&BranchName(user_id))?;
-        self.operations.unzip.execute(&BranchName(self.branch_name.clone()))?;
+        self.operations
+            .unzip
+            .execute(&BranchName(self.branch_name.clone()))?;
 
         Ok(http.configs().clone())
     }
@@ -82,7 +76,7 @@ impl<Fs: FileSystem + Clone> TvnClient<Fs> {
 
     pub async fn push(&mut self, session_configs: SessionConfigs) -> error::Result {
         let mut sender = PushSender {
-            session_configs
+            session_configs,
         };
         self.operations.push.execute(&mut sender).await?;
         Ok(())
@@ -96,12 +90,10 @@ impl<Fs: FileSystem + Clone> TvnClient<Fs> {
     }
 }
 
-
 struct OpenSender {
     user_id: Option<String>,
     lifetime_sec: Option<u64>,
 }
-
 
 #[async_trait]
 impl Pushable<SessionConfigs> for OpenSender {
@@ -113,29 +105,24 @@ impl Pushable<SessionConfigs> for OpenSender {
             Some(bundle),
             self.user_id.clone().map(UserId::from),
             self.lifetime_sec,
-        ).await?;
+        )
+        .await?;
         Ok(http.configs().clone())
     }
 }
 
-
 struct PushSender {
     session_configs: SessionConfigs,
 }
-
 
 #[async_trait]
 impl Pushable<()> for PushSender {
     type Error = String;
 
     async fn push(&mut self, bundle: Bundle) -> Result<(), Self::Error> {
-        let mut http = HttpClient::new(
-            "http://localhost:3000",
-            self.session_configs.clone(),
-        );
+        let mut http = HttpClient::new("http://localhost:3000", self.session_configs.clone());
         http.push(bundle).await?;
 
         Ok(())
     }
 }
-

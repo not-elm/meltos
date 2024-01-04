@@ -1,13 +1,13 @@
 use std::fmt::Debug;
 use std::net::SocketAddr;
 
-use axum::Router;
 use axum::routing::{delete, get, post};
+use axum::Router;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use meltos_backend::discussion::DiscussionIo;
 use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
+use meltos_backend::discussion::DiscussionIo;
 use meltos_backend::user::mock::MockUserSessionIo;
 use meltos_backend::user::SessionIo;
 
@@ -40,14 +40,14 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             MockGlobalDiscussionIo::default(),
         ),
     )
-        .await?;
+    .await?;
     Ok(())
 }
 
 fn app<Session, Discussion>(session: Session, _: Discussion) -> Router
-    where
-        Session: SessionIo + Debug + Clone + 'static,
-        Discussion: DiscussionIo + Default + 'static,
+where
+    Session: SessionIo + Debug + Clone + 'static,
+    Discussion: DiscussionIo + Default + 'static,
 {
     Router::new()
         .route("/room/open", post(api::room::open::<Session, Discussion>))
@@ -56,28 +56,28 @@ fn app<Session, Discussion>(session: Session, _: Discussion) -> Router
 }
 
 fn room_operations_router<Session>() -> Router<AppState<Session>>
-    where
-        Session: SessionIo + Clone + Debug + 'static,
+where
+    Session: SessionIo + Clone + Debug + 'static,
 {
     Router::new()
         .route("/channel", get(api::room::channel))
         .route("/join", post(api::room::join))
-        .nest("/tvn", tvn_routes())
+        .nest("/tvc", tvc_routes())
         .nest("/discussion/global", global_discussion_route())
 }
 
-fn tvn_routes<Session>() -> Router<AppState<Session>>
-    where
-        Session: SessionIo + Clone + Debug + 'static,
+fn tvc_routes<Session>() -> Router<AppState<Session>>
+where
+    Session: SessionIo + Clone + Debug + 'static,
 {
     Router::new()
-        .route("/fetch", get(api::room::tvn::fetch))
-        .route("/push", post(api::room::tvn::push))
+        .route("/fetch", get(api::room::tvc::fetch))
+        .route("/push", post(api::room::tvc::push))
 }
 
 fn global_discussion_route<Session>() -> Router<AppState<Session>>
-    where
-        Session: SessionIo + Clone + Debug + 'static,
+where
+    Session: SessionIo + Clone + Debug + 'static,
 {
     Router::new()
         .route("/create", post(api::room::discussion::global::create))

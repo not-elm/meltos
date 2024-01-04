@@ -3,7 +3,7 @@ pub use join::join;
 pub use open::open;
 
 pub mod discussion;
-pub mod tvn;
+pub mod tvc;
 
 mod channel;
 

@@ -30,7 +30,7 @@ pub async fn speak(
 mod tests {
     use meltos::discussion::message::MessageText;
     use meltos::schema::discussion::global::Speak;
-    use meltos_tvn::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::mock::MockFileSystem;
 
     use crate::api::test_util::{
         http_create_discussion, http_open_room, http_speak, logged_in_app,

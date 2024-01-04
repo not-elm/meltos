@@ -1,5 +1,5 @@
 use crate::user::{SessionId, UserId};
-use meltos_tvn::io::bundle::Bundle;
+use meltos_tvc::io::bundle::Bundle;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]

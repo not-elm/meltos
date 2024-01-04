@@ -8,6 +8,3 @@ mod commands;
 async fn main() {
     Commands::parse().execute().await.unwrap();
 }
-
-
-

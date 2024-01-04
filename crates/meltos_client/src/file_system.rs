@@ -1,13 +1,13 @@
 use std::path::Path;
 
-use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::js_sys::{Object, Uint8Array};
 
-use meltos_tvn::file_system::FileSystem;
+use meltos_tvc::file_system::FileSystem;
 
 use crate::console_log;
-use crate::tvc::log;
+
 
 #[wasm_bindgen(module = "fs")]
 extern "C" {
@@ -53,13 +53,11 @@ extern "C" {
     fn length(this: &Buffer) -> u32;
 }
 
-
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Default, Debug, Clone, Eq, PartialEq)]
 pub struct NodeFileSystem {
     pub workspace_folder: String,
 }
-
 
 #[wasm_bindgen]
 impl NodeFileSystem {
@@ -81,8 +79,6 @@ impl NodeFileSystem {
             format!("{}/{}", self.workspace_folder, path.replace("./", ""))
         }
     }
-
-
 }
 
 impl NodeFileSystem {
@@ -116,7 +112,7 @@ impl FileSystem for NodeFileSystem {
                 let options = serde_wasm_bindgen::to_value(&MkdirOptions {
                     recursive: true,
                 })
-                    .unwrap();
+                .unwrap();
                 mkdir_sync(dir, &options);
             }
         }
@@ -162,10 +158,9 @@ impl FileSystem for NodeFileSystem {
     }
 
     fn delete_file(&self, path: &str) -> std::io::Result<()> {
-        log("call delete");
+        console_log!("call delete");
         let path = self.path(path);
         unlink_sync(&path);
         Ok(())
     }
 }
-

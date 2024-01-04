@@ -6,7 +6,6 @@ use meltos_util::macros::{Display, Sha1};
 
 use crate::user::UserId;
 
-
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Eq, PartialEq, Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct Message {
@@ -14,7 +13,6 @@ pub struct Message {
     pub user_id: UserId,
     pub text: MessageText,
 }
-
 
 #[wasm_bindgen]
 impl Message {
@@ -35,11 +33,10 @@ impl Message {
 pub struct MessageText(pub String);
 impl_string_new_type!(MessageText);
 
-
 #[wasm_bindgen]
 impl MessageText {
     #[wasm_bindgen(constructor)]
-    pub fn wasm_new(text: String) -> Self{
+    pub fn wasm_new(text: String) -> Self {
         Self(text)
     }
 }
@@ -49,11 +46,10 @@ impl MessageText {
 #[derive(Eq, PartialEq, Clone, Debug, Hash, Serialize, Deserialize, Display, Sha1)]
 pub struct MessageId(pub String);
 
-
 #[wasm_bindgen]
 impl MessageId {
     #[wasm_bindgen(constructor)]
-    pub fn wasm_new(text: String) -> Self{
+    pub fn wasm_new(text: String) -> Self {
         Self(text)
     }
 }

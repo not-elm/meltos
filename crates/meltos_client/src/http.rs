@@ -5,20 +5,20 @@ use serde::Serialize;
 
 use meltos::room::RoomId;
 use meltos::schema::discussion::global::{Create, Created};
-use meltos::schema::room::{Join, Joined, Open};
 use meltos::schema::room::Opened;
+use meltos::schema::room::{Join, Joined, Open};
 use meltos::user::UserId;
-use meltos_tvn::io::bundle::Bundle;
-use meltos_tvn::operation::push::Pushable;
+use meltos_tvc::io::bundle::Bundle;
+use meltos_tvc::operation::push::Pushable;
 
 use crate::config::SessionConfigs;
 use crate::error;
 
 #[cfg(feature = "wasm")]
-use reqwest_wasm::{Client, header, Response};
+use reqwest_wasm::{header, Client, Response};
 
 #[cfg(not(feature = "wasm"))]
-use reqwest::{Client, header, Response};
+use reqwest::{header, Client, Response};
 
 #[derive(Debug, Clone)]
 pub struct HttpClient {
@@ -110,13 +110,13 @@ impl HttpClient {
     }
 
     async fn get<D>(&self) -> error::Result<D>
-        where
-            D: DeserializeOwned,
+    where
+        D: DeserializeOwned,
     {
         let response = self
             .client
             .get(format!(
-                "http://localhost:3000/room/{}/tvn/fetch",
+                "http://localhost:3000/room/{}/tvc/fetch",
                 self.configs.room_id
             ))
             .header(header::CONTENT_TYPE, "application/json")
@@ -131,9 +131,9 @@ impl HttpClient {
     }
 
     async fn post<S, D>(&self, path: &str, body: Option<&S>) -> error::Result<D>
-        where
-            S: Serialize,
-            D: DeserializeOwned,
+    where
+        S: Serialize,
+        D: DeserializeOwned,
     {
         let mut request = self
             .client
@@ -153,14 +153,14 @@ impl HttpClient {
 
 #[async_trait]
 impl Pushable<()> for HttpClient {
-    type Error =  String;
+    type Error = String;
 
     async fn push(&mut self, bundle: Bundle) -> Result<(), Self::Error> {
         let base = &self.base_uri;
 
         let response = self
             .client
-            .post(format!("{base}/room/{}/tvn/push", self.configs.room_id))
+            .post(format!("{base}/room/{}/tvc/push", self.configs.room_id))
             .header(
                 header::SET_COOKIE,
                 format!("session_id={}", self.configs.session_id),
@@ -168,17 +168,15 @@ impl Pushable<()> for HttpClient {
             .json(&bundle)
             .send()
             .await
-            .map_err(|e|e.to_string())?;
-        response
-            .error_for_status()
-            .map_err(|e|e.to_string())?;
+            .map_err(|e| e.to_string())?;
+        response.error_for_status().map_err(|e| e.to_string())?;
         Ok(())
     }
 }
 
 async fn response_to_json<D>(response: Response) -> error::Result<D>
-    where
-        D: DeserializeOwned,
+where
+    D: DeserializeOwned,
 {
     Ok(response.error_for_status()?.json().await?)
 }
