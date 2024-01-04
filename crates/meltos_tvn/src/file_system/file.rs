@@ -21,13 +21,16 @@ impl FileSystem for StdFileSystem {
     }
 
     fn read(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
+        println!("path={path}");
         match File::open(path) {
             Ok(mut file) => {
                 let mut buf = Vec::new();
                 file.read_to_end(&mut buf)?;
+                 println!("OK");
                 Ok(Some(buf))
             }
             Err(error) => {
+                 println!("err={error}");
                 if error.kind() == ErrorKind::NotFound {
                     Ok(None)
                 } else {
@@ -41,6 +44,7 @@ impl FileSystem for StdFileSystem {
         if Path::new(path).is_dir() {
             let mut p = Vec::new();
             for entry in std::fs::read_dir(path)? {
+                println!("{entry:?}");
                 p.extend(self.all_file_path(entry?.path().to_str().unwrap())?);
             }
             Ok(p)
@@ -53,6 +57,9 @@ impl FileSystem for StdFileSystem {
 
     fn delete_file(&self, path: &str) -> std::io::Result<()> {
         let path: &Path = path.as_ref();
+        if !path.exists(){
+            return Ok(());
+        }
         if path.is_dir() {
             std::fs::remove_dir_all(path)
         } else {

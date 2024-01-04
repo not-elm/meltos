@@ -26,7 +26,7 @@ mod tests {
         let response = http_call(
             &mut app,
             Request::builder()
-                .uri(format!("/tvc/{room_id}/tvn/fetch"))
+                .uri(format!("/room/{room_id}/tvn/fetch"))
                 .body(Body::empty())
                 .unwrap(),
         )

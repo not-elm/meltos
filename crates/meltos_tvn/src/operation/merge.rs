@@ -23,7 +23,6 @@ pub struct Merge<Fs>
     commit_hashes: CommitHashIo<Fs>,
     unzip: UnZip<Fs>,
     staging: StagingIo<Fs>,
-
     fs: Fs,
 }
 
@@ -115,7 +114,7 @@ impl<Fs> Merge<Fs>
         let merge_origin = self.merge_origin(&source_hashes, &dist_hashes)?;
         let dist_tree = self.commit_tree(dist_hashes.into_iter().collect(), dist, &merge_origin)?;
         let mut source_tree = self.commit_tree(source_hashes.into_iter().collect(), source, &merge_origin)?;
-        let mut conflicts = Vec::new();
+        let conflicts = Vec::new();
 
         for (path, dist_hash) in dist_tree.iter() {
             if !source_tree.contains_key(path) {
@@ -125,13 +124,15 @@ impl<Fs> Merge<Fs>
             let source_hash = source_tree.get(path).unwrap().clone();
             if dist_hash == &source_hash {
                 source_tree.remove(path);
-            } else {
-                conflicts.push(Conflict {
-                    source: source_hash,
-                    dist: dist_hash.clone(),
-                    file_path: path.clone(),
-                });
             }
+            // TODO: 現状はコンフリクトは検査せずに相手側のブランチをすべて取り込むようにします。
+            // else {
+            //     conflicts.push(Conflict {
+            //         source: source_hash,
+            //         dist: dist_hash.clone(),
+            //         file_path: path.clone(),
+            //     });
+            // }
         }
 
         if conflicts.is_empty() {
@@ -253,31 +254,6 @@ mod tests {
         assert!(file.is_some());
     }
 
-    #[test]
-    fn conflicts() {
-        let mock = MockFileSystem::default();
-
-        let b1 = BranchName::owner();
-        let b2 = BranchName::from("user");
-        let init = Init::new(b1.clone(), mock.clone());
-        let checkout = Checkout::new(mock.clone());
-        init.execute().unwrap();
-        checkout.execute(&b2).unwrap();
-        checkout.execute(&b1).unwrap();
-        mock.force_write("workspace/hello.txt", b"hello");
-        Stage::new(b1.clone(), mock.clone()).execute(".").unwrap();
-        Commit::new(b1.clone(), mock.clone()).execute("TEXT").unwrap();
-
-        checkout.execute(&b2).unwrap();
-        mock.force_write("workspace/hello.txt", b"HELLO");
-        Stage::new(b2.clone(), mock.clone()).execute(".").unwrap();
-        Commit::new(b2.clone(), mock.clone()).execute("TEXT").unwrap();
-
-        let merge = Merge::new(mock.clone());
-        let status = merge.execute(b1, b2).unwrap();
-        assert!(matches!(status, MergedStatus::Conflicted(_)));
-    }
-
 
     #[test]
     fn success_merged() {
@@ -306,4 +282,31 @@ mod tests {
         assert!(mock.read("workspace/hello.txt").unwrap().is_some());
         assert!(mock.read("workspace/test.txt").unwrap().is_some());
     }
+
+
+    // TODO: 現状はコンフリクト関連が未実装のため実装された際にこのテストも展開します。
+    //     #[test]
+    // fn conflicts() {
+    //     let mock = MockFileSystem::default();
+    //
+    //     let b1 = BranchName::owner();
+    //     let b2 = BranchName::from("user");
+    //     let init = Init::new(b1.clone(), mock.clone());
+    //     let checkout = Checkout::new(mock.clone());
+    //     init.execute().unwrap();
+    //     checkout.execute(&b2).unwrap();
+    //     checkout.execute(&b1).unwrap();
+    //     mock.force_write("workspace/hello.txt", b"hello");
+    //     Stage::new(b1.clone(), mock.clone()).execute(".").unwrap();
+    //     Commit::new(b1.clone(), mock.clone()).execute("TEXT").unwrap();
+    //
+    //     checkout.execute(&b2).unwrap();
+    //     mock.force_write("workspace/hello.txt", b"HELLO");
+    //     Stage::new(b2.clone(), mock.clone()).execute(".").unwrap();
+    //     Commit::new(b2.clone(), mock.clone()).execute("TEXT").unwrap();
+    //
+    //     let merge = Merge::new(mock.clone());
+    //     let status = merge.execute(b1, b2).unwrap();
+    //     assert!(matches!(status, MergedStatus::Conflicted(_)));
+    // }
 }
