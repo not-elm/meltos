@@ -61,13 +61,13 @@ mod tests {
             &room_id,
             &session_id,
             Reply {
-                to: spoke.text.id.clone(),
+                to: spoke.message.id.clone(),
                 text: MessageText::from("reply"),
             },
         )
         .await;
 
-        assert_eq!(&replied.to, &spoke.text.id);
+        assert_eq!(&replied.to, &spoke.message.id);
         assert_eq!(
             replied.message.clone(),
             Message {

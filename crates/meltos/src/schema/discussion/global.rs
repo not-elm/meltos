@@ -48,16 +48,16 @@ pub struct Speak {
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Spoke {
     pub discussion_id: DiscussionId,
-    pub text: Message,
+    pub message: Message,
 }
 
 #[wasm_bindgen]
 impl Spoke {
     #[wasm_bindgen(constructor)]
-    pub fn new(discussion_id: String, text: Message) -> Self {
+    pub fn new(discussion_id: String, message: Message) -> Self {
         Self {
             discussion_id: DiscussionId(discussion_id),
-            text,
+            message,
         }
     }
 }

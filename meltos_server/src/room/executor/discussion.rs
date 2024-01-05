@@ -36,13 +36,13 @@ where
 
     #[inline]
     pub async fn speak(self, speak: Speak) -> error::Result<Spoke> {
-        let text = self
+        let message = self
             .global_io
             .speak(&speak.discussion_id, self.user_id, speak.text)
             .await?;
         Ok(Spoke {
             discussion_id: speak.discussion_id,
-            text,
+            message,
         })
     }
 
