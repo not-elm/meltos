@@ -12,7 +12,7 @@ use crate::io::bundle::{Bundle, BundleBranch, BundleObject, BundleTrace};
 use crate::io::commit_obj::CommitObjIo;
 use crate::object::commit::CommitObj;
 
-#[async_trait]
+#[async_trait(?Send)]
 pub trait Pushable<Output> {
     type Error: Display;
 

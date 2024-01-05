@@ -1,0 +1,18 @@
+[package]
+name = "meltos_wasm"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = "0.4.39"
+meltos_client = { path = "../meltos_client" }
+serde-wasm-bindgen = "0.6.3"
+meltos_tvc = { path = "../meltos_tvc" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.39"
+directories = "5.0.1"

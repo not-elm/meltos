@@ -1,5 +1,5 @@
 use crate::config::{SessionConfigs, SessionConfigsIo};
-use crate::file_system::NodeFileSystem;
+use meltos_wasm::file_system::NodeFileSystem;
 
 use async_trait::async_trait;
 use meltos_tvc::file_system::FileSystem;

@@ -151,7 +151,7 @@ impl HttpClient {
     }
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl Pushable<()> for HttpClient {
     type Error = String;
 

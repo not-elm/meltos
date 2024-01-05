@@ -1,3 +1,6 @@
+#[cfg(feature = "wasm")]
+pub mod wasm;
+
 use async_trait::async_trait;
 
 use meltos::room::RoomId;
@@ -82,7 +85,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         Ok(())
     }
 
-    pub fn merge(&mut self, source: String) -> error::Result<MergedStatus> {
+    pub fn merge(&self, source: String) -> error::Result<MergedStatus> {
         let source = BranchName(source);
         let dist = BranchName(self.branch_name.clone());
         let status = self.operations.merge.execute(source, dist)?;
@@ -95,7 +98,7 @@ struct OpenSender {
     lifetime_sec: Option<u64>,
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl Pushable<SessionConfigs> for OpenSender {
     type Error = crate::error::Error;
 
@@ -115,7 +118,7 @@ struct PushSender {
     session_configs: SessionConfigs,
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl Pushable<()> for PushSender {
     type Error = String;
 
