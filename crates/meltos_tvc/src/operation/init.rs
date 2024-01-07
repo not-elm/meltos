@@ -50,6 +50,7 @@ where
     pub fn execute(&self) -> error::Result<CommitHash> {
         self.check_branch_not_initialized()?;
         self.working.write(&self.branch_name)?;
+        self.fs.create_dir("workspace")?;
         if self.stage.execute(".").is_ok() {
             self.commit.execute("INIT")
         } else {

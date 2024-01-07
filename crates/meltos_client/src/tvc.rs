@@ -1,6 +1,3 @@
-#[cfg(feature = "wasm")]
-pub mod wasm;
-
 use async_trait::async_trait;
 
 use meltos::room::RoomId;
@@ -20,13 +17,15 @@ const BASE: &str = "http://127.0.0.1:3000";
 
 pub struct TvcClient<Fs: FileSystem + Clone> {
     operations: Operations<Fs>,
+    fs: Fs,
     branch_name: String,
 }
 
 impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     pub fn new(branch_name: String, fs: Fs) -> Self {
         Self {
-            operations: Operations::new(BranchName::from(branch_name.clone()), fs),
+            operations: Operations::new(BranchName::from(branch_name.clone()), fs.clone()),
+            fs,
             branch_name,
         }
     }
@@ -90,6 +89,12 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         let dist = BranchName(self.branch_name.clone());
         let status = self.operations.merge.execute(source, dist)?;
         Ok(status)
+    }
+
+
+    pub fn close(&self) -> error::Result{
+        self.fs.delete(".")?;
+        Ok(())
     }
 }
 

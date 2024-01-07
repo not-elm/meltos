@@ -3,6 +3,8 @@ use wasm_bindgen::prelude::wasm_bindgen;
 pub mod file_system;
 mod error;
 
+pub mod tvc;
+
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
@@ -17,4 +19,21 @@ macro_rules! console_log {
     ($($arg:tt)*) => {{
         $crate::log(&format!($($arg)*));
     }};
+}
+
+
+
+#[cfg(test)]
+pub mod tests {
+    use crate::file_system::node::NodeFileSystem;
+
+    pub fn workspace_folder() -> String {
+        "D://tmp".to_string()
+    }
+
+
+    pub fn node_fs() -> NodeFileSystem {
+        NodeFileSystem::new(workspace_folder())
+    }
+
 }

@@ -4,7 +4,10 @@ use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen_futures::js_sys::{Object, Uint8Array};
 
+use meltos_client::error::JsResult;
 use meltos_tvc::file_system::{FileSystem, Stat, StatType};
+
+use crate::error::IntoJsResult;
 
 type NodeFsResult<T = JsValue> = std::result::Result<T, Error>;
 
@@ -66,7 +69,7 @@ extern "C" {
     fn _read_dir_sync(path: &str, options: JsValue) -> NodeFsResult<Vec<String>>;
 
     #[wasm_bindgen(js_name = rmdirSync, catch)]
-    fn rm_dir_sync(path: &str, options: MkdirOptions) -> NodeFsResult<JsValue>;
+    fn _rm_dir_sync(path: &str) -> NodeFsResult<JsValue>;
 
     #[wasm_bindgen(js_name = rmSync, catch)]
     fn _rm_sync(path: &str) -> NodeFsResult<JsValue>;
@@ -100,6 +103,14 @@ fn rm_sync(path: &str) -> std::io::Result<()> {
     _rm_sync(path).map_err(|e| {
         std::io::Error::other(format!("failed fs.rmSync : {e:?}"))
     })?;
+    Ok(())
+}
+
+
+#[inline(always)]
+fn rm_dir_sync(path: &str) -> std::io::Result<()> {
+    _rm_dir_sync(path)
+        .map_err(|e| std::io::Error::other(format!("failed fs.rmdirSync : {e:?}")))?;
     Ok(())
 }
 
@@ -139,7 +150,6 @@ pub struct NodeFileSystem {
 #[wasm_bindgen]
 impl NodeFileSystem {
     #[wasm_bindgen(constructor)]
-    #[inline(always)]
     pub fn new(workspace_folder: String) -> Self {
         Self {
             workspace_folder,
@@ -156,6 +166,41 @@ impl NodeFileSystem {
             format!("{}/{}", self.workspace_folder, path.replace("./", ""))
         }
     }
+
+    #[inline(always)]
+    pub fn create_dir_api(&self, path: &str) -> JsResult<()> {
+        self.create_dir(path).into_js_result()
+    }
+
+
+    #[inline(always)]
+    pub fn write_file_api(&self, path: &str, buf: Vec<u8>) -> JsResult<()> {
+        self.write_file(path, &buf).into_js_result()
+    }
+
+
+    #[inline(always)]
+    pub fn read_dir_api(&self, path: &str) -> JsResult<Option<Vec<String>>> {
+        self.read_dir(path).into_js_result()
+    }
+
+
+    #[inline(always)]
+    pub fn read_file_api(&self, path: &str) -> JsResult<Option<Vec<u8>>> {
+        self.read_file(path).into_js_result()
+    }
+
+
+    #[inline(always)]
+    pub fn delete_api(&self, path: &str) -> JsResult<()> {
+        self.delete(path).into_js_result()
+    }
+
+
+    #[inline(always)]
+    pub fn stat_api(&self, path: &str) -> JsResult<Option<Stat>>{
+        self.stat(path).into_js_result()
+    }
 }
 
 impl NodeFileSystem {
@@ -166,10 +211,27 @@ impl NodeFileSystem {
             files.push(path.trim_start_matches(&self.workspace_folder).to_string());
         } else if let Some(entries) = read_dir_sync(&path)? {
             for entry in entries {
-                self.read_files(files, format!("{path}/{entry}").trim_end_matches("\n").to_string())?;
+                self.read_files(files, format!("{path}/{entry}"))?;
             }
         }
         Ok(())
+    }
+
+
+    fn rm(&self, path: String) -> std::io::Result<()> {
+        if !exists_sync(&path)? {
+            Ok(())
+        } else if is_file(&path)? {
+            rm_sync(&path)
+        } else if let Some(entries) = read_dir_sync(&path)? {
+            for entry in entries {
+                self.rm(format!("{path}/{entry}"))?;
+            }
+            rm_dir_sync(&path).map_err(|e| std::io::Error::other(format!("failed fs.rmdirSync : {e:?}")))?;
+            Ok(())
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -177,8 +239,9 @@ impl NodeFileSystem {
 #[wasm_bindgen]
 #[derive(serde::Serialize, serde::Deserialize)]
 struct MkdirOptions {
-    recursive: bool,
+    pub recursive: bool,
 }
+
 
 impl FileSystem for NodeFileSystem {
     fn stat(&self, path: &str) -> std::io::Result<Option<Stat>> {
@@ -211,7 +274,7 @@ impl FileSystem for NodeFileSystem {
     #[inline]
     fn create_dir(&self, path: &str) -> std::io::Result<()> {
         let path = &self.path(path);
-        if exists_sync(path)?{
+        if exists_sync(path)? {
             return Ok(());
         }
         match mkdir_sync(path, MkdirOptions {
@@ -262,33 +325,11 @@ impl FileSystem for NodeFileSystem {
         }
     }
 
+
+    #[inline(always)]
     fn delete(&self, path: &str) -> std::io::Result<()> {
         let entry_path = self.path(path);
-        if !exists_sync(&entry_path)? {
-            return Ok(());
-        }
-
-        if is_file(&entry_path)? {
-            rm_sync(&entry_path)?;
-            Ok(())
-        } else {
-            for file_path in self.all_files_in(path)? {
-                rm_sync(&self.path(&file_path))?;
-            }
-
-            match rm_dir_sync(&entry_path, MkdirOptions {
-                recursive: true
-            }) {
-                Ok(_) => Ok(()),
-                Err(e) => {
-                    if e.not_found() {
-                        Ok(())
-                    } else {
-                        Err(std::io::Error::other(format!("failed delete dir: {e:?}")))
-                    }
-                }
-            }
-        }
+        self.rm(entry_path)
     }
 }
 
@@ -299,16 +340,7 @@ mod tests {
 
     use meltos_tvc::file_system::FileSystem;
 
-    use crate::file_system::node::NodeFileSystem;
-
-    fn workspace_folder() -> String {
-        "D://tmp".to_string()
-    }
-
-
-    fn node_fs() -> NodeFileSystem {
-        NodeFileSystem::new(workspace_folder())
-    }
+    use crate::tests::node_fs;
 
     #[wasm_bindgen_test]
     fn create_dir() {
@@ -316,6 +348,16 @@ mod tests {
         fs.create_dir("src1").unwrap();
         let dir = fs.read_dir("src1");
         fs.delete("src1").unwrap();
+        assert!(dir.unwrap().is_some());
+    }
+
+
+    #[wasm_bindgen_test]
+    fn create_dir_recursive() {
+        let fs = node_fs();
+        fs.create_dir("sample/src").unwrap();
+        let dir = fs.read_dir("sample/src");
+        fs.delete("sample/src").unwrap();
         assert!(dir.unwrap().is_some());
     }
 
