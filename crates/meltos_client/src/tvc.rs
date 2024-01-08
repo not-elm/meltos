@@ -8,6 +8,7 @@ use meltos_tvc::io::atomic::head::HeadIo;
 use meltos_tvc::io::atomic::staging::StagingIo;
 use meltos_tvc::io::bundle::Bundle;
 use meltos_tvc::io::trace_tree::TraceTreeIo;
+use meltos_tvc::object::commit::CommitHash;
 use meltos_tvc::object::tree::TreeObj;
 use meltos_tvc::operation::merge::MergedStatus;
 use meltos_tvc::operation::Operations;
@@ -38,6 +39,12 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             fs,
             branch_name,
         }
+    }
+
+    /// このメソッドはクライアントツール側でテストを実行する際に使用する想定です。
+    pub fn init_repository(&self) -> error::Result<CommitHash>{
+        let commit_hash = self.operations.init.execute()?;
+        Ok(commit_hash)
     }
 
     pub async fn open_room(&self, lifetime_sec: Option<u64>) -> error::Result<SessionConfigs> {

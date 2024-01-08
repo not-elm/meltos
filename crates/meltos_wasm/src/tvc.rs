@@ -3,8 +3,8 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use meltos_client::config::SessionConfigs;
 use meltos_client::error::JsResult;
 use meltos_client::tvc::TvcClient;
+use meltos_tvc::object::commit::CommitHash;
 
-use crate::console_log;
 use crate::file_system::vscode_node::VscodeNodeFs;
 
 #[wasm_bindgen]
@@ -18,6 +18,12 @@ impl WasmTvcClient {
         Self(TvcClient::new(branch_name, fs))
     }
 
+
+    #[inline]
+    pub fn init_repository(&self) -> JsResult<CommitHash>{
+        let commit_hash = self.0.init_repository()?;
+        Ok(commit_hash)
+    }
 
     #[inline]
     pub async fn open_room(&self, lifetime_sec: Option<u64>) -> JsResult<SessionConfigs> {
@@ -67,14 +73,6 @@ impl WasmTvcClient {
 
     #[inline]
     pub fn exists_in_traces(&self, file_path: &str) -> JsResult<bool> {
-        console_log!("INSPECT FILE = {file_path}");
-        if let Some(traces) = self.0.traces()? {
-            for (file, _) in traces.iter() {
-                console_log!("FILE = {file}");
-            }
-        }
-
-
         let exists = self.0.exists_in_traces(file_path)?;
         Ok(exists)
     }
