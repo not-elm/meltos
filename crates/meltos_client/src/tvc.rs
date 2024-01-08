@@ -3,11 +3,15 @@ use async_trait::async_trait;
 use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_tvc::branch::BranchName;
-use meltos_tvc::file_system::FileSystem;
+use meltos_tvc::file_system::{FilePath, FileSystem};
+use meltos_tvc::io::atomic::head::HeadIo;
+use meltos_tvc::io::atomic::staging::StagingIo;
 use meltos_tvc::io::bundle::Bundle;
+use meltos_tvc::io::trace_tree::TraceTreeIo;
+use meltos_tvc::object::tree::TreeObj;
 use meltos_tvc::operation::merge::MergedStatus;
-use meltos_tvc::operation::push::Pushable;
 use meltos_tvc::operation::Operations;
+use meltos_tvc::operation::push::Pushable;
 
 use crate::config::SessionConfigs;
 use crate::error;
@@ -17,6 +21,9 @@ const BASE: &str = "http://127.0.0.1:3000";
 
 pub struct TvcClient<Fs: FileSystem + Clone> {
     operations: Operations<Fs>,
+    staging: StagingIo<Fs>,
+    head: HeadIo<Fs>,
+    trace: TraceTreeIo<Fs>,
     fs: Fs,
     branch_name: String,
 }
@@ -25,6 +32,9 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     pub fn new(branch_name: String, fs: Fs) -> Self {
         Self {
             operations: Operations::new(BranchName::from(branch_name.clone()), fs.clone()),
+            staging: StagingIo::new(fs.clone()),
+            head: HeadIo::new(fs.clone()),
+            trace: TraceTreeIo::new(fs.clone()),
             fs,
             branch_name,
         }
@@ -92,7 +102,36 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 
 
-    pub fn close(&self) -> error::Result{
+    pub fn staging_files(&self) -> error::Result<Vec<String>> {
+        let tree = self.staging.read()?;
+        Ok(tree
+            .as_ref()
+            .map(|tree| tree.keys().map(|path| path.to_string()).collect())
+            .unwrap_or_default())
+    }
+
+
+    pub fn traces(&self) -> error::Result<Option<TreeObj>> {
+        let Some(head) = self.head.read(&BranchName(self.branch_name.clone()))?
+            else {
+                return Ok(None);
+            };
+        let trace_tree = self.trace.read(&head)?;
+        Ok(Some(trace_tree))
+    }
+
+
+    pub fn exists_in_traces(&self, file_path: &str) -> error::Result<bool> {
+        let Some(head) = self.head.read(&BranchName(self.branch_name.clone()))?
+            else {
+                return Ok(false);
+            };
+        let trace_tree = self.trace.read(&head)?;
+        Ok(trace_tree.contains_key(&FilePath::from(file_path)))
+    }
+
+
+    pub fn close(&self) -> error::Result {
         self.fs.delete(".")?;
         Ok(())
     }
@@ -103,7 +142,7 @@ struct OpenSender {
     lifetime_sec: Option<u64>,
 }
 
-#[async_trait(?Send)]
+#[async_trait(? Send)]
 impl Pushable<SessionConfigs> for OpenSender {
     type Error = crate::error::Error;
 
@@ -114,7 +153,7 @@ impl Pushable<SessionConfigs> for OpenSender {
             self.user_id.clone().map(UserId::from),
             self.lifetime_sec,
         )
-        .await?;
+            .await?;
         Ok(http.configs().clone())
     }
 }
@@ -123,7 +162,7 @@ struct PushSender {
     session_configs: SessionConfigs,
 }
 
-#[async_trait(?Send)]
+#[async_trait(? Send)]
 impl Pushable<()> for PushSender {
     type Error = String;
 

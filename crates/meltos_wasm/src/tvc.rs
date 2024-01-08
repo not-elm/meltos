@@ -3,8 +3,8 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use meltos_client::config::SessionConfigs;
 use meltos_client::error::JsResult;
 use meltos_client::tvc::TvcClient;
-use crate::console_log;
 
+use crate::console_log;
 use crate::file_system::vscode_node::VscodeNodeFs;
 
 #[wasm_bindgen]
@@ -57,8 +57,30 @@ impl WasmTvcClient {
         Ok(())
     }
 
+
     #[inline]
-    pub fn close(&self) -> JsResult{
+    pub fn staging_files(&self) -> JsResult<Vec<String>> {
+        let files = self.0.staging_files()?;
+        Ok(files)
+    }
+
+
+    #[inline]
+    pub fn exists_in_traces(&self, file_path: &str) -> JsResult<bool> {
+        console_log!("INSPECT FILE = {file_path}");
+        if let Some(traces) = self.0.traces()? {
+            for (file, _) in traces.iter() {
+                console_log!("FILE = {file}");
+            }
+        }
+
+
+        let exists = self.0.exists_in_traces(file_path)?;
+        Ok(exists)
+    }
+
+    #[inline]
+    pub fn close(&self) -> JsResult {
         self.0.close()?;
         Ok(())
     }

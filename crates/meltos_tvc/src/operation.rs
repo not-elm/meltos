@@ -3,6 +3,7 @@ use crate::error;
 use crate::file_system::std_fs::StdFileSystem;
 use crate::file_system::FileSystem;
 use crate::io::atomic::local_commits::LocalCommitsIo;
+use crate::io::atomic::staging::StagingIo;
 use crate::io::atomic::work_branch::WorkingIo;
 use crate::io::bundle::BundleIo;
 use crate::operation::checkout::Checkout;
