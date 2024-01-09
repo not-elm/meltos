@@ -13,9 +13,8 @@ pub struct WasmTvcClient(TvcClient<VscodeNodeFs>);
 #[wasm_bindgen]
 impl WasmTvcClient {
     #[wasm_bindgen(constructor)]
-    #[inline]
-    pub fn new(branch_name: String, fs: VscodeNodeFs) -> Self {
-        Self(TvcClient::new(branch_name, fs))
+    pub fn new(branch_name: &str, fs: VscodeNodeFs) -> Self {
+        Self(TvcClient::new(branch_name.to_string(), fs))
     }
 
 
