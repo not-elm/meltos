@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos_client::config::SessionConfigs;
+use meltos_client::error;
 use meltos_client::error::JsResult;
 use meltos_client::tvc::TvcClient;
 use meltos_tvc::object::commit::CommitHash;
@@ -27,6 +28,16 @@ impl WasmTvcClient {
     #[inline]
     pub async fn open_room(&self, lifetime_sec: Option<u64>) -> JsResult<SessionConfigs> {
         let session_configs = self.0.open_room(lifetime_sec).await?;
+        Ok(session_configs)
+    }
+
+    #[inline]
+    pub async fn join_room(
+        &self,
+        room_id: String,
+        user_id: String,
+    ) -> JsResult<SessionConfigs> {
+        let session_configs = self.0.join_room(room_id, user_id).await?;
         Ok(session_configs)
     }
 
