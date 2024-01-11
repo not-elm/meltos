@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos::room::RoomId;
 use meltos::user::UserId;
@@ -7,8 +8,11 @@ use meltos_tvc::file_system::{FilePath, FileSystem};
 use meltos_tvc::io::atomic::head::HeadIo;
 use meltos_tvc::io::atomic::staging::StagingIo;
 use meltos_tvc::io::bundle::Bundle;
+use meltos_tvc::io::commit_hashes::CommitHashIo;
+use meltos_tvc::io::commit_obj::CommitObjIo;
 use meltos_tvc::io::trace_tree::TraceTreeIo;
 use meltos_tvc::object::commit::CommitHash;
+use meltos_tvc::object::ObjHash;
 use meltos_tvc::object::tree::TreeObj;
 use meltos_tvc::operation::merge::MergedStatus;
 use meltos_tvc::operation::Operations;
@@ -18,6 +22,21 @@ use crate::config::SessionConfigs;
 use crate::error;
 use crate::http::HttpClient;
 
+#[wasm_bindgen(getter_with_clone)]
+#[derive(Clone, Debug)]
+pub struct ObjMeta {
+    pub file_path: String,
+    pub hash: String,
+}
+
+#[wasm_bindgen(getter_with_clone)]
+#[derive(Clone, Debug)]
+pub struct CommitMeta {
+    pub hash: String,
+    pub message: String,
+    pub objs: Vec<ObjMeta>,
+}
+
 const BASE: &str = "http://127.0.0.1:3000";
 
 pub struct TvcClient<Fs: FileSystem + Clone> {
@@ -25,24 +44,29 @@ pub struct TvcClient<Fs: FileSystem + Clone> {
     staging: StagingIo<Fs>,
     head: HeadIo<Fs>,
     trace: TraceTreeIo<Fs>,
+    commit_obj: CommitObjIo<Fs>,
+    commit_hashes: CommitHashIo<Fs>,
     fs: Fs,
     branch_name: String,
 }
 
 impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     pub fn new(branch_name: String, fs: Fs) -> Self {
+        let branch = BranchName::from(branch_name.clone());
         Self {
-            operations: Operations::new(BranchName::from(branch_name.clone()), fs.clone()),
+            operations: Operations::new(branch.clone(), fs.clone()),
             staging: StagingIo::new(fs.clone()),
             head: HeadIo::new(fs.clone()),
             trace: TraceTreeIo::new(fs.clone()),
+            commit_obj: CommitObjIo::new(branch, fs.clone()),
+            commit_hashes: CommitHashIo::new(fs.clone()),
             fs,
             branch_name,
         }
     }
 
     /// このメソッドはクライアントツール側でテストを実行する際に使用する想定です。
-    pub fn init_repository(&self) -> error::Result<CommitHash>{
+    pub fn init_repository(&self) -> error::Result<CommitHash> {
         let commit_hash = self.operations.init.execute()?;
         Ok(commit_hash)
     }
@@ -108,6 +132,37 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         Ok(status)
     }
 
+
+    pub fn all_commit_metas(&self) -> error::Result<Vec<CommitMeta>> {
+        let Some(head) = self.head.read(&BranchName(self.branch_name.clone()))?
+        else{
+            return Ok(Vec::with_capacity(0));
+        };
+        let hashes = self.commit_hashes.read_all(head, &None)?;
+        let mut metas = Vec::with_capacity(hashes.len());
+        for commit_hash in hashes{
+            metas.push(self.read_commit_meta(&commit_hash)?);
+        }
+        Ok(metas)
+    }
+
+
+    pub fn read_commit_meta(&self, commit_hash: &CommitHash) -> error::Result<CommitMeta> {
+        let obj = self.commit_obj.read(commit_hash)?;
+        let tree = self.commit_obj.read_commit_tree(commit_hash)?;
+        Ok(CommitMeta {
+            hash: commit_hash.to_string(),
+            message: obj.text.0,
+            objs: tree
+                .0
+                .into_iter()
+                .map(|(file_path, hash)| ObjMeta {
+                    file_path: file_path.0,
+                    hash: hash.0,
+                })
+                .collect(),
+        })
+    }
 
     pub fn staging_files(&self) -> error::Result<Vec<String>> {
         let tree = self.staging.read()?;

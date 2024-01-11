@@ -6,15 +6,15 @@ use crate::object::commit::CommitHash;
 
 #[derive(Debug)]
 pub struct CommitHashIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     commit_obj: CommitObjIo<Fs>,
 }
 
 impl<Fs> CommitHashIo<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> CommitHashIo<Fs> {
         Self {
@@ -24,8 +24,8 @@ where
 }
 
 impl<Fs> CommitHashIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     pub fn read_all(
         &self,

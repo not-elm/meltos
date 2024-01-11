@@ -1,9 +1,8 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos_client::config::SessionConfigs;
-use meltos_client::error;
 use meltos_client::error::JsResult;
-use meltos_client::tvc::TvcClient;
+use meltos_client::tvc::{CommitMeta, TvcClient};
 use meltos_tvc::object::commit::CommitHash;
 
 use crate::file_system::vscode_node::VscodeNodeFs;
@@ -20,7 +19,7 @@ impl WasmTvcClient {
 
 
     #[inline]
-    pub fn init_repository(&self) -> JsResult<CommitHash>{
+    pub fn init_repository(&self) -> JsResult<CommitHash> {
         let commit_hash = self.0.init_repository()?;
         Ok(commit_hash)
     }
@@ -78,6 +77,12 @@ impl WasmTvcClient {
     pub fn staging_files(&self) -> JsResult<Vec<String>> {
         let files = self.0.staging_files()?;
         Ok(files)
+    }
+
+    #[inline]
+    pub fn all_commit_metas(&self) -> JsResult<Vec<CommitMeta>> {
+        let metas = self.0.all_commit_metas()?;
+        Ok(metas)
     }
 
 
