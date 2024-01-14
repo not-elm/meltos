@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use meltos_tvc::io::bundle::Bundle;
 
 use crate::schema::discussion::global::{Closed, Created, Replied, Spoke};
 use crate::user::UserId;
@@ -31,6 +32,7 @@ pub struct ChannelMessage {
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum MessageData {
     Joined { user_id: String },
+    Pushed(Bundle),
     DiscussionCreated(Created),
     DiscussionSpoke(Spoke),
     DiscussionReplied(Replied),
