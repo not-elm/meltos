@@ -1,0 +1,15 @@
+components:
+  parameters:
+    room_id:
+      in: path
+      name: room_id
+      schema:
+        type: string
+        description: "参加するルームのID"
+      required: true
+
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session_id

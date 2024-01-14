@@ -1,0 +1,16 @@
+type: object
+description: ディスカッションのメタ情報
+required:
+  - "id"
+  - "title"
+  - "creator"
+properties:
+  id:
+    type: string
+    description: ディスカッション毎に一意となるID サーバー側で作成される
+  title:
+    type: string
+    description: ディスカッションのタイトル ディスカッションを作成する際にユーザーが指定する。
+  creator:
+    type: string
+    description: このディスカッションを作成したユーザーのID

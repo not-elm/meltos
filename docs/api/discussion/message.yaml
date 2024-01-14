@@ -1,0 +1,17 @@
+type: object
+description: ディスカッションのメタ情報
+required:
+  - "id"
+  - "user_id"
+  - "text"
+
+properties:
+  id:
+    type: string
+    description: メッセージ毎に一意となるID サーバー側で作成される
+  user_id:
+    type: string
+    description: メッセージの送信者のID
+  text:
+    type: string
+    description: メッセージ本文
