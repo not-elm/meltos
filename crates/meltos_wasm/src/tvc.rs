@@ -4,6 +4,7 @@ use meltos_client::config::SessionConfigs;
 use meltos_client::error::JsResult;
 use meltos_client::tvc::{CommitMeta, TvcClient};
 use meltos_tvc::object::commit::CommitHash;
+use meltos_tvc::object::ObjHash;
 
 use crate::file_system::vscode_node::VscodeNodeFs;
 
@@ -77,6 +78,13 @@ impl WasmTvcClient {
     pub fn staging_files(&self) -> JsResult<Vec<String>> {
         let files = self.0.staging_files()?;
         Ok(files)
+    }
+
+
+    #[inline]
+    pub fn read_file_from_hash(&self, obj_hash: String) -> JsResult<Option<String>>{
+        let content = self.0.read_file_from_hash(&ObjHash(obj_hash))?;
+        Ok(content)
     }
 
     #[inline]

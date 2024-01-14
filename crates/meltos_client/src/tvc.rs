@@ -6,6 +6,7 @@ use meltos::user::UserId;
 use meltos_tvc::branch::BranchName;
 use meltos_tvc::file_system::{FilePath, FileSystem};
 use meltos_tvc::io::atomic::head::HeadIo;
+use meltos_tvc::io::atomic::object::ObjIo;
 use meltos_tvc::io::atomic::staging::StagingIo;
 use meltos_tvc::io::bundle::Bundle;
 use meltos_tvc::io::commit_hashes::CommitHashIo;
@@ -46,6 +47,7 @@ pub struct TvcClient<Fs: FileSystem + Clone> {
     trace: TraceTreeIo<Fs>,
     commit_obj: CommitObjIo<Fs>,
     commit_hashes: CommitHashIo<Fs>,
+    obj: ObjIo<Fs>,
     fs: Fs,
     branch_name: String,
 }
@@ -60,6 +62,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             trace: TraceTreeIo::new(fs.clone()),
             commit_obj: CommitObjIo::new(branch, fs.clone()),
             commit_hashes: CommitHashIo::new(fs.clone()),
+            obj: ObjIo::new(fs.clone()),
             fs,
             branch_name,
         }
@@ -130,6 +133,16 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         let dist = BranchName(self.branch_name.clone());
         let status = self.operations.merge.execute(source, dist)?;
         Ok(status)
+    }
+
+
+    pub fn read_file_from_hash(&self, obj_hash: &ObjHash) -> error::Result<Option<String>>{
+        let Some(file_obj) = self.obj.try_read_to_file(obj_hash)?
+        else {
+            return Ok(None);
+        };
+
+        Ok(Some(String::from_utf8(file_obj.0).unwrap()))
     }
 
 
