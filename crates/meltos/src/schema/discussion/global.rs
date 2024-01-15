@@ -72,9 +72,9 @@ pub struct Reply {
 #[wasm_bindgen]
 impl Reply {
     #[wasm_bindgen(constructor)]
-    pub fn wasm_new(target_id: String, text: String) -> Self {
+    pub fn wasm_new(to: String, text: String) -> Self {
         Self {
-            to: MessageId(target_id),
+            to: MessageId(to),
             text: MessageText(text),
         }
     }

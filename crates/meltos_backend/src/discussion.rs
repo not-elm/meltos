@@ -1,7 +1,7 @@
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
 use meltos::discussion::{Discussion, DiscussionMeta};
-use meltos::error;
+use crate::error;
 use meltos::user::UserId;
 
 pub mod global;
@@ -29,5 +29,7 @@ pub trait DiscussionIo: Send + Sync {
 
     async fn all_discussions(&self) -> error::Result<Vec<Discussion>>;
 
-    async fn close(&self, discussion_id: &DiscussionId) -> error::Result;
+    async fn close_discussion(&self, discussion_id: &DiscussionId) -> error::Result;
+
+    async fn dispose(self) -> error::Result;
 }

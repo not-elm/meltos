@@ -62,7 +62,7 @@ where
     #[inline]
     pub async fn close(self, discussion_id: DiscussionId) -> error::Result<Closed> {
         self.global_io
-            .close(&discussion_id)
+            .close_discussion(&discussion_id)
             .await
             .map_err(|_| error::Error::DiscussionNotExists(discussion_id.clone()))?;
         Ok(Closed {

@@ -1,7 +1,7 @@
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
 use meltos::discussion::{Discussion, DiscussionMeta};
-use meltos::error;
+use crate::error;
 use meltos::user::UserId;
 use meltos_util::macros::Deref;
 
@@ -78,7 +78,7 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         Ok(discussions.values().cloned().collect())
     }
 
-    async fn close(&self, discussion_id: &DiscussionId) -> error::Result {
+    async fn close_discussion(&self, discussion_id: &DiscussionId) -> error::Result {
         let mut discussions = self.discussions.lock().await;
         let discussion = discussions
             .get_mut(discussion_id)
@@ -90,6 +90,10 @@ impl DiscussionIo for MockGlobalDiscussionIo {
             reply_discussions.remove(&id);
         }
 
+        Ok(())
+    }
+
+    async fn dispose(self) -> error::Result {
         Ok(())
     }
 }
