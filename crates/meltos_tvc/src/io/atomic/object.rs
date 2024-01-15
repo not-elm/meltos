@@ -3,19 +3,19 @@ use std::path::Path;
 use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::bundle::BundleObject;
+use crate::object::{AsMeta, CompressedBuf, Obj, ObjHash};
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
-use crate::object::{AsMeta, CompressedBuf, Obj, ObjHash};
 
 #[derive(Debug, Clone, Default)]
 pub struct ObjIo<Fs>(Fs)
-where
-    Fs: FileSystem;
+    where
+        Fs: FileSystem;
 
 impl<Fs> ObjIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     #[inline]
     pub const fn new(fs: Fs) -> ObjIo<Fs> {
@@ -33,6 +33,16 @@ where
         let obj = self.try_read_obj(object_hash)?;
         obj.file()
     }
+
+    #[inline]
+    pub fn try_read_to_file(&self, object_hash: &ObjHash) -> error::Result<Option<FileObj>> {
+        let Some(obj) = self.read_obj(object_hash)?
+            else{
+                return Ok(None);
+            };
+        Ok(Some(obj.file()?))
+    }
+
 
     #[inline]
     pub fn read_to_tree(&self, object_hash: &ObjHash) -> error::Result<TreeObj> {
@@ -76,9 +86,9 @@ where
         let Some(buf) = self
             .0
             .read_file(&format!(".meltos/objects/{}", object_hash))?
-        else {
-            return Ok(None);
-        };
+            else {
+                return Ok(None);
+            };
 
         Ok(Some(CompressedBuf(buf)))
     }
@@ -109,16 +119,16 @@ where
 
 #[cfg(test)]
 mod tests {
-    use meltos_util::compression::gz::Gz;
     use meltos_util::compression::CompressionBuf;
+    use meltos_util::compression::gz::Gz;
 
     use crate::encode::Decodable;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::workspace::WorkspaceIo;
-    use crate::object::file::FileObj;
     use crate::object::{AsMeta, Obj, ObjMeta};
+    use crate::object::file::FileObj;
 
     #[test]
     fn write_object_file() {

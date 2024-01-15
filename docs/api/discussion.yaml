@@ -1,0 +1,143 @@
+openapi: 3.0.3
+info:
+  title: Discussion
+  description: Discussion
+  version: 1.0.0
+servers:
+  - url: "https://<server name>/room/{room_id}/discussion/global"
+    variables:
+      room_id:
+        description: ルームのID
+
+security:
+  - cookieAuth: [ ]
+
+paths:
+  /create:
+    post:
+      description: "ディスカッションを新規作成する。"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: このディスカッションのタイトル
+              required:
+                - title
+      responses:
+        "200":
+          description: 正常にディスカッションが作成された。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: "discussion/discussion_meta.yaml"
+
+
+  /speak:
+    post:
+      description: ディスカッションに新規メッセージを送信する
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                discussion_id:
+                  type: string
+                  description: メッセージを作成する対象のディスカッションのID
+                text:
+                  type: string
+                  description: メッセージの本文
+              required:
+                - discussion_id
+                - text
+      responses:
+        "200":
+          description: 正常にメッセージが作成された
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  discussion_id:
+                    type: string
+                    description: メッセージの送信対象となるディスカッションのID
+                  message:
+                    $ref: "discussion/message.yaml"
+
+  /reply:
+    post:
+      description: メッセージに返信する
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                to:
+                  type: string
+                  description: 返信先のメッセージID
+                text:
+                  type: string
+                  description: 返信メッセージ本文
+              required:
+                - to
+                - text
+      responses:
+        "200":
+          description: 正常にメッセージが返信された
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  to:
+                    type: string
+                    description: 返信先のメッセージID
+                  message:
+                    $ref: "discussion/message.yaml"
+
+  /{discussion_id}:
+    delete:
+      parameters:
+        - in: path
+          name: discussion_id
+          schema:
+            type: string
+          required: true
+          description: 削除対象のディスカッションID
+      description: ディスカッションを削除する
+      responses:
+        "200":
+          description: ディスカッションが正常に削除された
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  discussion_id:
+                    type: string
+                    description: 削除されたディスカッションのID
+                required:
+                  - discussion_id
+
+components:
+  parameters:
+    room_id:
+      in: path
+      name: room_id
+      schema:
+        type: string
+        description: "参加するルームのID"
+      required: true
+
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session_id

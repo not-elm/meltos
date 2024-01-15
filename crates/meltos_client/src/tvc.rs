@@ -142,6 +142,16 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 
 
+    pub fn read_file_from_hash(&self, obj_hash: &ObjHash) -> error::Result<Option<String>>{
+        let Some(file_obj) = self.obj.try_read_to_file(obj_hash)?
+        else {
+            return Ok(None);
+        };
+
+        Ok(Some(String::from_utf8(file_obj.0).unwrap()))
+    }
+
+
     pub fn all_commit_metas(&self) -> error::Result<Vec<CommitMeta>> {
         let Some(head) = self.head.read(&BranchName(self.branch_name.clone()))?
         else{
