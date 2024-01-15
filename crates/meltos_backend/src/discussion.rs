@@ -1,15 +1,16 @@
+use meltos::discussion::{DiscussionBundle, DiscussionMeta};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
-use meltos::discussion::{Discussion, DiscussionMeta};
-use crate::error;
 use meltos::user::UserId;
+
+use crate::error;
 
 pub mod global;
 
 #[async_trait::async_trait]
 pub trait DiscussionIo: Send + Sync {
     async fn new_discussion(&self, title: String, creator: UserId)
-        -> error::Result<DiscussionMeta>;
+                            -> error::Result<DiscussionMeta>;
 
     async fn speak(
         &self,
@@ -25,9 +26,9 @@ pub trait DiscussionIo: Send + Sync {
         text: MessageText,
     ) -> error::Result<Message>;
 
-    async fn discussion_by(&self, discussion_id: &DiscussionId) -> error::Result<Discussion>;
+    async fn discussion_by(&self, discussion_id: &DiscussionId) -> error::Result<DiscussionBundle>;
 
-    async fn all_discussions(&self) -> error::Result<Vec<Discussion>>;
+    async fn all_discussions(&self) -> error::Result<Vec<DiscussionBundle>>;
 
     async fn close_discussion(&self, discussion_id: &DiscussionId) -> error::Result;
 

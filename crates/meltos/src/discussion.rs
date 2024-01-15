@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::discussion::id::DiscussionId;
-use crate::discussion::message::MessageId;
+use crate::discussion::message::{Message, MessageId};
 use crate::user::UserId;
 
 pub mod id;
@@ -29,6 +29,23 @@ impl DiscussionMeta {
         }
     }
 }
+
+
+#[wasm_bindgen(getter_with_clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct DiscussionBundle {
+    pub meta: DiscussionMeta,
+    pub messages: Vec<MessageBundle>,
+}
+
+
+#[wasm_bindgen(getter_with_clone)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+pub struct MessageBundle {
+    pub message: Message,
+    pub replies: Vec<Message>,
+}
+
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Debug, Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]

@@ -1,2 +1,2 @@
 pub mod mock;
-mod sqlite;
+pub mod sqlite;

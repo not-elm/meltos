@@ -1,11 +1,11 @@
+use meltos::discussion::{Discussion, DiscussionBundle, DiscussionMeta, MessageBundle};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
-use meltos::discussion::{Discussion, DiscussionMeta};
-use crate::error;
 use meltos::user::UserId;
 use meltos_util::macros::Deref;
 
 use crate::discussion::DiscussionIo;
+use crate::error;
 use crate::sync::arc_mutex::ArcHashMap;
 
 #[derive(Debug, Default)]
@@ -14,6 +14,48 @@ pub struct MockGlobalDiscussionIo {
     messages: Messages,
     reply_discussions: ReplyDiscussions,
 }
+
+
+impl MockGlobalDiscussionIo {
+    async fn message_bundles_in(&self, id: &DiscussionId) -> Option<Vec<MessageBundle>> {
+        let discussions = self.discussions
+            .lock()
+            .await;
+
+        let discussion_messages = &discussions.get(id)?.messages;
+        let mut message_bundles = Vec::with_capacity(discussion_messages.len());
+        for message_id in discussion_messages {
+            if let Some(bundle) = self.message_bundle(message_id).await {
+                message_bundles.push(bundle);
+            }
+        }
+        Some(message_bundles)
+    }
+
+    async fn message_bundle(&self, id: &MessageId) -> Option<MessageBundle> {
+        let reply = self.reply_discussions.lock().await;
+        let messages = self.messages.lock().await;
+        let message = messages.get(id)?.clone();
+
+        if let Some(message_ids) = reply.get(id) {
+            let mut replies = Vec::with_capacity(message_ids.len());
+
+            for message_id in message_ids {
+                replies.push(messages.get(message_id).unwrap().clone());
+            }
+            Some(MessageBundle {
+                message,
+                replies,
+            })
+        } else {
+            Some(MessageBundle {
+                message,
+                replies: Vec::with_capacity(0),
+            })
+        }
+    }
+}
+
 
 #[async_trait::async_trait]
 impl DiscussionIo for MockGlobalDiscussionIo {
@@ -68,14 +110,23 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         Ok(reply)
     }
 
-    async fn discussion_by(&self, discussion_id: &DiscussionId) -> error::Result<Discussion> {
+    async fn discussion_by(&self, discussion_id: &DiscussionId) -> error::Result<DiscussionBundle> {
         let mut discussions = self.discussions.lock().await;
-        Ok(discussions.get_mut(discussion_id).unwrap().clone())
+        let discussion = discussions.get_mut(discussion_id).unwrap();
+
+        Ok(DiscussionBundle {
+            meta: discussion.meta.clone(),
+            messages: self.message_bundles_in(discussion_id).await.unwrap_or_default(),
+        })
     }
 
-    async fn all_discussions(&self) -> error::Result<Vec<Discussion>> {
+    async fn all_discussions(&self) -> error::Result<Vec<DiscussionBundle>> {
         let discussions = self.discussions.lock().await;
-        Ok(discussions.values().cloned().collect())
+        let mut bundles = Vec::new();
+        for id in discussions.keys() {
+            bundles.push(self.discussion_by(id).await?);
+        }
+        Ok(bundles)
     }
 
     async fn close_discussion(&self, discussion_id: &DiscussionId) -> error::Result {

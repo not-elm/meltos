@@ -1,9 +1,10 @@
+use std::clone;
 use std::sync::{Mutex, MutexGuard};
 
 use async_trait::async_trait;
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, params, Transaction};
 
-use meltos::discussion::{Discussion, DiscussionMeta};
+use meltos::discussion::{Discussion, DiscussionBundle, DiscussionMeta, MessageBundle};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
 use meltos::room::RoomId;
@@ -70,9 +71,46 @@ fn create_reply_message_table(db: &rusqlite::Connection) -> rusqlite::Result<usi
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             message_id TEXT,
             reply_message_id TEXT
-            )", ())
+    )", ())
 }
 
+
+fn read_discussion_meta(tx: &Transaction, id: DiscussionId) -> error::Result<DiscussionMeta>{
+      let meta: DiscussionMeta = tx.query_row(
+         "SELECT title, creator FROM discussion_meta WHERE discussion_id LIKE $1",
+         params![id.to_string()],
+          |row|Ok(DiscussionMeta{
+              id,
+              title: row.get(0).unwrap(),
+              creator: UserId(row.get(1).unwrap())
+          })
+     )?;
+    Ok(meta)
+}
+
+
+
+fn read_messages_in(tx: &Transaction, id: DiscussionId) -> error::Result<Vec<MessageBundle>>{
+    let message_ids = read_message_ids_in(tx, id)?;
+    let bundles = Vec::with_capacity(message_ids.len());
+
+    Ok(bundles)
+}
+
+
+fn read_message_ids_in(tx: &Transaction, id: DiscussionId) -> error::Result<Vec<MessageId>>{
+    let mut stmt = tx.prepare("SELECT message_id FROM discussion_message WHERE discussion_id LIKE $1")?;
+      let message_id_rows = stmt.query_map(
+         params![id.to_string()],
+          |row|Ok(MessageId(row.get(0).unwrap()))
+     )?;
+
+    let mut message_ids = Vec::new();
+    for message_id in message_id_rows {
+        message_ids.push(message_id?);
+    }
+    Ok(message_ids)
+}
 
 #[async_trait]
 impl DiscussionIo for SqliteDiscussionIo {
@@ -103,6 +141,7 @@ impl DiscussionIo for SqliteDiscussionIo {
 
     async fn reply(&self, user_id: UserId, to: MessageId, text: MessageText) -> error::Result<Message> {
         let db = self.lock();
+
         let message = Message::new(user_id.to_string(), text.to_string());
         db.execute(
             "INSERT INTO message(message_id, user_id, text) VALUES(?1, ?2, ?3)",
@@ -116,11 +155,19 @@ impl DiscussionIo for SqliteDiscussionIo {
         Ok(message)
     }
 
-    async fn discussion_by(&self, discussion_id: &DiscussionId) -> error::Result<Discussion> {
-        todo!()
+    async fn discussion_by(&self, discussion_id: &DiscussionId) -> error::Result<DiscussionBundle> {
+        let mut db = self.db.lock().unwrap();
+        let tx = db.transaction()?;
+        let meta = read_discussion_meta(&tx, discussion_id.clone())?;
+        tx.commit()?;
+
+        Ok(DiscussionBundle{
+            meta,
+            messages: Vec::with_capacity(0)
+        })
     }
 
-    async fn all_discussions(&self) -> error::Result<Vec<Discussion>> {
+    async fn all_discussions(&self) -> error::Result<Vec<DiscussionBundle>> {
         todo!()
     }
 
@@ -149,7 +196,8 @@ mod tests {
 
     use futures::FutureExt;
 
-    use meltos::discussion::message::MessageText;
+    use meltos::discussion::message::{Message, MessageText};
+    use meltos::discussion::MessageBundle;
     use meltos::room::RoomId;
     use meltos::user::UserId;
 
@@ -198,6 +246,24 @@ mod tests {
             assert_eq!(reply.id.0.len(), 40);
             assert_eq!(reply.user_id, UserId::from("user"));
             assert_eq!(&reply.text.0, "reply");
+            Ok(())
+        })
+            .await;
+    }
+
+
+    #[tokio::test]
+    async fn have_1_message() {
+        try_execute(|db| async move {
+            let meta = db.new_discussion("title".to_string(), UserId::from("user")).await?;
+            let message = db.speak(&meta.id, UserId::from("user2"), MessageText::from("hello world!")).await?;
+            let discussion = db.discussion_by(&meta.id).await?;
+            assert_eq!(discussion.meta, meta);
+            assert_eq!(discussion.messages.len(), 1);
+            assert_eq!(discussion.messages[0], MessageBundle{
+                message,
+                replies: Vec::with_capacity(0)
+            });
             Ok(())
         })
             .await;
