@@ -15,11 +15,11 @@ use meltos::channel::{ChannelMessage, ChannelMessageSendable};
 use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
+use meltos_backend::path::{create_resource_dir, room_resource_dir};
 use meltos_backend::sync::arc_mutex::ArcMutex;
-use meltos_tvc::branch::BranchName;
-use meltos_tvc::file_system::mock::MockFileSystem;
+use meltos_backend::tvc::TvcBackendIo;
+use meltos_tvc::file_system::std_fs::StdFileSystem;
 use meltos_tvc::io::bundle::Bundle;
-use meltos_tvc::operation::Operations;
 use meltos_util::macros::Deref;
 
 use crate::error;
@@ -37,7 +37,7 @@ impl Rooms {
         let room_id = room.id.clone();
         tokio::spawn(async move {
             tokio::time::sleep(life_time).await;
-            rooms.lock().await.0.remove(&room_id);
+            rooms.lock().await.delete(&room_id);
         });
 
         let mut rooms = self.0.lock().await;
@@ -49,6 +49,14 @@ impl Rooms {
 pub struct RoomMap(HashMap<RoomId, Room>);
 
 impl RoomMap {
+    #[inline(always)]
+    pub fn delete(&mut self, room_id: &RoomId) {
+        if let Some(room) = self.0.remove(room_id) {
+            room.delete_resource_dir();
+        }
+    }
+
+    #[inline(always)]
     pub fn room(&mut self, room_id: &RoomId) -> std::result::Result<Room, Response> {
         Ok(self.room_mut(room_id)?.clone())
     }
@@ -72,7 +80,7 @@ impl RoomMap {
 pub struct Room {
     pub owner: UserId,
     pub id: RoomId,
-    pub tvc: Operations<MockFileSystem>,
+    pub tvc: TvcBackendIo<StdFileSystem>,
     discussion: Arc<dyn DiscussionIo>,
     channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error=error::Error>>>>>,
 }
@@ -80,14 +88,12 @@ pub struct Room {
 impl Room {
     pub fn open<Discussion: DiscussionIo + NewDiscussIo + 'static>(owner: UserId) -> error::Result<Self> {
         let room_id = RoomId::default();
+        create_resource_dir(&room_id)?;
         Ok(Self {
             id: room_id.clone(),
             owner: owner.clone(),
-            discussion: Arc::new(Discussion::new(room_id).map_err(|e|error::Error::RoomCreateFailed(e.to_string()))?),
-            tvc: Operations::new(
-                BranchName::from(owner.to_string()),
-                MockFileSystem::default(),
-            ),
+            discussion: Arc::new(Discussion::new(room_id.clone()).map_err(|e| error::Error::RoomCreateFailed(e.to_string()))?),
+            tvc: TvcBackendIo::new(room_id, StdFileSystem),
             channels: Arc::new(Mutex::new(Vec::new())),
         })
     }
@@ -112,7 +118,7 @@ impl Room {
     }
 
     pub fn save_bundle(&self, bundle: Bundle) -> std::result::Result<(), Response> {
-        self.tvc.save.execute(bundle).map_err(|e| {
+        self.tvc.save(bundle).map_err(|e| {
             Response::builder()
                 .status(StatusCode::INTERNAL_SERVER_ERROR)
                 .body(Body::from(
@@ -128,7 +134,7 @@ impl Room {
     }
 
     pub fn create_bundle(&self) -> std::result::Result<Bundle, Response> {
-        match self.tvc.bundle.create() {
+        match self.tvc.bundle() {
             Ok(bundle) => Ok(bundle),
             Err(error) => {
                 let response = Response::builder()
@@ -153,6 +159,15 @@ impl Room {
     {
         let command = f(self.as_global_discussion_executor(user_id)).await?;
         Ok(command)
+    }
+
+    pub fn delete_resource_dir(&self) {
+        let dir = room_resource_dir(&self.id);
+        if dir.exists() {
+            if let Err(e) = std::fs::remove_dir_all(dir) {
+                log::error!("failed delete room resource dir \nroom_id : {} \nmessage: {e}", self.id);
+            }
+        }
     }
 
     fn as_global_discussion_executor(

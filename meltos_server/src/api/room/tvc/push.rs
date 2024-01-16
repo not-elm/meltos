@@ -36,7 +36,7 @@ mod tests {
     async fn success() {
         let session = MockUserSessionIo::with_mock_users().await;
         let mock = MockFileSystem::default();
-        let mut app = app(session, MockGlobalDiscussionIo::default());
+      let mut app = app::<MockUserSessionIo, MockGlobalDiscussionIo>(session);
         let room_id = http_open_room(&mut app, mock.clone()).await;
         mock.write_file("workspace/src/hello.txt", b"hello")
             .unwrap();

@@ -151,9 +151,6 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         Ok(())
     }
 
-    async fn dispose(self) -> error::Result {
-        Ok(())
-    }
 }
 
 #[derive(Debug, Default, Clone, Deref)]

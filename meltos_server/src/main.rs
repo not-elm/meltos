@@ -8,7 +8,7 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
 use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
-use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
+use meltos_backend::discussion::global::sqlite::SqliteDiscussionIo;
 use meltos_backend::user::mock::MockUserSessionIo;
 use meltos_backend::user::SessionIo;
 
@@ -36,26 +36,22 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     axum::serve(
         listener,
-        app(
-            MockUserSessionIo::default(),
-            MockGlobalDiscussionIo::default(),
-        ),
+        app::<MockUserSessionIo, SqliteDiscussionIo>(MockUserSessionIo::default()),
     )
         .await?;
     Ok(())
 }
 
-fn app<Session, Discussion>(session: Session, _: Discussion) -> Router
+fn app<Session, Discussion>(session: Session) -> Router
     where
         Session: SessionIo + Debug + Clone + 'static,
         Discussion: DiscussionIo + NewDiscussIo + 'static,
 {
-
     Router::new()
         .route("/room/open", post(api::room::open::<Session, Discussion>))
         .layer(tower_http::limit::RequestBodyLimitLayer::new(100 * 1000 * 1000))
+        .route("/room/:room_id", delete(api::room::leave::<Session>))
         .nest("/room/:room_id", room_operations_router())
-
         .with_state(AppState::<Session>::new(session))
 }
 

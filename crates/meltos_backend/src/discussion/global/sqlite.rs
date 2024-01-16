@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard};
 
 use async_trait::async_trait;
@@ -11,15 +12,19 @@ use meltos::user::UserId;
 
 use crate::discussion::{DiscussionIo, NewDiscussIo};
 use crate::error;
+use crate::path::{create_resource_dir, room_resource_dir};
 
 pub struct SqliteDiscussionIo {
-    db: Mutex<rusqlite::Connection>,
+    db: Mutex<Connection>,
 }
 
 
 impl SqliteDiscussionIo {
     fn lock(&self) -> MutexGuard<Connection> {
-        self.db.lock().unwrap()
+        self
+            .db
+            .lock()
+            .unwrap()
     }
 
     fn read_discussion_ids(&self) -> error::Result<Vec<DiscussionId>> {
@@ -39,11 +44,10 @@ impl SqliteDiscussionIo {
 
 impl NewDiscussIo for SqliteDiscussionIo {
     fn new(room_id: RoomId) -> error::Result<Self> {
-        let path = format!("./{room_id}.db");
-        if std::fs::metadata(&path).is_ok() {
-            std::fs::remove_file(&path)?;
-        }
-        let db = rusqlite::Connection::open(&path)?;
+        delete_database_if_exists(&room_id)?;
+        create_resource_dir(&room_id)?;
+
+        let db = rusqlite::Connection::open(database_path(&room_id))?;
 
         create_discussion_meta_table(&db)?;
         create_message_table(&db)?;
@@ -53,7 +57,7 @@ impl NewDiscussIo for SqliteDiscussionIo {
         create_discussion_message_table_trigger(&db)?;
 
         Ok(Self {
-            db: Mutex::new(db)
+            db: Mutex::new(db),
         })
     }
 }
@@ -102,7 +106,7 @@ impl DiscussionIo for SqliteDiscussionIo {
     }
 
     async fn discussion_by(&self, discussion_id: &DiscussionId) -> error::Result<DiscussionBundle> {
-        let mut db = self.db.lock().unwrap();
+        let mut db = self.lock();
         let tx = db.transaction()?;
         let meta = read_discussion_meta(&tx, discussion_id.clone())?;
         let messages = read_messages_in(&tx, discussion_id.clone())?;
@@ -128,19 +132,20 @@ impl DiscussionIo for SqliteDiscussionIo {
         db.execute("DELETE FROM discussion_meta WHERE discussion_id = $1", params![discussion_id.to_string()])?;
         Ok(())
     }
+}
 
-    async fn dispose(self) -> error::Result {
-        let path = {
-            let db = self.db.lock().unwrap();
-            db.path().unwrap().to_string()
-        };
-        let db = self.db.into_inner().unwrap();
-        db.close().map_err(|(_, error)| error)?;
-        if std::fs::metadata(&path).is_ok() {
-            std::fs::remove_file(&path)?;
-        }
-        Ok(())
+
+#[inline(always)]
+fn database_path(room_id: &RoomId) -> PathBuf {
+    room_resource_dir(room_id).join("discussion.db")
+}
+
+fn delete_database_if_exists(room_id: &RoomId) -> std::io::Result<()> {
+    let path = database_path(room_id);
+    if std::fs::metadata(&path).is_ok() {
+        std::fs::remove_file(&path)?;
     }
+    Ok(())
 }
 
 
@@ -316,17 +321,18 @@ mod tests {
     use crate::discussion::{DiscussionIo, NewDiscussIo};
     use crate::discussion::global::sqlite::{read_all_messages, read_message_ids_in, read_reply_message_ids_in, SqliteDiscussionIo};
     use crate::error;
+    use crate::path::delete_resource_dir;
 
     #[tokio::test]
     async fn success_create_tables() {
         let room_id = RoomId::new();
-        let path = format!("./{room_id}.db");
-        match SqliteDiscussionIo::new(room_id) {
-            Ok(db) => db.dispose().await.unwrap(),
+        match SqliteDiscussionIo::new(room_id.clone()) {
+            Ok(db) => {
+                drop(db);
+                delete_resource_dir(&room_id).unwrap();
+            }
             Err(e) => {
-                if std::fs::metadata(&path).is_ok() {
-                    std::fs::remove_file(&path).unwrap();
-                }
+                delete_resource_dir(&room_id).unwrap();
                 panic!("{e}");
             }
         }
@@ -448,7 +454,7 @@ mod tests {
             db.reply(UserId::from("user2"), message2.id.clone(), MessageText::from("reply2")).await?;
             db.close_discussion(&meta.id).await?;
             assert!(db.all_discussions().await?.is_empty());
-            let mut con = db.db.lock().unwrap();
+            let mut con = db.lock();
             let tx = con.transaction()?;
             let messages = read_all_messages(&tx).unwrap();
             assert!(messages.is_empty());
@@ -481,7 +487,7 @@ mod tests {
 
             db.close_discussion(&meta.id).await?;
             assert_eq!(db.all_discussions().await?.len(), 1);
-            let mut con = db.db.lock().unwrap();
+            let mut con = db.lock();
             let tx = con.transaction()?;
             let messages = read_all_messages(&tx).unwrap();
             assert_eq!(messages, vec![
@@ -497,20 +503,18 @@ mod tests {
             .await;
     }
 
+
     async fn try_execute<F: Future<Output=error::Result>>(f: impl FnOnce(SqliteDiscussionIo) -> F + 'static + Send) {
         let room_id = RoomId::new();
         let path = format!("./{room_id}.db");
-        let Ok(db) = SqliteDiscussionIo::new(room_id) else {
+        let Ok(db) = SqliteDiscussionIo::new(room_id.clone()) else {
             if std::fs::metadata(&path).is_ok() {
                 std::fs::remove_file(&path).unwrap();
             }
             return;
         };
-        let path = db.db.lock().unwrap().path().unwrap().to_string();
         let result = std::panic::AssertUnwindSafe(f(db)).catch_unwind().await;
-        if std::fs::metadata(&path).is_ok() {
-            std::fs::remove_file(&path).unwrap();
-        }
+        delete_resource_dir(&room_id).unwrap();
         result.unwrap().unwrap();
     }
 }

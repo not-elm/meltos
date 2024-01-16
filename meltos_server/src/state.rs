@@ -17,8 +17,8 @@ pub struct AppState<Session> {
 }
 
 impl<Session> AppState<Session>
-where
-    Session: SessionIo + Clone,
+    where
+        Session: SessionIo + Clone,
 {
     pub fn new(session: Session) -> AppState<Session> {
         Self {
@@ -33,8 +33,8 @@ where
 pub struct SessionState<Session>(Session);
 
 impl<Session> SessionState<Session>
-where
-    Session: SessionIo,
+    where
+        Session: SessionIo,
 {
     pub async fn try_fetch_user_id(
         &self,
@@ -42,7 +42,7 @@ where
     ) -> std::result::Result<UserId, Response<Body>> {
         self.0.fetch(user_token).await.map_err(|e| {
             Response::builder()
-                .status(StatusCode::BAD_REQUEST)
+                .status(StatusCode::UNAUTHORIZED)
                 .body(Body::from(e.to_string()))
                 .unwrap()
         })
@@ -61,7 +61,24 @@ where
                         json!({
                             "error" : e.to_string()
                         })
-                        .to_string(),
+                            .to_string(),
+                    ))
+                    .unwrap())
+            }
+        }
+    }
+
+    pub async fn unregister(&self, user_id: UserId) -> std::result::Result<(), Response<Body>> {
+        match self.0.unregister(user_id).await {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                Err(axum::http::Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Body::from(
+                        json!({
+                            "error" : e.to_string()
+                        })
+                            .to_string(),
                     ))
                     .unwrap())
             }
@@ -76,8 +93,8 @@ impl<Session> FromRef<AppState<Session>> for Rooms {
 }
 
 impl<Session> FromRef<AppState<Session>> for SessionState<Session>
-where
-    Session: SessionIo + Clone,
+    where
+        Session: SessionIo + Clone,
 {
     fn from_ref(input: &AppState<Session>) -> Self {
         input.session.clone()

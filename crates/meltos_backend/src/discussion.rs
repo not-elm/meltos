@@ -37,5 +37,4 @@ pub trait DiscussionIo: Send + Sync {
 
     async fn close_discussion(&self, discussion_id: &DiscussionId) -> error::Result;
 
-    async fn dispose(self) -> error::Result;
 }

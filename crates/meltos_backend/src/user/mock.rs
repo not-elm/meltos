@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 
-use crate::sync::arc_mutex::ArcMutex;
 use meltos::user::{SessionId, UserId};
 
 use crate::error;
+use crate::sync::arc_mutex::ArcMutex;
 use crate::user::SessionIo;
 
 #[derive(Debug, Default, Clone)]
@@ -75,5 +75,14 @@ impl SessionIo for MockUserSessionIo {
                 .insert(session_id.clone(), random_user.clone());
             Ok((random_user, session_id))
         }
+    }
+
+    async fn unregister(&self, user_id: UserId) -> error::Result {
+        let mut map = self.0.lock().await;
+        if let Some((session_id, _)) = map.clone().iter().find(|(_, v)| v == &&user_id) {
+            map.remove(session_id);
+        }
+
+        Ok(())
     }
 }

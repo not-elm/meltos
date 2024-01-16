@@ -135,6 +135,38 @@ pub trait FileSystem {
     }
 }
 
+
+impl FileSystem for Box<dyn FileSystem>  {
+    fn stat(&self, path: &str) -> std::io::Result<Option<Stat>> {
+        self.as_ref().stat(path)
+    }
+
+    fn write_file(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
+        self.as_ref().write_file(path, buf)
+    }
+
+    fn create_dir(&self, path: &str) -> std::io::Result<()> {
+        self.as_ref().create_dir(path)
+    }
+
+    fn read_file(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
+        self.as_ref().read_file(path)
+    }
+
+    fn read_dir(&self, path: &str) -> std::io::Result<Option<Vec<String>>> {
+        self.as_ref().read_dir(path)
+    }
+
+    fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
+        self.as_ref().all_files_in(path)
+    }
+
+    fn delete(&self, path: &str) -> std::io::Result<()> {
+        self.as_ref().delete(path)
+    }
+}
+
+
 #[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]
 #[derive(Eq, PartialEq, Debug, Clone, Hash, Serialize, Deserialize, Ord, PartialOrd)]

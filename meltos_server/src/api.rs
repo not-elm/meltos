@@ -13,8 +13,8 @@ pub trait AsSuccessResponse {
 }
 
 impl<D> AsSuccessResponse for D
-where
-    D: Serialize,
+    where
+        D: Serialize,
 {
     fn as_success_response(&self) -> Response {
         Response::builder()
@@ -25,11 +25,11 @@ where
 
 #[cfg(test)]
 mod test_util {
+    use axum::{async_trait, http, Router};
     use axum::body::Body;
     use axum::extract::Request;
     use axum::http::{header, StatusCode};
     use axum::response::Response;
-    use axum::{async_trait, http, Router};
     use http_body_util::BodyExt;
     use serde::de::DeserializeOwned;
     use tower::{Service, ServiceExt};
@@ -38,8 +38,8 @@ mod test_util {
     use meltos::room::RoomId;
     use meltos::schema::discussion::global::{Closed, Create, Created, Replied, Spoke};
     use meltos::schema::discussion::global::{Reply, Speak};
-    use meltos::schema::room::Opened;
     use meltos::schema::room::{Join, Open};
+    use meltos::schema::room::Opened;
     use meltos::user::{SessionId, UserId};
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::user::mock::MockUserSessionIo;
@@ -77,7 +77,7 @@ mod test_util {
 
     unsafe impl<'a> Sync for MockServerClient<'a> {}
 
-    #[async_trait(?Send)]
+    #[async_trait(? Send)]
     impl<'a> Pushable<()> for MockServerClient<'a> {
         type Error = std::io::Error;
 
@@ -95,7 +95,7 @@ mod test_util {
                     .body(Body::from(serde_json::to_string(&bundle).unwrap()))
                     .unwrap(),
             )
-            .await;
+                .await;
             assert_eq!(response.status(), StatusCode::OK);
             Ok(())
         }
@@ -129,7 +129,7 @@ mod test_util {
     pub async fn logged_in_app() -> (SessionId, Router) {
         let session = MockUserSessionIo::default();
         let (_, session_id) = session.register(Some(UserId::from("owner"))).await.unwrap();
-        (session_id, app(session, MockGlobalDiscussionIo::default()))
+        (session_id, app::<MockUserSessionIo, MockGlobalDiscussionIo>(session))
     }
 
     pub fn owner_session_id() -> SessionId {
@@ -150,13 +150,18 @@ mod test_util {
     pub async fn http_fetch(app: &mut Router, room_id: &RoomId, session_id: &SessionId) -> Bundle {
         http_call_with_deserialize::<Bundle>(
             app,
-            Request::builder()
-                .header(header::SET_COOKIE, format!("session_id={session_id}"))
-                .uri(format!("/room/{room_id}/tvc/fetch"))
-                .body(Body::empty())
-                .unwrap(),
+            fetch_request(room_id, session_id)
         )
-        .await
+            .await
+    }
+
+
+    pub fn fetch_request(room_id: &RoomId, session_id: &SessionId) -> Request {
+        Request::builder()
+            .header(header::SET_COOKIE, format!("session_id={session_id}"))
+            .uri(format!("/room/{room_id}/tvc/fetch"))
+            .body(Body::empty())
+            .unwrap()
     }
 
     pub async fn http_create_discussion(
@@ -193,7 +198,7 @@ mod test_util {
                 .body(Body::from(reply.as_json()))
                 .unwrap(),
         )
-        .await
+            .await
     }
 
     pub async fn http_discussion_close(
@@ -213,7 +218,7 @@ mod test_util {
                 .body(Body::empty())
                 .unwrap(),
         )
-        .await
+            .await
     }
 
     pub fn open_room_request(mock: MockFileSystem) -> Request {
@@ -231,7 +236,7 @@ mod test_util {
                     bundle: None,
                     lifetime_secs: None,
                 })
-                .unwrap(),
+                    .unwrap(),
             ))
             .unwrap()
     }
@@ -250,7 +255,7 @@ mod test_util {
                     bundle,
                     lifetime_secs: life_time_minute,
                 })
-                .unwrap(),
+                    .unwrap(),
             ))
             .unwrap()
     }
@@ -269,7 +274,7 @@ mod test_util {
                 serde_json::to_string(&Create {
                     title,
                 })
-                .unwrap(),
+                    .unwrap(),
             ))
             .unwrap()
     }
@@ -303,11 +308,11 @@ mod test_util {
                     serde_json::to_string(&Join {
                         user_id,
                     })
-                    .unwrap(),
+                        .unwrap(),
                 ))
                 .unwrap(),
         )
-        .await
+            .await
     }
 
     pub async fn http_call(app: &mut Router, request: Request) -> Response {

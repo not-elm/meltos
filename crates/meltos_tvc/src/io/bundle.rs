@@ -41,7 +41,7 @@ pub struct BundleBranch {
     pub commits: Vec<CommitHash>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BundleIo<Fs>
 where
     Fs: FileSystem,

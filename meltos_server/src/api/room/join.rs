@@ -71,7 +71,7 @@ mod tests {
     #[tokio::test]
     async fn return_status_code_is_ok_if_joined_exists_room() {
         let session = MockUserSessionIo::default();
-        let mut app = app(session, MockGlobalDiscussionIo::default());
+       let mut app = app::<MockUserSessionIo, MockGlobalDiscussionIo>(session);
         let mock = MockFileSystem::default();
         mock.write_file("./some_text.txt", b"text file").unwrap();
         let room_id = http_open_room(&mut app, mock.clone()).await;
@@ -83,7 +83,7 @@ mod tests {
     #[tokio::test]
     async fn return_tvc_meta() {
         let session = MockUserSessionIo::default();
-        let mut app = app(session, MockGlobalDiscussionIo::default());
+       let mut app = app::<MockUserSessionIo, MockGlobalDiscussionIo>(session);
         let mock = MockFileSystem::default();
         mock.write_file("workspace/some_text.txt", b"text file")
             .unwrap();
@@ -103,7 +103,7 @@ mod tests {
     #[tokio::test]
     async fn return_user_id() {
         let session = MockUserSessionIo::default();
-        let mut app = app(session, MockGlobalDiscussionIo::default());
+        let mut app = app::<MockUserSessionIo, MockGlobalDiscussionIo>(session);
         let mock = MockFileSystem::default();
         mock.write_file("./some_text.txt", b"text file").unwrap();
         let room_id = http_open_room(&mut app, mock.clone()).await;

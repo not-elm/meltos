@@ -26,12 +26,6 @@ impl Error {
     pub fn already_exists(&self) -> bool {
         self.code() == "EEXIST"
     }
-
-
-    #[inline(always)]
-    pub fn not_found(&self) -> bool {
-        self.code() == "ENOENT"
-    }
 }
 
 
@@ -198,7 +192,7 @@ impl NodeFileSystem {
 
 
     #[inline(always)]
-    pub fn stat_api(&self, path: &str) -> JsResult<Option<Stat>>{
+    pub fn stat_api(&self, path: &str) -> JsResult<Option<Stat>> {
         self.stat(path).into_js_result()
     }
 }

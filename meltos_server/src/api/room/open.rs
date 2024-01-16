@@ -76,10 +76,7 @@ mod tests {
 
     #[tokio::test]
     async fn return_room_id_and_session_id() -> error::Result {
-        let app = app(
-            MockUserSessionIo::default(),
-            MockGlobalDiscussionIo::default(),
-        );
+        let app = app::<MockUserSessionIo, MockGlobalDiscussionIo>(MockUserSessionIo::default());
         let mock = MockFileSystem::default();
         let response = app.oneshot(open_room_request(mock)).await.unwrap();
         let opened = response.deserialize::<Opened>().await;
@@ -90,10 +87,7 @@ mod tests {
 
     #[tokio::test]
     async fn timeout() -> error::Result {
-        let mut app = app(
-            MockUserSessionIo::default(),
-            MockGlobalDiscussionIo::default(),
-        );
+        let mut app = app::<MockUserSessionIo, MockGlobalDiscussionIo>(MockUserSessionIo::default());
         let response = http_call(&mut app, open_room_request_with_options(None, Some(1))).await;
         tokio::time::sleep(Duration::from_secs(2)).await;
         let opened = response.deserialize::<Opened>().await;
