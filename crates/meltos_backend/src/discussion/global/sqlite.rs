@@ -9,7 +9,7 @@ use meltos::discussion::message::{Message, MessageId, MessageText};
 use meltos::room::RoomId;
 use meltos::user::UserId;
 
-use crate::discussion::DiscussionIo;
+use crate::discussion::{DiscussionIo, NewDiscussIo};
 use crate::error;
 
 pub struct SqliteDiscussionIo {
@@ -18,7 +18,27 @@ pub struct SqliteDiscussionIo {
 
 
 impl SqliteDiscussionIo {
-    pub fn new(room_id: &RoomId) -> error::Result<Self> {
+    fn lock(&self) -> MutexGuard<Connection> {
+        self.db.lock().unwrap()
+    }
+
+    fn read_discussion_ids(&self) -> error::Result<Vec<DiscussionId>> {
+        let db = self.lock();
+        let mut stmt = db.prepare("SELECT discussion_id FROM discussion_meta")?;
+        let rows = stmt.query_map(
+            (),
+            |row| Ok(DiscussionId(row.get(0).unwrap())),
+        )?;
+        let mut ids = Vec::new();
+        for row in rows {
+            ids.push(row?);
+        }
+        Ok(ids)
+    }
+}
+
+impl NewDiscussIo for SqliteDiscussionIo {
+    fn new(room_id: RoomId) -> error::Result<Self> {
         let path = format!("./{room_id}.db");
         if std::fs::metadata(&path).is_ok() {
             std::fs::remove_file(&path)?;
@@ -35,38 +55,6 @@ impl SqliteDiscussionIo {
         Ok(Self {
             db: Mutex::new(db)
         })
-    }
-
-
-    fn lock(&self) -> MutexGuard<Connection> {
-        self.db.lock().unwrap()
-    }
-
-    async fn _discussion_by(&self, discussion_id: &DiscussionId) -> error::Result<DiscussionBundle> {
-        let mut db = self.db.lock().unwrap();
-        let tx = db.transaction()?;
-        let meta = read_discussion_meta(&tx, discussion_id.clone())?;
-        let messages = read_messages_in(&tx, discussion_id.clone())?;
-        tx.commit()?;
-
-        Ok(DiscussionBundle {
-            meta,
-            messages,
-        })
-    }
-
-    fn read_discussion_ids(&self) -> error::Result<Vec<DiscussionId>> {
-        let db = self.lock();
-        let mut stmt = db.prepare("SELECT discussion_id FROM discussion_meta")?;
-        let rows = stmt.query_map(
-            (),
-            |row| Ok(DiscussionId(row.get(0).unwrap())),
-        )?;
-        let mut ids = Vec::new();
-        for row in rows {
-            ids.push(row?);
-        }
-        Ok(ids)
     }
 }
 
@@ -130,7 +118,7 @@ impl DiscussionIo for SqliteDiscussionIo {
         let ids = self.read_discussion_ids()?;
         let mut discussions = Vec::with_capacity(ids.len());
         for id in ids {
-            discussions.push(self._discussion_by(&id).await?);
+            discussions.push(self.discussion_by(&id).await?);
         }
         Ok(discussions)
     }
@@ -325,7 +313,7 @@ mod tests {
     use meltos::room::RoomId;
     use meltos::user::UserId;
 
-    use crate::discussion::DiscussionIo;
+    use crate::discussion::{DiscussionIo, NewDiscussIo};
     use crate::discussion::global::sqlite::{read_all_messages, read_message_ids_in, read_reply_message_ids_in, SqliteDiscussionIo};
     use crate::error;
 
@@ -333,7 +321,7 @@ mod tests {
     async fn success_create_tables() {
         let room_id = RoomId::new();
         let path = format!("./{room_id}.db");
-        match SqliteDiscussionIo::new(&room_id) {
+        match SqliteDiscussionIo::new(room_id) {
             Ok(db) => db.dispose().await.unwrap(),
             Err(e) => {
                 if std::fs::metadata(&path).is_ok() {
@@ -500,7 +488,7 @@ mod tests {
                 message1,
                 message2,
                 reply1,
-                reply2
+                reply2,
             ]);
 
             tx.commit()?;
@@ -512,7 +500,7 @@ mod tests {
     async fn try_execute<F: Future<Output=error::Result>>(f: impl FnOnce(SqliteDiscussionIo) -> F + 'static + Send) {
         let room_id = RoomId::new();
         let path = format!("./{room_id}.db");
-        let Ok(db) = SqliteDiscussionIo::new(&room_id) else {
+        let Ok(db) = SqliteDiscussionIo::new(room_id) else {
             if std::fs::metadata(&path).is_ok() {
                 std::fs::remove_file(&path).unwrap();
             }

@@ -7,7 +7,7 @@ use axum::routing::{delete, get, post};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use meltos_backend::discussion::DiscussionIo;
+use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
 use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
 use meltos_backend::user::mock::MockUserSessionIo;
 use meltos_backend::user::SessionIo;
@@ -48,7 +48,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 fn app<Session, Discussion>(session: Session, _: Discussion) -> Router
     where
         Session: SessionIo + Debug + Clone + 'static,
-        Discussion: DiscussionIo + Default + 'static,
+        Discussion: DiscussionIo + NewDiscussIo + 'static,
 {
 
     Router::new()

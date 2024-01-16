@@ -77,7 +77,7 @@ mod test_util {
 
     unsafe impl<'a> Sync for MockServerClient<'a> {}
 
-    #[async_trait]
+    #[async_trait(?Send)]
     impl<'a> Pushable<()> for MockServerClient<'a> {
         type Error = std::io::Error;
 

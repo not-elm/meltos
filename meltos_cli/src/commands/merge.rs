@@ -9,7 +9,7 @@ pub struct MergeArgs {
     source_branch: String,
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl CommandExecutable for MergeArgs {
     async fn execute(self) -> meltos_client::error::Result {
         let mut tvc = TvcClient::new(load_branch_name()?, StdFileSystem);

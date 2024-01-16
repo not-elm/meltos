@@ -1,10 +1,11 @@
 use meltos::discussion::{Discussion, DiscussionBundle, DiscussionMeta, MessageBundle};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
+use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_util::macros::Deref;
 
-use crate::discussion::DiscussionIo;
+use crate::discussion::{DiscussionIo, NewDiscussIo};
 use crate::error;
 use crate::sync::arc_mutex::ArcHashMap;
 
@@ -56,6 +57,12 @@ impl MockGlobalDiscussionIo {
     }
 }
 
+
+impl NewDiscussIo for MockGlobalDiscussionIo {
+    fn new(_: RoomId) -> error::Result<Self> {
+        Ok(Self::default())
+    }
+}
 
 #[async_trait::async_trait]
 impl DiscussionIo for MockGlobalDiscussionIo {

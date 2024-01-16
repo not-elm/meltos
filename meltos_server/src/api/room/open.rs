@@ -9,7 +9,7 @@ use meltos::room::RoomId;
 use meltos::schema::room::Open;
 use meltos::schema::room::Opened;
 use meltos::user::{SessionId, UserId};
-use meltos_backend::discussion::DiscussionIo;
+use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
 use meltos_backend::user::SessionIo;
 use meltos_util::serde::SerializeJson;
 
@@ -24,11 +24,11 @@ pub async fn open<Session, Discussion>(
     Json(param): Json<Open>,
 ) -> HttpResult
 where
-    Discussion: DiscussionIo + Default + 'static,
+    Discussion: DiscussionIo + NewDiscussIo + 'static,
     Session: SessionIo + Debug,
 {
     let (user_id, session_id) = session.register(param.user_id.clone()).await?;
-    let room = Room::open::<Discussion>(user_id.clone());
+    let room = Room::open::<Discussion>(user_id.clone())?;
     let room_id = room.id.clone();
     let life_time = param.life_time_duration();
     if let Some(bundle) = param.bundle {

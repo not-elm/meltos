@@ -102,11 +102,6 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         Ok(http.configs().clone())
     }
 
-    pub fn read_file_from_hash(&self, obj_hash: String) -> error::Result<String>{
-        let obj = self.obj.read_to_file(&ObjHash(obj_hash))?;
-        Ok(String::from_utf8(obj.0).unwrap())
-    }
-
 
     #[inline]
     pub async fn fetch(&self, session_config: SessionConfigs) -> error::Result {
@@ -142,11 +137,11 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 
 
-    pub fn read_file_from_hash(&self, obj_hash: &ObjHash) -> error::Result<Option<String>>{
+    pub fn read_file_from_hash(&self, obj_hash: &ObjHash) -> error::Result<Option<String>> {
         let Some(file_obj) = self.obj.try_read_to_file(obj_hash)?
-        else {
-            return Ok(None);
-        };
+            else {
+                return Ok(None);
+            };
 
         Ok(Some(String::from_utf8(file_obj.0).unwrap()))
     }
@@ -154,12 +149,12 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
 
     pub fn all_commit_metas(&self) -> error::Result<Vec<CommitMeta>> {
         let Some(head) = self.head.read(&BranchName(self.branch_name.clone()))?
-        else{
-            return Ok(Vec::with_capacity(0));
-        };
+            else {
+                return Ok(Vec::with_capacity(0));
+            };
         let hashes = self.commit_hashes.read_all(head, &None)?;
         let mut metas = Vec::with_capacity(hashes.len());
-        for commit_hash in hashes{
+        for commit_hash in hashes {
             metas.push(self.read_commit_meta(&commit_hash)?);
         }
         Ok(metas)

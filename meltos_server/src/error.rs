@@ -18,6 +18,9 @@ pub enum Error {
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
 
+    #[error("failed discussion io message: {0}")]
+    FailedDiscussionIo(String),
+    
     #[error(transparent)]
     Meltos(#[from] meltos::error::Error),
 
@@ -34,7 +37,10 @@ pub enum Error {
     SendClientOrder,
 
     #[error("room_id {0} was already created")]
-    RoomCreate(RoomId),
+    RoomAlreadyExists(RoomId),
+
+    #[error("failed create room message: {0}")]
+    RoomCreateFailed(String),
 
     #[error("user_id {0} was already joined in session {1}")]
     RoomJoin(UserId, RoomId),

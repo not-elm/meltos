@@ -9,7 +9,7 @@ pub struct StageArgs {
     path: String,
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl CommandExecutable for StageArgs {
     async fn execute(self) -> meltos_client::error::Result {
         let tvc = TvcClient::new(load_branch_name()?, StdFileSystem);

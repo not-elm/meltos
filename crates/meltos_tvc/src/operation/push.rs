@@ -115,7 +115,7 @@ mod tests {
 
     unsafe impl Sync for MockRemoteClient {}
 
-    #[async_trait]
+    #[async_trait(?Send)]
     impl Pushable<()> for MockRemoteClient {
         type Error = String;
 

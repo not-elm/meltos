@@ -7,7 +7,7 @@ use meltos_tvc::file_system::std_fs::StdFileSystem;
 #[derive(Args, Debug, Clone)]
 pub struct PushArgs;
 
-#[async_trait]
+#[async_trait(?Send)]
 impl CommandExecutable for PushArgs {
     async fn execute(self) -> meltos_client::error::Result {
         let configs = load_configs()?;

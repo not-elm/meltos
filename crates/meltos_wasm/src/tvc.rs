@@ -100,10 +100,6 @@ impl WasmTvcClient {
         Ok(exists)
     }
 
-    #[inline(always)]
-    pub fn read_file_from_hash(&self, obj_hash: String) -> JsResult<String> {
-        Ok(self.0.read_file_from_hash(obj_hash)?)
-    }
 
     #[inline]
     pub fn close(&self) -> JsResult {

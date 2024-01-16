@@ -13,7 +13,7 @@ pub struct JoinArgs {
     user_id: String,
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl CommandExecutable for JoinArgs {
     async fn execute(self) -> meltos_client::error::Result {
         let tvc = TvcClient::new(self.user_id.clone(), StdFileSystem);

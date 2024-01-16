@@ -9,7 +9,7 @@ use crate::commands::{load_configs, CommandExecutable};
 #[derive(Args, Debug, Clone)]
 pub struct FetchArgs;
 
-#[async_trait]
+#[async_trait(?Send)]
 impl CommandExecutable for FetchArgs {
     async fn execute(self) -> meltos_client::error::Result {
         let configs = load_configs()?;

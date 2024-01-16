@@ -14,7 +14,7 @@ use tokio::sync::Mutex;
 use meltos::channel::{ChannelMessage, ChannelMessageSendable};
 use meltos::room::RoomId;
 use meltos::user::UserId;
-use meltos_backend::discussion::DiscussionIo;
+use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
 use meltos_backend::sync::arc_mutex::ArcMutex;
 use meltos_tvc::branch::BranchName;
 use meltos_tvc::file_system::mock::MockFileSystem;
@@ -61,7 +61,7 @@ impl RoomMap {
                     json!({
                         "error": format!("room_id {room_id} is not exists")
                     })
-                    .to_string(),
+                        .to_string(),
                 ))
                 .unwrap(),
         )
@@ -74,26 +74,27 @@ pub struct Room {
     pub id: RoomId,
     pub tvc: Operations<MockFileSystem>,
     discussion: Arc<dyn DiscussionIo>,
-    channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error = error::Error>>>>>,
+    channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error=error::Error>>>>>,
 }
 
 impl Room {
-    pub fn open<Discussion: DiscussionIo + Default + 'static>(owner: UserId) -> Self {
-        Self {
-            id: RoomId::default(),
+    pub fn open<Discussion: DiscussionIo + NewDiscussIo + 'static>(owner: UserId) -> error::Result<Self> {
+        let room_id = RoomId::default();
+        Ok(Self {
+            id: room_id.clone(),
             owner: owner.clone(),
-            discussion: Arc::new(Discussion::default()),
+            discussion: Arc::new(Discussion::new(room_id).map_err(|e|error::Error::RoomCreateFailed(e.to_string()))?),
             tvc: Operations::new(
                 BranchName::from(owner.to_string()),
                 MockFileSystem::default(),
             ),
             channels: Arc::new(Mutex::new(Vec::new())),
-        }
+        })
     }
 
     pub async fn insert_channel(
         &self,
-        channel: impl ChannelMessageSendable<Error = error::Error> + 'static,
+        channel: impl ChannelMessageSendable<Error=error::Error> + 'static,
     ) {
         let mut channels = self.channels.lock().await;
         channels.push(Box::new(channel));
@@ -118,7 +119,7 @@ impl Room {
                     json!({
                         "error" : e.to_string()
                     })
-                    .to_string(),
+                        .to_string(),
                 ))
                 .unwrap()
         })?;
@@ -136,7 +137,7 @@ impl Room {
                         json!({
                             "error": error.to_string()
                         })
-                        .to_string(),
+                            .to_string(),
                     ))
                     .unwrap();
                 Err(response)
@@ -145,10 +146,10 @@ impl Room {
     }
 
     pub async fn global_discussion<'a, F, O, S>(&'a self, user_id: UserId, f: F) -> error::Result<S>
-    where
-        F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
-        O: Future<Output = error::Result<S>>,
-        S: Serialize,
+        where
+            F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
+            O: Future<Output=error::Result<S>>,
+            S: Serialize,
     {
         let command = f(self.as_global_discussion_executor(user_id)).await?;
         Ok(command)

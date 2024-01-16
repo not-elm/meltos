@@ -19,7 +19,7 @@ mod open;
 mod push;
 mod stage;
 
-#[async_trait]
+#[async_trait(?Send)]
 pub trait CommandExecutable {
     /// execute cli command.
     async fn execute(self) -> meltos_client::error::Result;
@@ -36,7 +36,7 @@ pub enum Commands {
     Merge(MergeArgs),
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl CommandExecutable for Commands {
     async fn execute(self) -> meltos_client::error::Result {
         match self {

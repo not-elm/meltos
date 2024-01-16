@@ -12,8 +12,8 @@ pub struct DiscussionCommandExecutor<'a, Global: ?Sized> {
 }
 
 impl<'a, Global> DiscussionCommandExecutor<'a, Global>
-where
-    Global: DiscussionIo + ?Sized,
+    where
+        Global: DiscussionIo + ?Sized,
 {
     #[inline]
     pub const fn new(
@@ -28,7 +28,11 @@ where
 
     #[inline]
     pub async fn create(self, title: String) -> error::Result<Created> {
-        let discussion_meta = self.global_io.new_discussion(title, self.user_id).await?;
+        let discussion_meta = self
+            .global_io
+            .new_discussion(title, self.user_id)
+            .await
+            .map_err(|e| error::Error::FailedDiscussionIo(e.to_string()))?;
         Ok(Created {
             meta: discussion_meta,
         })
@@ -39,7 +43,8 @@ where
         let message = self
             .global_io
             .speak(&speak.discussion_id, self.user_id, speak.text)
-            .await?;
+            .await
+            .map_err(|e| error::Error::FailedDiscussionIo(e.to_string()))?;
         Ok(Spoke {
             discussion_id: speak.discussion_id,
             message,
@@ -51,7 +56,8 @@ where
         let reply_message = self
             .global_io
             .reply(self.user_id, reply.to.clone(), reply.text)
-            .await?;
+            .await
+            .map_err(|e| error::Error::FailedDiscussionIo(e.to_string()))?;
 
         Ok(Replied {
             to: reply.to,

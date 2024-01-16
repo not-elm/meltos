@@ -9,7 +9,7 @@ pub struct CommitArgs {
     commit_text: String,
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl CommandExecutable for CommitArgs {
     async fn execute(self) -> meltos_client::error::Result {
         let tvc = TvcClient::new(load_branch_name()?, StdFileSystem);

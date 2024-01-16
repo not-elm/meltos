@@ -13,7 +13,8 @@ pub struct OpenArgs {
     lifetime_secs: Option<u64>,
 }
 
-#[async_trait]
+
+#[async_trait(?Send)]
 impl CommandExecutable for OpenArgs {
     async fn execute(self) -> meltos_client::error::Result {
         let tvc = TvcClient::new(BranchName::owner().0, StdFileSystem);
