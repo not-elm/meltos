@@ -1,10 +1,9 @@
-use std::clone;
 use std::sync::{Mutex, MutexGuard};
 
 use async_trait::async_trait;
 use rusqlite::{Connection, params, Transaction};
 
-use meltos::discussion::{Discussion, DiscussionBundle, DiscussionMeta, MessageBundle};
+use meltos::discussion::{DiscussionBundle, DiscussionMeta, MessageBundle};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
 use meltos::room::RoomId;
@@ -28,8 +27,10 @@ impl SqliteDiscussionIo {
 
         create_discussion_meta_table(&db)?;
         create_message_table(&db)?;
+        create_message_table_trigger(&db)?;
         create_discussion_message_table(&db)?;
         create_reply_message_table(&db)?;
+        create_discussion_message_table_trigger(&db)?;
 
         Ok(Self {
             db: Mutex::new(db)
@@ -40,76 +41,33 @@ impl SqliteDiscussionIo {
     fn lock(&self) -> MutexGuard<Connection> {
         self.db.lock().unwrap()
     }
-}
 
-fn create_discussion_meta_table(db: &rusqlite::Connection) -> rusqlite::Result<usize> {
-    db.execute("CREATE TABLE discussion_meta (
-            discussion_id TEXT PRIMARY KEY,
-            title TEXT NOT NULL,
-            creator TEXT NOT NULL
-        )", ())
-}
+    async fn _discussion_by(&self, discussion_id: &DiscussionId) -> error::Result<DiscussionBundle> {
+        let mut db = self.db.lock().unwrap();
+        let tx = db.transaction()?;
+        let meta = read_discussion_meta(&tx, discussion_id.clone())?;
+        let messages = read_messages_in(&tx, discussion_id.clone())?;
+        tx.commit()?;
 
-fn create_message_table(db: &rusqlite::Connection) -> rusqlite::Result<usize> {
-    db.execute("CREATE TABLE message (
-            message_id TEXT PRIMARY KEY,
-            user_id TEXT,
-            text TEXT
-            )", ())
-}
-
-fn create_discussion_message_table(db: &rusqlite::Connection) -> rusqlite::Result<usize> {
-    db.execute("CREATE TABLE discussion_message (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            discussion_id TEXT,
-            message_id TEXT
-            )", ())
-}
-
-fn create_reply_message_table(db: &rusqlite::Connection) -> rusqlite::Result<usize> {
-    db.execute("CREATE TABLE reply_message (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            message_id TEXT,
-            reply_message_id TEXT
-    )", ())
-}
-
-
-fn read_discussion_meta(tx: &Transaction, id: DiscussionId) -> error::Result<DiscussionMeta>{
-      let meta: DiscussionMeta = tx.query_row(
-         "SELECT title, creator FROM discussion_meta WHERE discussion_id LIKE $1",
-         params![id.to_string()],
-          |row|Ok(DiscussionMeta{
-              id,
-              title: row.get(0).unwrap(),
-              creator: UserId(row.get(1).unwrap())
-          })
-     )?;
-    Ok(meta)
-}
-
-
-
-fn read_messages_in(tx: &Transaction, id: DiscussionId) -> error::Result<Vec<MessageBundle>>{
-    let message_ids = read_message_ids_in(tx, id)?;
-    let bundles = Vec::with_capacity(message_ids.len());
-
-    Ok(bundles)
-}
-
-
-fn read_message_ids_in(tx: &Transaction, id: DiscussionId) -> error::Result<Vec<MessageId>>{
-    let mut stmt = tx.prepare("SELECT message_id FROM discussion_message WHERE discussion_id LIKE $1")?;
-      let message_id_rows = stmt.query_map(
-         params![id.to_string()],
-          |row|Ok(MessageId(row.get(0).unwrap()))
-     )?;
-
-    let mut message_ids = Vec::new();
-    for message_id in message_id_rows {
-        message_ids.push(message_id?);
+        Ok(DiscussionBundle {
+            meta,
+            messages,
+        })
     }
-    Ok(message_ids)
+
+    fn read_discussion_ids(&self) -> error::Result<Vec<DiscussionId>> {
+        let db = self.lock();
+        let mut stmt = db.prepare("SELECT discussion_id FROM discussion_meta")?;
+        let rows = stmt.query_map(
+            (),
+            |row| Ok(DiscussionId(row.get(0).unwrap())),
+        )?;
+        let mut ids = Vec::new();
+        for row in rows {
+            ids.push(row?);
+        }
+        Ok(ids)
+    }
 }
 
 #[async_trait]
@@ -159,20 +117,28 @@ impl DiscussionIo for SqliteDiscussionIo {
         let mut db = self.db.lock().unwrap();
         let tx = db.transaction()?;
         let meta = read_discussion_meta(&tx, discussion_id.clone())?;
+        let messages = read_messages_in(&tx, discussion_id.clone())?;
         tx.commit()?;
 
-        Ok(DiscussionBundle{
+        Ok(DiscussionBundle {
             meta,
-            messages: Vec::with_capacity(0)
+            messages,
         })
     }
 
     async fn all_discussions(&self) -> error::Result<Vec<DiscussionBundle>> {
-        todo!()
+        let ids = self.read_discussion_ids()?;
+        let mut discussions = Vec::with_capacity(ids.len());
+        for id in ids {
+            discussions.push(self._discussion_by(&id).await?);
+        }
+        Ok(discussions)
     }
 
     async fn close_discussion(&self, discussion_id: &DiscussionId) -> error::Result {
-        todo!()
+        let db = self.lock();
+        db.execute("DELETE FROM discussion_meta WHERE discussion_id = $1", params![discussion_id.to_string()])?;
+        Ok(())
     }
 
     async fn dispose(self) -> error::Result {
@@ -190,25 +156,192 @@ impl DiscussionIo for SqliteDiscussionIo {
 }
 
 
+fn create_discussion_meta_table(db: &rusqlite::Connection) -> rusqlite::Result<usize> {
+    db.execute("CREATE TABLE discussion_meta (
+            discussion_id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            creator TEXT NOT NULL
+        )", ())
+}
+
+fn create_message_table(db: &rusqlite::Connection) -> rusqlite::Result<usize> {
+    db.execute("CREATE TABLE message (
+            message_id TEXT PRIMARY KEY,
+            user_id TEXT,
+            text TEXT
+            )", ())
+}
+
+fn create_discussion_message_table(db: &rusqlite::Connection) -> rusqlite::Result<usize> {
+    db.execute("CREATE TABLE discussion_message (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            discussion_id TEXT,
+            message_id TEXT,
+            FOREIGN KEY(message_id) REFERENCES message(message_id)
+            )", ())
+}
+
+fn create_reply_message_table(db: &rusqlite::Connection) -> rusqlite::Result<usize> {
+    db.execute("CREATE TABLE reply_message (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message_id TEXT,
+            reply_message_id TEXT,
+            FOREIGN KEY(message_id) REFERENCES message(message_id),
+            FOREIGN KEY(reply_message_id) REFERENCES message(message_id)
+    )", ())
+}
+
+
+fn create_message_table_trigger(db: &Connection) -> rusqlite::Result<usize> {
+    db.execute(
+        "
+            CREATE TRIGGER delete_message_trigger DELETE ON discussion_meta
+            BEGIN
+            DELETE FROM message
+            WHERE message_id IN(
+                SELECT message.message_id FROM message
+                LEFT JOIN discussion_message
+                    ON (message.message_id=discussion_message.message_id)
+                WHERE discussion_message.discussion_id=old.discussion_id
+            );
+
+            DELETE FROM discussion_message WHERE discussion_id=old.discussion_id;
+
+            END;
+            ",
+        (),
+    )
+}
+
+
+fn create_discussion_message_table_trigger(db: &Connection) -> rusqlite::Result<usize> {
+    db.execute(
+        "
+            CREATE TRIGGER delete_discussion_message_trigger DELETE ON message
+            BEGIN
+            DELETE FROM message
+            WHERE message_id IN(
+                SELECT reply_message.reply_message_id FROM reply_message
+                LEFT JOIN message
+                    ON (message.message_id=reply_message.message_id)
+                WHERE reply_message.message_id=old.message_id
+            );
+            DELETE FROM reply_message WHERE message_id=old.message_id;
+
+            END;
+            ",
+        (),
+    )
+}
+
+
+fn read_discussion_meta(tx: &Transaction, id: DiscussionId) -> error::Result<DiscussionMeta> {
+    let meta: DiscussionMeta = tx.query_row(
+        "SELECT title, creator FROM discussion_meta WHERE discussion_id LIKE $1",
+        params![id.to_string()],
+        |row| Ok(DiscussionMeta {
+            id,
+            title: row.get(0).unwrap(),
+            creator: UserId(row.get(1).unwrap()),
+        }),
+    )?;
+    Ok(meta)
+}
+
+
+fn read_messages_in(tx: &Transaction, id: DiscussionId) -> error::Result<Vec<MessageBundle>> {
+    let message_ids = read_message_ids_in(tx, id)?;
+    let mut bundles = Vec::with_capacity(message_ids.len());
+    let messages = read_all_messages(tx)?;
+    for message in messages.iter().filter(|m| message_ids.contains(&m.id)) {
+        let reply_message_ids = read_reply_message_ids_in(tx, message.id.clone())?;
+        bundles.push(MessageBundle {
+            message: message.clone(),
+            replies: messages
+                .iter()
+                .filter(|m| reply_message_ids.contains(&m.id))
+                .cloned()
+                .collect(),
+        })
+    }
+    Ok(bundles)
+}
+
+fn read_all_messages(tx: &Transaction) -> error::Result<Vec<Message>> {
+    let mut stmt = tx.prepare("SELECT message_id, user_id, text FROM message")?;
+    let rows = stmt
+        .query_map(
+            (),
+            |row| Ok(Message {
+                id: MessageId(row.get(0).unwrap()),
+                user_id: UserId(row.get(1).unwrap()),
+                text: MessageText(row.get(2).unwrap()),
+            }))?;
+    let mut messages = Vec::new();
+    for row in rows {
+        messages.push(row?);
+    }
+    Ok(messages)
+}
+
+
+fn read_reply_message_ids_in(tx: &Transaction, id: MessageId) -> error::Result<Vec<MessageId>> {
+    let mut stmt = tx.prepare("SELECT reply_message_id FROM reply_message WHERE message_id = $1")?;
+    let message_id_rows = stmt.query_map(
+        params![id.to_string()],
+        |row| Ok(MessageId(row.get(0).unwrap())),
+    )?;
+
+    let mut message_ids = Vec::new();
+    for message_id in message_id_rows {
+        message_ids.push(message_id?);
+    }
+    Ok(message_ids)
+}
+
+fn read_message_ids_in(tx: &Transaction, id: DiscussionId) -> error::Result<Vec<MessageId>> {
+    let mut stmt = tx.prepare("SELECT message_id FROM discussion_message WHERE discussion_id = $1")?;
+    let message_id_rows = stmt.query_map(
+        params![id.to_string()],
+        |row| Ok(MessageId(row.get(0).unwrap())),
+    )?;
+
+    let mut message_ids = Vec::new();
+    for message_id in message_id_rows {
+        message_ids.push(message_id?);
+    }
+    Ok(message_ids)
+}
+
+
 #[cfg(test)]
 mod tests {
     use std::future::Future;
 
     use futures::FutureExt;
 
-    use meltos::discussion::message::{Message, MessageText};
+    use meltos::discussion::message::MessageText;
     use meltos::discussion::MessageBundle;
     use meltos::room::RoomId;
     use meltos::user::UserId;
 
     use crate::discussion::DiscussionIo;
-    use crate::discussion::global::sqlite::SqliteDiscussionIo;
+    use crate::discussion::global::sqlite::{read_all_messages, read_message_ids_in, read_reply_message_ids_in, SqliteDiscussionIo};
     use crate::error;
 
     #[tokio::test]
     async fn success_create_tables() {
-        let db = create_db();
-        db.dispose().await.unwrap();
+        let room_id = RoomId::new();
+        let path = format!("./{room_id}.db");
+        match SqliteDiscussionIo::new(&room_id) {
+            Ok(db) => db.dispose().await.unwrap(),
+            Err(e) => {
+                if std::fs::metadata(&path).is_ok() {
+                    std::fs::remove_file(&path).unwrap();
+                }
+                panic!("{e}");
+            }
+        }
     }
 
     #[tokio::test]
@@ -260,27 +393,136 @@ mod tests {
             let discussion = db.discussion_by(&meta.id).await?;
             assert_eq!(discussion.meta, meta);
             assert_eq!(discussion.messages.len(), 1);
-            assert_eq!(discussion.messages[0], MessageBundle{
+            assert_eq!(discussion.messages[0], MessageBundle {
                 message,
-                replies: Vec::with_capacity(0)
+                replies: Vec::with_capacity(0),
             });
             Ok(())
         })
             .await;
     }
 
+
+    #[tokio::test]
+    async fn have_1_reply() {
+        try_execute(|db| async move {
+            let meta = db.new_discussion("title".to_string(), UserId::from("user")).await?;
+            let message = db.speak(&meta.id, UserId::from("user2"), MessageText::from("hello world!")).await?;
+            let reply = db.reply(UserId::from("user3"), message.id.clone(), MessageText::from("reply")).await?;
+            let discussion = db.discussion_by(&meta.id).await?;
+            assert_eq!(discussion.meta, meta);
+            assert_eq!(discussion.messages.len(), 1);
+            assert_eq!(discussion.messages[0].replies.len(), 1);
+            assert_eq!(discussion.messages[0], MessageBundle {
+                message,
+                replies: vec![reply],
+            });
+            Ok(())
+        })
+            .await;
+    }
+
+
+    #[tokio::test]
+    async fn have_3_replies() {
+        try_execute(|db| async move {
+            let meta = db.new_discussion("title".to_string(), UserId::from("owner")).await?;
+            let message = db.speak(&meta.id, UserId::from("owner"), MessageText::from("1")).await?;
+            let message2 = db.speak(&meta.id, UserId::from("owner"), MessageText::from("2")).await?;
+            let reply = db.reply(UserId::from("user"), message2.id.clone(), MessageText::from("reply1")).await?;
+            let reply2 = db.reply(UserId::from("user2"), message2.id.clone(), MessageText::from("reply2")).await?;
+            let discussion = db.discussion_by(&meta.id).await?;
+            assert_eq!(discussion.meta, meta);
+            assert_eq!(discussion.messages.len(), 2);
+            assert_eq!(discussion.messages[0], MessageBundle {
+                message,
+                replies: vec![],
+            });
+            assert_eq!(discussion.messages[1], MessageBundle {
+                message: message2,
+                replies: vec![
+                    reply,
+                    reply2,
+                ],
+            });
+            Ok(())
+        })
+            .await;
+    }
+
+    #[tokio::test]
+    async fn close_discussion() {
+        try_execute(|db| async move {
+            let meta = db.new_discussion("title".to_string(), UserId::from("owner")).await?;
+            let message1 = db.speak(&meta.id, UserId::from("owner"), MessageText::from("1")).await?;
+            let message2 = db.speak(&meta.id, UserId::from("owner"), MessageText::from("2")).await?;
+            db.reply(UserId::from("user"), message2.id.clone(), MessageText::from("reply1")).await?;
+            db.reply(UserId::from("user2"), message2.id.clone(), MessageText::from("reply2")).await?;
+            db.close_discussion(&meta.id).await?;
+            assert!(db.all_discussions().await?.is_empty());
+            let mut con = db.db.lock().unwrap();
+            let tx = con.transaction()?;
+            let messages = read_all_messages(&tx).unwrap();
+            assert!(messages.is_empty());
+            let message_ids = read_message_ids_in(&tx, meta.id)?;
+            assert!(message_ids.is_empty());
+            assert!(read_reply_message_ids_in(&tx, message1.id)?.is_empty());
+            assert!(read_reply_message_ids_in(&tx, message2.id)?.is_empty());
+            tx.commit()?;
+            Ok(())
+        })
+            .await;
+    }
+
+
+    #[tokio::test]
+    async fn not_delete_second_discussion() {
+        try_execute(|db| async move {
+            let meta = db.new_discussion("title".to_string(), UserId::from("owner")).await?;
+
+            db.speak(&meta.id, UserId::from("owner"), MessageText::from("1")).await?;
+            let message2 = db.speak(&meta.id, UserId::from("owner"), MessageText::from("2")).await?;
+            db.reply(UserId::from("user"), message2.id.clone(), MessageText::from("reply1")).await?;
+            db.reply(UserId::from("user2"), message2.id.clone(), MessageText::from("reply2")).await?;
+
+            let meta2 = db.new_discussion("title2".to_string(), UserId::from("owner")).await?;
+            let message1 = db.speak(&meta2.id, UserId::from("owner"), MessageText::from("Discussion2 message1")).await?;
+            let message2 = db.speak(&meta2.id, UserId::from("owner"), MessageText::from("Discussion2 message2")).await?;
+            let reply1 = db.reply(UserId::from("user"), message2.id.clone(), MessageText::from("Discussion2 reply1")).await?;
+            let reply2 = db.reply(UserId::from("user2"), message2.id.clone(), MessageText::from("Discussion2 reply2")).await?;
+
+            db.close_discussion(&meta.id).await?;
+            assert_eq!(db.all_discussions().await?.len(), 1);
+            let mut con = db.db.lock().unwrap();
+            let tx = con.transaction()?;
+            let messages = read_all_messages(&tx).unwrap();
+            assert_eq!(messages, vec![
+                message1,
+                message2,
+                reply1,
+                reply2
+            ]);
+
+            tx.commit()?;
+            Ok(())
+        })
+            .await;
+    }
+
     async fn try_execute<F: Future<Output=error::Result>>(f: impl FnOnce(SqliteDiscussionIo) -> F + 'static + Send) {
-        let db = create_db();
+        let room_id = RoomId::new();
+        let path = format!("./{room_id}.db");
+        let Ok(db) = SqliteDiscussionIo::new(&room_id) else {
+            if std::fs::metadata(&path).is_ok() {
+                std::fs::remove_file(&path).unwrap();
+            }
+            return;
+        };
         let path = db.db.lock().unwrap().path().unwrap().to_string();
         let result = std::panic::AssertUnwindSafe(f(db)).catch_unwind().await;
         if std::fs::metadata(&path).is_ok() {
             std::fs::remove_file(&path).unwrap();
         }
-        let _ = result.expect("execute error");
-    }
-
-
-    fn create_db() -> SqliteDiscussionIo {
-        SqliteDiscussionIo::new(&RoomId::new()).unwrap()
+        result.unwrap().unwrap();
     }
 }
