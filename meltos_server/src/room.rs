@@ -12,16 +12,19 @@ use serde_json::json;
 use tokio::sync::Mutex;
 
 use meltos::channel::{ChannelMessage, ChannelMessageSendable};
+use meltos::discussion::DiscussionBundle;
 use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
 use meltos_backend::path::{create_resource_dir, room_resource_dir};
+use meltos_backend::session::{NewSessionIo, SessionIo};
 use meltos_backend::sync::arc_mutex::ArcMutex;
 use meltos_backend::tvc::TvcBackendIo;
 use meltos_tvc::file_system::std_fs::StdFileSystem;
 use meltos_tvc::io::bundle::Bundle;
 use meltos_util::macros::Deref;
 
+use crate::api::HttpResult;
 use crate::error;
 use crate::room::executor::discussion::DiscussionCommandExecutor;
 
@@ -81,20 +84,26 @@ pub struct Room {
     pub owner: UserId,
     pub id: RoomId,
     pub tvc: TvcBackendIo<StdFileSystem>,
+    pub session: Arc<dyn SessionIo>,
     discussion: Arc<dyn DiscussionIo>,
     channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error=error::Error>>>>>,
 }
 
 impl Room {
-    pub fn open<Discussion: DiscussionIo + NewDiscussIo + 'static>(owner: UserId) -> error::Result<Self> {
+    pub fn open<Discussion, Session>(owner: UserId) -> error::Result<Self>
+        where
+            Discussion: DiscussionIo + NewDiscussIo + 'static,
+            Session: SessionIo + NewSessionIo + 'static
+    {
         let room_id = RoomId::default();
         create_resource_dir(&room_id)?;
         Ok(Self {
             id: room_id.clone(),
             owner: owner.clone(),
-            discussion: Arc::new(Discussion::new(room_id.clone()).map_err(|e| error::Error::RoomCreateFailed(e.to_string()))?),
-            tvc: TvcBackendIo::new(room_id, StdFileSystem),
+            discussion: Arc::new(Discussion::new(room_id.clone()).map_err(|e| error::Error::FailedCreateDiscussionIo(e.to_string()))?),
+            tvc: TvcBackendIo::new(room_id.clone(), StdFileSystem),
             channels: Arc::new(Mutex::new(Vec::new())),
+            session: Arc::new(Session::new(room_id).map_err(|e|error::Error::FailedCreateSessionIo(e.to_string()))?),
         })
     }
 
@@ -133,6 +142,13 @@ impl Room {
         Ok(())
     }
 
+
+    pub async fn discussions(&self) -> HttpResult<Vec<DiscussionBundle>> {
+        let discussions = self.discussion.all_discussions().await?;
+        Ok(discussions)
+    }
+
+
     pub fn create_bundle(&self) -> std::result::Result<Bundle, Response> {
         match self.tvc.bundle() {
             Ok(bundle) => Ok(bundle),
@@ -161,7 +177,8 @@ impl Room {
         Ok(command)
     }
 
-    pub fn delete_resource_dir(&self) {
+    pub fn delete_resource_dir(self) {
+        drop(self.discussion);
         let dir = room_resource_dir(&self.id);
         if dir.exists() {
             if let Err(e) = std::fs::remove_dir_all(dir) {

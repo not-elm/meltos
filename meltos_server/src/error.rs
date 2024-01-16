@@ -40,7 +40,10 @@ pub enum Error {
     RoomAlreadyExists(RoomId),
 
     #[error("failed create room message: {0}")]
-    RoomCreateFailed(String),
+    FailedCreateDiscussionIo(String),
+
+    #[error("failed create session io message: {0}")]
+    FailedCreateSessionIo(String),
 
     #[error("user_id {0} was already joined in session {1}")]
     RoomJoin(UserId, RoomId),

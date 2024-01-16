@@ -210,22 +210,22 @@ impl NodeFileSystem {
         }
         Ok(())
     }
+}
 
 
-    fn rm(&self, path: String) -> std::io::Result<()> {
-        if !exists_sync(&path)? {
-            Ok(())
-        } else if is_file(&path)? {
-            rm_sync(&path)
-        } else if let Some(entries) = read_dir_sync(&path)? {
-            for entry in entries {
-                self.rm(format!("{path}/{entry}"))?;
-            }
-            rm_dir_sync(&path).map_err(|e| std::io::Error::other(format!("failed fs.rmdirSync : {e:?}")))?;
-            Ok(())
-        } else {
-            Ok(())
+fn rm_recursive(path: String) -> std::io::Result<()> {
+    if !exists_sync(&path)? {
+        Ok(())
+    } else if is_file(&path)? {
+        rm_sync(&path)
+    } else if let Some(entries) = read_dir_sync(&path)? {
+        for entry in entries {
+            rm_recursive(format!("{path}/{entry}"))?;
         }
+        rm_dir_sync(&path).map_err(|e| std::io::Error::other(format!("failed fs.rmdirSync : {e:?}")))?;
+        Ok(())
+    } else {
+        Ok(())
     }
 }
 
@@ -323,7 +323,7 @@ impl FileSystem for NodeFileSystem {
     #[inline(always)]
     fn delete(&self, path: &str) -> std::io::Result<()> {
         let entry_path = self.path(path);
-        self.rm(entry_path)
+        rm_recursive(entry_path)
     }
 }
 

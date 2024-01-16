@@ -1,5 +1,3 @@
-
-
 use meltos::room::RoomId;
 use meltos_tvc::file_system::{FileSystem, Stat};
 use meltos_tvc::file_system::std_fs::StdFileSystem;
@@ -24,12 +22,17 @@ impl<Fs> BackendFileSystem<Fs> {
 
     #[inline(always)]
     fn trim(&self, path: String) -> String {
-        path.trim_start_matches(&self.as_path(&path)).to_string()
+        path
+            .trim_start_matches(&format!("{}/", room_resource_dir(&self.room_id).to_str().unwrap()))
+            .trim_start_matches("./")
+            .to_string()
     }
 
     #[inline(always)]
     fn as_path(&self, path: &str) -> String {
-        room_resource_dir(&self.room_id).join(path).to_str().unwrap().to_string()
+        let dir = room_resource_dir(&self.room_id);
+        let path = path.trim_start_matches(dir.to_str().unwrap());
+        format!("{}/{}", dir.to_str().unwrap(), path.trim_start_matches('/'))
     }
 }
 
@@ -63,10 +66,9 @@ impl<Fs: FileSystem> FileSystem for BackendFileSystem<Fs> {
 
     #[inline(always)]
     fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
-        let files = self
+        Ok(self
             .fs
-            .all_files_in(&self.as_path(path))?;
-        Ok(files
+            .all_files_in(&self.as_path(path))?
             .into_iter()
             .map(|file| self.trim(file))
             .collect())
@@ -79,3 +81,25 @@ impl<Fs: FileSystem> FileSystem for BackendFileSystem<Fs> {
 }
 
 
+#[cfg(test)]
+mod tests {
+    use meltos::room::RoomId;
+    use meltos_tvc::file_system::FileSystem;
+    use meltos_tvc::file_system::mock::MockFileSystem;
+
+    use crate::tvc::file_system::BackendFileSystem;
+
+    #[test]
+    fn read_files_in_dir() {
+        let mock = MockFileSystem::default();
+        let fs = BackendFileSystem::new(RoomId::new(), mock.clone());
+        fs.write_file("dir/hello.txt", b"hello").unwrap();
+        fs.write_file("hello2.txt", b"hello").unwrap();
+        let mut files = fs.all_files_in(".").unwrap();
+        files.sort();
+        assert_eq!(files, vec![
+            "dir/hello.txt".to_string(),
+            "hello2.txt".to_string(),
+        ])
+    }
+}

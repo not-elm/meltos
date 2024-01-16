@@ -1,20 +1,16 @@
-use std::fmt::Debug;
 
 use axum::extract::State;
 use axum::http::Response;
 
 use meltos::channel::{ChannelMessage, MessageData};
 use meltos::schema::room::Left;
-use meltos_backend::user::SessionIo;
 
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
 use crate::middleware::user::SessionUser;
 use crate::room::Rooms;
-use crate::state::SessionState;
 
-pub async fn leave<Session: SessionIo + Debug>(
-    State(session): State<SessionState<Session>>,
+pub async fn leave(
     State(rooms): State<Rooms>,
     SessionRoom(room): SessionRoom,
     SessionUser(user_id): SessionUser,
@@ -27,10 +23,12 @@ pub async fn leave<Session: SessionIo + Debug>(
                 message: MessageData::ClosedRoom,
             })
             .await?;
-        rooms.delete(&room.id);
+        let room_id = room.id.clone();
+        drop(room);
+        rooms.delete(&room_id);
         Ok(Response::default())
     } else {
-        session.unregister(user_id.clone()).await?;
+        room.session.unregister(user_id.clone()).await?;
         let left = Left {
             user_id: user_id.clone()
         };
@@ -57,15 +55,15 @@ mod tests {
     use meltos::schema::room::{Joined, Opened};
     use meltos::user::{SessionId, UserId};
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
-    use meltos_backend::user::mock::MockUserSessionIo;
+    use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::file_system::mock::MockFileSystem;
 
     use crate::{app, error};
-    use crate::api::test_util::{fetch_request, http_call, http_join, open_room_request, ResponseConvertable};
+    use crate::api::test_util::{fetch_request, http_call, http_join, mock_app, open_room_request, ResponseConvertable};
 
     #[tokio::test]
     async fn delete_room_if_owner_left() -> error::Result {
-        let mut app = app::<MockUserSessionIo, MockGlobalDiscussionIo>(MockUserSessionIo::default());
+        let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
         let mock = MockFileSystem::default();
         let response = http_call(&mut app, open_room_request(mock.clone())).await;
         let opened = response.deserialize::<Opened>().await;
@@ -79,11 +77,11 @@ mod tests {
 
     #[tokio::test]
     async fn not_delete_room_if_user_left() -> error::Result {
-        let mut app = app::<MockUserSessionIo, MockGlobalDiscussionIo>(MockUserSessionIo::default());
-        let mock = MockFileSystem::default();
-        let response = http_call(&mut app, open_room_request(mock.clone())).await;
+        let mut app = mock_app();
+        let fs = MockFileSystem::default();
+        let response = http_call(&mut app, open_room_request(fs.clone())).await;
         let opened = response.deserialize::<Opened>().await;
-        let joined = http_join(&mut app, &opened.room_id, Some(UserId::from("user")))
+        let joined = http_join(&mut app, &opened.room_id, Some(UserId::from("session")))
             .await
             .deserialize::<Joined>()
             .await;

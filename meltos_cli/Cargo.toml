@@ -1,5 +1,5 @@
 [package]
-name = "meltos_cli"
+name = "mcl"
 version = "0.1.0"
 edition = "2021"
 

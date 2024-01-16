@@ -126,7 +126,7 @@ mod tests {
         init_main_branch(mock.clone());
         let checkout = Checkout::new(mock.clone());
         let b1 = BranchName::owner();
-        let b2 = BranchName::from("user");
+        let b2 = BranchName::from("session");
         checkout.execute(&b2).unwrap();
         checkout.execute(&b1).unwrap();
 

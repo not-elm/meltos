@@ -103,6 +103,12 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 
 
+
+    #[inline(always)]
+    pub async fn leave(&self, session_configs: SessionConfigs) -> error::Result{
+        HttpClient::new(BASE, session_configs).leave().await
+    }
+
     #[inline]
     pub async fn fetch(&self, session_config: SessionConfigs) -> error::Result {
         let http = HttpClient::new(BASE, session_config);

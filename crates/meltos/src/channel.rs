@@ -51,7 +51,7 @@ mod tests {
     #[test]
     fn json_type() {
         let message = MessageData::Joined {
-            user_id: "user".to_string(),
+            user_id: "session".to_string(),
         };
         let json = json!(message);
         let ty = json.get("type").unwrap();

@@ -6,6 +6,7 @@ use meltos_client::config::SessionConfigs;
 use crate::commands::commit::CommitArgs;
 use crate::commands::fetch::FetchArgs;
 use crate::commands::join::JoinArgs;
+use crate::commands::leave::LeaveArgs;
 use crate::commands::merge::MergeArgs;
 use crate::commands::open::OpenArgs;
 use crate::commands::push::PushArgs;
@@ -18,6 +19,7 @@ mod merge;
 mod open;
 mod push;
 mod stage;
+mod leave;
 
 #[async_trait(?Send)]
 pub trait CommandExecutable {
@@ -29,6 +31,7 @@ pub trait CommandExecutable {
 pub enum Commands {
     Open(OpenArgs),
     Join(JoinArgs),
+    Leave(LeaveArgs),
     Stage(StageArgs),
     Fetch(FetchArgs),
     Commit(CommitArgs),
@@ -42,6 +45,7 @@ impl CommandExecutable for Commands {
         match self {
             Self::Open(c) => c.execute().await,
             Self::Join(c) => c.execute().await,
+            Self::Leave(c) => c.execute().await,
             Self::Fetch(c) => c.execute().await,
             Self::Stage(c) => c.execute().await,
             Self::Commit(c) => c.execute().await,

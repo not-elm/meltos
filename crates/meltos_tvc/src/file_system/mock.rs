@@ -1,9 +1,9 @@
 use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, Mutex};
 
+use crate::file_system::{FileSystem, Stat};
 use crate::file_system::mock::dir::MockDir;
 use crate::file_system::mock::file::MockFile;
-use crate::file_system::{FileSystem, Stat};
 
 mod dir;
 mod file;
@@ -178,8 +178,10 @@ impl FileSystem for MockFileSystem {
 
 impl Debug for MockFileSystem {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let root = self.0.lock().unwrap();
-        f.write_fmt(format_args!("{root:?}"))
+        for file in self.all_files_in(".").unwrap() {
+            f.write_fmt(format_args!("{file:?}\n"))?;
+        }
+        Ok(())
     }
 }
 
@@ -200,10 +202,11 @@ fn entry_name(path: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::file_system::mock::MockFileSystem;
-    use crate::file_system::FileSystem;
     use std::thread::sleep;
     use std::time::Duration;
+
+    use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
 
     #[test]
     fn read_root_dir() {

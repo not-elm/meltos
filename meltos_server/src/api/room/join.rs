@@ -1,32 +1,28 @@
-use std::fmt::Debug;
-
-use axum::extract::State;
 use axum::Json;
 
 use meltos::channel::{ChannelMessage, MessageData};
 use meltos::schema::room::{Join, Joined};
-use meltos_backend::user::SessionIo;
 
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
-use crate::state::SessionState;
 
 /// RoomIdに対応するRoomに参加
 /// Roomが存在しない場合はstatus code404が返される
 ///
 /// レスポンスはRoomのメタデータ
 ///
-pub async fn join<Session: SessionIo + Debug>(
-    State(session): State<SessionState<Session>>,
+pub async fn join(
     SessionRoom(room): SessionRoom,
     Json(join): Json<Join>,
 ) -> HttpResult {
-    let (user_id, session_id) = session.register(join.user_id).await?;
+    let (user_id, session_id) = room.session.register(join.user_id).await?;
     let bundle = room.create_bundle()?;
+    let discussions = room.discussions().await?;
     let joined = Joined {
         user_id: user_id.clone(),
         session_id,
         bundle,
+        discussions,
     };
     room.send_all_users(ChannelMessage {
         message: MessageData::Joined {
@@ -34,7 +30,7 @@ pub async fn join<Session: SessionIo + Debug>(
         },
         from: user_id,
     })
-    .await?;
+        .await?;
 
     Ok(joined.as_success_response())
 }
@@ -47,22 +43,19 @@ mod tests {
     use meltos::schema::room::{Joined, Opened};
     use meltos::user::UserId;
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
-    use meltos_backend::user::mock::MockUserSessionIo;
+    use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::branch::BranchName;
-    use meltos_tvc::file_system::mock::MockFileSystem;
     use meltos_tvc::file_system::FileSystem;
+    use meltos_tvc::file_system::mock::MockFileSystem;
     use meltos_tvc::io::bundle::BundleIo;
     use meltos_tvc::operation::init::Init;
 
-    use crate::api::test_util::{
-        http_call_with_deserialize, http_join, http_open_room, logged_in_app,
-        open_room_request_with_options, ResponseConvertable,
-    };
+    use crate::api::test_util::{http_call_with_deserialize, http_join, http_open_room, mock_app, open_room_request_with_options, ResponseConvertable};
     use crate::app;
 
     #[tokio::test]
     async fn failed_if_requested_join_not_exists_room() {
-        let (_, mut app) = logged_in_app().await;
+        let mut app = mock_app();
         let response = http_join(&mut app, &RoomId("invalid_id".to_string()), None).await;
 
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
@@ -70,20 +63,17 @@ mod tests {
 
     #[tokio::test]
     async fn return_status_code_is_ok_if_joined_exists_room() {
-        let session = MockUserSessionIo::default();
-       let mut app = app::<MockUserSessionIo, MockGlobalDiscussionIo>(session);
-        let mock = MockFileSystem::default();
-        mock.write_file("./some_text.txt", b"text file").unwrap();
-        let room_id = http_open_room(&mut app, mock.clone()).await;
-
-        let response = http_join(&mut app, &room_id, None).await;
+        let mut app = mock_app();
+        let fs = MockFileSystem::default();
+        fs.write_file("./some_text.txt", b"text file").unwrap();
+        let opened = http_open_room(&mut app, fs.clone()).await;
+        let response = http_join(&mut app, &opened.room_id, None).await;
         assert_eq!(response.status(), StatusCode::OK);
     }
 
     #[tokio::test]
     async fn return_tvc_meta() {
-        let session = MockUserSessionIo::default();
-       let mut app = app::<MockUserSessionIo, MockGlobalDiscussionIo>(session);
+        let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
         let mock = MockFileSystem::default();
         mock.write_file("workspace/some_text.txt", b"text file")
             .unwrap();
@@ -102,12 +92,11 @@ mod tests {
 
     #[tokio::test]
     async fn return_user_id() {
-        let session = MockUserSessionIo::default();
-        let mut app = app::<MockUserSessionIo, MockGlobalDiscussionIo>(session);
+        let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
         let mock = MockFileSystem::default();
         mock.write_file("./some_text.txt", b"text file").unwrap();
-        let room_id = http_open_room(&mut app, mock.clone()).await;
-        let response = http_join(&mut app, &room_id, Some(UserId::from("tvc"))).await;
+        let opened = http_open_room(&mut app, mock.clone()).await;
+        let response = http_join(&mut app, &opened.room_id, Some(UserId::from("tvc"))).await;
         let meta = response.deserialize::<Joined>().await;
         assert_eq!(meta.user_id, UserId::from("tvc"));
     }
