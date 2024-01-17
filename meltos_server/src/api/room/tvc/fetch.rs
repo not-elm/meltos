@@ -14,15 +14,19 @@ mod tests {
     use axum::extract::Request;
     use axum::http::StatusCode;
 
+    use meltos::schema::room::Opened;
     use meltos_tvc::file_system::mock::MockFileSystem;
 
-    use crate::api::test_util::{http_call, http_fetch, http_open_room, logged_in_app};
+    use crate::api::test_util::{http_call, http_fetch, http_open_room, mock_app};
 
     #[tokio::test]
     async fn failed_if_not_logged_in() {
         let mock = MockFileSystem::default();
-        let (_, mut app) = logged_in_app().await;
-        let room_id = http_open_room(&mut app, mock.clone()).await;
+        let mut app = mock_app();
+        let Opened {
+            room_id,
+            ..
+        } = http_open_room(&mut app, mock.clone()).await;
         let response = http_call(
             &mut app,
             Request::builder()
@@ -30,15 +34,15 @@ mod tests {
                 .body(Body::empty())
                 .unwrap(),
         )
-        .await;
+            .await;
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
     async fn fetch() {
-        let mock = MockFileSystem::default();
-        let (session_id, mut app) = logged_in_app().await;
-        let room_id = http_open_room(&mut app, mock.clone()).await;
-        let _bundle = http_fetch(&mut app, &room_id, &session_id).await;
+        let fs = MockFileSystem::default();
+        let mut app = mock_app();
+        let opened = http_open_room(&mut app, fs.clone()).await;
+        let _bundle = http_fetch(&mut app, &opened.room_id, &opened.session_id).await;
     }
 }

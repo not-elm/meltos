@@ -1,17 +1,18 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
+use meltos::room::RoomId;
 
 use meltos::user::{SessionId, UserId};
 
 use crate::error;
 use crate::sync::arc_mutex::ArcMutex;
-use crate::user::SessionIo;
+use crate::session::{NewSessionIo, SessionIo};
 
 #[derive(Debug, Default, Clone)]
-pub struct MockUserSessionIo(ArcMutex<HashMap<SessionId, UserId>>);
+pub struct MockSessionIo(ArcMutex<HashMap<SessionId, UserId>>);
 
-impl MockUserSessionIo {
+impl MockSessionIo {
     pub async fn with_mock_users() -> Self {
         let me = Self::default();
         me.force_register(SessionId("owner".to_string()), UserId::from("owner"))
@@ -26,7 +27,7 @@ impl MockUserSessionIo {
     }
 }
 
-impl MockUserSessionIo {
+impl MockSessionIo {
     async fn generate_session_id(&self) -> SessionId {
         let map = self.0.lock().await;
         loop {
@@ -48,17 +49,18 @@ impl MockUserSessionIo {
     }
 }
 
-#[async_trait]
-impl SessionIo for MockUserSessionIo {
-    async fn fetch(&self, user_token: SessionId) -> crate::error::Result<UserId> {
-        self.0
-            .lock()
-            .await
-            .get(&user_token)
-            .cloned()
-            .ok_or(error::Error::UserIdNotExists)
-    }
 
+
+impl NewSessionIo for MockSessionIo {
+    #[inline(always)]
+    fn new(_room_id: RoomId) -> error::Result<Self> {
+        Ok(Self::default())
+    }
+}
+
+
+#[async_trait]
+impl SessionIo for MockSessionIo {
     async fn register(&self, user_id: Option<UserId>) -> crate::error::Result<(UserId, SessionId)> {
         let session_id = self.generate_session_id().await;
         if let Some(user_id) = user_id {
@@ -84,5 +86,14 @@ impl SessionIo for MockUserSessionIo {
         }
 
         Ok(())
+    }
+
+    async fn fetch(&self, user_token: SessionId) -> crate::error::Result<UserId> {
+        self.0
+            .lock()
+            .await
+            .get(&user_token)
+            .cloned()
+            .ok_or(error::Error::UserIdNotExists)
     }
 }

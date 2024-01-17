@@ -1,3 +1,6 @@
+use log::info;
+use wasm_bindgen::prelude::wasm_bindgen;
+use meltos_util::console_log;
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::{FilePath, FileSystem};
@@ -41,12 +44,14 @@ where
     }
 }
 
+
 impl<Fs> Stage<Fs>
 where
     Fs: FileSystem,
 {
     pub fn execute(&self, workspace_path: &str) -> error::Result {
         let mut stage_tree = self.staging.read()?.unwrap_or_default();
+
         let trace_tree = {
             if let Some(head) = self.head.read(&self.branch_name)? {
                 self.trace_tree.read(&head)?
@@ -122,10 +127,12 @@ where
         trace_tree: &TreeObj,
         workspace_path: &str,
     ) -> error::Result<Vec<(FilePath, ObjHash)>> {
-        let work_space_files = self.workspace.files(workspace_path)?;
+        let work_space_files = self.workspace.files(".")?;
+        console_log!("workspace files = {work_space_files:?}");
         Ok(trace_tree
             .iter()
             .filter_map(|(path, hash)| {
+                console_log!("delete path = {path} delete? = {}", work_space_files.contains(&path.0));
                 if work_space_files.contains(&path.0) {
                     None
                 } else {

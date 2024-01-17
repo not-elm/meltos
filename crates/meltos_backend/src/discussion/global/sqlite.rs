@@ -14,6 +14,7 @@ use crate::discussion::{DiscussionIo, NewDiscussIo};
 use crate::error;
 use crate::path::{create_resource_dir, room_resource_dir};
 
+#[derive(Debug)]
 pub struct SqliteDiscussionIo {
     db: Mutex<Connection>,
 }
@@ -341,9 +342,9 @@ mod tests {
     #[tokio::test]
     async fn create_discussion_meta() {
         try_execute(|db| async move {
-            let meta = db.new_discussion("title".to_string(), UserId::from("user")).await?;
+            let meta = db.new_discussion("title".to_string(), UserId::from("session")).await?;
             assert_eq!(meta.id.0.len(), 40);
-            assert_eq!(meta.creator, UserId::from("user"));
+            assert_eq!(meta.creator, UserId::from("session"));
             assert_eq!(meta.title, "title".to_string());
             Ok(())
         })
@@ -354,7 +355,7 @@ mod tests {
     #[tokio::test]
     async fn speak_message() {
         try_execute(|db| async move {
-            let meta = db.new_discussion("title".to_string(), UserId::from("user")).await?;
+            let meta = db.new_discussion("title".to_string(), UserId::from("session")).await?;
             let message = db.speak(&meta.id, UserId::from("user2"), MessageText::from("hello world!")).await?;
             assert_eq!(message.id.0.len(), 40);
             assert_eq!(message.user_id, UserId::from("user2"));
@@ -367,11 +368,11 @@ mod tests {
     #[tokio::test]
     async fn reply_message() {
         try_execute(|db| async move {
-            let meta = db.new_discussion("title".to_string(), UserId::from("user")).await?;
+            let meta = db.new_discussion("title".to_string(), UserId::from("session")).await?;
             let message = db.speak(&meta.id, UserId::from("user2"), MessageText::from("hello world!")).await?;
-            let reply = db.reply(UserId::from("user"), message.id, MessageText::from("reply")).await?;
+            let reply = db.reply(UserId::from("session"), message.id, MessageText::from("reply")).await?;
             assert_eq!(reply.id.0.len(), 40);
-            assert_eq!(reply.user_id, UserId::from("user"));
+            assert_eq!(reply.user_id, UserId::from("session"));
             assert_eq!(&reply.text.0, "reply");
             Ok(())
         })
@@ -382,7 +383,7 @@ mod tests {
     #[tokio::test]
     async fn have_1_message() {
         try_execute(|db| async move {
-            let meta = db.new_discussion("title".to_string(), UserId::from("user")).await?;
+            let meta = db.new_discussion("title".to_string(), UserId::from("session")).await?;
             let message = db.speak(&meta.id, UserId::from("user2"), MessageText::from("hello world!")).await?;
             let discussion = db.discussion_by(&meta.id).await?;
             assert_eq!(discussion.meta, meta);
@@ -400,7 +401,7 @@ mod tests {
     #[tokio::test]
     async fn have_1_reply() {
         try_execute(|db| async move {
-            let meta = db.new_discussion("title".to_string(), UserId::from("user")).await?;
+            let meta = db.new_discussion("title".to_string(), UserId::from("session")).await?;
             let message = db.speak(&meta.id, UserId::from("user2"), MessageText::from("hello world!")).await?;
             let reply = db.reply(UserId::from("user3"), message.id.clone(), MessageText::from("reply")).await?;
             let discussion = db.discussion_by(&meta.id).await?;
@@ -423,7 +424,7 @@ mod tests {
             let meta = db.new_discussion("title".to_string(), UserId::from("owner")).await?;
             let message = db.speak(&meta.id, UserId::from("owner"), MessageText::from("1")).await?;
             let message2 = db.speak(&meta.id, UserId::from("owner"), MessageText::from("2")).await?;
-            let reply = db.reply(UserId::from("user"), message2.id.clone(), MessageText::from("reply1")).await?;
+            let reply = db.reply(UserId::from("session"), message2.id.clone(), MessageText::from("reply1")).await?;
             let reply2 = db.reply(UserId::from("user2"), message2.id.clone(), MessageText::from("reply2")).await?;
             let discussion = db.discussion_by(&meta.id).await?;
             assert_eq!(discussion.meta, meta);
@@ -450,7 +451,7 @@ mod tests {
             let meta = db.new_discussion("title".to_string(), UserId::from("owner")).await?;
             let message1 = db.speak(&meta.id, UserId::from("owner"), MessageText::from("1")).await?;
             let message2 = db.speak(&meta.id, UserId::from("owner"), MessageText::from("2")).await?;
-            db.reply(UserId::from("user"), message2.id.clone(), MessageText::from("reply1")).await?;
+            db.reply(UserId::from("session"), message2.id.clone(), MessageText::from("reply1")).await?;
             db.reply(UserId::from("user2"), message2.id.clone(), MessageText::from("reply2")).await?;
             db.close_discussion(&meta.id).await?;
             assert!(db.all_discussions().await?.is_empty());
@@ -476,13 +477,13 @@ mod tests {
 
             db.speak(&meta.id, UserId::from("owner"), MessageText::from("1")).await?;
             let message2 = db.speak(&meta.id, UserId::from("owner"), MessageText::from("2")).await?;
-            db.reply(UserId::from("user"), message2.id.clone(), MessageText::from("reply1")).await?;
+            db.reply(UserId::from("session"), message2.id.clone(), MessageText::from("reply1")).await?;
             db.reply(UserId::from("user2"), message2.id.clone(), MessageText::from("reply2")).await?;
 
             let meta2 = db.new_discussion("title2".to_string(), UserId::from("owner")).await?;
             let message1 = db.speak(&meta2.id, UserId::from("owner"), MessageText::from("Discussion2 message1")).await?;
             let message2 = db.speak(&meta2.id, UserId::from("owner"), MessageText::from("Discussion2 message2")).await?;
-            let reply1 = db.reply(UserId::from("user"), message2.id.clone(), MessageText::from("Discussion2 reply1")).await?;
+            let reply1 = db.reply(UserId::from("session"), message2.id.clone(), MessageText::from("Discussion2 reply1")).await?;
             let reply2 = db.reply(UserId::from("user2"), message2.id.clone(), MessageText::from("Discussion2 reply2")).await?;
 
             db.close_discussion(&meta.id).await?;

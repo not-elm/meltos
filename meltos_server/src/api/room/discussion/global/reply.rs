@@ -1,6 +1,6 @@
 use axum::Json;
-use meltos::channel::{ChannelMessage, MessageData};
 
+use meltos::channel::{ChannelMessage, MessageData};
 use meltos::schema::discussion::global::Reply;
 
 use crate::api::{AsSuccessResponse, HttpResult};
@@ -21,7 +21,7 @@ pub async fn reply(
         from: user_id,
         message: MessageData::DiscussionReplied(replied.clone()),
     })
-    .await?;
+        .await?;
 
     Ok(replied.as_success_response())
 }
@@ -30,19 +30,21 @@ pub async fn reply(
 mod tests {
     use meltos::discussion::message::{Message, MessageText};
     use meltos::schema::discussion::global::{Reply, Speak};
+    use meltos::schema::room::Opened;
     use meltos::user::UserId;
-
     use meltos_tvc::file_system::mock::MockFileSystem;
 
-    use crate::api::test_util::{
-        http_create_discussion, http_open_room, http_reply, http_speak, logged_in_app,
-    };
+    use crate::api::test_util::{http_create_discussion, http_open_room, http_reply, http_speak, mock_app};
 
     #[tokio::test]
     async fn return_replied_command() {
-        let (session_id, mut app) = logged_in_app().await;
+        let mut app = mock_app();
         let mock = MockFileSystem::default();
-        let room_id = http_open_room(&mut app, mock).await;
+        let Opened {
+            session_id,
+            room_id,
+            ..
+        } = http_open_room(&mut app, mock).await;
         let created =
             http_create_discussion(&mut app, &session_id, "title".to_string(), room_id.clone())
                 .await;
@@ -55,7 +57,7 @@ mod tests {
                 text: MessageText::from("message"),
             },
         )
-        .await;
+            .await;
         let replied = http_reply(
             &mut app,
             &room_id,
@@ -65,7 +67,7 @@ mod tests {
                 text: MessageText::from("reply"),
             },
         )
-        .await;
+            .await;
 
         assert_eq!(&replied.to, &spoke.message.id);
         assert_eq!(

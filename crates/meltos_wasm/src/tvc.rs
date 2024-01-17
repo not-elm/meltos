@@ -5,10 +5,12 @@ use meltos_client::error::JsResult;
 use meltos_client::tvc::{CommitMeta, TvcClient};
 use meltos_tvc::object::commit::CommitHash;
 use meltos_tvc::object::ObjHash;
+use meltos_util::console_log;
 
 use crate::file_system::vscode_node::VscodeNodeFs;
 
-#[wasm_bindgen]
+#[wasm_bindgen(getter_with_clone)]
+#[derive(Clone)]
 pub struct WasmTvcClient(TvcClient<VscodeNodeFs>);
 
 #[wasm_bindgen]
@@ -55,8 +57,9 @@ impl WasmTvcClient {
 
 
     #[inline]
-    pub async fn push(&mut self, session_configs: SessionConfigs) -> JsResult {
-        self.0.push(session_configs).await?;
+    pub async fn push(&mut self, session_configs: &SessionConfigs) -> JsResult {
+        console_log!("PUSH!!!!!!!!!!!!!");
+        self.0.push(session_configs.clone()).await?;
         Ok(())
     }
 
@@ -68,8 +71,8 @@ impl WasmTvcClient {
 
 
     #[inline]
-    pub async fn fetch(&self, session_configs: SessionConfigs) -> JsResult {
-        self.0.fetch(session_configs).await?;
+    pub async fn fetch(&self, session_configs: &SessionConfigs) -> JsResult {
+        self.0.fetch(session_configs.clone()).await?;
         Ok(())
     }
 
@@ -82,19 +85,18 @@ impl WasmTvcClient {
 
 
     #[inline]
-    pub fn read_file_from_hash(&self, obj_hash: String) -> JsResult<Option<String>>{
+    pub fn read_file_from_hash(&self, obj_hash: String) -> JsResult<Option<String>> {
         let content = self.0.read_file_from_hash(&ObjHash(obj_hash))?;
         Ok(content)
     }
 
-    #[inline]
+
     pub fn all_commit_metas(&self) -> JsResult<Vec<CommitMeta>> {
         let metas = self.0.all_commit_metas()?;
         Ok(metas)
     }
 
 
-    #[inline]
     pub fn exists_in_traces(&self, file_path: &str) -> JsResult<bool> {
         let exists = self.0.exists_in_traces(file_path)?;
         Ok(exists)

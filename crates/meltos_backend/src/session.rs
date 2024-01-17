@@ -1,11 +1,20 @@
 use async_trait::async_trait;
 use auto_delegate::delegate;
+use meltos::room::RoomId;
 
 use meltos::user::{SessionId, UserId};
 
 use crate::error;
 
 pub mod mock;
+pub mod sqlite;
+
+
+
+pub trait NewSessionIo: Sized{
+    fn new(room_id: RoomId) -> error::Result<Self>;
+}
+
 
 #[async_trait]
 #[delegate]

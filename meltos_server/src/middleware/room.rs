@@ -9,7 +9,6 @@ use serde_json::json;
 use tokio_tungstenite::tungstenite::http::StatusCode;
 
 use meltos::room::RoomId;
-use meltos_backend::user::SessionIo;
 
 use crate::room::Room;
 use crate::state::AppState;
@@ -19,14 +18,14 @@ pub struct SessionRoom(pub Room);
 
 #[derive(TypedPath, Deserialize, Serialize)]
 #[typed_path("/room/:room_id")]
-struct PathParam {
+pub struct PathParam {
     pub room_id: RoomId,
 }
 
 impl PathParam {
-    pub async fn new<Session: Send + Sync>(
+    pub async fn new(
         parts: &mut Parts,
-        state: &AppState<Session>,
+        state: &AppState,
     ) -> Result<Self, Response> {
         let param = PathParam::from_request_parts(parts, state)
             .await
@@ -37,7 +36,7 @@ impl PathParam {
                         json!({
                             "error" : e.to_string()
                         })
-                        .to_string(),
+                            .to_string(),
                     ))
                     .unwrap()
             })?;
@@ -46,15 +45,13 @@ impl PathParam {
 }
 
 #[async_trait]
-impl<Session> FromRequestParts<AppState<Session>> for SessionRoom
-where
-    Session: SessionIo,
+impl FromRequestParts<AppState> for SessionRoom
 {
     type Rejection = Response;
 
     async fn from_request_parts(
         parts: &mut Parts,
-        state: &AppState<Session>,
+        state: &AppState,
     ) -> Result<Self, Self::Rejection> {
         let room_id = PathParam::new(parts, state).await?.room_id;
         let room = state.rooms.lock().await.room(&room_id)?;

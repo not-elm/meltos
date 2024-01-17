@@ -6,7 +6,7 @@ use meltos_util::serde::SerializeJson;
 
 pub mod room;
 
-pub type HttpResult = std::result::Result<Response, Response>;
+pub type HttpResult<T = Response> = std::result::Result<T, Response>;
 
 pub trait AsSuccessResponse {
     fn as_success_response(&self) -> Response;
@@ -42,8 +42,7 @@ mod test_util {
     use meltos::schema::room::Opened;
     use meltos::user::{SessionId, UserId};
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
-    use meltos_backend::user::mock::MockUserSessionIo;
-    use meltos_backend::user::SessionIo;
+    use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::branch::BranchName;
     use meltos_tvc::file_system::mock::MockFileSystem;
     use meltos_tvc::io::bundle::Bundle;
@@ -126,31 +125,23 @@ mod test_util {
         }
     }
 
-    pub async fn logged_in_app() -> (SessionId, Router) {
-        let session = MockUserSessionIo::default();
-        let (_, session_id) = session.register(Some(UserId::from("owner"))).await.unwrap();
-        (session_id, app::<MockUserSessionIo, MockGlobalDiscussionIo>(session))
+
+    #[inline(always)]
+    pub fn mock_app() -> Router {
+        app::<MockSessionIo, MockGlobalDiscussionIo>()
     }
 
-    pub fn owner_session_id() -> SessionId {
-        SessionId("owner".to_string())
-    }
 
-    #[allow(unused)]
-    pub fn user_session_id() -> SessionId {
-        SessionId("tvc".to_string())
-    }
 
-    pub async fn http_open_room(app: &mut Router, mock: MockFileSystem) -> RoomId {
+    pub async fn http_open_room(app: &mut Router, mock: MockFileSystem) -> Opened {
         http_call_with_deserialize::<Opened>(app, open_room_request(mock))
             .await
-            .room_id
     }
 
     pub async fn http_fetch(app: &mut Router, room_id: &RoomId, session_id: &SessionId) -> Bundle {
         http_call_with_deserialize::<Bundle>(
             app,
-            fetch_request(room_id, session_id)
+            fetch_request(room_id, session_id),
         )
             .await
     }

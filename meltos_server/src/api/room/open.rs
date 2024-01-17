@@ -2,35 +2,35 @@ use std::fmt::Debug;
 
 use axum::body::Body;
 use axum::extract::State;
-use axum::response::Response;
 use axum::Json;
+use axum::response::Response;
 
 use meltos::room::RoomId;
 use meltos::schema::room::Open;
 use meltos::schema::room::Opened;
 use meltos::user::{SessionId, UserId};
 use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
-use meltos_backend::user::SessionIo;
+use meltos_backend::session::{NewSessionIo, SessionIo};
 use meltos_util::serde::SerializeJson;
 
 use crate::api::HttpResult;
 use crate::room::{Room, Rooms};
-use crate::state::SessionState;
 
 #[tracing::instrument]
 pub async fn open<Session, Discussion>(
     State(rooms): State<Rooms>,
-    State(session): State<SessionState<Session>>,
     Json(param): Json<Open>,
 ) -> HttpResult
-where
-    Discussion: DiscussionIo + NewDiscussIo + 'static,
-    Session: SessionIo + Debug,
+    where
+        Discussion: DiscussionIo + NewDiscussIo + 'static,
+        Session: SessionIo + NewSessionIo + Debug + 'static,
 {
-    let (user_id, session_id) = session.register(param.user_id.clone()).await?;
-    let room = Room::open::<Discussion>(user_id.clone())?;
-    let room_id = room.id.clone();
     let life_time = param.life_time_duration();
+    let user_id = param.user_id.unwrap_or_else(UserId::new);
+    let room = Room::open::<Discussion, Session>(user_id.clone())?;
+    let (user_id, session_id) = room.session.register(Some(user_id)).await?;
+    let room_id = room.id.clone();
+
     if let Some(bundle) = param.bundle {
         room.save_bundle(bundle)?;
     }
@@ -52,31 +52,32 @@ fn response_success_create_room(
                 user_id,
                 session_id,
             }
-            .as_json(),
+                .as_json(),
         ))
         .unwrap()
 }
 
 #[cfg(test)]
 mod tests {
-    use axum::http::StatusCode;
     use std::time::Duration;
+
+    use axum::http::StatusCode;
     use tower::ServiceExt;
 
     use meltos::schema::room::Opened;
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
-    use meltos_backend::user::mock::MockUserSessionIo;
+    use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::file_system::mock::MockFileSystem;
 
+    use crate::{app, error};
     use crate::api::test_util::{
         create_discussion_request, http_call, open_room_request, open_room_request_with_options,
         ResponseConvertable,
     };
-    use crate::{app, error};
 
     #[tokio::test]
     async fn return_room_id_and_session_id() -> error::Result {
-        let app = app::<MockUserSessionIo, MockGlobalDiscussionIo>(MockUserSessionIo::default());
+        let app = app::<MockSessionIo, MockGlobalDiscussionIo>();
         let mock = MockFileSystem::default();
         let response = app.oneshot(open_room_request(mock)).await.unwrap();
         let opened = response.deserialize::<Opened>().await;
@@ -87,7 +88,7 @@ mod tests {
 
     #[tokio::test]
     async fn timeout() -> error::Result {
-        let mut app = app::<MockUserSessionIo, MockGlobalDiscussionIo>(MockUserSessionIo::default());
+        let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
         let response = http_call(&mut app, open_room_request_with_options(None, Some(1))).await;
         tokio::time::sleep(Duration::from_secs(2)).await;
         let opened = response.deserialize::<Opened>().await;

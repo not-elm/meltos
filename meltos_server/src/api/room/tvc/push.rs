@@ -1,5 +1,6 @@
 use axum::http::Response;
 use axum::Json;
+
 use meltos_tvc::io::bundle::Bundle;
 
 use crate::api::HttpResult;
@@ -20,34 +21,35 @@ pub async fn push(
 
 #[cfg(test)]
 mod tests {
-    use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
-    use meltos_backend::user::mock::MockUserSessionIo;
+    use meltos::schema::room::Opened;
     use meltos_tvc::branch::BranchName;
-    use meltos_tvc::file_system::mock::MockFileSystem;
     use meltos_tvc::file_system::FileSystem;
+    use meltos_tvc::file_system::mock::MockFileSystem;
     use meltos_tvc::operation;
     use meltos_tvc::operation::commit::Commit;
     use meltos_tvc::operation::stage;
 
-    use crate::api::test_util::{http_open_room, owner_session_id, MockServerClient};
-    use crate::app;
+    use crate::api::test_util::{http_open_room, mock_app, MockServerClient};
 
     #[tokio::test]
-    async fn success() {
-        let session = MockUserSessionIo::with_mock_users().await;
-        let mock = MockFileSystem::default();
-      let mut app = app::<MockUserSessionIo, MockGlobalDiscussionIo>(session);
-        let room_id = http_open_room(&mut app, mock.clone()).await;
-        mock.write_file("workspace/src/hello.txt", b"hello")
+    async fn success_send_bundle() {
+        let fs = MockFileSystem::default();
+        let mut app = mock_app();
+        let Opened {
+            room_id,
+            session_id,
+            ..
+        } = http_open_room(&mut app, fs.clone()).await;
+        fs.write_file("workspace/src/hello.txt", b"hello")
             .unwrap();
-        stage::Stage::new(BranchName::owner(), mock.clone())
+        stage::Stage::new(BranchName::owner(), fs.clone())
             .execute(".")
             .unwrap();
-        Commit::new(BranchName::owner(), mock.clone())
+        Commit::new(BranchName::owner(), fs.clone())
             .execute("commit")
             .unwrap();
-        let mut sender = MockServerClient::new(&mut app, room_id, owner_session_id());
-        operation::push::Push::new(BranchName::owner(), mock.clone())
+        let mut sender = MockServerClient::new(&mut app, room_id, session_id);
+        operation::push::Push::new(BranchName::owner(), fs.clone())
             .execute(&mut sender)
             .await
             .unwrap();

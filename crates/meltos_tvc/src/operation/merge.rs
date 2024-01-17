@@ -256,7 +256,7 @@ mod tests {
         let mock = MockFileSystem::default();
 
         let b1 = BranchName::owner();
-        let b2 = BranchName::from("user");
+        let b2 = BranchName::from("session");
         let init = Init::new(b1.clone(), mock.clone());
         let checkout = Checkout::new(mock.clone());
         init.execute().unwrap();
@@ -289,7 +289,7 @@ mod tests {
     //     let mock = MockFileSystem::default();
     //
     //     let b1 = BranchName::owner();
-    //     let b2 = BranchName::from("user");
+    //     let b2 = BranchName::from("session");
     //     let init = Init::new(b1.clone(), mock.clone());
     //     let checkout = Checkout::new(mock.clone());
     //     init.execute().unwrap();

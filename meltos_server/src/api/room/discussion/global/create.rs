@@ -21,7 +21,7 @@ pub async fn create(
         from: user_id,
         message: MessageData::DiscussionCreated(created.clone()),
     })
-    .await?;
+        .await?;
 
     Ok(created.as_success_response())
 }
@@ -33,16 +33,21 @@ mod tests {
     use tower::ServiceExt;
 
     use meltos::schema::discussion::global::Created;
+    use meltos::schema::room::Opened;
     use meltos_tvc::file_system::mock::MockFileSystem;
 
-    use crate::api::test_util::{create_discussion_request, http_open_room, logged_in_app};
+    use crate::api::test_util::{create_discussion_request, http_open_room, mock_app};
     use crate::error;
 
     #[tokio::test]
     async fn return_created_command() -> error::Result {
-        let (session_id, mut app) = logged_in_app().await;
+        let mut app = mock_app();
         let mock = MockFileSystem::default();
-        let room_id = http_open_room(&mut app, mock).await;
+        let Opened {
+            room_id,
+            session_id,
+            ..
+        } = http_open_room(&mut app, mock).await;
         let request = create_discussion_request("title".to_string(), room_id, &session_id);
         let response = app.oneshot(request).await.unwrap();
         assert_eq!(response.status(), StatusCode::OK);

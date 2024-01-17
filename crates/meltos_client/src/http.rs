@@ -99,6 +99,17 @@ impl HttpClient {
         })
     }
 
+
+    pub async fn leave(&self) -> error::Result{
+        self.client
+            .delete(format!("{}/room/{}", self.base_uri, self.configs.room_id))
+            .header(header::SET_COOKIE, format!("session_id={}", self.configs().session_id))
+            .send()
+            .await?;
+
+        Ok(())
+    }
+
     #[inline]
     pub async fn fetch(&self) -> error::Result<Bundle> {
         self.get().await

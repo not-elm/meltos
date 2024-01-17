@@ -8,26 +8,28 @@ use axum_extra::extract::cookie::Cookie;
 use serde_json::json;
 
 use meltos::user::{SessionId, UserId};
-use meltos_backend::user::SessionIo;
 
+use crate::middleware::room::PathParam;
 use crate::state::AppState;
 
 #[derive(Eq, PartialEq, Clone, Hash, Debug)]
 pub struct SessionUser(pub UserId);
 
 #[async_trait]
-impl<Session> FromRequestParts<AppState<Session>> for SessionUser
-where
-    Session: SessionIo,
+impl FromRequestParts<AppState> for SessionUser
+
 {
     type Rejection = Response;
 
     async fn from_request_parts(
         parts: &mut Parts,
-        state: &AppState<Session>,
+        state: &AppState,
     ) -> Result<Self, Self::Rejection> {
         let session_id = extract_session_id_from_cookie(parts)?;
-        let user_id = state.session.try_fetch_user_id(session_id).await?;
+        let room_id = PathParam::new(parts, state).await?.room_id;
+        let mut rooms = state.rooms.lock().await;
+        let room = rooms.room(&room_id)?;
+        let user_id = room.session.fetch(session_id).await?;
         Ok(Self(user_id))
     }
 }
@@ -39,7 +41,7 @@ fn response_unauthorized() -> Response {
             json!({
                 "error" : "unauthorized"
             })
-            .to_string(),
+                .to_string(),
         ))
         .unwrap()
 }
