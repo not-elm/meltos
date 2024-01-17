@@ -178,6 +178,7 @@ impl Room {
     }
 
     pub fn delete_resource_dir(self) {
+        drop(self.session);
         drop(self.discussion);
         let dir = room_resource_dir(&self.id);
         if dir.exists() {

@@ -1,9 +1,9 @@
 use crate::encode::Decodable;
 use crate::error;
 use crate::file_system::{FilePath, FileSystem};
+use crate::object::{AsMeta, Obj, ObjHash};
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
-use crate::object::{AsMeta, Obj, ObjHash};
 
 pub struct ChangeFileMeta {
     pub path: FilePath,
@@ -18,15 +18,15 @@ pub enum ChangeFile {
 
 #[derive(Debug, Clone)]
 pub struct WorkspaceIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     fs: Fs,
 }
 
 impl<Fs> WorkspaceIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     #[inline]
     pub const fn new(fs: Fs) -> WorkspaceIo<Fs> {
@@ -37,6 +37,7 @@ where
 
     pub fn convert_to_objs(&self, path: &str) -> error::Result<ObjectIter<Fs>> {
         let files = self.files(path)?;
+
         Ok(ObjectIter {
             files,
             index: 0,
@@ -144,8 +145,8 @@ where
 }
 
 pub struct ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     files: Vec<String>,
     index: usize,
@@ -153,8 +154,8 @@ where
 }
 
 impl<'a, Fs> Iterator for ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     type Item = std::io::Result<(FilePath, FileObj)>;
 
@@ -170,8 +171,8 @@ where
 }
 
 impl<'a, Fs> ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     fn read_to_obj(&self) -> std::io::Result<(FilePath, FileObj)> {
         let path = self.files.get(self.index).unwrap();
@@ -182,13 +183,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::file_system::mock::MockFileSystem;
+    use std::collections::HashSet;
+
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::workspace::WorkspaceIo;
-    use crate::object::file::FileObj;
     use crate::object::{AsMeta, Obj, ObjHash};
-    use std::collections::HashSet;
+    use crate::object::file::FileObj;
 
     #[test]
     fn read_all_objects_in_dir() {
@@ -241,10 +243,10 @@ mod tests {
             files.into_iter().collect::<HashSet<String>>(),
             vec![
                 "workspace/hello.txt".to_string(),
-                "workspace/dist/index.js".to_string()
+                "workspace/dist/index.js".to_string(),
             ]
-            .into_iter()
-            .collect::<HashSet<String>>()
+                .into_iter()
+                .collect::<HashSet<String>>()
         );
     }
 }

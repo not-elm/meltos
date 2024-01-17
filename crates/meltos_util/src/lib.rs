@@ -4,6 +4,7 @@ pub mod serde;
 
 pub mod hash;
 pub mod fs;
+pub mod wasm;
 
 pub mod macros {
     pub use meltos_macros::*;

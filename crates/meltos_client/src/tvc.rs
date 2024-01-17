@@ -40,6 +40,7 @@ pub struct CommitMeta {
 
 const BASE: &str = "http://127.0.0.1:3000";
 
+#[derive(Clone)]
 pub struct TvcClient<Fs: FileSystem + Clone> {
     operations: Operations<Fs>,
     staging: StagingIo<Fs>,
@@ -103,9 +104,8 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 
 
-
     #[inline(always)]
-    pub async fn leave(&self, session_configs: SessionConfigs) -> error::Result{
+    pub async fn leave(&self, session_configs: SessionConfigs) -> error::Result {
         HttpClient::new(BASE, session_configs).leave().await
     }
 

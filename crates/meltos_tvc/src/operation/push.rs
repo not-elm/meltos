@@ -12,7 +12,7 @@ use crate::io::bundle::{Bundle, BundleBranch, BundleObject, BundleTrace};
 use crate::io::commit_obj::CommitObjIo;
 use crate::object::commit::CommitObj;
 
-#[async_trait(?Send)]
+#[async_trait(? Send)]
 pub trait Pushable<Output> {
     type Error: Display;
 
@@ -21,8 +21,8 @@ pub trait Pushable<Output> {
 
 #[derive(Debug, Clone)]
 pub struct Push<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     commit_obj: CommitObjIo<Fs>,
     local_commits: LocalCommitsIo<Fs>,
@@ -31,8 +31,8 @@ where
 }
 
 impl<Fs> Push<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     pub fn new(branch_name: BranchName, fs: Fs) -> Push<Fs> {
         Self {
@@ -45,8 +45,8 @@ where
 }
 
 impl<Fs> Push<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     /// Sends the currently locally committed data to the remote.
     /// * push local commits to remote server.
@@ -56,6 +56,7 @@ where
         remote: &mut impl Pushable<Output>,
     ) -> error::Result<Output> {
         let bundle = self.create_push_bundle()?;
+
         let output = remote
             .push(bundle)
             .await
@@ -71,6 +72,7 @@ where
         }
         let traces = self.trace.read_all()?;
         let objs = self.commit_obj.read_objs_associated_with_local_commits()?;
+
         Ok(Bundle {
             objs,
             traces,
@@ -96,8 +98,8 @@ mod tests {
 
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::bundle::Bundle;
     use crate::io::commit_obj::CommitObjIo;
@@ -115,7 +117,7 @@ mod tests {
 
     unsafe impl Sync for MockRemoteClient {}
 
-    #[async_trait(?Send)]
+    #[async_trait(? Send)]
     impl Pushable<()> for MockRemoteClient {
         type Error = String;
 

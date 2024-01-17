@@ -4,7 +4,7 @@ use crate::file_system::FileSystem;
 use crate::io::commit_obj::CommitObjIo;
 use crate::object::commit::CommitHash;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CommitHashIo<Fs>
     where
         Fs: FileSystem,
