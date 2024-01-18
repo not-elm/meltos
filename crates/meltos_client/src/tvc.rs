@@ -122,9 +122,10 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         Ok(())
     }
 
-    pub fn commit(&self, commit_text: String) -> error::Result {
-        self.operations.commit.execute(commit_text)?;
-        Ok(())
+
+    #[inline(always)]
+    pub fn commit(&self, commit_text: String) -> error::Result<CommitHash> {
+        Ok(self.operations.commit.execute(commit_text)?)
     }
 
     pub async fn push(&mut self, session_configs: SessionConfigs) -> error::Result {
@@ -203,13 +204,13 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 
 
-    pub fn exists_in_traces(&self, file_path: &str) -> error::Result<bool> {
+    pub fn find_obj_hash_from_traces(&self, file_path: &str) -> error::Result<Option<ObjHash>> {
         let Some(head) = self.head.read(&BranchName(self.branch_name.clone()))?
             else {
-                return Ok(false);
+                return Ok(None);
             };
         let trace_tree = self.trace.read(&head)?;
-        Ok(trace_tree.contains_key(&FilePath::from(file_path)))
+        Ok(trace_tree.get(&FilePath::from(file_path)).cloned())
     }
 
 

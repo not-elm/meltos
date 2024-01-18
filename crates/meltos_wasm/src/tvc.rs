@@ -27,13 +27,13 @@ impl WasmTvcClient {
         Ok(commit_hash)
     }
 
-    #[inline]
+    #[inline(always)]
     pub async fn open_room(&self, lifetime_sec: Option<u64>) -> JsResult<SessionConfigs> {
         let session_configs = self.0.open_room(lifetime_sec).await?;
         Ok(session_configs)
     }
 
-    #[inline]
+    #[inline(always)]
     pub async fn join_room(
         &self,
         room_id: String,
@@ -43,65 +43,63 @@ impl WasmTvcClient {
         Ok(session_configs)
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn stage(&self, path: String) -> JsResult {
         self.0.stage(path)?;
         Ok(())
     }
 
-    #[inline]
-    pub fn commit(&self, text: String) -> JsResult {
-        self.0.commit(text)?;
-        Ok(())
+    #[inline(always)]
+    pub fn commit(&self, text: String) -> JsResult<CommitHash> {
+        Ok(self.0.commit(text)?)
     }
 
 
-    #[inline]
+    #[inline(always)]
     pub async fn push(&mut self, session_configs: &SessionConfigs) -> JsResult {
         console_log!("PUSH!!!!!!!!!!!!!");
         self.0.push(session_configs.clone()).await?;
         Ok(())
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn merge(&self, source_branch: String) -> JsResult {
         let _ = self.0.merge(source_branch)?;
         Ok(())
     }
 
 
-    #[inline]
+    #[inline(always)]
     pub async fn fetch(&self, session_configs: &SessionConfigs) -> JsResult {
         self.0.fetch(session_configs.clone()).await?;
         Ok(())
     }
 
 
-    #[inline]
+    #[inline(always)]
     pub fn staging_files(&self) -> JsResult<Vec<String>> {
         let files = self.0.staging_files()?;
         Ok(files)
     }
 
 
-    #[inline]
+    #[inline(always)]
     pub fn read_file_from_hash(&self, obj_hash: String) -> JsResult<Option<String>> {
         let content = self.0.read_file_from_hash(&ObjHash(obj_hash))?;
         Ok(content)
     }
 
-
+    #[inline(always)]
     pub fn all_commit_metas(&self) -> JsResult<Vec<CommitMeta>> {
         let metas = self.0.all_commit_metas()?;
         Ok(metas)
     }
 
-
-    pub fn exists_in_traces(&self, file_path: &str) -> JsResult<bool> {
-        let exists = self.0.exists_in_traces(file_path)?;
-        Ok(exists)
+    #[inline(always)]
+    pub fn find_obj_hash_from_traces(&self, file_path: &str) -> JsResult<Option<ObjHash>> {
+        let obj_hash = self.0.find_obj_hash_from_traces(file_path)?;
+        Ok(obj_hash)
     }
-
 
     #[inline]
     pub fn close(&self) -> JsResult {

@@ -1,6 +1,3 @@
-use log::info;
-use wasm_bindgen::prelude::wasm_bindgen;
-use meltos_util::console_log;
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::{FilePath, FileSystem};
@@ -9,15 +6,15 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::io::workspace::WorkspaceIo;
+use crate::object::{AsMeta, ObjHash};
 use crate::object::delete::DeleteObj;
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
-use crate::object::{AsMeta, ObjHash};
 
 #[derive(Debug, Clone)]
 pub struct Stage<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     trace_tree: TraceTreeIo<Fs>,
     staging: StagingIo<Fs>,
@@ -28,8 +25,8 @@ where
 }
 
 impl<Fs> Stage<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     #[inline]
     pub fn new(branch_name: BranchName, fs: Fs) -> Stage<Fs> {
@@ -46,8 +43,8 @@ where
 
 
 impl<Fs> Stage<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     pub fn execute(&self, workspace_path: &str) -> error::Result {
         let mut stage_tree = self.staging.read()?.unwrap_or_default();
@@ -128,11 +125,9 @@ where
         workspace_path: &str,
     ) -> error::Result<Vec<(FilePath, ObjHash)>> {
         let work_space_files = self.workspace.files(".")?;
-        console_log!("workspace files = {work_space_files:?}");
         Ok(trace_tree
             .iter()
             .filter_map(|(path, hash)| {
-                console_log!("delete path = {path} delete? = {}", work_space_files.contains(&path.0));
                 if work_space_files.contains(&path.0) {
                     None
                 } else {
@@ -147,12 +142,12 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
+    use crate::object::{AsMeta, ObjHash};
     use crate::object::delete::DeleteObj;
     use crate::object::file::FileObj;
-    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::stage;
     use crate::operation::stage::Stage;
@@ -169,7 +164,7 @@ mod tests {
             &FilePath::from_path("workspace/src/main.rs"),
             "dasds日本語".as_bytes(),
         )
-        .unwrap();
+            .unwrap();
         stage.execute(".").unwrap();
 
         let obj = ObjIo::new(mock);

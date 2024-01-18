@@ -1,7 +1,7 @@
+use meltos_tvc::file_system::FileSystem;
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen_futures::js_sys::Uint8Array;
 
-use meltos_tvc::file_system::FileSystem;
 use crate::console_log;
 
 #[wasm_bindgen]
@@ -28,7 +28,6 @@ extern "C" {
 
 impl FileSystem for StorageFs {
     fn write(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
-        console_log!("write = {path}");
         self.write_api(path.to_string(), Uint8Array::from(buf));
         Ok(())
     }
