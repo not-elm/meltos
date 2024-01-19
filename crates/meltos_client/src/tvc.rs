@@ -117,12 +117,25 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         Ok(())
     }
 
+
+    #[inline(always)]
     pub fn stage(&self, path: String) -> error::Result {
         self.operations.stage.execute(&path)?;
         Ok(())
     }
 
+    #[inline(always)]
+    pub fn un_stage(&self, file_path: &str) -> error::Result {
+        self.operations.un_stage.execute(file_path)?;
+        Ok(())
+    }
 
+    #[inline(always)]
+    pub fn un_stage_all(&self) -> error::Result {
+        self.operations.un_stage.execute_all()?;
+        Ok(())
+    }
+    
     #[inline(always)]
     pub fn commit(&self, commit_text: String) -> error::Result<CommitHash> {
         Ok(self.operations.commit.execute(commit_text)?)

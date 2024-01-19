@@ -50,6 +50,18 @@ impl WasmTvcClient {
     }
 
     #[inline(always)]
+    pub fn un_stage(&self, file_path: &str) -> JsResult {
+        self.0.un_stage(file_path)?;
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn un_stage_all(&self) -> JsResult {
+        self.0.un_stage_all()?;
+        Ok(())
+    }
+
+    #[inline(always)]
     pub fn commit(&self, text: String) -> JsResult<CommitHash> {
         Ok(self.0.commit(text)?)
     }

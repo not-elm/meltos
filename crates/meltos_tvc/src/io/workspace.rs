@@ -49,7 +49,7 @@ impl<Fs> WorkspaceIo<Fs>
     pub fn files(&self, path: &str) -> error::Result<Vec<String>> {
         let path = match path {
             "." | "./" => "workspace".to_string(),
-            path => format!("workspace/{path}"),
+            path => format!("workspace/{}", path.trim_start_matches("workspace/")),
         };
         Ok(self.fs.all_files_in(&path)?)
     }

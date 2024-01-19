@@ -13,6 +13,7 @@ use crate::operation::patch::Patch;
 use crate::operation::push::Push;
 use crate::operation::save::Save;
 use crate::operation::stage::Stage;
+use crate::operation::un_stage::UnStage;
 use crate::operation::unzip::UnZip;
 
 pub mod checkout;
@@ -25,6 +26,7 @@ pub mod push;
 pub mod save;
 pub mod stage;
 pub mod unzip;
+pub mod un_stage;
 
 #[derive(Debug)]
 pub struct Operations<Fs = StdFileSystem>
@@ -34,6 +36,7 @@ pub struct Operations<Fs = StdFileSystem>
     pub init: Init<Fs>,
     pub patch: Patch<Fs>,
     pub stage: Stage<Fs>,
+    pub un_stage: UnStage<Fs>,
     pub commit: Commit<Fs>,
     pub push: Push<Fs>,
     pub save: Save<Fs>,
@@ -67,6 +70,7 @@ impl<Fs> Operations<Fs>
             init: Init::new(branch_name.clone(), fs.clone()),
             patch: Patch::new(fs.clone()),
             stage: Stage::new(branch_name.clone(), fs.clone()),
+            un_stage: UnStage::new(fs.clone()),
             commit: Commit::new(branch_name.clone(), fs.clone()),
             push: Push::new(branch_name.clone(), fs.clone()),
             save: Save::new(fs.clone()),
