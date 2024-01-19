@@ -60,6 +60,7 @@ impl<'a, Global> DiscussionCommandExecutor<'a, Global>
             .map_err(|e| error::Error::FailedDiscussionIo(e.to_string()))?;
 
         Ok(Replied {
+            discussion_id: reply.discussion_id,
             to: reply.to,
             message: reply_message,
         })

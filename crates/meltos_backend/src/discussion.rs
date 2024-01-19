@@ -36,5 +36,4 @@ pub trait DiscussionIo: Send + Sync {
     async fn all_discussions(&self) -> error::Result<Vec<DiscussionBundle>>;
 
     async fn close_discussion(&self, discussion_id: &DiscussionId) -> error::Result;
-
 }

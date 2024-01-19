@@ -10,6 +10,7 @@ use crate::commands::leave::LeaveArgs;
 use crate::commands::merge::MergeArgs;
 use crate::commands::open::OpenArgs;
 use crate::commands::push::PushArgs;
+use crate::commands::reply::ReplyArgs;
 use crate::commands::speak::SpeakArgs;
 use crate::commands::stage::StageArgs;
 
@@ -22,6 +23,7 @@ mod push;
 mod stage;
 mod leave;
 mod speak;
+mod reply;
 
 #[async_trait(?Send)]
 pub trait CommandExecutable {
@@ -39,7 +41,8 @@ pub enum Commands {
     Commit(CommitArgs),
     Push(PushArgs),
     Merge(MergeArgs),
-    Speak(SpeakArgs)
+    Speak(SpeakArgs),
+    Reply(ReplyArgs)
 }
 
 #[async_trait(?Send)]
@@ -55,6 +58,7 @@ impl CommandExecutable for Commands {
             Self::Push(c) => c.execute().await,
             Self::Merge(c) => c.execute().await,
             Self::Speak(c) => c.execute().await,
+            Self::Reply(c) => c.execute().await,
         }
     }
 }

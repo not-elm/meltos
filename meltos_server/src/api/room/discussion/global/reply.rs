@@ -63,6 +63,7 @@ mod tests {
             &room_id,
             &session_id,
             Reply {
+                discussion_id: created.meta.id.clone(),
                 to: spoke.message.id.clone(),
                 text: MessageText::from("reply"),
             },
