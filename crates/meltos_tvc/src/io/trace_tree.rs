@@ -2,23 +2,24 @@ use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
+use crate::object::AsMeta;
 use crate::object::commit::CommitHash;
 use crate::object::tree::TreeObj;
-use crate::object::AsMeta;
 
 #[derive(Debug, Clone)]
 pub struct TraceTreeIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     trace: TraceIo<Fs>,
     object: ObjIo<Fs>,
 }
 
 impl<Fs> TraceTreeIo<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
+    #[inline(always)]
     pub fn new(fs: Fs) -> TraceTreeIo<Fs> {
         Self {
             trace: TraceIo::new(fs.clone()),
@@ -28,8 +29,8 @@ where
 }
 
 impl<Fs> TraceTreeIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     pub fn write(&self, trace_tree: &TreeObj, commit_hash: &CommitHash) -> error::Result {
         let meta = trace_tree.as_meta()?;
@@ -49,38 +50,39 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::encode::Encodable;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::trace_tree::TraceTreeIo;
+    use crate::object::{AsMeta, ObjHash};
     use crate::object::commit::CommitHash;
     use crate::object::tree::TreeObj;
-    use crate::object::{AsMeta, ObjHash};
     use crate::operation::init;
 
     #[test]
     fn success_read_trace_tree() {
-        let mock = MockFileSystem::default();
-        let init = init::Init::new(BranchName::owner(), mock.clone());
-        let trace_tree = TraceTreeIo::new(mock.clone());
-        init.execute().unwrap();
+        let fs = MockFileSystem::default();
+        let branch = BranchName::owner();
+        let init = init::Init::new(fs.clone());
+        let trace_tree = TraceTreeIo::new(fs.clone());
+        init.execute(&branch).unwrap();
 
         let mut tree = TreeObj::default();
         tree.insert(FilePath::from("me/hello"), ObjHash::new(b"hello"));
 
         let commit_hash = CommitHash(ObjHash::new(b"commit"));
         trace_tree.write(&tree, &commit_hash).unwrap();
-        mock.write_file(
+        fs.write_file(
             &format!(".meltos/branches/traces/{commit_hash}"),
             &tree.as_meta().unwrap().hash.encode().unwrap(),
         )
-        .unwrap();
+            .unwrap();
         trace_tree.read(&commit_hash).unwrap();
     }
 
     #[test]
     fn read_tree_after_wrote() {
-        let mock = MockFileSystem::default();
-        let trace_tre = TraceTreeIo::new(mock);
+        let fs = MockFileSystem::default();
+        let trace_tre = TraceTreeIo::new(fs);
         let mut staging = TreeObj::default();
         staging.insert(FilePath::from_path("./src/hello"), ObjHash::new(b"hello"));
         let commit_hash = CommitHash(ObjHash::new(b"commit"));

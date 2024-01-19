@@ -9,8 +9,8 @@ use crate::object::commit::CommitHash;
 
 #[derive(Debug, Clone)]
 pub struct Save<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     trace: TraceIo<Fs>,
     object: ObjIo<Fs>,
@@ -18,8 +18,8 @@ where
 }
 
 impl<Fs> Save<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Save<Fs> {
         Self {
@@ -74,8 +74,8 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::encode::Encodable;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::bundle::{Bundle, BundleBranch};
     use crate::object::commit::CommitHash;
     use crate::object::ObjHash;
@@ -83,8 +83,8 @@ mod tests {
 
     #[test]
     fn created_head_file() {
-        let mock = MockFileSystem::default();
-        let save = Save::new(mock.clone());
+        let fs = MockFileSystem::default();
+        let save = Save::new(fs.clone());
 
         let head = CommitHash(ObjHash::new(b"commit hash"));
         let bundle = Bundle {
@@ -96,7 +96,7 @@ mod tests {
             objs: Vec::with_capacity(0),
         };
         save.execute(bundle).unwrap();
-        let actual = mock.try_read_file(".meltos/refs/heads/owner").unwrap();
+        let actual = fs.try_read_file(".meltos/refs/heads/owner").unwrap();
         assert_eq!(actual, head.encode().unwrap());
     }
 }

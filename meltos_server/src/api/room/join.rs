@@ -74,13 +74,14 @@ mod tests {
     #[tokio::test]
     async fn return_tvc_meta() {
         let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
-        let mock = MockFileSystem::default();
-        mock.write_file("workspace/some_text.txt", b"text file")
+        let fs = MockFileSystem::default();
+        let branch = BranchName::owner();
+        fs.write_file("workspace/some_text.txt", b"text file")
             .unwrap();
-        Init::new(BranchName::owner(), mock.clone())
-            .execute()
+        Init::new(fs.clone())
+            .execute(&branch)
             .unwrap();
-        let bundle = BundleIo::new(mock.clone()).create().unwrap();
+        let bundle = BundleIo::new(fs.clone()).create().unwrap();
         let open_request = open_room_request_with_options(Some(bundle), None);
         let room_id = http_call_with_deserialize::<Opened>(&mut app, open_request)
             .await
@@ -93,9 +94,9 @@ mod tests {
     #[tokio::test]
     async fn return_user_id() {
         let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
-        let mock = MockFileSystem::default();
-        mock.write_file("./some_text.txt", b"text file").unwrap();
-        let opened = http_open_room(&mut app, mock.clone()).await;
+        let fs = MockFileSystem::default();
+        fs.write_file("./some_text.txt", b"text file").unwrap();
+        let opened = http_open_room(&mut app, fs.clone()).await;
         let response = http_join(&mut app, &opened.room_id, Some(UserId::from("tvc"))).await;
         let meta = response.deserialize::<Joined>().await;
         assert_eq!(meta.user_id, UserId::from("tvc"));

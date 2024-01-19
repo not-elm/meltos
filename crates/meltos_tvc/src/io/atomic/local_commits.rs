@@ -7,50 +7,54 @@ use crate::object::local_commits::LocalCommitsObj;
 
 #[derive(Debug, Clone)]
 pub struct LocalCommitsIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     fs: Fs,
-    file_path: String,
 }
 
 impl<Fs> LocalCommitsIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
-    #[inline]
-    pub fn new(branch_name: BranchName, fs: Fs) -> LocalCommitsIo<Fs> {
+    #[inline(always)]
+    pub const fn new(fs: Fs) -> LocalCommitsIo<Fs> {
         Self {
             fs,
-            file_path: format!(".meltos/branches/{branch_name}/LOCAL"),
         }
     }
 
-    pub fn write(&self, local_commits: &LocalCommitsObj) -> error::Result {
+    pub fn write(&self, local_commits: &LocalCommitsObj, branch_name: &BranchName) -> error::Result {
         self.fs
-            .write_file(&self.file_path, &local_commits.encode()?)?;
+            .write_file(&self.file_path(branch_name), &local_commits.encode()?)?;
         Ok(())
     }
 
-    pub fn append(&self, commit_hash: CommitHash) -> error::Result {
-        let mut local_commits = self.read()?.unwrap_or_default();
+    pub fn append(&self, commit_hash: CommitHash, branch_name: &BranchName) -> error::Result {
+        let mut local_commits = self.read(branch_name)?.unwrap_or_default();
         local_commits.push(commit_hash);
-        self.write(&local_commits)
+        self.write(&local_commits, branch_name)
     }
 
-    pub fn try_read(&self) -> error::Result<LocalCommitsObj> {
-        let Some(local_commits) = self.read()? else {
+    pub fn try_read(&self, branch_name: &BranchName) -> error::Result<LocalCommitsObj> {
+        let Some(local_commits) = self.read(branch_name)? else {
             return Err(error::Error::NotfoundLocalCommits);
         };
         Ok(local_commits)
     }
 
-    pub fn read(&self) -> error::Result<Option<LocalCommitsObj>> {
-        let Some(buf) = self.fs.read_file(&self.file_path)? else {
+    pub fn read(&self, branch_name: &BranchName) -> error::Result<Option<LocalCommitsObj>> {
+        let Some(buf) = self.fs.read_file(&self.file_path(branch_name))? else {
             return Ok(None);
         };
 
         Ok(Some(LocalCommitsObj::decode(&buf)?))
+    }
+
+
+    #[inline(always)]
+    fn file_path(&self, branch_name: &BranchName) -> String {
+        format!(".meltos/branches/{branch_name}/LOCAL")
     }
 }
 
@@ -66,9 +70,10 @@ mod tests {
     #[test]
     fn append_one_commit() {
         let hash = CommitHash(ObjHash::new(b"commit hash"));
-        let io = LocalCommitsIo::new(BranchName::owner(), MockFileSystem::default());
-        io.append(hash.clone()).unwrap();
-        let local_commits = io.read().unwrap().unwrap();
+        let branch_name = BranchName::owner();
+        let io = LocalCommitsIo::new(MockFileSystem::default());
+        io.append(hash.clone(), &branch_name).unwrap();
+        let local_commits = io.read(&branch_name).unwrap().unwrap();
         assert_eq!(local_commits, LocalCommitsObj(vec![hash]));
     }
 }

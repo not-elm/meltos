@@ -10,42 +10,41 @@ use crate::io::bundle::BundleObject;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::local_commits::LocalCommitsObj;
-use crate::object::tree::TreeObj;
 use crate::object::ObjHash;
+use crate::object::tree::TreeObj;
 
 #[derive(Debug, Clone)]
 pub struct CommitObjIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     head: HeadIo<Fs>,
     object: ObjIo<Fs>,
     local_commits: LocalCommitsIo<Fs>,
     trace_tree: TraceTreeIo<Fs>,
-    branch_name: BranchName,
 }
 
 impl<Fs> CommitObjIo<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
-    pub fn new(branch_name: BranchName, fs: Fs) -> CommitObjIo<Fs> {
+    #[inline(always)]
+    pub fn new(fs: Fs) -> CommitObjIo<Fs> {
         CommitObjIo {
             head: HeadIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
-            local_commits: LocalCommitsIo::new(branch_name.clone(), fs.clone()),
+            local_commits: LocalCommitsIo::new(fs.clone()),
             trace_tree: TraceTreeIo::new(fs),
-            branch_name,
         }
     }
 }
 
 impl<Fs> CommitObjIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
-    pub fn read_local_commits(&self) -> error::Result<Vec<CommitObj>> {
-        let Some(LocalCommitsObj(local_hashes)) = self.local_commits.read()? else {
+    pub fn read_local_commits(&self, branch_name: &BranchName) -> error::Result<Vec<CommitObj>> {
+        let Some(LocalCommitsObj(local_hashes)) = self.local_commits.read(branch_name)? else {
             return Ok(Vec::with_capacity(0));
         };
 
@@ -56,8 +55,9 @@ where
         Ok(commit_objs)
     }
 
-    pub fn read_head(&self) -> error::Result<CommitObj> {
-        let hash = self.head.try_read(&self.branch_name)?;
+    #[inline]
+    pub fn read_head(&self, branch_name: &BranchName) -> error::Result<CommitObj> {
+        let hash = self.head.try_read(branch_name)?;
         self.read(&hash)
     }
 
@@ -73,13 +73,13 @@ where
     }
 
 
-
     pub fn create(
         &self,
         commit_text: impl Into<CommitText>,
         staging_hash: ObjHash,
+        branch_name: &BranchName,
     ) -> error::Result<CommitObj> {
-        let head_commit = self.head.read(&self.branch_name)?;
+        let head_commit = self.head.read(branch_name)?;
         let parents = head_commit
             .map(|head| vec![head])
             .unwrap_or(Vec::with_capacity(0));
@@ -91,13 +91,13 @@ where
     }
 
     #[inline]
-    pub fn reset_local_commits(&self) -> error::Result {
-        self.local_commits.write(&LocalCommitsObj::default())
+    pub fn reset_local_commits(&self, branch_name: &BranchName) -> error::Result {
+        self.local_commits.write(&LocalCommitsObj::default(), branch_name)
     }
 
-    pub fn read_objs_associated_with_local_commits(&self) -> error::Result<Vec<BundleObject>> {
-        let local_commits = self.local_commits.try_read()?;
-        let head = self.head.read(&self.branch_name)?;
+    pub fn read_objs_associated_with_local_commits(&self, branch_name: &BranchName) -> error::Result<Vec<BundleObject>> {
+        let local_commits = self.local_commits.try_read(branch_name)?;
+        let head = self.head.read(branch_name)?;
         let from = local_commits.0[local_commits.0.len() - 1].clone();
         let obj_hashes = self.read_obj_hashes(from, &head)?;
         let mut obj_bufs = Vec::with_capacity(obj_hashes.len());
@@ -175,64 +175,64 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::commit_obj::CommitObjIo;
     use crate::io::trace_tree::TraceTreeIo;
     use crate::object::ObjHash;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
-    use crate::tests::init_main_branch;
+    use crate::tests::init_owner_branch;
 
     #[test]
     fn local_commits_is_empty_if_not_committed() {
-        let local_commit_objs = CommitObjIo::new(BranchName::owner(), MockFileSystem::default())
-            .read_local_commits()
+        let local_commit_objs = CommitObjIo::new(MockFileSystem::default())
+            .read_local_commits(&BranchName::owner())
             .unwrap();
         assert_eq!(local_commit_objs, vec![]);
     }
 
     #[test]
     fn local_commit_count_is_2() {
-        let mock = MockFileSystem::default();
-        init_main_branch(mock.clone());
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
         let branch = BranchName::owner();
-        let stage = Stage::new(branch.clone(), mock.clone());
-        let commit = Commit::new(branch.clone(), mock.clone());
-        let commit_obj = CommitObjIo::new(branch, mock.clone());
+        let stage = Stage::new(fs.clone());
+        let commit = Commit::new(fs.clone());
+        let commit_obj = CommitObjIo::new(fs.clone());
 
-        mock.write_file("workspace/hello.txt", b"hello").unwrap();
-        stage.execute(".").unwrap();
-        commit.execute("commit text").unwrap();
+        fs.write_file("workspace/hello.txt", b"hello").unwrap();
+        stage.execute(&branch, ".").unwrap();
+        commit.execute(&branch, "commit text").unwrap();
 
-        mock.write_file("workspace/hello.txt", b"hello2").unwrap();
-        stage.execute(".").unwrap();
-        commit.execute("commit text").unwrap();
+        fs.write_file("workspace/hello.txt", b"hello2").unwrap();
+        stage.execute(&branch, ".").unwrap();
+        commit.execute(&branch, "commit text").unwrap();
 
-        let local_commits = commit_obj.read_local_commits().unwrap();
+        let local_commits = commit_obj.read_local_commits(&branch).unwrap();
         assert_eq!(local_commits.len(), 3);
     }
 
     #[test]
     fn read_objs_associated_with_all_commits() {
-        let mock = MockFileSystem::default();
-        let null_commit_hash = init_main_branch(mock.clone());
+        let fs = MockFileSystem::default();
+        let null_commit_hash = init_owner_branch(fs.clone());
         let branch = BranchName::owner();
-        let stage = Stage::new(branch.clone(), mock.clone());
-        let trace = TraceTreeIo::new(mock.clone());
-        let commit = Commit::new(branch.clone(), mock.clone());
-        let obj = ObjIo::new(mock.clone());
-        let commit_obj = CommitObjIo::new(branch, mock.clone());
+        let stage = Stage::new(fs.clone());
+        let trace = TraceTreeIo::new(fs.clone());
+        let commit = Commit::new(fs.clone());
+        let obj = ObjIo::new(fs.clone());
+        let commit_obj = CommitObjIo::new(fs.clone());
 
-        mock.write_file("workspace/hello/hello", b"hello").unwrap();
-        stage.execute(".").unwrap();
-        let commit_hash1 = commit.execute("commit text").unwrap();
+        fs.write_file("workspace/hello/hello", b"hello").unwrap();
+        stage.execute(&branch, ".").unwrap();
+        let commit_hash1 = commit.execute(&branch, "commit text").unwrap();
 
-        mock.write_file("workspace/src/sample", b"sample").unwrap();
-        mock.write_file("workspace/t", b"t").unwrap();
-        stage.execute(".").unwrap();
-        let commit_hash2 = commit.execute("commit text").unwrap();
+        fs.write_file("workspace/src/sample", b"sample").unwrap();
+        fs.write_file("workspace/t", b"t").unwrap();
+        stage.execute(&branch, ".").unwrap();
+        let commit_hash2 = commit.execute(&branch, "commit text").unwrap();
 
         let mut objs = commit_obj
             .read_obj_hashes(commit_hash2.clone(), &None)

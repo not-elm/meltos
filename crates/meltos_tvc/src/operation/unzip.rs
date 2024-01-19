@@ -8,8 +8,8 @@ use crate::io::workspace::WorkspaceIo;
 
 #[derive(Debug, Clone)]
 pub struct UnZip<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     workspace: WorkspaceIo<Fs>,
     trace_tree: TraceTreeIo<Fs>,
@@ -19,8 +19,8 @@ where
 }
 
 impl<Fs> UnZip<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> UnZip<Fs> {
         Self {
@@ -34,8 +34,8 @@ where
 }
 
 impl<Fs> UnZip<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     /// Restore committed data into the workspace.
     pub fn execute(&self, branch_name: &BranchName) -> error::Result {
@@ -54,30 +54,30 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::operation::unzip::UnZip;
-    use crate::tests::init_main_branch;
+    use crate::tests::init_owner_branch;
 
     #[test]
     fn success_if_committed() -> error::Result {
-        let mock = MockFileSystem::default();
-        init_main_branch(mock.clone());
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
         let branch = BranchName::owner();
 
-        let stage = Stage::new(branch.clone(), mock.clone());
-        let commit = Commit::new(branch.clone(), mock.clone());
-        let unzip = UnZip::new(mock.clone());
+        let stage = Stage::new(fs.clone());
+        let commit = Commit::new(fs.clone());
+        let unzip = UnZip::new(fs.clone());
 
-        mock.write_file("workspace/hello", b"hello")?;
-        stage.execute("hello")?;
-        commit.execute("commit text")?;
-        mock.delete("workspace/hello")?;
+        fs.write_file("workspace/hello", b"hello")?;
+        stage.execute(&branch, "hello")?;
+        commit.execute(&branch, "commit text")?;
+        fs.delete("workspace/hello")?;
 
         unzip.execute(&branch)?;
-        assert_eq!(mock.try_read_file("workspace/hello")?, b"hello");
+        assert_eq!(fs.try_read_file("workspace/hello")?, b"hello");
         Ok(())
     }
 }

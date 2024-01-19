@@ -75,8 +75,8 @@ impl WasmTvcClient {
     }
 
     #[inline(always)]
-    pub fn merge(&self, source_branch: String) -> JsResult {
-        let _ = self.0.merge(source_branch)?;
+    pub fn merge(&self, source_commit_hash: String) -> JsResult {
+        let _ = self.0.merge(CommitHash(ObjHash(source_commit_hash)))?;
         Ok(())
     }
 

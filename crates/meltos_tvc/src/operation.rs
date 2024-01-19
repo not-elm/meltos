@@ -1,5 +1,3 @@
-use crate::branch::BranchName;
-use crate::error;
 use crate::file_system::FileSystem;
 use crate::file_system::std_fs::StdFileSystem;
 use crate::io::atomic::local_commits::LocalCommitsIo;
@@ -47,41 +45,28 @@ pub struct Operations<Fs = StdFileSystem>
     pub local_commits: LocalCommitsIo<Fs>,
     pub working: WorkingIo<Fs>,
     fs: Fs,
-    branch_name: BranchName,
 }
 
 impl<Fs> Operations<Fs>
     where
         Fs: FileSystem + Clone,
 {
-    #[inline]
-    pub fn new_main(fs: Fs) -> Operations<Fs> {
-        Self::new(BranchName::owner(), fs)
-    }
-
-    #[inline]
-    pub fn new_work(fs: Fs) -> error::Result<Operations<Fs>> {
-        let work = WorkingIo::new(fs.clone());
-        Ok(Self::new(work.try_read()?, fs))
-    }
-
-    pub fn new(branch_name: BranchName, fs: Fs) -> Operations<Fs> {
+    pub fn new(fs: Fs) -> Operations<Fs> {
         Self {
-            init: Init::new(branch_name.clone(), fs.clone()),
+            init: Init::new(fs.clone()),
             patch: Patch::new(fs.clone()),
-            stage: Stage::new(branch_name.clone(), fs.clone()),
+            stage: Stage::new(fs.clone()),
             un_stage: UnStage::new(fs.clone()),
-            commit: Commit::new(branch_name.clone(), fs.clone()),
-            push: Push::new(branch_name.clone(), fs.clone()),
+            commit: Commit::new(fs.clone()),
+            push: Push::new(fs.clone()),
             save: Save::new(fs.clone()),
             bundle: BundleIo::new(fs.clone()),
             checkout: Checkout::new(fs.clone()),
             unzip: UnZip::new(fs.clone()),
             merge: Merge::new(fs.clone()),
-            local_commits: LocalCommitsIo::new(branch_name.clone(), fs.clone()),
+            local_commits: LocalCommitsIo::new(fs.clone()),
             working: WorkingIo::new(fs.clone()),
             fs,
-            branch_name,
         }
     }
 }
@@ -92,6 +77,6 @@ impl<Fs> Clone for Operations<Fs>
 {
     #[inline]
     fn clone(&self) -> Self {
-        Self::new(self.branch_name.clone(), self.fs.clone())
+        Self::new(self.fs.clone())
     }
 }

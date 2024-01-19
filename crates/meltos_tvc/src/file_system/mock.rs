@@ -210,116 +210,116 @@ mod tests {
 
     #[test]
     fn read_root_dir() {
-        let mock = MockFileSystem::default();
-        let dir = mock.read_dir(".").unwrap();
+        let fs = MockFileSystem::default();
+        let dir = fs.read_dir(".").unwrap();
         assert_eq!(dir.unwrap().len(), 0);
     }
 
     #[test]
     fn read_root_dir_with_files() {
-        let mock = MockFileSystem::default();
-        mock.force_write("1.txt", b"1");
-        mock.force_write("2.txt", b"2");
-        mock.force_write("3.txt", b"3");
-        println!("ENTRY = {mock:?}");
-        let dir = mock.read_dir(".").unwrap();
+        let fs = MockFileSystem::default();
+        fs.force_write("1.txt", b"1");
+        fs.force_write("2.txt", b"2");
+        fs.force_write("3.txt", b"3");
+        println!("ENTRY = {fs:?}");
+        let dir = fs.read_dir(".").unwrap();
         assert_eq!(dir.unwrap().len(), 3);
     }
 
     #[test]
     fn create_src_dir() {
-        let mock = MockFileSystem::default();
-        mock.create_dir("src").unwrap();
-        let dir = mock.try_read_dir("src").unwrap();
+        let fs = MockFileSystem::default();
+        fs.create_dir("src").unwrap();
+        let dir = fs.try_read_dir("src").unwrap();
         assert_eq!(dir.len(), 0);
 
-        mock.force_write("src/hello.txt", b"hello");
-        let src = mock.try_read_dir("src").unwrap();
+        fs.force_write("src/hello.txt", b"hello");
+        let src = fs.try_read_dir("src").unwrap();
         assert_eq!(src.len(), 1);
     }
 
     #[test]
     fn create_parent_dirs() {
-        let mock = MockFileSystem::default();
-        mock.force_write("dist/hello.txt", b"hello");
-        mock.force_write("dist/hello2.txt", b"hello");
-        mock.force_write("dist/hello3.txt", b"hello");
+        let fs = MockFileSystem::default();
+        fs.force_write("dist/hello.txt", b"hello");
+        fs.force_write("dist/hello2.txt", b"hello");
+        fs.force_write("dist/hello3.txt", b"hello");
 
-        let dist = mock.try_read_dir("dist").unwrap();
+        let dist = fs.try_read_dir("dist").unwrap();
 
         assert_eq!(dist.len(), 3);
     }
 
     #[test]
     fn read_hello_world() {
-        let mock = MockFileSystem::default();
-        mock.force_write("hello.txt", b"hello world");
-        mock.force_write("dist/hello.txt", b"hello world");
-        mock.force_write("dist/sample/hello.txt", b"hello world");
+        let fs = MockFileSystem::default();
+        fs.force_write("hello.txt", b"hello world");
+        fs.force_write("dist/hello.txt", b"hello world");
+        fs.force_write("dist/sample/hello.txt", b"hello world");
 
-        let buf = mock.read_file("hello.txt").unwrap();
+        let buf = fs.read_file("hello.txt").unwrap();
         assert_eq!(buf, Some(b"hello world".to_vec()));
-        let buf = mock.read_file("dist/hello.txt").unwrap();
+        let buf = fs.read_file("dist/hello.txt").unwrap();
         assert_eq!(buf, Some(b"hello world".to_vec()));
-        let buf = mock.read_file("dist/sample/hello.txt").unwrap();
+        let buf = fs.read_file("dist/sample/hello.txt").unwrap();
         assert_eq!(buf, Some(b"hello world".to_vec()));
     }
 
     #[test]
     fn read_file_start_with_period() {
-        let mock = MockFileSystem::default();
-        mock.force_write("hello.txt", b"hello world");
-        mock.force_write("dist/hello.txt", b"hello world");
-        mock.force_write("dist/sample/hello.txt", b"hello world");
+        let fs = MockFileSystem::default();
+        fs.force_write("hello.txt", b"hello world");
+        fs.force_write("dist/hello.txt", b"hello world");
+        fs.force_write("dist/sample/hello.txt", b"hello world");
 
-        let buf = mock.read_file("./hello.txt").unwrap();
+        let buf = fs.read_file("./hello.txt").unwrap();
         assert_eq!(buf, Some(b"hello world".to_vec()));
-        let buf = mock.read_file("./dist/hello.txt").unwrap();
+        let buf = fs.read_file("./dist/hello.txt").unwrap();
         assert_eq!(buf, Some(b"hello world".to_vec()));
-        let buf = mock.read_file("./dist/sample/hello.txt").unwrap();
+        let buf = fs.read_file("./dist/sample/hello.txt").unwrap();
         assert_eq!(buf, Some(b"hello world".to_vec()));
     }
 
     #[test]
     fn delete_file() {
-        let mock = MockFileSystem::default();
-        mock.force_write("hello.txt", b"hello world");
-        mock.delete("hello.txt").unwrap();
+        let fs = MockFileSystem::default();
+        fs.force_write("hello.txt", b"hello world");
+        fs.delete("hello.txt").unwrap();
 
-        assert_eq!(mock.read_file("hello.txt").unwrap(), None);
+        assert_eq!(fs.read_file("hello.txt").unwrap(), None);
     }
 
     #[test]
     fn delete_dir() {
-        let mock = MockFileSystem::default();
-        mock.create_dir("src").unwrap();
-        mock.write_file("src/hello.txt", b"hello").unwrap();
+        let fs = MockFileSystem::default();
+        fs.create_dir("src").unwrap();
+        fs.write_file("src/hello.txt", b"hello").unwrap();
 
-        mock.force_write("dist/hello.txt", b"hello");
-        mock.force_write("dist/sample/sample.js", b"console.log(`sample`)");
+        fs.force_write("dist/hello.txt", b"hello");
+        fs.force_write("dist/sample/sample.js", b"console.log(`sample`)");
 
-        assert_eq!(mock.read_dir("src").unwrap().unwrap().len(), 1);
-        assert_eq!(mock.read_dir("dist/sample").unwrap().unwrap().len(), 1);
+        assert_eq!(fs.read_dir("src").unwrap().unwrap().len(), 1);
+        assert_eq!(fs.read_dir("dist/sample").unwrap().unwrap().len(), 1);
 
-        mock.delete("src").unwrap();
-        assert!(mock.read_dir("src").unwrap().is_none());
-        assert_eq!(mock.read_dir("dist/sample").unwrap().unwrap().len(), 1);
-        assert_eq!(mock.try_read_dir("dist").unwrap().len(), 2);
+        fs.delete("src").unwrap();
+        assert!(fs.read_dir("src").unwrap().is_none());
+        assert_eq!(fs.read_dir("dist/sample").unwrap().unwrap().len(), 1);
+        assert_eq!(fs.try_read_dir("dist").unwrap().len(), 2);
 
-        mock.delete("dist/sample").unwrap();
-        assert!(mock.read_dir("src").unwrap().is_none());
-        assert!(mock.read_dir("dist/sample").unwrap().is_none());
-        assert_eq!(mock.try_read_dir("dist").unwrap().len(), 1);
+        fs.delete("dist/sample").unwrap();
+        assert!(fs.read_dir("src").unwrap().is_none());
+        assert!(fs.read_dir("dist/sample").unwrap().is_none());
+        assert_eq!(fs.try_read_dir("dist").unwrap().len(), 1);
     }
 
     #[test]
     fn all_files_with_in_children() {
-        let mock = MockFileSystem::default();
-        mock.force_write("hello1.txt", b"hello");
-        mock.force_write("hello2.txt", b"hello");
-        mock.force_write("hello3.txt", b"hello");
+        let fs = MockFileSystem::default();
+        fs.force_write("hello1.txt", b"hello");
+        fs.force_write("hello2.txt", b"hello");
+        fs.force_write("hello3.txt", b"hello");
 
-        let mut files = mock.all_files_in(".").unwrap();
+        let mut files = fs.all_files_in(".").unwrap();
         files.sort();
         assert_eq!(
             files,
@@ -333,12 +333,12 @@ mod tests {
 
     #[test]
     fn all_files_recursive() {
-        let mock = MockFileSystem::default();
-        mock.force_write("hello1.txt", b"hello");
-        mock.force_write("src/hello2.txt", b"hello");
-        mock.force_write("src/dist/hello3.txt", b"hello");
+        let fs = MockFileSystem::default();
+        fs.force_write("hello1.txt", b"hello");
+        fs.force_write("src/hello2.txt", b"hello");
+        fs.force_write("src/dist/hello3.txt", b"hello");
 
-        let mut files = mock.all_files_in(".").unwrap();
+        let mut files = fs.all_files_in(".").unwrap();
         files.sort();
         assert_eq!(
             files,
@@ -352,12 +352,12 @@ mod tests {
 
     #[test]
     fn all_files_relative_to_src() {
-        let mock = MockFileSystem::default();
-        mock.force_write("hello1.txt", b"hello");
-        mock.force_write("src/hello2.txt", b"hello");
-        mock.force_write("src/dist/hello3.txt", b"hello");
+        let fs = MockFileSystem::default();
+        fs.force_write("hello1.txt", b"hello");
+        fs.force_write("src/hello2.txt", b"hello");
+        fs.force_write("src/dist/hello3.txt", b"hello");
 
-        let mut files = mock.all_files_in("src").unwrap();
+        let mut files = fs.all_files_in("src").unwrap();
         files.sort();
         assert_eq!(
             files,
@@ -370,54 +370,54 @@ mod tests {
 
     #[test]
     fn return_none_if_not_exists_entry() {
-        let mock = MockFileSystem::default();
-        mock.create_dir("src").unwrap();
-        let stat = mock.stat("hello.txt").unwrap();
+        let fs = MockFileSystem::default();
+        fs.create_dir("src").unwrap();
+        let stat = fs.stat("hello.txt").unwrap();
         assert_eq!(stat, None);
-        let stat = mock.stat("src/hello.txt").unwrap();
+        let stat = fs.stat("src/hello.txt").unwrap();
         assert_eq!(stat, None);
     }
 
     #[test]
     fn stat_file() {
-        let mock = MockFileSystem::default();
-        mock.write_file("src/hello.txt", b"hello").unwrap();
-        let stat = mock.stat("src/hello.txt").unwrap().unwrap();
+        let fs = MockFileSystem::default();
+        fs.write_file("src/hello.txt", b"hello").unwrap();
+        let stat = fs.stat("src/hello.txt").unwrap().unwrap();
         assert!(stat.is_file());
         assert_eq!(stat.size, b"hello".len() as u64);
     }
 
     #[test]
     fn stat_dir() {
-        let mock = MockFileSystem::default();
-        mock.create_dir("src").unwrap();
-        let stat = mock.stat("src").unwrap().unwrap();
+        let fs = MockFileSystem::default();
+        fs.create_dir("src").unwrap();
+        let stat = fs.stat("src").unwrap().unwrap();
         assert!(stat.is_dir());
         assert_eq!(stat.size, 0);
     }
 
     #[test]
     fn update_dir_stat() {
-        let mock = MockFileSystem::default();
-        mock.create_dir("src").unwrap();
+        let fs = MockFileSystem::default();
+        fs.create_dir("src").unwrap();
 
-        mock.create_dir("src/dist").unwrap();
-        let stat = mock.stat("src").unwrap().unwrap();
+        fs.create_dir("src/dist").unwrap();
+        let stat = fs.stat("src").unwrap().unwrap();
         assert_eq!(stat.size, 1);
 
-        mock.write_file("src/hello.txt", b"hello world").unwrap();
-        let stat = mock.stat("src").unwrap().unwrap();
+        fs.write_file("src/hello.txt", b"hello world").unwrap();
+        let stat = fs.stat("src").unwrap().unwrap();
         assert_eq!(stat.size, 2);
     }
 
     #[test]
     fn update_file_stat() {
-        let mock = MockFileSystem::default();
-        mock.write_file("src/hello.txt", b"hello world").unwrap();
-        let stat1 = mock.stat("src/hello.txt").unwrap().unwrap();
+        let fs = MockFileSystem::default();
+        fs.write_file("src/hello.txt", b"hello world").unwrap();
+        let stat1 = fs.stat("src/hello.txt").unwrap().unwrap();
         sleep(Duration::new(1, 100));
-        mock.write_file("src/hello.txt", b"hello").unwrap();
-        let stat2 = mock.stat("src/hello.txt").unwrap().unwrap();
+        fs.write_file("src/hello.txt", b"hello").unwrap();
+        let stat2 = fs.stat("src/hello.txt").unwrap().unwrap();
         assert_eq!(stat1.create_time, stat2.create_time);
         assert_eq!(stat2.size, b"hello".len() as u64);
 
@@ -428,11 +428,11 @@ mod tests {
     fn read() {
         let buf1 = [0, 1, 2, 3];
         let buf2 = [5, 6, 7, 8];
-        let mock = MockFileSystem::default();
+        let fs = MockFileSystem::default();
 
-        mock.write_file("buf1", &buf1).unwrap();
-        mock.write_file("buf2", &buf2).unwrap();
-        assert_eq!(mock.read_file("buf1").unwrap().unwrap(), buf1.to_vec());
-        assert_eq!(mock.read_file("buf2").unwrap().unwrap(), buf2.to_vec());
+        fs.write_file("buf1", &buf1).unwrap();
+        fs.write_file("buf2", &buf2).unwrap();
+        assert_eq!(fs.read_file("buf1").unwrap().unwrap(), buf1.to_vec());
+        assert_eq!(fs.read_file("buf2").unwrap().unwrap(), buf2.to_vec());
     }
 }

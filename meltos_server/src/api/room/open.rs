@@ -78,8 +78,8 @@ mod tests {
     #[tokio::test]
     async fn return_room_id_and_session_id() -> error::Result {
         let app = app::<MockSessionIo, MockGlobalDiscussionIo>();
-        let mock = MockFileSystem::default();
-        let response = app.oneshot(open_room_request(mock)).await.unwrap();
+        let fs = MockFileSystem::default();
+        let response = app.oneshot(open_room_request(fs)).await.unwrap();
         let opened = response.deserialize::<Opened>().await;
         assert_eq!(opened.room_id.0.len(), 40);
         assert_eq!(opened.session_id.0.len(), 40);

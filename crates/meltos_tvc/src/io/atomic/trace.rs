@@ -9,17 +9,18 @@ use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct TraceIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     fs: Fs,
 }
 
 impl<Fs> TraceIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
-    pub fn new(fs: Fs) -> TraceIo<Fs> {
+    #[inline(always)]
+    pub const fn new(fs: Fs) -> TraceIo<Fs> {
         Self {
             fs,
         }
@@ -78,30 +79,30 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::trace::TraceIo;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
-    use crate::tests::init_main_branch;
+    use crate::tests::init_owner_branch;
 
     #[test]
     fn read_all_traces() {
-        let mock = MockFileSystem::default();
-        init_main_branch(mock.clone());
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
 
         let branch = BranchName::owner();
-        let stage = Stage::new(branch.clone(), mock.clone());
-        let trace = TraceIo::new(mock.clone());
-        let commit = Commit::new(branch, mock.clone());
+        let stage = Stage::new(fs.clone());
+        let trace = TraceIo::new(fs.clone());
+        let commit = Commit::new(fs.clone());
 
-        mock.write_file("workspace/hello.txt", b"hello").unwrap();
-        stage.execute(".").unwrap();
-        let commit_hash1 = commit.execute("text").unwrap();
+        fs.write_file("workspace/hello.txt", b"hello").unwrap();
+        stage.execute(&branch, ".").unwrap();
+        let commit_hash1 = commit.execute(&branch, "text").unwrap();
 
-        mock.delete("workspace/hello.txt").unwrap();
-        stage.execute(".").unwrap();
-        let commit_hash2 = commit.execute("text").unwrap();
+        fs.delete("workspace/hello.txt").unwrap();
+        stage.execute(&branch, ".").unwrap();
+        let commit_hash2 = commit.execute(&branch, "text").unwrap();
 
         let traces = trace.read_all().unwrap();
         assert_eq!(traces.len(), 3);

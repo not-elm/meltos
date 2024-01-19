@@ -42,12 +42,12 @@ mod tests {
     #[tokio::test]
     async fn return_created_command() -> error::Result {
         let mut app = mock_app();
-        let mock = MockFileSystem::default();
+        let fs = MockFileSystem::default();
         let Opened {
             room_id,
             session_id,
             ..
-        } = http_open_room(&mut app, mock).await;
+        } = http_open_room(&mut app, fs).await;
         let request = create_discussion_request("title".to_string(), room_id, &session_id);
         let response = app.oneshot(request).await.unwrap();
         assert_eq!(response.status(), StatusCode::OK);

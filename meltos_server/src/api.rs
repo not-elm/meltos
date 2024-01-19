@@ -132,7 +132,6 @@ mod test_util {
     }
 
 
-
     pub async fn http_open_room(app: &mut Router, mock: MockFileSystem) -> Opened {
         http_call_with_deserialize::<Opened>(app, open_room_request(mock))
             .await
@@ -212,9 +211,9 @@ mod test_util {
             .await
     }
 
-    pub fn open_room_request(mock: MockFileSystem) -> Request {
-        Init::new(BranchName::owner(), mock.clone())
-            .execute()
+    pub fn open_room_request(fs: MockFileSystem) -> Request {
+        Init::new(fs.clone())
+            .execute(&BranchName::owner())
             .unwrap();
 
         Request::builder()

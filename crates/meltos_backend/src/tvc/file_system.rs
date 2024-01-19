@@ -91,8 +91,8 @@ mod tests {
 
     #[test]
     fn read_files_in_dir() {
-        let mock = MockFileSystem::default();
-        let fs = BackendFileSystem::new(RoomId::new(), mock.clone());
+        let fs = MockFileSystem::default();
+        let fs = BackendFileSystem::new(RoomId::new(), fs.clone());
         fs.write_file("dir/hello.txt", b"hello").unwrap();
         fs.write_file("hello2.txt", b"hello").unwrap();
         let mut files = fs.all_files_in(".").unwrap();

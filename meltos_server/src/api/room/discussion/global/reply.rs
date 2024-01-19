@@ -39,12 +39,12 @@ mod tests {
     #[tokio::test]
     async fn return_replied_command() {
         let mut app = mock_app();
-        let mock = MockFileSystem::default();
+        let fs = MockFileSystem::default();
         let Opened {
             session_id,
             room_id,
             ..
-        } = http_open_room(&mut app, mock).await;
+        } = http_open_room(&mut app, fs).await;
         let created =
             http_create_discussion(&mut app, &session_id, "title".to_string(), room_id.clone())
                 .await;

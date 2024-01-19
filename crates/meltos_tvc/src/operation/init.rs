@@ -8,34 +8,32 @@ use crate::operation::stage::Stage;
 
 #[derive(Debug, Clone)]
 pub struct Init<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     commit: Commit<Fs>,
     working: WorkingIo<Fs>,
     stage: Stage<Fs>,
     fs: Fs,
-    branch_name: BranchName,
 }
 
 impl<Fs> Init<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
-    pub fn new(branch_name: BranchName, fs: Fs) -> Init<Fs> {
+    pub fn new(fs: Fs) -> Init<Fs> {
         Self {
-            commit: Commit::new(branch_name.clone(), fs.clone()),
+            commit: Commit::new(fs.clone()),
             working: WorkingIo::new(fs.clone()),
-            stage: Stage::new(branch_name.clone(), fs.clone()),
+            stage: Stage::new(fs.clone()),
             fs,
-            branch_name,
         }
     }
 }
 
 impl<Fs> Init<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     /// Initialize the project.
     ///
@@ -47,14 +45,14 @@ where
     /// * create `trace file` named `null commit hash`.
     /// * create `local commits file` and append `null commit hash`.
     /// * write `main` to the`WORKING`.
-    pub fn execute(&self) -> error::Result<CommitHash> {
+    pub fn execute(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
         self.check_branch_not_initialized()?;
-        self.working.write(&self.branch_name)?;
+        self.working.write(branch_name)?;
         self.fs.create_dir("workspace")?;
-        if self.stage.execute(".").is_ok() {
-            self.commit.execute("INIT")
+        if self.stage.execute(branch_name, ".").is_ok() {
+            self.commit.execute(branch_name, "INIT")
         } else {
-            self.commit.execute_null_commit()
+            self.commit.execute_null_commit(branch_name)
         }
     }
 
@@ -71,41 +69,41 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::encode::Encodable;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::atomic::object::ObjIo;
+    use crate::object::{AsMeta, ObjHash};
     use crate::object::commit::CommitHash;
     use crate::object::tree::TreeObj;
-    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
-    use crate::operation::init;
     use crate::operation::init::Init;
 
     #[test]
     fn init() {
-        let mock = MockFileSystem::default();
-        let init = Init::new(BranchName::owner(), mock.clone());
-        init.execute().unwrap();
+        let fs = MockFileSystem::default();
+        let init = Init::new(fs.clone());
+        init.execute(&BranchName::owner()).unwrap();
     }
 
     #[test]
     fn failed_init_if_has_been_initialized() {
-        let mock = MockFileSystem::default();
-        let init = Init::new(BranchName::owner(), mock.clone());
-        init.execute().unwrap();
-        assert!(init.execute().is_err());
+        let fs = MockFileSystem::default();
+        let branch = BranchName::owner();
+        let init = Init::new(fs.clone());
+        init.execute(&branch).unwrap();
+        assert!(init.execute(&branch).is_err());
     }
 
     #[test]
     fn created_head_file() {
-        let mock = MockFileSystem::default();
+        let fs = MockFileSystem::default();
         let branch = BranchName::owner();
-        let init = init::Init::new(branch.clone(), mock.clone());
+        let init = Init::new(fs.clone());
 
-        init.execute().unwrap();
-        let head_commit_hash = read_head_commit_hash(mock.clone());
-        let commit = Commit::new(BranchName::owner(), mock.clone());
+        init.execute(&branch).unwrap();
+        let head_commit_hash = read_head_commit_hash(fs.clone());
+        let commit = Commit::new(fs.clone());
         let null_commit = commit.create_null_commit(TreeObj::default().as_meta().unwrap());
         assert_eq!(
             head_commit_hash,
@@ -115,14 +113,14 @@ mod tests {
 
     #[test]
     fn created_trace_file_named_null_commit_hash() {
-        let mock = MockFileSystem::default();
+        let fs = MockFileSystem::default();
         let branch = BranchName::owner();
-        let init = init::Init::new(branch.clone(), mock.clone());
+        let init = Init::new(fs.clone());
 
-        init.execute().unwrap();
+        init.execute(&branch).unwrap();
 
-        let head_commit_hash = read_head_commit_hash(mock.clone());
-        let trace_tree_hash = mock
+        let head_commit_hash = read_head_commit_hash(fs.clone());
+        let trace_tree_hash = fs
             .read_file(&format!(".meltos/traces/{head_commit_hash}"))
             .unwrap();
         assert_eq!(
@@ -133,11 +131,12 @@ mod tests {
 
     #[test]
     fn staged_workspace_files() {
-        let mock = MockFileSystem::default();
-        mock.force_write("workspace/src/test.rs", b"test");
-        let init = Init::new(BranchName::owner(), mock.clone());
-        init.execute().unwrap();
-        assert!(ObjIo::new(mock)
+        let fs = MockFileSystem::default();
+        fs.force_write("workspace/src/test.rs", b"test");
+        let branch = BranchName::owner();
+        let init = Init::new(fs.clone());
+        init.execute(&branch).unwrap();
+        assert!(ObjIo::new(fs)
             .read(&ObjHash::new(b"FILE\0test"))
             .unwrap()
             .is_some());

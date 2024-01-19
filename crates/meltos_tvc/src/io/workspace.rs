@@ -194,12 +194,12 @@ mod tests {
 
     #[test]
     fn read_all_objects_in_dir() {
-        let mock = MockFileSystem::default();
-        let workspace = WorkspaceIo::new(mock.clone());
-        mock.write_file("workspace/hello/hello.txt", b"hello")
+        let fs = MockFileSystem::default();
+        let workspace = WorkspaceIo::new(fs.clone());
+        fs.write_file("workspace/hello/hello.txt", b"hello")
             .unwrap();
-        mock.write_file("workspace/hello/world", b"world").unwrap();
-        mock.write_file("workspace/hello/dir/main.sh", b"echo hi ")
+        fs.write_file("workspace/hello/world", b"world").unwrap();
+        fs.write_file("workspace/hello/dir/main.sh", b"echo hi ")
             .unwrap();
         let mut hashes = workspace
             .convert_to_objs("hello")
@@ -218,26 +218,26 @@ mod tests {
 
     #[test]
     fn decode_buffer() {
-        let mock = MockFileSystem::default();
-        let workspace = WorkspaceIo::new(mock.clone());
+        let fs = MockFileSystem::default();
+        let workspace = WorkspaceIo::new(fs.clone());
         let obj = FileObj(b"hello".to_vec());
         let meta = obj.as_meta().unwrap();
-        ObjIo::new(mock.clone())
+        ObjIo::new(fs.clone())
             .write(&meta.hash, &meta.compressed_buf)
             .unwrap();
         workspace
             .unpack(&FilePath::from_path("hello.txt"), &Obj::File(obj))
             .unwrap();
-        assert_eq!(mock.try_read_file("hello.txt").unwrap(), b"hello");
+        assert_eq!(fs.try_read_file("hello.txt").unwrap(), b"hello");
     }
 
     #[test]
     fn read_all_files() {
-        let mock = MockFileSystem::default();
+        let fs = MockFileSystem::default();
 
-        let workspace = WorkspaceIo::new(mock.clone());
-        mock.force_write("workspace/hello.txt", b"hello");
-        mock.force_write("workspace/dist/index.js", b"index");
+        let workspace = WorkspaceIo::new(fs.clone());
+        fs.force_write("workspace/hello.txt", b"hello");
+        fs.force_write("workspace/dist/index.js", b"index");
         let files = workspace.files(".").unwrap();
         assert_eq!(
             files.into_iter().collect::<HashSet<String>>(),

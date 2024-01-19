@@ -5,15 +5,15 @@ use crate::io::atomic::head::HeadIo;
 
 #[derive(Debug, Clone)]
 pub struct NewBranch<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     head: HeadIo<Fs>,
 }
 
 impl<Fs> NewBranch<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     #[inline]
     pub const fn new(fs: Fs) -> NewBranch<Fs> {
@@ -39,15 +39,15 @@ mod tests {
     use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::operation::new_branch::NewBranch;
-    use crate::tests::init_main_branch;
+    use crate::tests::init_owner_branch;
 
     #[test]
     fn copy_head_file() {
-        let mock = MockFileSystem::default();
-        let null_commit_hash = init_main_branch(mock.clone());
+        let fs = MockFileSystem::default();
+        let null_commit_hash = init_owner_branch(fs.clone());
 
-        let new_branch = NewBranch::new(mock.clone());
-        let head = HeadIo::new(mock);
+        let new_branch = NewBranch::new(fs.clone());
+        let head = HeadIo::new(fs);
         new_branch
             .execute(BranchName::owner(), BranchName::from("second"))
             .unwrap();

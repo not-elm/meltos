@@ -49,16 +49,17 @@ mod tests {
     #[test]
     fn deleted_hello_from_staging() {
         let fs = MockFileSystem::default();
-        let init = Init::new(BranchName::owner(), fs.clone());
-        let stage = Stage::new(BranchName::owner(), fs.clone());
+        let branch = BranchName::owner();
+        let init = Init::new(fs.clone());
+        let stage = Stage::new(fs.clone());
         let un_stage = UnStage::new(fs.clone());
         let staging = StagingIo::new(fs.clone());
         let file_path = "workspace/hello.txt";
 
-        init.execute().unwrap();
+        init.execute(&branch).unwrap();
         fs.force_write(file_path, b"hello");
         println!("{fs:?}");
-        stage.execute(file_path).unwrap();
+        stage.execute(&branch, file_path).unwrap();
 
         assert!(staging.read().unwrap().unwrap().contains_key(&FilePath::from_path(file_path)));
         un_stage.execute(file_path).unwrap();
@@ -68,16 +69,17 @@ mod tests {
     #[test]
     fn delete_all_files_from_staging() {
         let fs = MockFileSystem::default();
-        let init = Init::new(BranchName::owner(), fs.clone());
-        let stage = Stage::new(BranchName::owner(), fs.clone());
+        let branch = BranchName::owner();
+        let init = Init::new(fs.clone());
+        let stage = Stage::new(fs.clone());
         let un_stage = UnStage::new(fs.clone());
         let staging = StagingIo::new(fs.clone());
-        init.execute().unwrap();
+        init.execute(&branch).unwrap();
 
         fs.force_write("workspace/hello1.txt", b"hello");
         fs.force_write("workspace/hello2.txt", b"hello");
         fs.force_write("workspace/hello3.txt", b"hello");
-        stage.execute(".").unwrap();
+        stage.execute(&branch, ".").unwrap();
 
         let current_stagings = staging.read().unwrap().unwrap();
         assert!(current_stagings.contains_key(&FilePath::from_path("workspace/hello1.txt")));

@@ -21,12 +21,12 @@ mod tests {
 
     #[tokio::test]
     async fn failed_if_not_logged_in() {
-        let mock = MockFileSystem::default();
+        let fs = MockFileSystem::default();
         let mut app = mock_app();
         let Opened {
             room_id,
             ..
-        } = http_open_room(&mut app, mock.clone()).await;
+        } = http_open_room(&mut app, fs.clone()).await;
         let response = http_call(
             &mut app,
             Request::builder()

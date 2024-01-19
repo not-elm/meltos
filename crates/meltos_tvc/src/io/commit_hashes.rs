@@ -1,4 +1,3 @@
-use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::commit_obj::CommitObjIo;
@@ -16,9 +15,10 @@ impl<Fs> CommitHashIo<Fs>
     where
         Fs: FileSystem + Clone,
 {
+    #[inline(always)]
     pub fn new(fs: Fs) -> CommitHashIo<Fs> {
         Self {
-            commit_obj: CommitObjIo::new(BranchName::owner(), fs),
+            commit_obj: CommitObjIo::new(fs),
         }
     }
 }
@@ -60,32 +60,33 @@ mod tests {
     use crate::file_system::mock::MockFileSystem;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
-    use crate::tests::init_main_branch;
+    use crate::tests::init_owner_branch;
 
     #[test]
     fn read_only_null() {
-        let mock = MockFileSystem::default();
-        let commit_hashes = crate::io::commit_hashes::CommitHashIo::new(mock.clone());
-        let null_commit = init_main_branch(mock.clone());
+        let fs = MockFileSystem::default();
+        let commit_hashes = crate::io::commit_hashes::CommitHashIo::new(fs.clone());
+        let null_commit = init_owner_branch(fs.clone());
         let hashes = commit_hashes.read_all(null_commit.clone(), &None).unwrap();
         assert_eq!(hashes, vec![null_commit]);
     }
 
     #[test]
     fn read_with_parents() {
-        let mock = MockFileSystem::default();
-        let commit_hashes = crate::io::commit_hashes::CommitHashIo::new(mock.clone());
-        let stage = Stage::new(BranchName::owner(), mock.clone());
-        let commit = Commit::new(BranchName::owner(), mock.clone());
-        let commit0 = init_main_branch(mock.clone());
+        let fs = MockFileSystem::default();
+        let branch = BranchName::owner();
+        let commit_hashes = crate::io::commit_hashes::CommitHashIo::new(fs.clone());
+        let stage = Stage::new(fs.clone());
+        let commit = Commit::new(fs.clone());
+        let commit0 = init_owner_branch(fs.clone());
 
-        mock.force_write("workspace/test.txt", b"hello");
-        stage.execute(".").unwrap();
-        let commit1 = commit.execute("commit").unwrap();
+        fs.force_write("workspace/test.txt", b"hello");
+        stage.execute(&branch, ".").unwrap();
+        let commit1 = commit.execute(&branch, "commit").unwrap();
 
-        mock.force_write("workspace/test2.txt", b"hello2");
-        stage.execute(".").unwrap();
-        let commit2 = commit.execute("commit").unwrap();
+        fs.force_write("workspace/test2.txt", b"hello2");
+        stage.execute(&branch, ".").unwrap();
+        let commit2 = commit.execute(&branch, "commit").unwrap();
 
         let hashes = commit_hashes.read_all(commit2.clone(), &None).unwrap();
         assert_eq!(hashes, vec![commit2, commit1, commit0]);

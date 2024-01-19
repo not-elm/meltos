@@ -37,7 +37,7 @@ impl<Fs> ObjIo<Fs>
     #[inline]
     pub fn try_read_to_file(&self, object_hash: &ObjHash) -> error::Result<Option<FileObj>> {
         let Some(obj) = self.read_obj(object_hash)?
-            else{
+            else {
                 return Ok(None);
             };
         Ok(Some(obj.file()?))
@@ -133,16 +133,16 @@ mod tests {
     #[test]
     fn write_object_file() {
         let buf = b"hello world!";
-        let mock = MockFileSystem::default();
-        mock.force_write("workspace/test/hello.txt", buf);
+        let fs = MockFileSystem::default();
+        fs.force_write("workspace/test/hello.txt", buf);
 
-        let io = ObjIo::new(mock.clone());
-        let workspace = WorkspaceIo::new(mock.clone());
+        let io = ObjIo::new(fs.clone());
+        let workspace = WorkspaceIo::new(fs.clone());
         let mut objs = workspace.convert_to_objs("test/hello.txt").unwrap();
         let (_, file_obj) = objs.next().unwrap().unwrap();
         io.write_obj(&Obj::File(file_obj)).unwrap();
 
-        let hello_buf = mock
+        let hello_buf = fs
             .try_read_file(&format!(
                 ".meltos/objects/{}",
                 meltos_util::hash::hash(b"FILE\0hello world!")
@@ -153,8 +153,8 @@ mod tests {
 
     #[test]
     fn read_obj() {
-        let mock = MockFileSystem::default();
-        let io = ObjIo::new(mock.clone());
+        let fs = MockFileSystem::default();
+        let io = ObjIo::new(fs.clone());
         let obj = ObjMeta::compress(b"FILE\0hello world!".to_vec()).unwrap();
         io.write_obj(&FileObj::decode(b"FILE\0hello world!").unwrap())
             .unwrap();

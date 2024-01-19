@@ -26,7 +26,6 @@ pub struct Push<Fs>
 {
     commit_obj: CommitObjIo<Fs>,
     local_commits: LocalCommitsIo<Fs>,
-    branch_name: BranchName,
     trace: TraceIo<Fs>,
 }
 
@@ -34,12 +33,12 @@ impl<Fs> Push<Fs>
     where
         Fs: FileSystem + Clone,
 {
-    pub fn new(branch_name: BranchName, fs: Fs) -> Push<Fs> {
+    #[inline]
+    pub fn new(fs: Fs) -> Push<Fs> {
         Self {
-            commit_obj: CommitObjIo::new(branch_name.clone(), fs.clone()),
+            commit_obj: CommitObjIo::new(fs.clone()),
             trace: TraceIo::new(fs.clone()),
-            local_commits: LocalCommitsIo::new(branch_name.clone(), fs),
-            branch_name,
+            local_commits: LocalCommitsIo::new(fs),
         }
     }
 }
@@ -53,31 +52,32 @@ impl<Fs> Push<Fs>
     /// * clear local commits
     pub async fn execute<Output>(
         &self,
+        branch_name: BranchName,
         remote: &mut impl Pushable<Output>,
     ) -> error::Result<Output> {
-        let bundle = self.create_push_bundle()?;
+        let bundle = self.create_push_bundle(branch_name.clone())?;
 
         let output = remote
             .push(bundle)
             .await
             .map_err(|e| error::Error::FailedConnectServer(format!("{e}")))?;
-        self.commit_obj.reset_local_commits()?;
+        self.commit_obj.reset_local_commits(&branch_name)?;
         Ok(output)
     }
 
-    pub fn create_push_bundle(&self) -> error::Result<Bundle> {
-        let local_commits = self.local_commits.read()?.unwrap_or_default();
+    pub fn create_push_bundle(&self, branch_name: BranchName) -> error::Result<Bundle> {
+        let local_commits = self.local_commits.read(&branch_name)?.unwrap_or_default();
         if local_commits.is_empty() {
             return Err(error::Error::NotfoundLocalCommits);
         }
         let traces = self.trace.read_all()?;
-        let objs = self.commit_obj.read_objs_associated_with_local_commits()?;
+        let objs = self.commit_obj.read_objs_associated_with_local_commits(&branch_name)?;
 
         Ok(Bundle {
             objs,
             traces,
             branches: vec![BundleBranch {
-                branch_name: self.branch_name.clone(),
+                branch_name,
                 commits: local_commits.0,
             }],
         })
@@ -106,7 +106,7 @@ mod tests {
     use crate::operation::commit::Commit;
     use crate::operation::push::{Push, Pushable};
     use crate::operation::stage::Stage;
-    use crate::tests::init_main_branch;
+    use crate::tests::init_owner_branch;
 
     #[derive(Debug, Default)]
     struct MockRemoteClient {
@@ -129,9 +129,9 @@ mod tests {
 
     #[tokio::test]
     async fn failed_if_no_commit() {
-        let mock = MockFileSystem::default();
-        let push = Push::new(BranchName::owner(), mock);
-        match push.execute(&mut MockRemoteClient::default()).await {
+        let fs = MockFileSystem::default();
+        let push = Push::new(fs);
+        match push.execute(BranchName::owner(), &mut MockRemoteClient::default()).await {
             Err(error::Error::NotfoundLocalCommits) => {}
             _ => panic!("expected return error::Error::NotfoundLocalCommits bad was"),
         }
@@ -139,54 +139,54 @@ mod tests {
 
     #[tokio::test]
     async fn success_if_committed() {
-        let mock = MockFileSystem::default();
-        init_main_branch(mock.clone());
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
         let branch = BranchName::owner();
-        let stage = Stage::new(branch.clone(), mock.clone());
-        let commit = Commit::new(branch.clone(), mock.clone());
-        let push = Push::new(branch, mock.clone());
+        let stage = Stage::new(fs.clone());
+        let commit = Commit::new(fs.clone());
+        let push = Push::new(fs.clone());
 
-        mock.write_file("workspace/hello.txt", b"hello").unwrap();
-        stage.execute(".").unwrap();
-        commit.execute("commit text").unwrap();
-        assert!(push.execute(&mut MockRemoteClient::default()).await.is_ok());
+        fs.write_file("workspace/hello.txt", b"hello").unwrap();
+        stage.execute(&branch, ".").unwrap();
+        commit.execute(&branch, "commit text").unwrap();
+        assert!(push.execute(branch, &mut MockRemoteClient::default()).await.is_ok());
     }
 
     #[tokio::test]
     async fn local_commits_is_cleared_if_succeed() {
-        let mock = MockFileSystem::default();
-        init_main_branch(mock.clone());
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
         let branch = BranchName::owner();
-        let commit_obj = CommitObjIo::new(branch.clone(), mock.clone());
-        let stage = Stage::new(branch.clone(), mock.clone());
-        let commit = Commit::new(branch.clone(), mock.clone());
-        let push = Push::new(branch, mock.clone());
-        mock.write_file("workspace/hello", b"hello").unwrap();
-        stage.execute(".").unwrap();
-        commit.execute("commit text").unwrap();
-        push.execute(&mut MockRemoteClient::default())
+        let commit_obj = CommitObjIo::new(fs.clone());
+        let stage = Stage::new(fs.clone());
+        let commit = Commit::new(fs.clone());
+        let push = Push::new(fs.clone());
+        fs.write_file("workspace/hello", b"hello").unwrap();
+        stage.execute(&branch, ".").unwrap();
+        commit.execute(&branch, "commit text").unwrap();
+        push.execute(branch.clone(), &mut MockRemoteClient::default())
             .await
             .unwrap();
 
-        assert_eq!(commit_obj.read_local_commits().unwrap().len(), 0);
+        assert_eq!(commit_obj.read_local_commits(&branch).unwrap().len(), 0);
     }
 
     #[tokio::test]
     async fn push_param() {
-        let mock = MockFileSystem::default();
-        init_main_branch(mock.clone());
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
         let branch = BranchName::owner();
-        let stage = Stage::new(branch.clone(), mock.clone());
-        let commit = Commit::new(branch.clone(), mock.clone());
-        let push = Push::new(branch.clone(), mock.clone());
+        let stage = Stage::new(fs.clone());
+        let commit = Commit::new(fs.clone());
+        let push = Push::new(fs.clone());
 
-        mock.write_file("workspace/hello.txt", b"hello").unwrap();
-        stage.execute(".").unwrap();
-        commit.execute("commit text").unwrap();
+        fs.write_file("workspace/hello.txt", b"hello").unwrap();
+        stage.execute(&branch, ".").unwrap();
+        commit.execute(&branch, "commit text").unwrap();
         let mut remote = MockRemoteClient::default();
-        push.execute(&mut remote).await.unwrap();
+        push.execute(branch.clone(), &mut remote).await.unwrap();
         let bundle = remote.bundle.unwrap();
-        let head = HeadIo::new(mock);
+        let head = HeadIo::new(fs);
         let commits = &bundle.branches[0].commits;
         assert_eq!(
             &commits[commits.len() - 1],

@@ -1,4 +1,3 @@
-
 use axum::extract::State;
 use axum::http::Response;
 
@@ -64,8 +63,8 @@ mod tests {
     #[tokio::test]
     async fn delete_room_if_owner_left() -> error::Result {
         let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
-        let mock = MockFileSystem::default();
-        let response = http_call(&mut app, open_room_request(mock.clone())).await;
+        let fs = MockFileSystem::default();
+        let response = http_call(&mut app, open_room_request(fs.clone())).await;
         let opened = response.deserialize::<Opened>().await;
         let response = http_leave(&mut app, &opened.room_id, &opened.session_id).await;
         assert_eq!(response.status(), StatusCode::OK);

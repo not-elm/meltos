@@ -21,7 +21,6 @@ pub struct Stage<Fs>
     object: ObjIo<Fs>,
     head: HeadIo<Fs>,
     workspace: WorkspaceIo<Fs>,
-    branch_name: BranchName,
 }
 
 impl<Fs> Stage<Fs>
@@ -29,14 +28,13 @@ impl<Fs> Stage<Fs>
         Fs: FileSystem + Clone,
 {
     #[inline]
-    pub fn new(branch_name: BranchName, fs: Fs) -> Stage<Fs> {
+    pub fn new(fs: Fs) -> Stage<Fs> {
         Self {
             staging: StagingIo::new(fs.clone()),
             workspace: WorkspaceIo::new(fs.clone()),
             trace_tree: TraceTreeIo::new(fs.clone()),
             head: HeadIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
-            branch_name,
         }
     }
 }
@@ -46,11 +44,11 @@ impl<Fs> Stage<Fs>
     where
         Fs: FileSystem,
 {
-    pub fn execute(&self, workspace_path: &str) -> error::Result {
+    pub fn execute(&self, branch_name: &BranchName, workspace_path: &str) -> error::Result {
         let mut stage_tree = self.staging.read()?.unwrap_or_default();
 
         let trace_tree = {
-            if let Some(head) = self.head.read(&self.branch_name)? {
+            if let Some(head) = self.head.read(branch_name)? {
                 self.trace_tree.read(&head)?
             } else {
                 TreeObj::default()
@@ -149,25 +147,25 @@ mod tests {
     use crate::object::delete::DeleteObj;
     use crate::object::file::FileObj;
     use crate::operation::commit::Commit;
-    use crate::operation::stage;
     use crate::operation::stage::Stage;
-    use crate::tests::init_main_branch;
+    use crate::tests::init_owner_branch;
 
     #[test]
     fn create_obj_file_after_staged() {
-        let mock = MockFileSystem::default();
-        init_main_branch(mock.clone());
-        let stage = Stage::new(BranchName::owner(), mock.clone());
-        mock.write_file(&FilePath::from_path("workspace/hello"), b"hello")
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
+        let branch = BranchName::owner();
+        let stage = Stage::new(fs.clone());
+        fs.write_file(&FilePath::from_path("workspace/hello"), b"hello")
             .unwrap();
-        mock.write_file(
+        fs.write_file(
             &FilePath::from_path("workspace/src/main.rs"),
             "dasds日本語".as_bytes(),
         )
             .unwrap();
-        stage.execute(".").unwrap();
+        stage.execute(&branch, ".").unwrap();
 
-        let obj = ObjIo::new(mock);
+        let obj = ObjIo::new(fs);
         let obj1 = obj
             .read_obj(&ObjHash::new(b"FILE\0hello"))
             .unwrap()
@@ -190,25 +188,25 @@ mod tests {
 
     #[test]
     fn create_delete_obj() {
-        let mock = MockFileSystem::default();
-        init_main_branch(mock.clone());
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
+        let branch = BranchName::owner();
+        let stage = Stage::new(fs.clone());
+        let commit = Commit::new(fs.clone());
 
-        let stage = Stage::new(BranchName::owner(), mock.clone());
-        let commit = Commit::new(BranchName::owner(), mock.clone());
+        fs.write_file("workspace/hello.txt", b"hello").unwrap();
+        stage.execute(&branch, "hello.txt").unwrap();
+        commit.execute(&branch, "add hello.txt").unwrap();
 
-        mock.write_file("workspace/hello.txt", b"hello").unwrap();
-        stage.execute("hello.txt").unwrap();
-        commit.execute("add hello.txt").unwrap();
-
-        mock.delete("workspace/hello.txt").unwrap();
-        stage.execute("hello.txt").unwrap();
-        commit.execute("delete hello.txt").unwrap();
+        fs.delete("workspace/hello.txt").unwrap();
+        stage.execute(&branch, "hello.txt").unwrap();
+        commit.execute(&branch, "delete hello.txt").unwrap();
 
         let hello_hash = FileObj(b"hello".to_vec()).as_meta().unwrap().hash;
         let delete_hello = DeleteObj(hello_hash).as_meta().unwrap();
         let delete_hello_hash = delete_hello.hash;
 
-        let buf = ObjIo::new(mock)
+        let buf = ObjIo::new(fs)
             .read_obj(&delete_hello_hash)
             .unwrap()
             .unwrap()
@@ -220,15 +218,16 @@ mod tests {
 
     #[test]
     fn no_moved_if_not_changed_file() {
-        let mock = MockFileSystem::default();
-        init_main_branch(mock.clone());
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
 
-        let stage = stage::Stage::new(BranchName::owner(), mock.clone());
+        let branch = BranchName::owner();
+        let stage = Stage::new(fs.clone());
 
-        mock.write_file("workspace/hello.txt", b"hello").unwrap();
-        stage.execute(".").unwrap();
+        fs.write_file("workspace/hello.txt", b"hello").unwrap();
+        stage.execute(&branch, ".").unwrap();
 
-        match stage.execute(".") {
+        match stage.execute(&branch, ".") {
             Err(error::Error::ChangedFileNotExits) => {}
             _ => panic!("expected the [error::Error::ChangedFileNotExits] bad was."),
         }
