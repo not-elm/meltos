@@ -38,7 +38,7 @@ pub struct CommitMeta {
     pub objs: Vec<ObjMeta>,
 }
 
-const BASE: &str = "http://127.0.0.1:3000";
+pub const BASE: &str = "http://127.0.0.1:3000";
 
 #[derive(Clone)]
 pub struct TvcClient<Fs: FileSystem + Clone> {

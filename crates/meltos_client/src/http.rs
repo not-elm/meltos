@@ -1,24 +1,21 @@
 use async_trait::async_trait;
-
+#[cfg(not(feature = "wasm"))]
+use reqwest::{Client, header, Response};
+#[cfg(feature = "wasm")]
+use reqwest_wasm::{Client, header, Response};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use meltos::room::RoomId;
-use meltos::schema::discussion::global::{Create, Created};
-use meltos::schema::room::Opened;
+use meltos::schema::discussion::global::{Create, Created, Replied, Reply, Speak, Spoke};
 use meltos::schema::room::{Join, Joined, Open};
+use meltos::schema::room::Opened;
 use meltos::user::UserId;
 use meltos_tvc::io::bundle::Bundle;
 use meltos_tvc::operation::push::Pushable;
 
 use crate::config::SessionConfigs;
 use crate::error;
-
-#[cfg(feature = "wasm")]
-use reqwest_wasm::{header, Client, Response};
-
-#[cfg(not(feature = "wasm"))]
-use reqwest::{header, Client, Response};
 
 #[derive(Debug, Clone)]
 pub struct HttpClient {
@@ -100,7 +97,7 @@ impl HttpClient {
     }
 
 
-    pub async fn leave(&self) -> error::Result{
+    pub async fn leave(&self) -> error::Result {
         self.client
             .delete(format!("{}/room/{}", self.base_uri, self.configs.room_id))
             .header(header::SET_COOKIE, format!("session_id={}", self.configs().session_id))
@@ -115,14 +112,24 @@ impl HttpClient {
         self.get().await
     }
 
-    #[inline]
+    #[inline(always)]
     pub async fn create_discussion(&self, create: &Create) -> error::Result<Created> {
         self.post("discussion/global/create", Some(create)).await
     }
 
+    #[inline(always)]
+    pub async fn speak(&self, speak: &Speak) -> error::Result<Spoke> {
+        self.post("discussion/global/speak", Some(speak)).await
+    }
+
+    #[inline(always)]
+    pub async fn reply(&self, reply: &Reply) -> error::Result<Replied> {
+        self.post("discussion/global/reply", Some(reply)).await
+    }
+
     async fn get<D>(&self) -> error::Result<D>
-    where
-        D: DeserializeOwned,
+        where
+            D: DeserializeOwned,
     {
         let response = self
             .client
@@ -142,13 +149,13 @@ impl HttpClient {
     }
 
     async fn post<S, D>(&self, path: &str, body: Option<&S>) -> error::Result<D>
-    where
-        S: Serialize,
-        D: DeserializeOwned,
+        where
+            S: Serialize,
+            D: DeserializeOwned,
     {
         let mut request = self
             .client
-            .post(format!("{}/{path}", &self.base_uri))
+            .post(format!("{}/room/{}/{path}", &self.base_uri, self.configs.room_id))
             .header(
                 header::SET_COOKIE,
                 format!("session_id={}", self.configs.session_id),
@@ -162,7 +169,7 @@ impl HttpClient {
     }
 }
 
-#[async_trait(?Send)]
+#[async_trait(? Send)]
 impl Pushable<()> for HttpClient {
     type Error = String;
 
@@ -186,8 +193,8 @@ impl Pushable<()> for HttpClient {
 }
 
 async fn response_to_json<D>(response: Response) -> error::Result<D>
-where
-    D: DeserializeOwned,
+    where
+        D: DeserializeOwned,
 {
     Ok(response.error_for_status()?.json().await?)
 }
