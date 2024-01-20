@@ -33,7 +33,7 @@ pub async fn open<Session, Discussion>(
         return Err(response_error_exceed_bundle_size(bundle_size, configs.limit_bundle_size));
     }
 
-    let life_time = param.life_time_duration();
+    let life_time = param.lifetime_duration(configs.room_limit_life_time_sec);
     let user_id = param.user_id.unwrap_or_else(UserId::new);
     let room = Room::open::<Discussion, Session>(user_id.clone())?;
     let (user_id, session_id) = room.session.register(Some(user_id)).await?;

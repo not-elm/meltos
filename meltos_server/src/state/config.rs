@@ -10,7 +10,7 @@ pub struct AppConfigs {
     /// roomの最大生存期間
     /// ユーザーがroomをopenする際にlife_time_secを指定していない場合はこの値が反映される
     /// ユーザーが指定していた場合、この設定値を超えていない場合はユーザーの生存期間が反映され、超えている場合は設定値が反映される。
-    pub room_limit_life_time_sec: usize,
+    pub room_limit_life_time_sec: u64,
 
     /// TVCのリポジトリの最大サイズ
     /// bundleがpushされる際にリポジトリサイズが許容値を超えないかを確認するために使用される。

@@ -7,7 +7,6 @@ use crate::io::atomic::head::{CommitText, HeadIo};
 use crate::io::atomic::local_commits::LocalCommitsIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::bundle::BundleObject;
-use crate::io::trace_tree::TraceTreeIo;
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::local_commits::LocalCommitsObj;
 use crate::object::ObjHash;
@@ -21,7 +20,6 @@ pub struct CommitObjIo<Fs>
     head: HeadIo<Fs>,
     object: ObjIo<Fs>,
     local_commits: LocalCommitsIo<Fs>,
-    trace_tree: TraceTreeIo<Fs>,
 }
 
 impl<Fs> CommitObjIo<Fs>
@@ -34,7 +32,6 @@ impl<Fs> CommitObjIo<Fs>
             head: HeadIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
             local_commits: LocalCommitsIo::new(fs.clone()),
-            trace_tree: TraceTreeIo::new(fs),
         }
     }
 }
