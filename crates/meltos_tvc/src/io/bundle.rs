@@ -20,6 +20,17 @@ pub struct Bundle {
     pub branches: Vec<BundleBranch>,
 }
 
+
+impl Bundle {
+    #[inline(always)]
+    pub fn obj_data_size(&self) -> usize {
+        self.objs
+            .iter()
+            .map(|obj| obj.compressed_buf.0.len())
+            .sum()
+    }
+}
+
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BundleTrace {

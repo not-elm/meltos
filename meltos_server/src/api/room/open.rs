@@ -14,17 +14,25 @@ use meltos_backend::session::{NewSessionIo, SessionIo};
 use meltos_util::serde::SerializeJson;
 
 use crate::api::HttpResult;
+use crate::api::room::response_error_exceed_bundle_size;
 use crate::room::{Room, Rooms};
+use crate::state::config::AppConfigs;
 
 #[tracing::instrument]
 pub async fn open<Session, Discussion>(
     State(rooms): State<Rooms>,
+    State(configs): State<AppConfigs>,
     Json(param): Json<Open>,
 ) -> HttpResult
     where
         Discussion: DiscussionIo + NewDiscussIo + 'static,
         Session: SessionIo + NewSessionIo + Debug + 'static,
 {
+    let bundle_size = param.bundle.as_ref().map(|b| b.obj_data_size()).unwrap_or_default();
+    if configs.limit_bundle_size < bundle_size {
+        return Err(response_error_exceed_bundle_size(bundle_size, configs.limit_bundle_size));
+    }
+
     let life_time = param.life_time_duration();
     let user_id = param.user_id.unwrap_or_else(UserId::new);
     let room = Room::open::<Discussion, Session>(user_id.clone())?;
@@ -68,12 +76,11 @@ mod tests {
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::io::bundle::{Bundle, BundleObject};
+    use meltos_tvc::object::{CompressedBuf, ObjHash};
 
     use crate::{app, error};
-    use crate::api::test_util::{
-        create_discussion_request, http_call, open_room_request, open_room_request_with_options,
-        ResponseConvertable,
-    };
+    use crate::api::test_util::{create_discussion_request, http_call, mock_app, open_room_request, open_room_request_with_options, ResponseConvertable};
 
     #[tokio::test]
     async fn return_room_id_and_session_id() -> error::Result {
@@ -103,5 +110,44 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
         Ok(())
+    }
+
+    #[tokio::test]
+    async fn success_if_bundle_less_than_100mb() {
+        let app = mock_app();
+        let request = open_room_request_with_options(Some(create_bundle_less_than_1024bytes()), None);
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn failed_if_send_bundle_more_than_100mib() {
+        let mut app = mock_app();
+        let request = open_room_request_with_options(Some(create_bundle_more_than_1025bytes()), None);
+        let response = http_call(&mut app, request).await;
+        assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
+    }
+
+    fn create_bundle_less_than_1024bytes() -> Bundle {
+        create_dummy_bundle(vec![1; 1024])
+    }
+
+    fn create_bundle_more_than_1025bytes() -> Bundle {
+        create_dummy_bundle(vec![1; 1025])
+    }
+
+
+    fn create_dummy_bundle(mut buf: Vec<u8>) -> Bundle {
+        buf.shrink_to_fit();
+        Bundle {
+            traces: Vec::with_capacity(0),
+            objs: vec![
+                BundleObject {
+                    hash: ObjHash::new(b"dummy"),
+                    compressed_buf: CompressedBuf(buf),
+                }
+            ],
+            branches: Vec::with_capacity(0),
+        }
     }
 }

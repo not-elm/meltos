@@ -235,6 +235,7 @@ mod test_util {
         bundle: Option<Bundle>,
         life_time_minute: Option<u64>,
     ) -> Request {
+
         Request::builder()
             .method(http::Method::POST)
             .header(header::CONTENT_TYPE, "application/json")

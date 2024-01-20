@@ -2,8 +2,10 @@ use std::env;
 use std::fmt::Debug;
 use std::net::SocketAddr;
 
+use axum::extract::DefaultBodyLimit;
 use axum::Router;
 use axum::routing::{delete, get, post};
+use tower_http::decompression::RequestDecompressionLayer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
@@ -47,12 +49,17 @@ fn app<Session, Discussion>() -> Router
         Session: SessionIo + NewSessionIo + Debug + 'static,
         Discussion: DiscussionIo + NewDiscussIo + Debug + 'static,
 {
+    // Bundleの最大サイズは100MIBに設定したいですが、json形式でデータが送られてくる関係上
+    // リクエストボディのデータサイズが大きくなることを考慮して400MIBまでは許容するように
+    // 今後修正する可能性あり
+    const LIMIT: usize = 1024 * 1024 * 400;
     Router::new()
         .route("/room/open", post(api::room::open::<Session, Discussion>))
-        .layer(tower_http::limit::RequestBodyLimitLayer::new(100 * 1000 * 1000))
+        .layer(DefaultBodyLimit::max(LIMIT))
         .route("/room/:room_id", delete(api::room::leave))
         .nest("/room/:room_id", room_operations_router())
         .with_state(AppState::new())
+        .layer(RequestDecompressionLayer::new())
 }
 
 fn room_operations_router() -> Router<AppState>
