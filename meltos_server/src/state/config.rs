@@ -57,6 +57,6 @@ mod tests {
     #[test]
     fn it_read_limit_tvc_repository_size(){
         let config = AppConfigs::default();
-        assert_eq!(config.limit_tvc_repository_size, 4048);
+        assert_eq!(config.limit_tvc_repository_size, 3072);
     }
 }

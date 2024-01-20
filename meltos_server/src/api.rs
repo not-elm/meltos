@@ -1,6 +1,8 @@
 use axum::body::Body;
+use axum::http::StatusCode;
 use axum::response::Response;
 use serde::Serialize;
+use serde_json::json;
 
 use meltos_util::serde::SerializeJson;
 
@@ -23,12 +25,35 @@ impl<D> AsSuccessResponse for D
     }
 }
 
+
+pub trait IntoHttpResult<T, E> {
+    fn into_http_result(self) -> HttpResult<T>;
+}
+
+
+impl<T> IntoHttpResult<T, meltos_tvc::error::Error> for std::result::Result<T, meltos_tvc::error::Error> {
+    fn into_http_result(self) -> HttpResult<T> {
+        match self {
+            Ok(v) => Ok(v),
+            Err(e) => {
+                let response = Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Body::from(json!({
+                        "message" : e.to_string()
+                    }).to_string()))
+                    .unwrap();
+                Err(response)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod test_util {
     use axum::{async_trait, http, Router};
     use axum::body::Body;
     use axum::extract::Request;
-    use axum::http::{header, StatusCode};
+    use axum::http::header;
     use axum::response::Response;
     use http_body_util::BodyExt;
     use serde::de::DeserializeOwned;
@@ -77,10 +102,10 @@ mod test_util {
     unsafe impl<'a> Sync for MockServerClient<'a> {}
 
     #[async_trait(? Send)]
-    impl<'a> Pushable<()> for MockServerClient<'a> {
+    impl<'a> Pushable<Response> for MockServerClient<'a> {
         type Error = std::io::Error;
 
-        async fn push(&mut self, bundle: Bundle) -> std::io::Result<()> {
+        async fn push(&mut self, bundle: Bundle) -> std::io::Result<Response> {
             let response = http_call(
                 self.app,
                 Request::builder()
@@ -95,8 +120,8 @@ mod test_util {
                     .unwrap(),
             )
                 .await;
-            assert_eq!(response.status(), StatusCode::OK);
-            Ok(())
+
+            Ok(response)
         }
     }
 
@@ -235,7 +260,6 @@ mod test_util {
         bundle: Option<Bundle>,
         life_time_minute: Option<u64>,
     ) -> Request {
-
         Request::builder()
             .method(http::Method::POST)
             .header(header::CONTENT_TYPE, "application/json")

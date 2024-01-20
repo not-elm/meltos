@@ -99,7 +99,7 @@ impl MockEntry {
 pub struct MockFileSystem(pub Arc<Mutex<MockDir>>);
 
 impl MockFileSystem {
-    #[cfg(test)]
+    #[allow(unused)]
     pub fn force_write(&self, path: &str, buf: &[u8]) {
         self.write_file(path, buf).unwrap();
     }

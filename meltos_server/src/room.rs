@@ -24,7 +24,7 @@ use meltos_tvc::file_system::std_fs::StdFileSystem;
 use meltos_tvc::io::bundle::Bundle;
 use meltos_util::macros::Deref;
 
-use crate::api::HttpResult;
+use crate::api::{HttpResult, IntoHttpResult};
 use crate::error;
 use crate::room::executor::discussion::DiscussionCommandExecutor;
 
@@ -103,7 +103,7 @@ impl Room {
             discussion: Arc::new(Discussion::new(room_id.clone()).map_err(|e| error::Error::FailedCreateDiscussionIo(e.to_string()))?),
             tvc: TvcBackendIo::new(room_id.clone(), StdFileSystem),
             channels: Arc::new(Mutex::new(Vec::new())),
-            session: Arc::new(Session::new(room_id).map_err(|e|error::Error::FailedCreateSessionIo(e.to_string()))?),
+            session: Arc::new(Session::new(room_id).map_err(|e| error::Error::FailedCreateSessionIo(e.to_string()))?),
         })
     }
 
@@ -124,6 +124,14 @@ impl Room {
             sender.send(message.clone()).await?;
         }
         Ok(())
+    }
+
+    #[inline(always)]
+    pub fn tvc_repository_size(&self) -> HttpResult<usize> {
+        self
+            .tvc
+            .total_objs_size()
+            .into_http_result()
     }
 
     pub fn save_bundle(&self, bundle: Bundle) -> std::result::Result<(), Response> {

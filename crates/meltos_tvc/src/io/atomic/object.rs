@@ -67,9 +67,19 @@ impl<Fs> ObjIo<Fs>
         Ok(Some(Obj::expand(&buf)?))
     }
 
+
+    #[inline(always)]
+    pub fn total_objs_size(&self) -> error::Result<usize> {
+        Ok(self
+            .read_all()?
+            .iter()
+            .map(|o| o.compressed_buf.0.len())
+            .sum())
+    }
+
+
     pub fn read_all(&self) -> error::Result<Vec<BundleObject>> {
         let files = self.0.all_files_in(".meltos/objects")?;
-        println!("{:?}", files.join("\n"));
         let mut objs = Vec::with_capacity(files.len());
         for path in files {
             let buf = self.0.try_read_file(&path)?;

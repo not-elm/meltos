@@ -77,7 +77,6 @@ impl<Fs> BundleIo<Fs>
 
     pub fn create(&self) -> error::Result<Bundle> {
         let branches = self.read_branch_heads()?;
-        println!("{branches:?}");
         Ok(Bundle {
             branches,
             objs: self.object.read_all()?,

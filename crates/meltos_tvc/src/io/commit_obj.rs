@@ -97,9 +97,10 @@ impl<Fs> CommitObjIo<Fs>
 
     pub fn read_objs_associated_with_local_commits(&self, branch_name: &BranchName) -> error::Result<Vec<BundleObject>> {
         let local_commits = self.local_commits.try_read(branch_name)?;
-        let head = self.head.read(branch_name)?;
         let from = local_commits.0[local_commits.0.len() - 1].clone();
-        let obj_hashes = self.read_obj_hashes(from, &head)?;
+        let parents = self.read(&local_commits.0[0])?.parents;
+        let to = parents.first().cloned();
+        let obj_hashes = self.read_obj_hashes(from, &to)?;
         let mut obj_bufs = Vec::with_capacity(obj_hashes.len());
         for hash in obj_hashes {
             let Some(compressed_buf) = self.object.read(&hash)? else {
@@ -119,23 +120,11 @@ impl<Fs> CommitObjIo<Fs>
         to: &Option<CommitHash>,
     ) -> error::Result<HashSet<ObjHash>> {
         let mut obj_hashes = HashSet::new();
-        self._read_hashes(&mut obj_hashes, from, to)?;
+        self.scan_commit_obj(&mut obj_hashes, from, to)?;
+
         Ok(obj_hashes)
     }
 
-    fn _read_hashes(
-        &self,
-        obj_hashes: &mut HashSet<ObjHash>,
-        from: CommitHash,
-        to: &Option<CommitHash>,
-    ) -> error::Result {
-        let tree = self.trace_tree.read(&from)?;
-        self.scan_commit_obj(obj_hashes, from, to)?;
-        for obj_hash in tree.0.into_values() {
-            obj_hashes.insert(obj_hash);
-        }
-        Ok(())
-    }
 
     fn scan_commit_obj(
         &self,
@@ -158,12 +147,14 @@ impl<Fs> CommitObjIo<Fs>
     ) -> error::Result {
         let tree = self.object.read_to_tree(&commit_obj.committed_objs_tree)?;
         obj_hashes.insert(commit_obj.committed_objs_tree.clone());
+
         for hash in tree.0.into_values() {
             obj_hashes.insert(hash);
         }
+
         if !to.as_ref().is_some_and(|p| commit_obj.parents.contains(p)) {
             for hash in commit_obj.parents.iter() {
-                self._read_hashes(obj_hashes, hash.clone(), to)?;
+                self.scan_commit_obj(obj_hashes, hash.clone(), to)?;
             }
         }
         Ok(())
@@ -175,11 +166,13 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::branch::BranchName;
-    use crate::file_system::FileSystem;
+    use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
+    use crate::io::atomic::local_commits::LocalCommitsIo;
     use crate::io::atomic::object::ObjIo;
     use crate::io::commit_obj::CommitObjIo;
     use crate::io::trace_tree::TraceTreeIo;
+    use crate::object::local_commits::LocalCommitsObj;
     use crate::object::ObjHash;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
@@ -276,5 +269,44 @@ mod tests {
             .collect::<Vec<ObjHash>>();
         expect.sort();
         assert_eq!(objs, expect);
+    }
+
+
+    /// 直前にコミットされたオブジェクトに関連するデータだけが取得されること
+    #[test]
+    fn read_only_objs_relative_to_local() {
+        let fs = MockFileSystem::default();
+        let branch = BranchName::owner();
+        let stage = Stage::new(fs.clone());
+        let commit = Commit::new(fs.clone());
+        let local_commit = LocalCommitsIo::new(fs.clone());
+        init_owner_branch(fs.clone());
+
+        fs.force_write("workspace/hello.txt", b"hello");
+        stage.execute(&branch, ".").unwrap();
+        commit.execute(&branch, "").unwrap();
+        // pushされたと仮定してローカルコミットを削除
+        local_commit.write(&LocalCommitsObj::default(), &branch).unwrap();
+
+        fs.force_write("workspace/hello2.txt", b"hello2");
+        stage.execute(&branch, ".").unwrap();
+        let commit_hash = commit.execute(&branch, "").unwrap();
+
+        let commit_obj_io = CommitObjIo::new(fs.clone());
+        let objs = commit_obj_io
+            .read_objs_associated_with_local_commits(&branch)
+            .unwrap();
+        let traces = TraceTreeIo::new(fs.clone())
+            .read(&commit_hash)
+            .unwrap();
+        let hello_hash = traces
+            .get(&FilePath::from_path("workspace/hello.txt"))
+            .unwrap();
+        let hello2_hash = traces
+            .get(&FilePath::from_path("workspace/hello2.txt"))
+            .unwrap();
+
+        assert!(!objs.iter().any(|o| &o.hash == hello_hash));
+        assert!(objs.iter().any(|o| &o.hash == hello2_hash));
     }
 }

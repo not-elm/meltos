@@ -53,7 +53,7 @@ impl<Fs> Commit<Fs>
         self.object.write_obj(&stage_tree)?;
 
         let commit = self.commit_obj.create(commit_text, stage_meta.hash, branch_name)?;
-        let pre_head = self.head.read(&branch_name)?;
+        let pre_head = self.head.read(branch_name)?;
         let head_commit_hash = self.commit(branch_name, commit)?;
         self.update_trace(stage_tree, &head_commit_hash, &pre_head)?;
         Ok(head_commit_hash)

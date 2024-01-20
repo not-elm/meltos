@@ -14,6 +14,6 @@ limit_bundle_size = 1024
 # bundleがpushされる際にリポジトリサイズが許容値を超えないかを確認するために使用される。
 # リポジトリサイズは.meltos/objs内のバッファサイズの合計値
 # 4MIB
-limit_tvc_repository_size = 4048
+limit_tvc_repository_size = 3072
 
 
