@@ -96,8 +96,7 @@ mod tests {
             session_id,
             ..
         } = http_open_room(&mut app, fs.clone()).await;
-        fs.write_file("workspace/src/hello.txt", &dummy_large_buf())
-            .unwrap();
+        fs.force_write("workspace/src/hello.txt", &dummy_large_buf());
         let response = execute_tvc_operations(&mut app, &fs, room_id, session_id, branch).await;
         assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
     }

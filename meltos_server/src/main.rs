@@ -15,6 +15,7 @@ use meltos_backend::session::{NewSessionIo, SessionIo};
 use meltos_backend::session::sqlite::SqliteSessionIo;
 
 use crate::state::AppState;
+use crate::state::config::AppConfigs;
 
 mod api;
 mod channel;
@@ -49,13 +50,9 @@ fn app<Session, Discussion>() -> Router
         Session: SessionIo + NewSessionIo + Debug + 'static,
         Discussion: DiscussionIo + NewDiscussIo + Debug + 'static,
 {
-    // Bundleの最大サイズは100MIBに設定したいですが、json形式でデータが送られてくる関係上
-    // リクエストボディのデータサイズが大きくなることを考慮して400MIBまでは許容するように
-    // 今後修正する可能性あり
-    const LIMIT: usize = 1024 * 1024 * 400;
     Router::new()
         .route("/room/open", post(api::room::open::<Session, Discussion>))
-        .layer(DefaultBodyLimit::max(LIMIT))
+        .layer(DefaultBodyLimit::max(bundle_request_body_size()))
         .route("/room/:room_id", delete(api::room::leave))
         .nest("/room/:room_id", room_operations_router())
         .with_state(AppState::new())
@@ -74,8 +71,9 @@ fn room_operations_router() -> Router<AppState>
 fn tvc_routes() -> Router<AppState>
 {
     Router::new()
-        .route("/fetch", get(api::room::tvc::fetch))
         .route("/push", post(api::room::tvc::push))
+        .layer(DefaultBodyLimit::max(bundle_request_body_size()))
+        .route("/fetch", get(api::room::tvc::fetch))
 }
 
 fn global_discussion_route() -> Router<AppState>
@@ -85,4 +83,13 @@ fn global_discussion_route() -> Router<AppState>
         .route("/speak", post(api::room::discussion::global::speak))
         .route("/reply", post(api::room::discussion::global::reply))
         .route("/close", delete(api::room::discussion::global::close))
+}
+
+
+#[inline(always)]
+fn bundle_request_body_size() -> usize {
+    // Bundleの最大サイズは100MIBに設定したいですが、json形式でデータが送られてくる関係上
+    // リクエストボディのデータサイズが大きくなることを考慮して4倍までは許容するように
+    // 今後修正する可能性あり
+    AppConfigs::default().limit_tvc_repository_size * 4
 }
