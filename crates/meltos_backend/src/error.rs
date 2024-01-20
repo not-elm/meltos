@@ -12,7 +12,7 @@ pub type Result<T = ()> = std::result::Result<T, Error>;
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("session id not exists")]
-    UserIdNotExists,
+    SessionIdNotExists,
 
     #[error("discussion not exists id: {0}")]
     DiscussionNotExists(DiscussionId),
@@ -30,7 +30,7 @@ pub enum Error {
 
 impl From<Error> for Response {
     fn from(e: Error) -> Self {
-        let status_code = if matches!(e, Error::UserIdNotExists) {
+        let status_code = if matches!(e, Error::SessionIdNotExists) {
             StatusCode::UNAUTHORIZED
         } else {
             StatusCode::INTERNAL_SERVER_ERROR

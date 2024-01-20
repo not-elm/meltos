@@ -94,6 +94,6 @@ impl SessionIo for MockSessionIo {
             .await
             .get(&user_token)
             .cloned()
-            .ok_or(error::Error::UserIdNotExists)
+            .ok_or(error::Error::SessionIdNotExists)
     }
 }

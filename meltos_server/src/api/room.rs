@@ -6,6 +6,7 @@ pub use channel::channel;
 pub use join::join;
 pub use open::open;
 pub use leave::leave;
+pub use sync::sync;
 
 pub mod discussion;
 pub mod tvc;
@@ -15,8 +16,7 @@ mod channel;
 mod join;
 mod open;
 mod leave;
-
-
+mod sync;
 
 
 pub(crate) fn response_error_exceed_bundle_size(

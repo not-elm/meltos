@@ -14,6 +14,7 @@ use tokio::sync::Mutex;
 use meltos::channel::{ChannelMessage, ChannelMessageSendable};
 use meltos::discussion::DiscussionBundle;
 use meltos::room::RoomId;
+use meltos::schema::room::RoomBundle;
 use meltos::user::UserId;
 use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
 use meltos_backend::path::{create_resource_dir, room_resource_dir};
@@ -107,6 +108,24 @@ impl Room {
         })
     }
 
+
+    pub async fn room_bundle(&self) -> HttpResult<RoomBundle> {
+        let discussion = self
+            .discussion
+            .all_discussions()
+            .await
+            .into_http_result()?;
+        let tvc = self
+            .tvc
+            .bundle()
+            .into_http_result()?;
+
+        Ok(RoomBundle {
+            tvc,
+            discussion,
+        })
+    }
+
     pub async fn insert_channel(
         &self,
         channel: impl ChannelMessageSendable<Error=error::Error> + 'static,
@@ -115,6 +134,7 @@ impl Room {
         channels.push(Box::new(channel));
     }
 
+    #[inline(always)]
     pub async fn send_all_users(
         &self,
         message: ChannelMessage,
@@ -134,19 +154,9 @@ impl Room {
             .into_http_result()
     }
 
+    #[inline(always)]
     pub fn save_bundle(&self, bundle: Bundle) -> std::result::Result<(), Response> {
-        self.tvc.save(bundle).map_err(|e| {
-            Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
-                .body(Body::from(
-                    json!({
-                        "error" : e.to_string()
-                    })
-                        .to_string(),
-                ))
-                .unwrap()
-        })?;
-
+        self.tvc.save(bundle).into_http_result()?;
         Ok(())
     }
 
@@ -157,22 +167,9 @@ impl Room {
     }
 
 
+    #[inline(always)]
     pub fn create_bundle(&self) -> std::result::Result<Bundle, Response> {
-        match self.tvc.bundle() {
-            Ok(bundle) => Ok(bundle),
-            Err(error) => {
-                let response = Response::builder()
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(Body::from(
-                        json!({
-                            "error": error.to_string()
-                        })
-                            .to_string(),
-                    ))
-                    .unwrap();
-                Err(response)
-            }
-        }
+        self.tvc.bundle().into_http_result()
     }
 
     pub async fn global_discussion<'a, F, O, S>(&'a self, user_id: UserId, f: F) -> error::Result<S>

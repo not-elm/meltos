@@ -53,6 +53,7 @@ fn app<Session, Discussion>() -> Router
     Router::new()
         .route("/room/open", post(api::room::open::<Session, Discussion>))
         .layer(DefaultBodyLimit::max(bundle_request_body_size()))
+        .route("/room/:room_id", get(api::room::sync))
         .route("/room/:room_id", delete(api::room::leave))
         .nest("/room/:room_id", room_operations_router())
         .with_state(AppState::new())

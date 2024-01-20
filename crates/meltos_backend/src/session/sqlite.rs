@@ -9,7 +9,7 @@ use meltos::user::{SessionId, UserId};
 use meltos_util::fs::delete_dir;
 
 use crate::error;
-use crate::error::Error::UserIdNotExists;
+use crate::error::Error::SessionIdNotExists;
 use crate::path::{create_resource_dir, room_resource_dir};
 use crate::session::{NewSessionIo, SessionIo};
 
@@ -89,7 +89,7 @@ impl SessionIo for SqliteSessionIo {
         match result {
             Ok(user_id) => Ok(user_id),
             Err(rusqlite::Error::QueryReturnedNoRows) => {
-                Err(UserIdNotExists)
+                Err(SessionIdNotExists)
             }
             Err(e) => {
                 Err(error::Error::Sqlite(e))
@@ -142,7 +142,7 @@ mod tests {
     async fn return_user_is_not_exists_error_when_unregistered() {
         try_execute(|db| async move {
             let result = db.fetch(SessionId::new()).await;
-            assert!(matches!(result.unwrap_err(), error::Error::UserIdNotExists));
+            assert!(matches!(result.unwrap_err(), error::Error::SessionIdNotExists));
             Ok(())
         })
             .await;

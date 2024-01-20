@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use axum::body::Body;
 use axum::http::StatusCode;
 use axum::response::Response;
@@ -35,17 +37,36 @@ impl<T> IntoHttpResult<T, meltos_tvc::error::Error> for std::result::Result<T, m
     fn into_http_result(self) -> HttpResult<T> {
         match self {
             Ok(v) => Ok(v),
+            Err(e) => Err(response_error(StatusCode::INTERNAL_SERVER_ERROR, e))
+        }
+    }
+}
+
+
+impl<T> IntoHttpResult<T, meltos_backend::error::Error> for std::result::Result<T, meltos_backend::error::Error> {
+    fn into_http_result(self) -> HttpResult<T> {
+        match self {
+            Ok(v) => Ok(v),
+            Err(meltos_backend::error::Error::SessionIdNotExists) => {
+                Err(response_error(StatusCode::UNAUTHORIZED, meltos_backend::error::Error::SessionIdNotExists))
+            }
+            Err(meltos_backend::error::Error::DiscussionNotExists(id)) => {
+                Err(response_error(StatusCode::UNAUTHORIZED, meltos_backend::error::Error::DiscussionNotExists(id)))
+            }
             Err(e) => {
-                let response = Response::builder()
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(Body::from(json!({
-                        "message" : e.to_string()
-                    }).to_string()))
-                    .unwrap();
-                Err(response)
+                Err(response_error(StatusCode::INTERNAL_SERVER_ERROR, e))
             }
         }
     }
+}
+
+fn response_error(status: StatusCode, e: impl Display) -> Response {
+    Response::builder()
+        .status(status)
+        .body(Body::from(json!({
+            "message" : e.to_string()
+        }).to_string()))
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -53,7 +74,7 @@ mod test_util {
     use axum::{async_trait, http, Router};
     use axum::body::Body;
     use axum::extract::Request;
-    use axum::http::header;
+    use axum::http::{header, StatusCode};
     use axum::response::Response;
     use http_body_util::BodyExt;
     use serde::de::DeserializeOwned;
@@ -63,7 +84,7 @@ mod test_util {
     use meltos::room::RoomId;
     use meltos::schema::discussion::global::{Closed, Create, Created, Replied, Spoke};
     use meltos::schema::discussion::global::{Reply, Speak};
-    use meltos::schema::room::{Join, Open};
+    use meltos::schema::room::{Join, Open, RoomBundle};
     use meltos::schema::room::Opened;
     use meltos::user::{SessionId, UserId};
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
@@ -186,6 +207,26 @@ mod test_util {
         room_id: RoomId,
     ) -> Created {
         http_call_with_deserialize(app, create_discussion_request(title, room_id, session_id)).await
+    }
+
+
+    pub async fn http_sync(
+        app: &mut Router,
+        room_id: &RoomId,
+        session_id: &SessionId,
+    ) -> RoomBundle {
+        let response = http_call(app, request_sync(room_id, session_id)).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        response.deserialize().await
+    }
+
+    pub fn request_sync(room_id: &RoomId, session_id: &SessionId) -> Request {
+        Request::builder()
+            .method(http::method::Method::GET)
+            .header(header::SET_COOKIE, format!("session_id={session_id}"))
+            .uri(format!("/room/{room_id}"))
+            .body(Body::empty())
+            .unwrap()
     }
 
     pub async fn http_speak(

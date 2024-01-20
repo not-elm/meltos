@@ -120,9 +120,11 @@ impl DiscussionIo for MockGlobalDiscussionIo {
     async fn discussion_by(&self, discussion_id: &DiscussionId) -> error::Result<DiscussionBundle> {
         let mut discussions = self.discussions.lock().await;
         let discussion = discussions.get_mut(discussion_id).unwrap();
+        let meta = discussion.meta.clone();
+        drop(discussions);
 
         Ok(DiscussionBundle {
-            meta: discussion.meta.clone(),
+            meta,
             messages: self.message_bundles_in(discussion_id).await.unwrap_or_default(),
         })
     }
@@ -130,8 +132,14 @@ impl DiscussionIo for MockGlobalDiscussionIo {
     async fn all_discussions(&self) -> error::Result<Vec<DiscussionBundle>> {
         let discussions = self.discussions.lock().await;
         let mut bundles = Vec::new();
-        for id in discussions.keys() {
-            bundles.push(self.discussion_by(id).await?);
+        let ids = discussions
+            .iter()
+            .map(|(id, _)|id)
+            .cloned()
+            .collect::<Vec<DiscussionId>>();
+        drop(discussions);
+        for id in ids {
+            bundles.push(self.discussion_by(&id).await?);
         }
         Ok(bundles)
     }
