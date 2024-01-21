@@ -4,6 +4,7 @@ use axum::http::{Response, StatusCode};
 use axum::Json;
 use serde_json::json;
 
+use meltos::channel::{ChannelMessage, MessageData};
 use meltos_tvc::io::bundle::Bundle;
 
 use crate::api::HttpResult;
@@ -18,7 +19,7 @@ use crate::state::config::AppConfigs;
 pub async fn push(
     State(configs): State<AppConfigs>,
     SessionRoom(room): SessionRoom,
-    SessionUser(_): SessionUser,
+    SessionUser(user_id): SessionUser,
     Json(bundle): Json<Bundle>,
 ) -> HttpResult {
     let bundle_data_size = bundle.obj_data_size();
@@ -32,7 +33,13 @@ pub async fn push(
         return Err(response_error_exceed_tvc_repository_size(configs.limit_tvc_repository_size, actual_size));
     }
 
-    room.save_bundle(bundle)?;
+    room.save_bundle(bundle.clone())?;
+    room
+        .send_all_users(ChannelMessage {
+            from: user_id,
+            message: MessageData::Pushed(bundle),
+        })
+        .await?;
     Ok(Response::default())
 }
 

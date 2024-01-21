@@ -38,6 +38,14 @@ pub struct CommitMeta {
     pub objs: Vec<ObjMeta>,
 }
 
+
+#[wasm_bindgen(getter_with_clone)]
+#[derive(Clone, Debug)]
+pub struct BranchCommitMeta {
+    pub name: String,
+    pub commits: Vec<CommitMeta>,
+}
+
 pub const BASE: &str = "http://127.0.0.1:3000";
 
 #[derive(Clone)]
@@ -92,7 +100,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     ) -> error::Result<SessionConfigs> {
         let (http, bundle) =
             HttpClient::join(BASE, RoomId(room_id), Some(UserId(user_id.clone()))).await?;
-
+        self.fs.create_dir("workspace")?;
         self.operations.save.execute(bundle)?;
         self.operations.checkout.execute(&BranchName(user_id))?;
         self.operations
@@ -165,8 +173,21 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 
 
-    pub fn all_commit_metas(&self) -> error::Result<Vec<CommitMeta>> {
-        let Some(head) = self.head.read(&self.branch_name)?
+    pub fn all_branch_commit_metas(&self) -> error::Result<Vec<BranchCommitMeta>> {
+        let heads = self.head.read_all()?;
+        let mut branches = Vec::with_capacity(heads.len());
+        for (branch, _) in heads{
+            branches.push(BranchCommitMeta{
+                commits: self.all_commit_metas(&branch)?,
+                name: branch.0
+            });
+        }
+        Ok(branches)
+    }
+
+
+    fn all_commit_metas(&self, branch_name: &BranchName) -> error::Result<Vec<CommitMeta>> {
+        let Some(head) = self.head.read(branch_name)?
             else {
                 return Ok(Vec::with_capacity(0));
             };
@@ -226,7 +247,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
 
 
     #[inline(always)]
-    pub fn save_bundle(&self, bundle: Bundle) -> error::Result{
+    pub fn save_bundle(&self, bundle: Bundle) -> error::Result {
         self.operations.save.execute(bundle)?;
         Ok(())
     }

@@ -1,8 +1,9 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos_client::config::SessionConfigs;
+use meltos_client::error;
 use meltos_client::error::JsResult;
-use meltos_client::tvc::{CommitMeta, TvcClient};
+use meltos_client::tvc::{BranchCommitMeta, TvcClient};
 use meltos_tvc::io::bundle::Bundle;
 use meltos_tvc::object::commit::CommitHash;
 use meltos_tvc::object::ObjHash;
@@ -103,9 +104,9 @@ impl WasmTvcClient {
     }
 
     #[inline(always)]
-    pub fn all_commit_metas(&self) -> JsResult<Vec<CommitMeta>> {
-        let metas = self.0.all_commit_metas()?;
-        Ok(metas)
+    pub fn all_branch_commit_metas(&self) -> error::Result<Vec<BranchCommitMeta>> {
+        let branches = self.0.all_branch_commit_metas()?;
+        Ok(branches)
     }
 
     #[inline(always)]
@@ -115,8 +116,8 @@ impl WasmTvcClient {
     }
 
     #[inline(always)]
-    pub fn save_bundle(&self, bundle: &Bundle) -> JsResult {
-        self.0.save_bundle(bundle.clone())?;
+    pub fn save_bundle(&self, bundle: Bundle) -> JsResult {
+        self.0.save_bundle(bundle)?;
         Ok(())
     }
 
