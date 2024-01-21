@@ -9,6 +9,7 @@ use crate::file_system::FileSystem;
 use crate::io::atomic::work_branch::WorkingIo;
 
 #[wasm_bindgen(getter_with_clone)]
+#[repr(transparent)]
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize, Ord, PartialOrd)]
 pub struct BranchName(pub String);
 impl_string_new_type!(BranchName);

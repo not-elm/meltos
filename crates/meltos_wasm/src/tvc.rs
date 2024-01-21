@@ -3,6 +3,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use meltos_client::config::SessionConfigs;
 use meltos_client::error::JsResult;
 use meltos_client::tvc::{CommitMeta, TvcClient};
+use meltos_tvc::io::bundle::Bundle;
 use meltos_tvc::object::commit::CommitHash;
 use meltos_tvc::object::ObjHash;
 use meltos_util::console_log;
@@ -111,6 +112,12 @@ impl WasmTvcClient {
     pub fn find_obj_hash_from_traces(&self, file_path: &str) -> JsResult<Option<ObjHash>> {
         let obj_hash = self.0.find_obj_hash_from_traces(file_path)?;
         Ok(obj_hash)
+    }
+
+    #[inline(always)]
+    pub fn save_bundle(&self, bundle: &Bundle) -> JsResult {
+        self.0.save_bundle(bundle.clone())?;
+        Ok(())
     }
 
     #[inline]

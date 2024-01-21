@@ -32,7 +32,7 @@ impl Default for AppConfigs {
 
 fn source() -> &'static str {
     #[cfg(not(test))]
-    return "Settings.toml";
+    return "./meltos_server/Settings.toml";
     #[cfg(test)]
     return "SettingsTest.toml";
 }

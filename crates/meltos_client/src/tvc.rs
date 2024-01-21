@@ -224,6 +224,13 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         Ok(trace_tree.get(&FilePath::from(file_path)).cloned())
     }
 
+
+    #[inline(always)]
+    pub fn save_bundle(&self, bundle: Bundle) -> error::Result{
+        self.operations.save.execute(bundle)?;
+        Ok(())
+    }
+
     pub fn close(&self) -> error::Result {
         self.fs.delete(".")?;
         Ok(())

@@ -21,6 +21,23 @@ pub struct Bundle {
 }
 
 
+#[wasm_bindgen]
+impl Bundle {
+    #[wasm_bindgen(constructor)]
+    pub fn wasm_new(
+        traces: Vec<BundleTrace>,
+        objs: Vec<BundleObject>,
+        branches: Vec<BundleBranch>,
+    ) -> Self {
+        Self {
+            traces,
+            objs,
+            branches,
+        }
+    }
+}
+
+
 impl Bundle {
     #[inline(always)]
     pub fn obj_data_size(&self) -> usize {
@@ -38,6 +55,19 @@ pub struct BundleTrace {
     pub obj_hash: ObjHash,
 }
 
+
+#[wasm_bindgen]
+impl BundleTrace {
+    #[wasm_bindgen(constructor)]
+    pub fn wasm_new(commit_hash: String, obj_hash: String) -> Self {
+        Self {
+            commit_hash: CommitHash(ObjHash(commit_hash)),
+            obj_hash: ObjHash(obj_hash),
+        }
+    }
+}
+
+
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BundleObject {
@@ -45,11 +75,35 @@ pub struct BundleObject {
     pub compressed_buf: CompressedBuf,
 }
 
+
+#[wasm_bindgen]
+impl BundleObject {
+    #[wasm_bindgen(constructor)]
+    pub fn wasm_new(hash: String, compressed_buf: Vec<u8>) -> Self {
+        Self {
+            hash: ObjHash(hash),
+            compressed_buf: CompressedBuf(compressed_buf),
+        }
+    }
+}
+
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BundleBranch {
     pub branch_name: BranchName,
     pub commits: Vec<CommitHash>,
+}
+
+
+#[wasm_bindgen]
+impl BundleBranch {
+    #[wasm_bindgen(constructor)]
+    pub fn wasm_new(branch_name: String, commits: Vec<String>) -> Self {
+        Self {
+            branch_name: BranchName(branch_name),
+            commits: commits.into_iter().map(|hash| CommitHash(ObjHash(hash))).collect(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
