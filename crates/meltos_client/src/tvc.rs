@@ -6,6 +6,7 @@ use meltos::user::UserId;
 use meltos_tvc::branch::BranchName;
 use meltos_tvc::file_system::{FilePath, FileSystem};
 use meltos_tvc::io::atomic::head::HeadIo;
+use meltos_tvc::io::atomic::local_commits::LocalCommitsIo;
 use meltos_tvc::io::atomic::object::ObjIo;
 use meltos_tvc::io::atomic::staging::StagingIo;
 use meltos_tvc::io::bundle::Bundle;
@@ -54,6 +55,7 @@ pub struct TvcClient<Fs: FileSystem + Clone> {
     staging: StagingIo<Fs>,
     head: HeadIo<Fs>,
     trace: TraceTreeIo<Fs>,
+    local_commits: LocalCommitsIo<Fs>,
     commit_obj: CommitObjIo<Fs>,
     commit_hashes: CommitHashIo<Fs>,
     workspace: WorkspaceIo<Fs>,
@@ -69,6 +71,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             staging: StagingIo::new(fs.clone()),
             head: HeadIo::new(fs.clone()),
             trace: TraceTreeIo::new(fs.clone()),
+            local_commits: LocalCommitsIo::new(fs.clone()),
             commit_obj: CommitObjIo::new(fs.clone()),
             commit_hashes: CommitHashIo::new(fs.clone()),
             workspace: WorkspaceIo::new(fs.clone()),
@@ -220,6 +223,12 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
                 .collect(),
         })
     }
+
+    #[inline(always)]
+    pub fn can_push(&self) -> error::Result<bool> {
+        Ok(self.local_commits.read(&self.branch_name)?.is_some_and(|commits| !commits.is_empty()))
+    }
+
 
     pub fn staging_files(&self) -> error::Result<Vec<String>> {
         let tree = self.staging.read()?;

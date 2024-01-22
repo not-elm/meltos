@@ -100,6 +100,11 @@ impl WasmTvcClient {
         let branches = self.0.all_branch_commit_metas()?;
         Ok(branches)
     }
+    
+    #[inline(always)]
+    pub fn can_push(&self) -> JsResult<bool>{
+        Ok(self.0.can_push()?)
+    }
 
 
     #[inline(always)]
