@@ -27,7 +27,6 @@ pub enum Error {
     DatabaseAlreadyRemoved(RoomId),
 }
 
-
 impl From<Error> for Response {
     fn from(e: Error) -> Self {
         let status_code = if matches!(e, Error::SessionIdNotExists) {
@@ -37,12 +36,14 @@ impl From<Error> for Response {
         };
         Response::builder()
             .status(status_code)
-            .body(Body::from(json!({
-                "error" : e.to_string()
-            }).to_string()))
+            .body(Body::from(
+                json!({
+                    "error" : e.to_string()
+                })
+                .to_string(),
+            ))
             .unwrap()
     }
 }
-
 
 unsafe impl Send for Error {}

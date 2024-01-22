@@ -3,7 +3,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use meltos_tvc::file_system::{FileSystem, Stat};
 
 #[wasm_bindgen]
-extern {
+extern "C" {
     #[derive(Debug, Clone)]
     pub type VscodeNodeFs;
 
@@ -25,7 +25,6 @@ extern {
     #[wasm_bindgen(method, js_name = deleteApi)]
     pub fn delete_api(this: &VscodeNodeFs, path: &str);
 }
-
 
 impl FileSystem for VscodeNodeFs {
     fn stat(&self, _: &str) -> std::io::Result<Option<Stat>> {

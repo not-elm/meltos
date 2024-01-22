@@ -7,15 +7,15 @@ use crate::object::local_commits::LocalCommitsObj;
 
 #[derive(Debug, Clone)]
 pub struct LocalCommitsIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     fs: Fs,
 }
 
 impl<Fs> LocalCommitsIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     #[inline(always)]
     pub const fn new(fs: Fs) -> LocalCommitsIo<Fs> {
@@ -24,7 +24,11 @@ impl<Fs> LocalCommitsIo<Fs>
         }
     }
 
-    pub fn write(&self, local_commits: &LocalCommitsObj, branch_name: &BranchName) -> error::Result {
+    pub fn write(
+        &self,
+        local_commits: &LocalCommitsObj,
+        branch_name: &BranchName,
+    ) -> error::Result {
         self.fs
             .write_file(&self.file_path(branch_name), &local_commits.encode()?)?;
         Ok(())
@@ -50,7 +54,6 @@ impl<Fs> LocalCommitsIo<Fs>
 
         Ok(Some(LocalCommitsObj::decode(&buf)?))
     }
-
 
     #[inline(always)]
     fn file_path(&self, branch_name: &BranchName) -> String {

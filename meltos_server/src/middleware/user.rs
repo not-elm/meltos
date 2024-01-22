@@ -16,9 +16,7 @@ use crate::state::AppState;
 pub struct SessionUser(pub UserId);
 
 #[async_trait]
-impl FromRequestParts<AppState> for SessionUser
-
-{
+impl FromRequestParts<AppState> for SessionUser {
     type Rejection = Response;
 
     async fn from_request_parts(
@@ -41,7 +39,7 @@ fn response_unauthorized() -> Response {
             json!({
                 "error" : "unauthorized"
             })
-                .to_string(),
+            .to_string(),
         ))
         .unwrap()
 }

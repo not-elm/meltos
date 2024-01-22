@@ -21,8 +21,8 @@ pub trait Pushable<Output> {
 
 #[derive(Debug, Clone)]
 pub struct Push<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     commit_obj: CommitObjIo<Fs>,
     local_commits: LocalCommitsIo<Fs>,
@@ -30,8 +30,8 @@ pub struct Push<Fs>
 }
 
 impl<Fs> Push<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     #[inline]
     pub fn new(fs: Fs) -> Push<Fs> {
@@ -44,8 +44,8 @@ impl<Fs> Push<Fs>
 }
 
 impl<Fs> Push<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     /// Sends the currently locally committed data to the remote.
     /// * push local commits to remote server.
@@ -71,7 +71,9 @@ impl<Fs> Push<Fs>
             return Err(error::Error::NotfoundLocalCommits);
         }
         let traces = self.trace.read_all()?;
-        let objs = self.commit_obj.read_objs_associated_with_local_commits(&branch_name)?;
+        let objs = self
+            .commit_obj
+            .read_objs_associated_with_local_commits(&branch_name)?;
 
         Ok(Bundle {
             objs,
@@ -98,8 +100,8 @@ mod tests {
 
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::bundle::Bundle;
     use crate::io::commit_obj::CommitObjIo;
@@ -131,7 +133,10 @@ mod tests {
     async fn failed_if_no_commit() {
         let fs = MockFileSystem::default();
         let push = Push::new(fs);
-        match push.execute(BranchName::owner(), &mut MockRemoteClient::default()).await {
+        match push
+            .execute(BranchName::owner(), &mut MockRemoteClient::default())
+            .await
+        {
             Err(error::Error::NotfoundLocalCommits) => {}
             _ => panic!("expected return error::Error::NotfoundLocalCommits bad was"),
         }
@@ -149,7 +154,10 @@ mod tests {
         fs.write_file("workspace/hello.txt", b"hello").unwrap();
         stage.execute(&branch, ".").unwrap();
         commit.execute(&branch, "commit text").unwrap();
-        assert!(push.execute(branch, &mut MockRemoteClient::default()).await.is_ok());
+        assert!(push
+            .execute(branch, &mut MockRemoteClient::default())
+            .await
+            .is_ok());
     }
 
     #[tokio::test]

@@ -30,7 +30,6 @@ impl DiscussionMeta {
     }
 }
 
-
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct DiscussionBundle {
@@ -38,14 +37,12 @@ pub struct DiscussionBundle {
     pub messages: Vec<MessageBundle>,
 }
 
-
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct MessageBundle {
     pub message: Message,
     pub replies: Vec<Message>,
 }
-
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Debug, Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]

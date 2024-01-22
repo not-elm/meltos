@@ -73,7 +73,6 @@ impl<Fs> Merge<Fs>
         self.execute(source_head, dist)
     }
 
-
     pub fn execute(
         &self,
         source: CommitHash,
@@ -95,8 +94,10 @@ impl<Fs> Merge<Fs>
 
         match self.inspect_merges(source_hashes, dist_hashes)? {
             InspectStatus::CanMerge(tree) => {
+                self.head.write(&dist, &source)?;
                 self.staging.write_tree(&tree)?;
-                self.commit.execute(&dist, format!("merged {source} to {dist}"))?;
+                self.commit
+                    .execute(&dist, format!("merged {source} to {dist}"))?;
                 self.unzip.execute(&dist)?;
                 Ok(MergedStatus::Merged)
             }
@@ -118,19 +119,16 @@ impl<Fs> Merge<Fs>
         dist_hashes: Vec<CommitHash>,
     ) -> crate::error::Result<InspectStatus> {
         let merge_origin = self.merge_origin(&source_hashes, &dist_hashes)?;
-        let dist_tree = self.commit_tree(dist_hashes.into_iter().collect(), &merge_origin)?;
-        let mut source_tree = self.commit_tree(source_hashes.into_iter().collect(), &merge_origin)?;
+        let mut dist_tree = self.commit_tree(dist_hashes.into_iter().collect(), &merge_origin)?;
+        let source_tree =
+            self.commit_tree(source_hashes.into_iter().collect(), &merge_origin)?;
         let conflicts = Vec::new();
 
-        for (path, dist_hash) in dist_tree.iter() {
-            if !source_tree.contains_key(path) {
-                continue;
+        for (path, _) in source_tree.iter() {
+            if dist_tree.contains_key(path) {
+                dist_tree.remove(path);
             }
 
-            let source_hash = source_tree.get(path).unwrap().clone();
-            if dist_hash == &source_hash {
-                source_tree.remove(path);
-            }
             // TODO: 現状はコンフリクトは検査せずに相手側のブランチをすべて取り込むようにします。
             // else {
             //     conflicts.push(Conflict {
@@ -142,7 +140,7 @@ impl<Fs> Merge<Fs>
         }
 
         if conflicts.is_empty() {
-            Ok(InspectStatus::CanMerge(source_tree))
+            Ok(InspectStatus::CanMerge(dist_tree))
         } else {
             Ok(InspectStatus::Conflict(conflicts))
         }
@@ -210,9 +208,7 @@ mod tests {
         Checkout::new(fs.clone()).execute(&second).unwrap();
 
         fs.force_write("workspace/hello.txt", b"hello");
-        Stage::new(fs.clone())
-            .execute(&second, ".")
-            .unwrap();
+        Stage::new(fs.clone()).execute(&second, ".").unwrap();
         Commit::new(fs.clone())
             .execute(&second, "commit text")
             .unwrap();
@@ -271,16 +267,12 @@ mod tests {
         checkout.execute(&b1).unwrap();
         fs.force_write("workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&b2, ".").unwrap();
-        Commit::new(fs.clone())
-            .execute(&b2, "TEXT")
-            .unwrap();
+        Commit::new(fs.clone()).execute(&b2, "TEXT").unwrap();
 
         checkout.execute(&b2).unwrap();
         fs.force_write("workspace/test.txt", b"HELLO");
         Stage::new(fs.clone()).execute(&b1, ".").unwrap();
-        Commit::new(fs.clone())
-            .execute(&b1, "TEXT")
-            .unwrap();
+        Commit::new(fs.clone()).execute(&b1, "TEXT").unwrap();
 
         let merge = Merge::new(fs.clone());
         let status = merge.execute_from_branch(b1, b2).unwrap();

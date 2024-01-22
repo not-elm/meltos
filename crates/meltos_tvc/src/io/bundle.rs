@@ -9,8 +9,8 @@ use crate::file_system::FileSystem;
 use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
-use crate::object::{CompressedBuf, ObjHash};
 use crate::object::commit::CommitHash;
+use crate::object::{CompressedBuf, ObjHash};
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Default)]
@@ -19,7 +19,6 @@ pub struct Bundle {
     pub objs: Vec<BundleObject>,
     pub branches: Vec<BundleBranch>,
 }
-
 
 #[wasm_bindgen]
 impl Bundle {
@@ -37,14 +36,10 @@ impl Bundle {
     }
 }
 
-
 impl Bundle {
     #[inline(always)]
     pub fn obj_data_size(&self) -> usize {
-        self.objs
-            .iter()
-            .map(|obj| obj.compressed_buf.0.len())
-            .sum()
+        self.objs.iter().map(|obj| obj.compressed_buf.0.len()).sum()
     }
 }
 
@@ -54,7 +49,6 @@ pub struct BundleTrace {
     pub commit_hash: CommitHash,
     pub obj_hash: ObjHash,
 }
-
 
 #[wasm_bindgen]
 impl BundleTrace {
@@ -67,14 +61,12 @@ impl BundleTrace {
     }
 }
 
-
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BundleObject {
     pub hash: ObjHash,
     pub compressed_buf: CompressedBuf,
 }
-
 
 #[wasm_bindgen]
 impl BundleObject {
@@ -94,22 +86,24 @@ pub struct BundleBranch {
     pub commits: Vec<CommitHash>,
 }
 
-
 #[wasm_bindgen]
 impl BundleBranch {
     #[wasm_bindgen(constructor)]
     pub fn wasm_new(branch_name: String, commits: Vec<String>) -> Self {
         Self {
             branch_name: BranchName(branch_name),
-            commits: commits.into_iter().map(|hash| CommitHash(ObjHash(hash))).collect(),
+            commits: commits
+                .into_iter()
+                .map(|hash| CommitHash(ObjHash(hash)))
+                .collect(),
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct BundleIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     object: ObjIo<Fs>,
     trace: TraceIo<Fs>,
@@ -117,8 +111,8 @@ pub struct BundleIo<Fs>
 }
 
 impl<Fs> BundleIo<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     #[inline]
     pub fn new(fs: Fs) -> BundleIo<Fs> {
@@ -143,9 +137,9 @@ impl<Fs> BundleIo<Fs>
         let mut branches = Vec::with_capacity(head_files.len());
         for path in head_files {
             let Some(branch_name) = Path::new(&path).file_name().and_then(|name| name.to_str())
-                else {
-                    continue;
-                };
+            else {
+                continue;
+            };
 
             let branch_name = BranchName::from(branch_name);
             let head = HeadIo::new(self.fs.clone()).try_read(&branch_name)?;
@@ -167,8 +161,8 @@ impl<Fs> BundleIo<Fs>
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
     use crate::io::bundle::BundleIo;
     use crate::operation::commit::Commit;
@@ -237,12 +231,8 @@ mod tests {
         init_owner_branch(fs.clone());
         let branch = BranchName::owner();
         fs.write_file("workspace/hello.txt", b"hello").unwrap();
-        Stage::new(fs.clone())
-            .execute(&branch, ".")
-            .unwrap();
-        Commit::new(fs.clone())
-            .execute(&branch, "commit")
-            .unwrap();
+        Stage::new(fs.clone()).execute(&branch, ".").unwrap();
+        Commit::new(fs.clone()).execute(&branch, "commit").unwrap();
         let bundle = BundleIo::new(fs.clone()).create().unwrap();
         let objs_count = fs.all_files_in(".meltos/objects").unwrap().len();
 

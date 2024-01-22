@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 
-use meltos::discussion::DiscussionMeta;
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::Message;
+use meltos::discussion::DiscussionMeta;
 use meltos::schema::discussion::global::{Replied, Reply, Speak, Spoke};
 
 use crate::config::SessionConfigs;
@@ -23,22 +23,20 @@ pub trait ClientDiscussionIo: Send + Sync {
     ) -> Result<(), Self::Error>;
 
     async fn replied(&self, discussion_id: DiscussionId, reply: Message)
-                     -> Result<(), Self::Error>;
+        -> Result<(), Self::Error>;
 
     async fn closed(&self, discussion_id: DiscussionId) -> Result<(), Self::Error>;
 }
-
 
 pub struct DiscussionClient {
     http: HttpClient,
 }
 
-
 impl DiscussionClient {
     #[inline(always)]
     pub fn new(config: SessionConfigs) -> Self {
         Self {
-            http: HttpClient::new(BASE, config)
+            http: HttpClient::new(BASE, config),
         }
     }
 

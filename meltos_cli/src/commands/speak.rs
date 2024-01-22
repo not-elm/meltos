@@ -6,7 +6,7 @@ use meltos::discussion::message::MessageText;
 use meltos::schema::discussion::global::Speak;
 use meltos_client::discussion::DiscussionClient;
 
-use crate::commands::{CommandExecutable, load_configs};
+use crate::commands::{load_configs, CommandExecutable};
 
 #[derive(Args, Debug, Clone)]
 pub struct SpeakArgs {

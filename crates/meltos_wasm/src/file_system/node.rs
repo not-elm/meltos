@@ -1,7 +1,7 @@
 use std::path::Path;
 
-use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::js_sys::{Object, Uint8Array};
 
 use meltos_client::error::JsResult;
@@ -12,7 +12,7 @@ use crate::error::IntoJsResult;
 type NodeFsResult<T = JsValue> = std::result::Result<T, Error>;
 
 #[wasm_bindgen(module = "fs")]
-extern {
+extern "C" {
     #[derive(Debug)]
     type Error;
 
@@ -20,14 +20,12 @@ extern {
     fn code(this: &Error) -> String;
 }
 
-
 impl Error {
     #[inline(always)]
     pub fn already_exists(&self) -> bool {
         self.code() == "EEXIST"
     }
 }
-
 
 #[wasm_bindgen(module = "fs")]
 extern "C" {
@@ -46,7 +44,6 @@ extern "C" {
     #[wasm_bindgen(method, getter, js_name = mtimeMs)]
     fn m_time_ms(this: &Stats) -> usize;
 }
-
 
 #[wasm_bindgen(module = "fs")]
 extern "C" {
@@ -75,31 +72,29 @@ extern "C" {
     fn _lstat_sync(path: &str) -> NodeFsResult<Stats>;
 }
 
-
 fn exists_sync(path: &str) -> std::io::Result<bool> {
     match _exists_sync(path) {
         Ok(exists) => Ok(exists),
-        Err(e) => Err(std::io::Error::other(format!("failed fs.existsSysnc: {e:?}")))
+        Err(e) => {
+            Err(std::io::Error::other(format!(
+                "failed fs.existsSysnc: {e:?}"
+            )))
+        }
     }
 }
-
 
 fn read_dir_sync(path: &str) -> std::io::Result<Option<Vec<String>>> {
     match _read_dir_sync(path, JsValue::null()) {
         Ok(entries) => Ok(Some(entries)),
-        Err(e) => Err(std::io::Error::other(format!("failed read dir: {e:?}")))
+        Err(e) => Err(std::io::Error::other(format!("failed read dir: {e:?}"))),
     }
 }
 
-
 #[inline(always)]
 fn rm_sync(path: &str) -> std::io::Result<()> {
-    _rm_sync(path).map_err(|e| {
-        std::io::Error::other(format!("failed fs.rmSync : {e:?}"))
-    })?;
+    _rm_sync(path).map_err(|e| std::io::Error::other(format!("failed fs.rmSync : {e:?}")))?;
     Ok(())
 }
-
 
 #[inline(always)]
 fn rm_dir_sync(path: &str) -> std::io::Result<()> {
@@ -108,13 +103,12 @@ fn rm_dir_sync(path: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-
 #[inline]
 fn lstat_sync(path: &str) -> std::io::Result<Stats> {
-    let stats = _lstat_sync(path).map_err(|e| std::io::Error::other(format!("failed lstat_sync : {e:?}")))?;
+    let stats = _lstat_sync(path)
+        .map_err(|e| std::io::Error::other(format!("failed lstat_sync : {e:?}")))?;
     Ok(stats)
 }
-
 
 #[inline]
 fn is_file(path: &str) -> std::io::Result<bool> {
@@ -166,30 +160,25 @@ impl NodeFileSystem {
         self.create_dir(path).into_js_result()
     }
 
-
     #[inline(always)]
     pub fn write_file_api(&self, path: &str, buf: Vec<u8>) -> JsResult<()> {
         self.write_file(path, &buf).into_js_result()
     }
-
 
     #[inline(always)]
     pub fn read_dir_api(&self, path: &str) -> JsResult<Option<Vec<String>>> {
         self.read_dir(path).into_js_result()
     }
 
-
     #[inline(always)]
     pub fn read_file_api(&self, path: &str) -> JsResult<Option<Vec<u8>>> {
         self.read_file(path).into_js_result()
     }
 
-
     #[inline(always)]
     pub fn delete_api(&self, path: &str) -> JsResult<()> {
         self.delete(path).into_js_result()
     }
-
 
     #[inline(always)]
     pub fn stat_api(&self, path: &str) -> JsResult<Option<Stat>> {
@@ -212,7 +201,6 @@ impl NodeFileSystem {
     }
 }
 
-
 fn rm_recursive(path: String) -> std::io::Result<()> {
     if !exists_sync(&path)? {
         Ok(())
@@ -222,13 +210,13 @@ fn rm_recursive(path: String) -> std::io::Result<()> {
         for entry in entries {
             rm_recursive(format!("{path}/{entry}"))?;
         }
-        rm_dir_sync(&path).map_err(|e| std::io::Error::other(format!("failed fs.rmdirSync : {e:?}")))?;
+        rm_dir_sync(&path)
+            .map_err(|e| std::io::Error::other(format!("failed fs.rmdirSync : {e:?}")))?;
         Ok(())
     } else {
         Ok(())
     }
 }
-
 
 #[wasm_bindgen]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -236,15 +224,20 @@ struct MkdirOptions {
     pub recursive: bool,
 }
 
-
 impl FileSystem for NodeFileSystem {
     fn stat(&self, path: &str) -> std::io::Result<Option<Stat>> {
         let path = self.path(path);
         if exists_sync(&path)? {
             let stats = lstat_sync(&path)?;
             Ok(Some(Stat {
-                ty: if stats.is_file() { StatType::File } else { StatType::Dir },
-                size: if stats.is_file() { stats.size() as u64 } else {
+                ty: if stats.is_file() {
+                    StatType::File
+                } else {
+                    StatType::Dir
+                },
+                size: if stats.is_file() {
+                    stats.size() as u64
+                } else {
                     read_dir_sync(&path)?.unwrap_or_default().len() as u64
                 },
                 create_time: (stats.c_time_ms() / 1000) as u64,
@@ -271,15 +264,20 @@ impl FileSystem for NodeFileSystem {
         if exists_sync(path)? {
             return Ok(());
         }
-        match mkdir_sync(path, MkdirOptions {
-            recursive: true
-        }) {
-            Ok(_) => Ok(()),
-            Err(e) => if e.already_exists() {
-                Ok(())
-            } else {
-                Err(std::io::Error::other(format!("failed to create dir {e:?}")))
+        match mkdir_sync(
+            path,
+            MkdirOptions {
+                recursive: true,
             },
+        ) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                if e.already_exists() {
+                    Ok(())
+                } else {
+                    Err(std::io::Error::other(format!("failed to create dir {e:?}")))
+                }
+            }
         }
     }
 
@@ -301,7 +299,6 @@ impl FileSystem for NodeFileSystem {
         }
     }
 
-
     #[inline(always)]
     fn read_dir(&self, path: &str) -> std::io::Result<Option<Vec<String>>> {
         read_dir_sync(&self.path(path))
@@ -319,14 +316,12 @@ impl FileSystem for NodeFileSystem {
         }
     }
 
-
     #[inline(always)]
     fn delete(&self, path: &str) -> std::io::Result<()> {
         let entry_path = self.path(path);
         rm_recursive(entry_path)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -344,7 +339,6 @@ mod tests {
         fs.delete("src1").unwrap();
         assert!(dir.unwrap().is_some());
     }
-
 
     #[wasm_bindgen_test]
     fn create_dir_recursive() {
@@ -364,7 +358,6 @@ mod tests {
         fs.delete("src2").unwrap();
     }
 
-
     #[wasm_bindgen_test]
     fn success_if_not_found() {
         let fs = node_fs();
@@ -372,7 +365,6 @@ mod tests {
         fs.delete("src3").unwrap();
         fs.delete("src3").unwrap();
     }
-
 
     #[wasm_bindgen_test]
     fn write_file_below_root() {
@@ -399,7 +391,6 @@ mod tests {
         fs.delete("src4").unwrap();
     }
 
-
     #[wasm_bindgen_test]
     fn stat_file() {
         let fs = node_fs();
@@ -413,7 +404,6 @@ mod tests {
         assert_eq!(stat1.create_time, stat2.create_time);
         assert!(stat1.update_time <= stat2.update_time);
     }
-
 
     #[wasm_bindgen_test]
     fn stat_dir() {
@@ -431,4 +421,3 @@ mod tests {
         assert!(stat1.update_time <= stat2.update_time);
     }
 }
-

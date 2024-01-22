@@ -11,8 +11,7 @@ pub struct AppState {
     pub(crate) configs: AppConfigs,
 }
 
-impl AppState
-{
+impl AppState {
     #[inline(always)]
     pub fn new() -> AppState {
         Self {
@@ -22,14 +21,12 @@ impl AppState
     }
 }
 
-
 impl FromRef<AppState> for Rooms {
     #[inline(always)]
     fn from_ref(input: &AppState) -> Self {
         input.rooms.clone()
     }
 }
-
 
 impl FromRef<AppState> for AppConfigs {
     #[inline(always)]

@@ -3,19 +3,19 @@ use std::fmt::Debug;
 use std::net::SocketAddr;
 
 use axum::extract::DefaultBodyLimit;
-use axum::Router;
 use axum::routing::{delete, get, post};
+use axum::Router;
 use tower_http::decompression::RequestDecompressionLayer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
 use meltos_backend::discussion::global::sqlite::SqliteDiscussionIo;
-use meltos_backend::session::{NewSessionIo, SessionIo};
+use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
 use meltos_backend::session::sqlite::SqliteSessionIo;
+use meltos_backend::session::{NewSessionIo, SessionIo};
 
-use crate::state::AppState;
 use crate::state::config::AppConfigs;
+use crate::state::AppState;
 
 mod api;
 mod channel;
@@ -37,18 +37,14 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     tracing_init();
     let listener = tokio::net::TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 3000))).await?;
 
-    axum::serve(
-        listener,
-        app::<SqliteSessionIo, SqliteDiscussionIo>(),
-    )
-        .await?;
+    axum::serve(listener, app::<SqliteSessionIo, SqliteDiscussionIo>()).await?;
     Ok(())
 }
 
 fn app<Session, Discussion>() -> Router
-    where
-        Session: SessionIo + NewSessionIo + Debug + 'static,
-        Discussion: DiscussionIo + NewDiscussIo + Debug + 'static,
+where
+    Session: SessionIo + NewSessionIo + Debug + 'static,
+    Discussion: DiscussionIo + NewDiscussIo + Debug + 'static,
 {
     Router::new()
         .route("/room/open", post(api::room::open::<Session, Discussion>))
@@ -60,8 +56,7 @@ fn app<Session, Discussion>() -> Router
         .layer(RequestDecompressionLayer::new())
 }
 
-fn room_operations_router() -> Router<AppState>
-{
+fn room_operations_router() -> Router<AppState> {
     Router::new()
         .route("/channel", get(api::room::channel))
         .route("/join", post(api::room::join))
@@ -69,23 +64,20 @@ fn room_operations_router() -> Router<AppState>
         .nest("/discussion/global", global_discussion_route())
 }
 
-fn tvc_routes() -> Router<AppState>
-{
+fn tvc_routes() -> Router<AppState> {
     Router::new()
         .route("/push", post(api::room::tvc::push))
         .layer(DefaultBodyLimit::max(bundle_request_body_size()))
         .route("/fetch", get(api::room::tvc::fetch))
 }
 
-fn global_discussion_route() -> Router<AppState>
-{
+fn global_discussion_route() -> Router<AppState> {
     Router::new()
         .route("/create", post(api::room::discussion::global::create))
         .route("/speak", post(api::room::discussion::global::speak))
         .route("/reply", post(api::room::discussion::global::reply))
         .route("/close", delete(api::room::discussion::global::close))
 }
-
 
 #[inline(always)]
 fn bundle_request_body_size() -> usize {

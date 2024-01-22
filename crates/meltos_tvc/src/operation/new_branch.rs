@@ -5,15 +5,15 @@ use crate::io::atomic::head::HeadIo;
 
 #[derive(Debug, Clone)]
 pub struct NewBranch<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     head: HeadIo<Fs>,
 }
 
 impl<Fs> NewBranch<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     #[inline]
     pub const fn new(fs: Fs) -> NewBranch<Fs> {

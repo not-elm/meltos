@@ -11,10 +11,7 @@ use crate::middleware::room::SessionRoom;
 ///
 /// レスポンスはRoomのメタデータ
 ///
-pub async fn join(
-    SessionRoom(room): SessionRoom,
-    Json(join): Json<Join>,
-) -> HttpResult {
+pub async fn join(SessionRoom(room): SessionRoom, Json(join): Json<Join>) -> HttpResult {
     let (user_id, session_id) = room.session.register(join.user_id).await?;
     let bundle = room.create_bundle()?;
     let discussions = room.discussions().await?;
@@ -30,7 +27,7 @@ pub async fn join(
         },
         from: user_id,
     })
-        .await?;
+    .await?;
 
     Ok(joined.as_success_response())
 }
@@ -45,12 +42,15 @@ mod tests {
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::branch::BranchName;
-    use meltos_tvc::file_system::FileSystem;
     use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::FileSystem;
     use meltos_tvc::io::bundle::BundleIo;
     use meltos_tvc::operation::init::Init;
 
-    use crate::api::test_util::{http_call_with_deserialize, http_join, http_open_room, mock_app, open_room_request_with_options, ResponseConvertable};
+    use crate::api::test_util::{
+        http_call_with_deserialize, http_join, http_open_room, mock_app,
+        open_room_request_with_options, ResponseConvertable,
+    };
     use crate::app;
 
     #[tokio::test]
@@ -78,9 +78,7 @@ mod tests {
         let branch = BranchName::owner();
         fs.write_file("workspace/some_text.txt", b"text file")
             .unwrap();
-        Init::new(fs.clone())
-            .execute(&branch)
-            .unwrap();
+        Init::new(fs.clone()).execute(&branch).unwrap();
         let bundle = BundleIo::new(fs.clone()).create().unwrap();
         let open_request = open_room_request_with_options(Some(bundle), None);
         let room_id = http_call_with_deserialize::<Opened>(&mut app, open_request)

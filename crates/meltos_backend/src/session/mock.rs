@@ -6,8 +6,8 @@ use meltos::room::RoomId;
 use meltos::user::{SessionId, UserId};
 
 use crate::error;
-use crate::sync::arc_mutex::ArcMutex;
 use crate::session::{NewSessionIo, SessionIo};
+use crate::sync::arc_mutex::ArcMutex;
 
 #[derive(Debug, Default, Clone)]
 pub struct MockSessionIo(ArcMutex<HashMap<SessionId, UserId>>);
@@ -49,15 +49,12 @@ impl MockSessionIo {
     }
 }
 
-
-
 impl NewSessionIo for MockSessionIo {
     #[inline(always)]
     fn new(_room_id: RoomId) -> error::Result<Self> {
         Ok(Self::default())
     }
 }
-
 
 #[async_trait]
 impl SessionIo for MockSessionIo {

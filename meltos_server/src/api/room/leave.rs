@@ -16,12 +16,11 @@ pub async fn leave(
 ) -> HttpResult {
     if room.owner == user_id {
         let mut rooms = rooms.lock().await;
-        room
-            .send_all_users(ChannelMessage {
-                from: user_id,
-                message: MessageData::ClosedRoom,
-            })
-            .await?;
+        room.send_all_users(ChannelMessage {
+            from: user_id,
+            message: MessageData::ClosedRoom,
+        })
+        .await?;
         let room_id = room.id.clone();
         drop(room);
         rooms.delete(&room_id);
@@ -29,26 +28,25 @@ pub async fn leave(
     } else {
         room.session.unregister(user_id.clone()).await?;
         let left = Left {
-            user_id: user_id.clone()
+            user_id: user_id.clone(),
         };
 
-        room
-            .send_all_users(ChannelMessage {
-                from: user_id,
-                message: MessageData::Left(left.clone()),
-            })
-            .await?;
+        room.send_all_users(ChannelMessage {
+            from: user_id,
+            message: MessageData::Left(left.clone()),
+        })
+        .await?;
         Ok(left.as_success_response())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use axum::{http, Router};
     use axum::body::Body;
     use axum::extract::Request;
     use axum::http::{header, StatusCode};
     use axum::response::Response;
+    use axum::{http, Router};
 
     use meltos::room::RoomId;
     use meltos::schema::room::{Joined, Opened};
@@ -57,8 +55,10 @@ mod tests {
     use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::file_system::mock::MockFileSystem;
 
+    use crate::api::test_util::{
+        fetch_request, http_call, http_join, mock_app, open_room_request, ResponseConvertable,
+    };
     use crate::{app, error};
-    use crate::api::test_util::{fetch_request, http_call, http_join, mock_app, open_room_request, ResponseConvertable};
 
     #[tokio::test]
     async fn delete_room_if_owner_left() -> error::Result {
@@ -73,7 +73,6 @@ mod tests {
         Ok(())
     }
 
-
     #[tokio::test]
     async fn not_delete_room_if_user_left() -> error::Result {
         let mut app = mock_app();
@@ -87,9 +86,11 @@ mod tests {
 
         let response = http_leave(&mut app, &opened.room_id, &joined.session_id).await;
         assert_eq!(response.status(), StatusCode::OK);
-        let response = http_call(&mut app, fetch_request(&opened.room_id, &joined.session_id)).await;
+        let response =
+            http_call(&mut app, fetch_request(&opened.room_id, &joined.session_id)).await;
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
-        let response = http_call(&mut app, fetch_request(&opened.room_id, &opened.session_id)).await;
+        let response =
+            http_call(&mut app, fetch_request(&opened.room_id, &opened.session_id)).await;
         assert_eq!(response.status(), StatusCode::OK);
         let response = http_leave(&mut app, &opened.room_id, &opened.session_id).await;
         assert_eq!(response.status(), StatusCode::OK);
@@ -98,8 +99,11 @@ mod tests {
         Ok(())
     }
 
-
-    pub async fn http_leave(app: &mut Router, room_id: &RoomId, session_id: &SessionId) -> Response {
+    pub async fn http_leave(
+        app: &mut Router,
+        room_id: &RoomId,
+        session_id: &SessionId,
+    ) -> Response {
         http_call(app, leave_request(room_id, session_id)).await
     }
 

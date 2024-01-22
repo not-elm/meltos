@@ -1,6 +1,6 @@
-use meltos::discussion::{DiscussionBundle, DiscussionMeta};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
+use meltos::discussion::{DiscussionBundle, DiscussionMeta};
 use meltos::room::RoomId;
 use meltos::user::UserId;
 
@@ -12,10 +12,10 @@ pub trait NewDiscussIo: Sized {
     fn new(room_id: RoomId) -> error::Result<Self>;
 }
 
-
 #[async_trait::async_trait]
 pub trait DiscussionIo: Send + Sync {
-    async fn new_discussion(&self, title: String, creator: UserId) -> error::Result<DiscussionMeta>;
+    async fn new_discussion(&self, title: String, creator: UserId)
+        -> error::Result<DiscussionMeta>;
 
     async fn speak(
         &self,

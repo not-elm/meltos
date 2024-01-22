@@ -1,6 +1,6 @@
 use meltos::room::RoomId;
-use meltos_tvc::file_system::{FileSystem, Stat};
 use meltos_tvc::file_system::std_fs::StdFileSystem;
+use meltos_tvc::file_system::{FileSystem, Stat};
 
 use crate::path::room_resource_dir;
 
@@ -19,20 +19,25 @@ impl<Fs> BackendFileSystem<Fs> {
         }
     }
 
-
     #[inline(always)]
     fn trim(&self, path: String) -> String {
-        path
-            .trim_start_matches(&format!("{}/", room_resource_dir(&self.room_id).to_str().unwrap()))
-            .trim_start_matches("./")
-            .to_string()
+        path.trim_start_matches(&format!(
+            "{}/",
+            room_resource_dir(&self.room_id)
+                .to_str()
+                .unwrap()
+                .replace('\\', "/")
+        ))
+        .trim_start_matches("./")
+        .to_string()
     }
 
     #[inline(always)]
     fn as_path(&self, path: &str) -> String {
         let dir = room_resource_dir(&self.room_id);
-        let path = path.trim_start_matches(dir.to_str().unwrap());
-        format!("{}/{}", dir.to_str().unwrap(), path.trim_start_matches('/'))
+        let dir = dir.to_str().unwrap().replace('\\', "/");
+        let path = path.trim_start_matches(&dir);
+        format!("{}/{}", dir, path.trim_start_matches('/'))
     }
 }
 
@@ -59,7 +64,8 @@ impl<Fs: FileSystem> FileSystem for BackendFileSystem<Fs> {
 
     #[inline(always)]
     fn read_dir(&self, path: &str) -> std::io::Result<Option<Vec<String>>> {
-        Ok(self.fs
+        Ok(self
+            .fs
             .read_dir(&self.as_path(path))?
             .map(|files| files.into_iter().map(|path| self.trim(path)).collect()))
     }
@@ -80,12 +86,11 @@ impl<Fs: FileSystem> FileSystem for BackendFileSystem<Fs> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use meltos::room::RoomId;
-    use meltos_tvc::file_system::FileSystem;
     use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::FileSystem;
 
     use crate::tvc::file_system::BackendFileSystem;
 
@@ -97,9 +102,9 @@ mod tests {
         fs.write_file("hello2.txt", b"hello").unwrap();
         let mut files = fs.all_files_in(".").unwrap();
         files.sort();
-        assert_eq!(files, vec![
-            "dir/hello.txt".to_string(),
-            "hello2.txt".to_string(),
-        ])
+        assert_eq!(
+            files,
+            vec!["dir/hello.txt".to_string(), "hello2.txt".to_string(),]
+        )
     }
 }

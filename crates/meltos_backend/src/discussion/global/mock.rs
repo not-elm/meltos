@@ -1,6 +1,6 @@
-use meltos::discussion::{Discussion, DiscussionBundle, DiscussionMeta, MessageBundle};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
+use meltos::discussion::{Discussion, DiscussionBundle, DiscussionMeta, MessageBundle};
 use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_util::macros::Deref;
@@ -16,12 +16,9 @@ pub struct MockGlobalDiscussionIo {
     reply_discussions: ReplyDiscussions,
 }
 
-
 impl MockGlobalDiscussionIo {
     async fn message_bundles_in(&self, id: &DiscussionId) -> Option<Vec<MessageBundle>> {
-        let discussions = self.discussions
-            .lock()
-            .await;
+        let discussions = self.discussions.lock().await;
 
         let discussion_messages = &discussions.get(id)?.messages;
         let mut message_bundles = Vec::with_capacity(discussion_messages.len());
@@ -56,7 +53,6 @@ impl MockGlobalDiscussionIo {
         }
     }
 }
-
 
 impl NewDiscussIo for MockGlobalDiscussionIo {
     fn new(_: RoomId) -> error::Result<Self> {
@@ -125,7 +121,10 @@ impl DiscussionIo for MockGlobalDiscussionIo {
 
         Ok(DiscussionBundle {
             meta,
-            messages: self.message_bundles_in(discussion_id).await.unwrap_or_default(),
+            messages: self
+                .message_bundles_in(discussion_id)
+                .await
+                .unwrap_or_default(),
         })
     }
 
@@ -134,7 +133,7 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         let mut bundles = Vec::new();
         let ids = discussions
             .iter()
-            .map(|(id, _)|id)
+            .map(|(id, _)| id)
             .cloned()
             .collect::<Vec<DiscussionId>>();
         drop(discussions);
@@ -158,7 +157,6 @@ impl DiscussionIo for MockGlobalDiscussionIo {
 
         Ok(())
     }
-
 }
 
 #[derive(Debug, Default, Clone, Deref)]

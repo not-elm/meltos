@@ -13,7 +13,6 @@ pub struct OpenArgs {
     lifetime_secs: Option<u64>,
 }
 
-
 #[async_trait(?Send)]
 impl CommandExecutable for OpenArgs {
     async fn execute(self) -> meltos_client::error::Result {

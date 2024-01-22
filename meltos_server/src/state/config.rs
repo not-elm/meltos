@@ -15,7 +15,7 @@ pub struct AppConfigs {
     /// TVCのリポジトリの最大サイズ
     /// bundleがpushされる際にリポジトリサイズが許容値を超えないかを確認するために使用される。
     /// リポジトリサイズは.meltos/objs内のバッファサイズの合計値
-    pub limit_tvc_repository_size : usize
+    pub limit_tvc_repository_size: usize,
 }
 
 impl Default for AppConfigs {
@@ -29,14 +29,12 @@ impl Default for AppConfigs {
     }
 }
 
-
 fn source() -> &'static str {
     #[cfg(not(test))]
-    return "./meltos_server/Settings.toml";
+    return "./Settings.toml";
     #[cfg(test)]
     return "SettingsTest.toml";
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -55,7 +53,7 @@ mod tests {
     }
 
     #[test]
-    fn it_read_limit_tvc_repository_size(){
+    fn it_read_limit_tvc_repository_size() {
         let config = AppConfigs::default();
         assert_eq!(config.limit_tvc_repository_size, 3072);
     }

@@ -16,8 +16,6 @@ mod tests {
     use crate::operation::init;
 
     pub(crate) fn init_owner_branch(mock: MockFileSystem) -> CommitHash {
-        init::Init::new(mock)
-            .execute(&BranchName::owner())
-            .unwrap()
+        init::Init::new(mock).execute(&BranchName::owner()).unwrap()
     }
 }

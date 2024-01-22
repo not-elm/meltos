@@ -13,11 +13,11 @@ use meltos_tvc::io::commit_hashes::CommitHashIo;
 use meltos_tvc::io::commit_obj::CommitObjIo;
 use meltos_tvc::io::trace_tree::TraceTreeIo;
 use meltos_tvc::object::commit::CommitHash;
-use meltos_tvc::object::ObjHash;
 use meltos_tvc::object::tree::TreeObj;
+use meltos_tvc::object::ObjHash;
 use meltos_tvc::operation::merge::MergedStatus;
-use meltos_tvc::operation::Operations;
 use meltos_tvc::operation::push::Pushable;
+use meltos_tvc::operation::Operations;
 
 use crate::config::SessionConfigs;
 use crate::error;
@@ -37,7 +37,6 @@ pub struct CommitMeta {
     pub message: String,
     pub objs: Vec<ObjMeta>,
 }
-
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Clone, Debug)]
@@ -89,7 +88,11 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             lifetime_sec,
         };
 
-        let session_configs = self.operations.push.execute(self.branch_name.clone(), &mut sender).await?;
+        let session_configs = self
+            .operations
+            .push
+            .execute(self.branch_name.clone(), &mut sender)
+            .await?;
         Ok(session_configs)
     }
 
@@ -103,13 +106,10 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         self.fs.create_dir("workspace")?;
         self.operations.save.execute(bundle)?;
         self.operations.checkout.execute(&BranchName(user_id))?;
-        self.operations
-            .unzip
-            .execute(&self.branch_name)?;
+        self.operations.unzip.execute(&self.branch_name)?;
 
         Ok(http.configs().clone())
     }
-
 
     #[inline(always)]
     pub async fn leave(&self, session_configs: SessionConfigs) -> error::Result {
@@ -123,7 +123,6 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         self.operations.save.execute(bundle)?;
         Ok(())
     }
-
 
     #[inline(always)]
     pub fn stage(&self, path: String) -> error::Result {
@@ -145,14 +144,20 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
 
     #[inline(always)]
     pub fn commit(&self, commit_text: String) -> error::Result<CommitHash> {
-        Ok(self.operations.commit.execute(&self.branch_name, commit_text)?)
+        Ok(self
+            .operations
+            .commit
+            .execute(&self.branch_name, commit_text)?)
     }
 
     pub async fn push(&mut self, session_configs: SessionConfigs) -> error::Result {
         let mut sender = PushSender {
             session_configs,
         };
-        self.operations.push.execute(self.branch_name.clone(), &mut sender).await?;
+        self.operations
+            .push
+            .execute(self.branch_name.clone(), &mut sender)
+            .await?;
         Ok(())
     }
 
@@ -162,35 +167,30 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         Ok(status)
     }
 
-
     pub fn read_file_from_hash(&self, obj_hash: &ObjHash) -> error::Result<Option<String>> {
-        let Some(file_obj) = self.obj.try_read_to_file(obj_hash)?
-            else {
-                return Ok(None);
-            };
+        let Some(file_obj) = self.obj.try_read_to_file(obj_hash)? else {
+            return Ok(None);
+        };
 
         Ok(Some(String::from_utf8(file_obj.0).unwrap()))
     }
 
-
     pub fn all_branch_commit_metas(&self) -> error::Result<Vec<BranchCommitMeta>> {
         let heads = self.head.read_all()?;
         let mut branches = Vec::with_capacity(heads.len());
-        for (branch, _) in heads{
-            branches.push(BranchCommitMeta{
+        for (branch, _) in heads {
+            branches.push(BranchCommitMeta {
                 commits: self.all_commit_metas(&branch)?,
-                name: branch.0
+                name: branch.0,
             });
         }
         Ok(branches)
     }
 
-
     fn all_commit_metas(&self, branch_name: &BranchName) -> error::Result<Vec<CommitMeta>> {
-        let Some(head) = self.head.read(branch_name)?
-            else {
-                return Ok(Vec::with_capacity(0));
-            };
+        let Some(head) = self.head.read(branch_name)? else {
+            return Ok(Vec::with_capacity(0));
+        };
         let hashes = self.commit_hashes.read_all(head, &None)?;
         let mut metas = Vec::with_capacity(hashes.len());
         for commit_hash in hashes {
@@ -198,7 +198,6 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         }
         Ok(metas)
     }
-
 
     pub fn read_commit_meta(&self, commit_hash: &CommitHash) -> error::Result<CommitMeta> {
         let obj = self.commit_obj.read(commit_hash)?;
@@ -209,9 +208,11 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             objs: tree
                 .0
                 .into_iter()
-                .map(|(file_path, hash)| ObjMeta {
-                    file_path: file_path.0,
-                    hash: hash.0,
+                .map(|(file_path, hash)| {
+                    ObjMeta {
+                        file_path: file_path.0,
+                        hash: hash.0,
+                    }
                 })
                 .collect(),
         })
@@ -225,26 +226,21 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             .unwrap_or_default())
     }
 
-
     pub fn traces(&self) -> error::Result<Option<TreeObj>> {
-        let Some(head) = self.head.read(&self.branch_name)?
-            else {
-                return Ok(None);
-            };
+        let Some(head) = self.head.read(&self.branch_name)? else {
+            return Ok(None);
+        };
         let trace_tree = self.trace.read(&head)?;
         Ok(Some(trace_tree))
     }
 
-
     pub fn find_obj_hash_from_traces(&self, file_path: &str) -> error::Result<Option<ObjHash>> {
-        let Some(head) = self.head.read(&self.branch_name)?
-            else {
-                return Ok(None);
-            };
+        let Some(head) = self.head.read(&self.branch_name)? else {
+            return Ok(None);
+        };
         let trace_tree = self.trace.read(&head)?;
         Ok(trace_tree.get(&FilePath::from(file_path)).cloned())
     }
-
 
     #[inline(always)]
     pub fn save_bundle(&self, bundle: Bundle) -> error::Result {
@@ -274,7 +270,7 @@ impl Pushable<SessionConfigs> for OpenSender {
             self.user_id.clone().map(UserId::from),
             self.lifetime_sec,
         )
-            .await?;
+        .await?;
         Ok(http.configs().clone())
     }
 }

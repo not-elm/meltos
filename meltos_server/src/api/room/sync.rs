@@ -5,10 +5,7 @@ use crate::middleware::user::SessionUser;
 /// 現在のルームの状態を全て返します。
 ///
 /// リクエスト側とルームの状態を同期するために使用されます。
-pub async fn sync(
-    SessionRoom(room): SessionRoom,
-    SessionUser(_): SessionUser,
-) -> HttpResult {
+pub async fn sync(SessionRoom(room): SessionRoom, SessionUser(_): SessionUser) -> HttpResult {
     let room_bundle = room.room_bundle().await?;
     Ok(room_bundle.as_success_response())
 }
@@ -17,13 +14,13 @@ pub async fn sync(
 mod tests {
     use axum::http::StatusCode;
 
-    use meltos::discussion::{DiscussionBundle, MessageBundle};
     use meltos::discussion::message::MessageText;
+    use meltos::discussion::{DiscussionBundle, MessageBundle};
     use meltos::schema::discussion::global::{Created, Speak, Spoke};
     use meltos::schema::room::Opened;
     use meltos_tvc::branch::BranchName;
-    use meltos_tvc::file_system::FilePath;
     use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::FilePath;
     use meltos_tvc::io::bundle::BundleIo;
     use meltos_tvc::io::trace_tree::TraceTreeIo;
     use meltos_tvc::operation::commit::Commit;
@@ -31,7 +28,10 @@ mod tests {
     use meltos_tvc::operation::push::Push;
     use meltos_tvc::operation::stage::Stage;
 
-    use crate::api::test_util::{http_call, http_create_discussion, http_open_room, http_speak, http_sync, mock_app, MockServerClient, open_room_request_with_options, ResponseConvertable};
+    use crate::api::test_util::{
+        http_call, http_create_discussion, http_open_room, http_speak, http_sync, mock_app,
+        open_room_request_with_options, MockServerClient, ResponseConvertable,
+    };
 
     #[tokio::test]
     async fn it_return_discussion_states() {
@@ -44,30 +44,34 @@ mod tests {
         } = http_open_room(&mut app, fs.clone()).await;
 
         let Created {
-            meta
-        } = http_create_discussion(&mut app, &session_id, "title".to_string(), room_id.clone()).await;
-
-        let Spoke {
-            message,
-            ..
-        } = http_speak(&mut app, &room_id, &session_id, Speak {
-            discussion_id: meta.id.clone(),
-            text: MessageText("speak".to_string()),
-        })
+            meta,
+        } = http_create_discussion(&mut app, &session_id, "title".to_string(), room_id.clone())
             .await;
 
+        let Spoke {
+            message, ..
+        } = http_speak(
+            &mut app,
+            &room_id,
+            &session_id,
+            Speak {
+                discussion_id: meta.id.clone(),
+                text: MessageText("speak".to_string()),
+            },
+        )
+        .await;
+
         let room_bundle = http_sync(&mut app, &room_id, &session_id).await;
-        assert_eq!(room_bundle.discussion, vec![
-            DiscussionBundle {
+        assert_eq!(
+            room_bundle.discussion,
+            vec![DiscussionBundle {
                 meta,
-                messages: vec![
-                    MessageBundle {
-                        message,
-                        replies: Vec::with_capacity(0),
-                    }
-                ],
-            }
-        ])
+                messages: vec![MessageBundle {
+                    message,
+                    replies: Vec::with_capacity(0),
+                }],
+            }]
+        )
     }
 
     #[tokio::test]
@@ -83,24 +87,21 @@ mod tests {
         let traces = TraceTreeIo::new(fs.clone());
 
         init.execute(&branch).unwrap();
-        let open_request = open_room_request_with_options(
-            Some(bundle.create().unwrap()),
-            None,
-        );
+        let open_request = open_room_request_with_options(Some(bundle.create().unwrap()), None);
         let Opened {
             room_id,
             session_id,
             ..
-        } = http_call(&mut app, open_request)
-            .await
-            .deserialize()
-            .await;
+        } = http_call(&mut app, open_request).await.deserialize().await;
 
         fs.force_write("workspace/hello.txt", b"hello world!");
         stage.execute(&branch, ".").unwrap();
         commit.execute(&branch, "commit text").unwrap();
         let response = push
-            .execute(branch.clone(), &mut MockServerClient::new(&mut app, room_id.clone(), session_id.clone()))
+            .execute(
+                branch.clone(),
+                &mut MockServerClient::new(&mut app, room_id.clone(), session_id.clone()),
+            )
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
@@ -110,17 +111,17 @@ mod tests {
         assert_eq!(room_bundle.tvc.branches[0].branch_name, branch.clone());
 
         assert_eq!(room_bundle.tvc.traces.len(), 2);
-        let hello_txt_hash = traces.read(
-            &room_bundle
-                .tvc
-                .traces[1]
-                .commit_hash
-        )
+        let hello_txt_hash = traces
+            .read(&room_bundle.tvc.traces[1].commit_hash)
             .unwrap()
             .get(&FilePath::from_path("workspace/hello.txt"))
             .unwrap()
             .clone();
 
-        assert!(room_bundle.tvc.objs.iter().any(|o| o.hash == hello_txt_hash));
+        assert!(room_bundle
+            .tvc
+            .objs
+            .iter()
+            .any(|o| o.hash == hello_txt_hash));
     }
 }

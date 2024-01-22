@@ -65,6 +65,7 @@ impl FileSystem for StdFileSystem {
                 Ok(Some(buf))
             }
             Err(error) => {
+                println!("{error:?} {path}");
                 if error.kind() == ErrorKind::NotFound {
                     Ok(None)
                 } else {
@@ -81,7 +82,14 @@ impl FileSystem for StdFileSystem {
         let mut entries = Vec::new();
         for entry in std::fs::read_dir(path)? {
             let entry = entry?;
-            entries.push(entry.path().to_str().unwrap().to_string());
+            entries.push(
+                entry
+                    .path()
+                    .to_str()
+                    .unwrap()
+                    .to_string()
+                    .replace('\\', "/"),
+            );
         }
         Ok(Some(entries))
     }
@@ -94,7 +102,7 @@ impl FileSystem for StdFileSystem {
             }
             Ok(p)
         } else if std::fs::File::open(path).is_ok() {
-            Ok(vec![path.to_string()])
+            Ok(vec![path.to_string().replace('\\', "/")])
         } else {
             Ok(Vec::with_capacity(0))
         }

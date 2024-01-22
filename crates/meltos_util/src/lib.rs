@@ -2,8 +2,8 @@ pub mod compression;
 pub mod error;
 pub mod serde;
 
-pub mod hash;
 pub mod fs;
+pub mod hash;
 pub mod wasm;
 
 pub mod macros {

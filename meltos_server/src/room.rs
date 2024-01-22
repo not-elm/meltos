@@ -73,7 +73,7 @@ impl RoomMap {
                     json!({
                         "error": format!("room_id {room_id} is not exists")
                     })
-                        .to_string(),
+                    .to_string(),
                 ))
                 .unwrap(),
         )
@@ -87,38 +87,36 @@ pub struct Room {
     pub tvc: TvcBackendIo<StdFileSystem>,
     pub session: Arc<dyn SessionIo>,
     discussion: Arc<dyn DiscussionIo>,
-    channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error=error::Error>>>>>,
+    channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error = error::Error>>>>>,
 }
 
 impl Room {
     pub fn open<Discussion, Session>(owner: UserId) -> error::Result<Self>
-        where
-            Discussion: DiscussionIo + NewDiscussIo + 'static,
-            Session: SessionIo + NewSessionIo + 'static
+    where
+        Discussion: DiscussionIo + NewDiscussIo + 'static,
+        Session: SessionIo + NewSessionIo + 'static,
     {
         let room_id = RoomId::default();
         create_resource_dir(&room_id)?;
         Ok(Self {
             id: room_id.clone(),
             owner: owner.clone(),
-            discussion: Arc::new(Discussion::new(room_id.clone()).map_err(|e| error::Error::FailedCreateDiscussionIo(e.to_string()))?),
+            discussion: Arc::new(
+                Discussion::new(room_id.clone())
+                    .map_err(|e| error::Error::FailedCreateDiscussionIo(e.to_string()))?,
+            ),
             tvc: TvcBackendIo::new(room_id.clone(), StdFileSystem),
             channels: Arc::new(Mutex::new(Vec::new())),
-            session: Arc::new(Session::new(room_id).map_err(|e| error::Error::FailedCreateSessionIo(e.to_string()))?),
+            session: Arc::new(
+                Session::new(room_id)
+                    .map_err(|e| error::Error::FailedCreateSessionIo(e.to_string()))?,
+            ),
         })
     }
 
-
     pub async fn room_bundle(&self) -> HttpResult<RoomBundle> {
-        let discussion = self
-            .discussion
-            .all_discussions()
-            .await
-            .into_http_result()?;
-        let tvc = self
-            .tvc
-            .bundle()
-            .into_http_result()?;
+        let discussion = self.discussion.all_discussions().await.into_http_result()?;
+        let tvc = self.tvc.bundle().into_http_result()?;
 
         Ok(RoomBundle {
             tvc,
@@ -128,7 +126,7 @@ impl Room {
 
     pub async fn insert_channel(
         &self,
-        channel: impl ChannelMessageSendable<Error=error::Error> + 'static,
+        channel: impl ChannelMessageSendable<Error = error::Error> + 'static,
     ) {
         let mut channels = self.channels.lock().await;
         channels.push(Box::new(channel));
@@ -140,18 +138,22 @@ impl Room {
         message: ChannelMessage,
     ) -> std::result::Result<(), Response> {
         let mut channels = self.channels.lock().await;
-        for sender in channels.iter_mut() {
-            sender.send(message.clone()).await?;
+        let mut next_channels = Vec::with_capacity(channels.len());
+        while let Some(mut sender) = channels.pop() {
+            if let Err(e) = sender.send(message.clone()).await {
+                // 失敗した場合は切断されたと判断し、ログだけ出力してchannelsから消す
+                tracing::debug!("{e}");
+            } else {
+                next_channels.push(sender);
+            }
         }
+        *channels = next_channels;
         Ok(())
     }
 
     #[inline(always)]
     pub fn tvc_repository_size(&self) -> HttpResult<usize> {
-        self
-            .tvc
-            .total_objs_size()
-            .into_http_result()
+        self.tvc.total_objs_size().into_http_result()
     }
 
     #[inline(always)]
@@ -160,12 +162,10 @@ impl Room {
         Ok(())
     }
 
-
     pub async fn discussions(&self) -> HttpResult<Vec<DiscussionBundle>> {
         let discussions = self.discussion.all_discussions().await?;
         Ok(discussions)
     }
-
 
     #[inline(always)]
     pub fn create_bundle(&self) -> std::result::Result<Bundle, Response> {
@@ -173,10 +173,10 @@ impl Room {
     }
 
     pub async fn global_discussion<'a, F, O, S>(&'a self, user_id: UserId, f: F) -> error::Result<S>
-        where
-            F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
-            O: Future<Output=error::Result<S>>,
-            S: Serialize,
+    where
+        F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
+        O: Future<Output = error::Result<S>>,
+        S: Serialize,
     {
         let command = f(self.as_global_discussion_executor(user_id)).await?;
         Ok(command)
@@ -188,7 +188,10 @@ impl Room {
         let dir = room_resource_dir(&self.id);
         if dir.exists() {
             if let Err(e) = std::fs::remove_dir_all(dir) {
-                log::error!("failed delete room resource dir \nroom_id : {} \nmessage: {e}", self.id);
+                log::error!(
+                    "failed delete room resource dir \nroom_id : {} \nmessage: {e}",
+                    self.id
+                );
             }
         }
     }

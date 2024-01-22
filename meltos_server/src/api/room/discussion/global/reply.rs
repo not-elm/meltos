@@ -21,7 +21,7 @@ pub async fn reply(
         from: user_id,
         message: MessageData::DiscussionReplied(replied.clone()),
     })
-        .await?;
+    .await?;
 
     Ok(replied.as_success_response())
 }
@@ -34,7 +34,9 @@ mod tests {
     use meltos::user::UserId;
     use meltos_tvc::file_system::mock::MockFileSystem;
 
-    use crate::api::test_util::{http_create_discussion, http_open_room, http_reply, http_speak, mock_app};
+    use crate::api::test_util::{
+        http_create_discussion, http_open_room, http_reply, http_speak, mock_app,
+    };
 
     #[tokio::test]
     async fn return_replied_command() {
@@ -57,7 +59,7 @@ mod tests {
                 text: MessageText::from("message"),
             },
         )
-            .await;
+        .await;
         let replied = http_reply(
             &mut app,
             &room_id,
@@ -68,7 +70,7 @@ mod tests {
                 text: MessageText::from("reply"),
             },
         )
-            .await;
+        .await;
 
         assert_eq!(&replied.to, &spoke.message.id);
         assert_eq!(

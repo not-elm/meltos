@@ -27,7 +27,7 @@ pub async fn close(
         from: user_id,
         message: MessageData::DiscussionClosed(closed.clone()),
     })
-        .await?;
+    .await?;
 
     Ok(closed.as_success_response())
 }
@@ -43,7 +43,9 @@ mod tests {
     use meltos::schema::room::Opened;
     use meltos_tvc::file_system::mock::MockFileSystem;
 
-    use crate::api::test_util::{http_create_discussion, http_discussion_close, http_open_room, mock_app};
+    use crate::api::test_util::{
+        http_create_discussion, http_discussion_close, http_open_room, mock_app,
+    };
 
     #[tokio::test]
     async fn failed_if_not_exists_query() {

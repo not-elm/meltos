@@ -17,13 +17,13 @@ use crate::commands::stage::StageArgs;
 mod commit;
 mod fetch;
 mod join;
+mod leave;
 mod merge;
 mod open;
 mod push;
-mod stage;
-mod leave;
-mod speak;
 mod reply;
+mod speak;
+mod stage;
 
 #[async_trait(?Send)]
 pub trait CommandExecutable {
@@ -42,7 +42,7 @@ pub enum Commands {
     Push(PushArgs),
     Merge(MergeArgs),
     Speak(SpeakArgs),
-    Reply(ReplyArgs)
+    Reply(ReplyArgs),
 }
 
 #[async_trait(?Send)]

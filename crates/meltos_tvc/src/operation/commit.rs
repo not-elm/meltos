@@ -7,14 +7,14 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::commit_obj::CommitObjIo;
 use crate::io::trace_tree::TraceTreeIo;
-use crate::object::{AsMeta, ObjMeta};
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::tree::TreeObj;
+use crate::object::{AsMeta, ObjMeta};
 
 #[derive(Debug, Clone)]
 pub struct Commit<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     commit_obj: CommitObjIo<Fs>,
     head: HeadIo<Fs>,
@@ -25,8 +25,8 @@ pub struct Commit<Fs>
 }
 
 impl<Fs> Commit<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Commit<Fs> {
         Self {
@@ -41,10 +41,14 @@ impl<Fs> Commit<Fs>
 }
 
 impl<Fs> Commit<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
-    pub fn execute(&self, branch_name: &BranchName, commit_text: impl Into<CommitText>) -> error::Result<CommitHash> {
+    pub fn execute(
+        &self,
+        branch_name: &BranchName,
+        commit_text: impl Into<CommitText>,
+    ) -> error::Result<CommitHash> {
         let Some(stage_tree) = self.staging.read()? else {
             return Err(error::Error::NotfoundStages);
         };
@@ -52,14 +56,15 @@ impl<Fs> Commit<Fs>
         let stage_meta = stage_tree.as_meta()?;
         self.object.write_obj(&stage_tree)?;
 
-        let commit = self.commit_obj.create(commit_text, stage_meta.hash, branch_name)?;
+        let commit = self
+            .commit_obj
+            .create(commit_text, stage_meta.hash, branch_name)?;
         let pre_head = self.head.read(branch_name)?;
         let head_commit_hash = self.commit(branch_name, commit)?;
         self.update_trace(stage_tree, &head_commit_hash, &pre_head)?;
         Ok(head_commit_hash)
     }
 
-    ///
     /// * create `null commit`
     /// * create `head file` and write `null commit hash`
     /// * create `trace file` named `null commit hash`.
@@ -68,7 +73,8 @@ impl<Fs> Commit<Fs>
         let null_staging = TreeObj::default();
         let null_staging_meta = null_staging.as_meta()?;
         let null_commit = self.create_null_commit(null_staging_meta);
-        self.head.write(&branch_name, &CommitHash(null_commit.as_meta()?.hash))?;
+        self.head
+            .write(branch_name, &CommitHash(null_commit.as_meta()?.hash))?;
         let commit_hash = self.commit(branch_name, null_commit)?;
         self.update_trace(null_staging, &commit_hash, &None)?;
         self.staging.reset()?;
@@ -78,7 +84,7 @@ impl<Fs> Commit<Fs>
     pub(crate) fn create_null_commit(&self, null_staging: ObjMeta) -> CommitObj {
         CommitObj {
             parents: Vec::with_capacity(0),
-            text: CommitText::from(""),
+            text: CommitText::from("Initial Commit"),
             committed_objs_tree: null_staging.hash,
         }
     }
@@ -105,7 +111,8 @@ impl<Fs> Commit<Fs>
         self.object.write_obj(&commit)?;
         self.head
             .write(branch_name, &CommitHash(commit_meta.hash.clone()))?;
-        self.local_commits.append(CommitHash(commit_meta.hash.clone()), branch_name)?;
+        self.local_commits
+            .append(CommitHash(commit_meta.hash.clone()), branch_name)?;
         Ok(CommitHash(commit_meta.hash.clone()))
     }
 }
@@ -114,16 +121,16 @@ impl<Fs> Commit<Fs>
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::{FilePath, FileSystem};
     use crate::io::atomic::head::{CommitText, HeadIo};
     use crate::io::atomic::local_commits::LocalCommitsIo;
     use crate::io::atomic::object::ObjIo;
     use crate::io::atomic::staging::StagingIo;
-    use crate::object::{AsMeta, ObjHash};
     use crate::object::commit::CommitObj;
     use crate::object::local_commits::LocalCommitsObj;
     use crate::object::tree::TreeObj;
+    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::tests::init_owner_branch;

@@ -135,8 +135,7 @@ pub trait FileSystem {
     }
 }
 
-
-impl FileSystem for Box<dyn FileSystem>  {
+impl FileSystem for Box<dyn FileSystem> {
     fn stat(&self, path: &str) -> std::io::Result<Option<Stat>> {
         self.as_ref().stat(path)
     }
@@ -165,7 +164,6 @@ impl FileSystem for Box<dyn FileSystem>  {
         self.as_ref().delete(path)
     }
 }
-
 
 #[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]

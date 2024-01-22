@@ -2,8 +2,8 @@ use std::fmt::Debug;
 
 use axum::body::Body;
 use axum::extract::State;
-use axum::Json;
 use axum::response::Response;
+use axum::Json;
 
 use meltos::room::RoomId;
 use meltos::schema::room::Open;
@@ -13,8 +13,8 @@ use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
 use meltos_backend::session::{NewSessionIo, SessionIo};
 use meltos_util::serde::SerializeJson;
 
-use crate::api::HttpResult;
 use crate::api::room::response_error_exceed_bundle_size;
+use crate::api::HttpResult;
 use crate::room::{Room, Rooms};
 use crate::state::config::AppConfigs;
 
@@ -24,13 +24,20 @@ pub async fn open<Session, Discussion>(
     State(configs): State<AppConfigs>,
     Json(param): Json<Open>,
 ) -> HttpResult
-    where
-        Discussion: DiscussionIo + NewDiscussIo + 'static,
-        Session: SessionIo + NewSessionIo + Debug + 'static,
+where
+    Discussion: DiscussionIo + NewDiscussIo + 'static,
+    Session: SessionIo + NewSessionIo + Debug + 'static,
 {
-    let bundle_size = param.bundle.as_ref().map(|b| b.obj_data_size()).unwrap_or_default();
+    let bundle_size = param
+        .bundle
+        .as_ref()
+        .map(|b| b.obj_data_size())
+        .unwrap_or_default();
     if configs.limit_bundle_size < bundle_size {
-        return Err(response_error_exceed_bundle_size(bundle_size, configs.limit_bundle_size));
+        return Err(response_error_exceed_bundle_size(
+            bundle_size,
+            configs.limit_bundle_size,
+        ));
     }
 
     let life_time = param.lifetime_duration(configs.room_limit_life_time_sec);
@@ -60,7 +67,7 @@ fn response_success_create_room(
                 user_id,
                 session_id,
             }
-                .as_json(),
+            .as_json(),
         ))
         .unwrap()
 }
@@ -79,8 +86,11 @@ mod tests {
     use meltos_tvc::io::bundle::{Bundle, BundleObject};
     use meltos_tvc::object::{CompressedBuf, ObjHash};
 
+    use crate::api::test_util::{
+        create_discussion_request, http_call, mock_app, open_room_request,
+        open_room_request_with_options, ResponseConvertable,
+    };
     use crate::{app, error};
-    use crate::api::test_util::{create_discussion_request, http_call, mock_app, open_room_request, open_room_request_with_options, ResponseConvertable};
 
     #[tokio::test]
     async fn return_room_id_and_session_id() -> error::Result {
@@ -115,7 +125,8 @@ mod tests {
     #[tokio::test]
     async fn success_if_bundle_less_than_100mb() {
         let app = mock_app();
-        let request = open_room_request_with_options(Some(create_bundle_less_than_1024bytes()), None);
+        let request =
+            open_room_request_with_options(Some(create_bundle_less_than_1024bytes()), None);
         let response = app.oneshot(request).await.unwrap();
         assert_eq!(response.status(), StatusCode::OK);
     }
@@ -123,7 +134,8 @@ mod tests {
     #[tokio::test]
     async fn failed_if_send_bundle_more_than_100mib() {
         let mut app = mock_app();
-        let request = open_room_request_with_options(Some(create_bundle_more_than_1025bytes()), None);
+        let request =
+            open_room_request_with_options(Some(create_bundle_more_than_1025bytes()), None);
         let response = http_call(&mut app, request).await;
         assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
     }
@@ -136,17 +148,14 @@ mod tests {
         create_dummy_bundle(vec![1; 1025])
     }
 
-
     fn create_dummy_bundle(mut buf: Vec<u8>) -> Bundle {
         buf.shrink_to_fit();
         Bundle {
             traces: Vec::with_capacity(0),
-            objs: vec![
-                BundleObject {
-                    hash: ObjHash::new(b"dummy"),
-                    compressed_buf: CompressedBuf(buf),
-                }
-            ],
+            objs: vec![BundleObject {
+                hash: ObjHash::new(b"dummy"),
+                compressed_buf: CompressedBuf(buf),
+            }],
             branches: Vec::with_capacity(0),
         }
     }

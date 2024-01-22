@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
 use meltos_tvc::io::bundle::Bundle;
+use serde::{Deserialize, Serialize};
 
 use crate::schema::discussion::global::{Closed, Created, Replied, Spoke};
 use crate::schema::room::Left;

@@ -8,15 +8,13 @@ pub struct UnStage<Fs: FileSystem> {
     staging: StagingIo<Fs>,
 }
 
-
 impl<Fs: FileSystem> UnStage<Fs> {
     #[inline]
     pub fn new(fs: Fs) -> UnStage<Fs> {
         Self {
-            staging: StagingIo::new(fs)
+            staging: StagingIo::new(fs),
         }
     }
-
 
     pub fn execute(&self, file_path: &str) -> error::Result {
         if let Some(mut staging) = self.staging.read()? {
@@ -26,7 +24,6 @@ impl<Fs: FileSystem> UnStage<Fs> {
         Ok(())
     }
 
-
     #[inline(always)]
     pub fn execute_all(&self) -> error::Result {
         self.staging.write_tree(&TreeObj::default())?;
@@ -34,12 +31,11 @@ impl<Fs: FileSystem> UnStage<Fs> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::FilePath;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FilePath;
     use crate::io::atomic::staging::StagingIo;
     use crate::object::tree::TreeObj;
     use crate::operation::init::Init;
@@ -61,9 +57,17 @@ mod tests {
         println!("{fs:?}");
         stage.execute(&branch, file_path).unwrap();
 
-        assert!(staging.read().unwrap().unwrap().contains_key(&FilePath::from_path(file_path)));
+        assert!(staging
+            .read()
+            .unwrap()
+            .unwrap()
+            .contains_key(&FilePath::from_path(file_path)));
         un_stage.execute(file_path).unwrap();
-        assert!(!staging.read().unwrap().unwrap().contains_key(&FilePath::from_path(file_path)));
+        assert!(!staging
+            .read()
+            .unwrap()
+            .unwrap()
+            .contains_key(&FilePath::from_path(file_path)));
     }
 
     #[test]
@@ -94,5 +98,3 @@ mod tests {
         assert_eq!(current_stagings, TreeObj::default());
     }
 }
-
-

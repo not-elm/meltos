@@ -20,7 +20,7 @@ pub enum Error {
 
     #[error("failed discussion io message: {0}")]
     FailedDiscussionIo(String),
-    
+
     #[error(transparent)]
     Meltos(#[from] meltos::error::Error),
 

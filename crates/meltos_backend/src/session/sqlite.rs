@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use async_trait::async_trait;
-use rusqlite::{Connection, params};
+use rusqlite::{params, Connection};
 use tokio::sync::Mutex;
 
 use meltos::room::RoomId;
@@ -18,7 +18,6 @@ pub struct SqliteSessionIo {
     db: Mutex<Connection>,
 }
 
-
 fn create_session_table(db: &Connection) -> rusqlite::Result<usize> {
     db.execute(
         "
@@ -26,21 +25,20 @@ fn create_session_table(db: &Connection) -> rusqlite::Result<usize> {
             session_id TEXT NOT NULL PRIMARY KEY,
             user_id TEXT NOT NULL
             )
-        ", ())
+        ",
+        (),
+    )
 }
-
 
 #[inline(always)]
 fn delete_database(room_id: &RoomId) -> std::io::Result<()> {
     delete_dir(database_path(room_id))
 }
 
-
 #[inline(always)]
 fn database_path(room_id: &RoomId) -> PathBuf {
     room_resource_dir(room_id).join("session.db")
 }
-
 
 impl NewSessionIo for SqliteSessionIo {
     fn new(room_id: RoomId) -> error::Result<Self> {
@@ -51,7 +49,7 @@ impl NewSessionIo for SqliteSessionIo {
         create_session_table(&db)?;
 
         Ok(Self {
-            db: Mutex::new(db)
+            db: Mutex::new(db),
         })
     }
 }
@@ -72,10 +70,7 @@ impl SessionIo for SqliteSessionIo {
 
     async fn unregister(&self, user_id: UserId) -> crate::error::Result {
         let db = self.db.lock().await;
-        db.execute(
-            "DELETE FROM session WHERE user_id=$1",
-            params![user_id.0],
-        )?;
+        db.execute("DELETE FROM session WHERE user_id=$1", params![user_id.0])?;
         Ok(())
     }
 
@@ -88,16 +83,11 @@ impl SessionIo for SqliteSessionIo {
         );
         match result {
             Ok(user_id) => Ok(user_id),
-            Err(rusqlite::Error::QueryReturnedNoRows) => {
-                Err(SessionIdNotExists)
-            }
-            Err(e) => {
-                Err(error::Error::Sqlite(e))
-            }
+            Err(rusqlite::Error::QueryReturnedNoRows) => Err(SessionIdNotExists),
+            Err(e) => Err(error::Error::Sqlite(e)),
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -109,51 +99,58 @@ mod tests {
     use meltos::user::{SessionId, UserId};
 
     use crate::error;
-    use crate::session::{NewSessionIo, SessionIo};
     use crate::session::sqlite::{delete_database, SqliteSessionIo};
+    use crate::session::{NewSessionIo, SessionIo};
 
     #[tokio::test]
     async fn created_owner_id() {
-        try_execute(|db| async move {
-            let (user_id, session_id) = db.register(Some(UserId::from("user"))).await?;
-            assert_eq!(user_id, UserId::from("user"));
+        try_execute(|db| {
+            async move {
+                let (user_id, session_id) = db.register(Some(UserId::from("user"))).await?;
+                assert_eq!(user_id, UserId::from("user"));
 
-            let fetched_user_id = db.fetch(session_id).await?;
-            assert_eq!(fetched_user_id, UserId::from("user"));
-            Ok(())
+                let fetched_user_id = db.fetch(session_id).await?;
+                assert_eq!(fetched_user_id, UserId::from("user"));
+                Ok(())
+            }
         })
-            .await;
+        .await;
     }
-
 
     #[tokio::test]
     async fn deleted_user_id_after_unregister() {
-        try_execute(|db| async move {
-            let (user_id, session_id) = db.register(Some(UserId::from("user"))).await?;
-            db.unregister(user_id).await?;
-            assert!(db.fetch(session_id).await.is_err());
-            Ok(())
+        try_execute(|db| {
+            async move {
+                let (user_id, session_id) = db.register(Some(UserId::from("user"))).await?;
+                db.unregister(user_id).await?;
+                assert!(db.fetch(session_id).await.is_err());
+                Ok(())
+            }
         })
-            .await;
+        .await;
     }
-
 
     #[tokio::test]
     async fn return_user_is_not_exists_error_when_unregistered() {
-        try_execute(|db| async move {
-            let result = db.fetch(SessionId::new()).await;
-            assert!(matches!(result.unwrap_err(), error::Error::SessionIdNotExists));
-            Ok(())
+        try_execute(|db| {
+            async move {
+                let result = db.fetch(SessionId::new()).await;
+                assert!(matches!(
+                    result.unwrap_err(),
+                    error::Error::SessionIdNotExists
+                ));
+                Ok(())
+            }
         })
-            .await;
+        .await;
     }
 
-    async fn try_execute<F: Future<Output=crate::error::Result>>(f: impl FnOnce(SqliteSessionIo) -> F) {
+    async fn try_execute<F: Future<Output = crate::error::Result>>(
+        f: impl FnOnce(SqliteSessionIo) -> F,
+    ) {
         let room_id = RoomId::new();
         let db = SqliteSessionIo::new(room_id.clone()).unwrap();
-        let result = std::panic::AssertUnwindSafe(f(db))
-            .catch_unwind()
-            .await;
+        let result = std::panic::AssertUnwindSafe(f(db)).catch_unwind().await;
 
         delete_database(&room_id).unwrap();
         result.unwrap().unwrap();

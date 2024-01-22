@@ -2,22 +2,22 @@ use crate::error;
 use crate::file_system::FileSystem;
 use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::trace::TraceIo;
-use crate::object::AsMeta;
 use crate::object::commit::CommitHash;
 use crate::object::tree::TreeObj;
+use crate::object::AsMeta;
 
 #[derive(Debug, Clone)]
 pub struct TraceTreeIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     trace: TraceIo<Fs>,
     object: ObjIo<Fs>,
 }
 
 impl<Fs> TraceTreeIo<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     #[inline(always)]
     pub fn new(fs: Fs) -> TraceTreeIo<Fs> {
@@ -29,8 +29,8 @@ impl<Fs> TraceTreeIo<Fs>
 }
 
 impl<Fs> TraceTreeIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     pub fn write(&self, trace_tree: &TreeObj, commit_hash: &CommitHash) -> error::Result {
         let meta = trace_tree.as_meta()?;
@@ -50,12 +50,12 @@ impl<Fs> TraceTreeIo<Fs>
 mod tests {
     use crate::branch::BranchName;
     use crate::encode::Encodable;
-    use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::{FilePath, FileSystem};
     use crate::io::trace_tree::TraceTreeIo;
-    use crate::object::{AsMeta, ObjHash};
     use crate::object::commit::CommitHash;
     use crate::object::tree::TreeObj;
+    use crate::object::{AsMeta, ObjHash};
     use crate::operation::init;
 
     #[test]
@@ -75,7 +75,7 @@ mod tests {
             &format!(".meltos/branches/traces/{commit_hash}"),
             &tree.as_meta().unwrap().hash.encode().unwrap(),
         )
-            .unwrap();
+        .unwrap();
         trace_tree.read(&commit_hash).unwrap();
     }
 

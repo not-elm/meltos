@@ -1,9 +1,9 @@
 use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, Mutex};
 
-use crate::file_system::{FileSystem, Stat};
 use crate::file_system::mock::dir::MockDir;
 use crate::file_system::mock::file::MockFile;
+use crate::file_system::{FileSystem, Stat};
 
 mod dir;
 mod file;
@@ -205,8 +205,8 @@ mod tests {
     use std::thread::sleep;
     use std::time::Duration;
 
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
 
     #[test]
     fn read_root_dir() {

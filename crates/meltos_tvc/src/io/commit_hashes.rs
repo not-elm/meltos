@@ -5,15 +5,15 @@ use crate::object::commit::CommitHash;
 
 #[derive(Debug, Clone)]
 pub struct CommitHashIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     commit_obj: CommitObjIo<Fs>,
 }
 
 impl<Fs> CommitHashIo<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     #[inline(always)]
     pub fn new(fs: Fs) -> CommitHashIo<Fs> {
@@ -24,8 +24,8 @@ impl<Fs> CommitHashIo<Fs>
 }
 
 impl<Fs> CommitHashIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     pub fn read_all(
         &self,

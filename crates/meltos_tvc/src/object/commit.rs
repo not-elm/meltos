@@ -6,9 +6,9 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos_util::macros::{Deref, Display};
 
-use crate::{error, impl_serialize_and_deserialize};
 use crate::io::atomic::head::CommitText;
 use crate::object::{AsMeta, Decodable, Encodable, ObjHash, ObjMeta};
+use crate::{error, impl_serialize_and_deserialize};
 
 #[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]
@@ -101,8 +101,8 @@ fn decode_parents(buf: &mut VecDeque<&[u8]>) -> error::Result<Vec<CommitHash>> {
 #[cfg(test)]
 mod tests {
     use crate::io::atomic::head::CommitText;
-    use crate::object::{Decodable, Encodable, ObjHash};
     use crate::object::commit::{CommitHash, CommitObj};
+    use crate::object::{Decodable, Encodable, ObjHash};
 
     #[test]
     fn serialize() {

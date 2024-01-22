@@ -9,8 +9,8 @@ use crate::object::commit::CommitHash;
 
 #[derive(Debug, Clone)]
 pub struct Save<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     trace: TraceIo<Fs>,
     object: ObjIo<Fs>,
@@ -18,8 +18,8 @@ pub struct Save<Fs>
 }
 
 impl<Fs> Save<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Save<Fs> {
         Self {
@@ -74,8 +74,8 @@ impl<Fs> Save<Fs>
 mod tests {
     use crate::branch::BranchName;
     use crate::encode::Encodable;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::bundle::{Bundle, BundleBranch};
     use crate::object::commit::CommitHash;
     use crate::object::ObjHash;

@@ -23,10 +23,7 @@ pub struct PathParam {
 }
 
 impl PathParam {
-    pub async fn new(
-        parts: &mut Parts,
-        state: &AppState,
-    ) -> Result<Self, Response> {
+    pub async fn new(parts: &mut Parts, state: &AppState) -> Result<Self, Response> {
         let param = PathParam::from_request_parts(parts, state)
             .await
             .map_err(|e| {
@@ -36,7 +33,7 @@ impl PathParam {
                         json!({
                             "error" : e.to_string()
                         })
-                            .to_string(),
+                        .to_string(),
                     ))
                     .unwrap()
             })?;
@@ -45,8 +42,7 @@ impl PathParam {
 }
 
 #[async_trait]
-impl FromRequestParts<AppState> for SessionRoom
-{
+impl FromRequestParts<AppState> for SessionRoom {
     type Rejection = Response;
 
     async fn from_request_parts(

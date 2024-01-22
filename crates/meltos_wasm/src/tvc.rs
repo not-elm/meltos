@@ -22,7 +22,6 @@ impl WasmTvcClient {
         Self(TvcClient::new(branch_name.to_string(), fs))
     }
 
-
     #[inline]
     pub fn init_repository(&self) -> JsResult<CommitHash> {
         let commit_hash = self.0.init_repository()?;
@@ -36,11 +35,7 @@ impl WasmTvcClient {
     }
 
     #[inline(always)]
-    pub async fn join_room(
-        &self,
-        room_id: String,
-        user_id: String,
-    ) -> JsResult<SessionConfigs> {
+    pub async fn join_room(&self, room_id: String, user_id: String) -> JsResult<SessionConfigs> {
         let session_configs = self.0.join_room(room_id, user_id).await?;
         Ok(session_configs)
     }
@@ -68,7 +63,6 @@ impl WasmTvcClient {
         Ok(self.0.commit(text)?)
     }
 
-
     #[inline(always)]
     pub async fn push(&mut self, session_configs: &SessionConfigs) -> JsResult {
         console_log!("PUSH!!!!!!!!!!!!!");
@@ -82,20 +76,17 @@ impl WasmTvcClient {
         Ok(())
     }
 
-
     #[inline(always)]
     pub async fn fetch(&self, session_configs: &SessionConfigs) -> JsResult {
         self.0.fetch(session_configs.clone()).await?;
         Ok(())
     }
 
-
     #[inline(always)]
     pub fn staging_files(&self) -> JsResult<Vec<String>> {
         let files = self.0.staging_files()?;
         Ok(files)
     }
-
 
     #[inline(always)]
     pub fn read_file_from_hash(&self, obj_hash: String) -> JsResult<Option<String>> {
@@ -127,5 +118,3 @@ impl WasmTvcClient {
         Ok(())
     }
 }
-
-

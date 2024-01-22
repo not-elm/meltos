@@ -24,8 +24,7 @@ mod tests {
         let fs = MockFileSystem::default();
         let mut app = mock_app();
         let Opened {
-            room_id,
-            ..
+            room_id, ..
         } = http_open_room(&mut app, fs.clone()).await;
         let response = http_call(
             &mut app,
@@ -34,7 +33,7 @@ mod tests {
                 .body(Body::empty())
                 .unwrap(),
         )
-            .await;
+        .await;
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 

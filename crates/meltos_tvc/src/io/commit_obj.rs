@@ -9,13 +9,13 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::bundle::BundleObject;
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::local_commits::LocalCommitsObj;
-use crate::object::ObjHash;
 use crate::object::tree::TreeObj;
+use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct CommitObjIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     head: HeadIo<Fs>,
     object: ObjIo<Fs>,
@@ -23,8 +23,8 @@ pub struct CommitObjIo<Fs>
 }
 
 impl<Fs> CommitObjIo<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     #[inline(always)]
     pub fn new(fs: Fs) -> CommitObjIo<Fs> {
@@ -37,8 +37,8 @@ impl<Fs> CommitObjIo<Fs>
 }
 
 impl<Fs> CommitObjIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     pub fn read_local_commits(&self, branch_name: &BranchName) -> error::Result<Vec<CommitObj>> {
         let Some(LocalCommitsObj(local_hashes)) = self.local_commits.read(branch_name)? else {
@@ -69,7 +69,6 @@ impl<Fs> CommitObjIo<Fs>
         Ok(tree)
     }
 
-
     pub fn create(
         &self,
         commit_text: impl Into<CommitText>,
@@ -89,10 +88,14 @@ impl<Fs> CommitObjIo<Fs>
 
     #[inline]
     pub fn reset_local_commits(&self, branch_name: &BranchName) -> error::Result {
-        self.local_commits.write(&LocalCommitsObj::default(), branch_name)
+        self.local_commits
+            .write(&LocalCommitsObj::default(), branch_name)
     }
 
-    pub fn read_objs_associated_with_local_commits(&self, branch_name: &BranchName) -> error::Result<Vec<BundleObject>> {
+    pub fn read_objs_associated_with_local_commits(
+        &self,
+        branch_name: &BranchName,
+    ) -> error::Result<Vec<BundleObject>> {
         let local_commits = self.local_commits.try_read(branch_name)?;
         let from = local_commits.0[local_commits.0.len() - 1].clone();
         let parents = self.read(&local_commits.0[0])?.parents;
@@ -121,7 +124,6 @@ impl<Fs> CommitObjIo<Fs>
 
         Ok(obj_hashes)
     }
-
 
     fn scan_commit_obj(
         &self,
@@ -163,8 +165,8 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::branch::BranchName;
-    use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::{FilePath, FileSystem};
     use crate::io::atomic::local_commits::LocalCommitsIo;
     use crate::io::atomic::object::ObjIo;
     use crate::io::commit_obj::CommitObjIo;
@@ -268,7 +270,6 @@ mod tests {
         assert_eq!(objs, expect);
     }
 
-
     /// 直前にコミットされたオブジェクトに関連するデータだけが取得されること
     #[test]
     fn read_only_objs_relative_to_local() {
@@ -283,7 +284,9 @@ mod tests {
         stage.execute(&branch, ".").unwrap();
         commit.execute(&branch, "").unwrap();
         // pushされたと仮定してローカルコミットを削除
-        local_commit.write(&LocalCommitsObj::default(), &branch).unwrap();
+        local_commit
+            .write(&LocalCommitsObj::default(), &branch)
+            .unwrap();
 
         fs.force_write("workspace/hello2.txt", b"hello2");
         stage.execute(&branch, ".").unwrap();
@@ -293,9 +296,7 @@ mod tests {
         let objs = commit_obj_io
             .read_objs_associated_with_local_commits(&branch)
             .unwrap();
-        let traces = TraceTreeIo::new(fs.clone())
-            .read(&commit_hash)
-            .unwrap();
+        let traces = TraceTreeIo::new(fs.clone()).read(&commit_hash).unwrap();
         let hello_hash = traces
             .get(&FilePath::from_path("workspace/hello.txt"))
             .unwrap();

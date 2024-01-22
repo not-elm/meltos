@@ -1,5 +1,5 @@
-use crate::file_system::FileSystem;
 use crate::file_system::std_fs::StdFileSystem;
+use crate::file_system::FileSystem;
 use crate::io::atomic::local_commits::LocalCommitsIo;
 use crate::io::atomic::work_branch::WorkingIo;
 use crate::io::bundle::BundleIo;
@@ -23,13 +23,13 @@ pub mod patch;
 pub mod push;
 pub mod save;
 pub mod stage;
-pub mod unzip;
 pub mod un_stage;
+pub mod unzip;
 
 #[derive(Debug)]
 pub struct Operations<Fs = StdFileSystem>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     pub init: Init<Fs>,
     pub patch: Patch<Fs>,
@@ -48,8 +48,8 @@ pub struct Operations<Fs = StdFileSystem>
 }
 
 impl<Fs> Operations<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Operations<Fs> {
         Self {
@@ -72,8 +72,8 @@ impl<Fs> Operations<Fs>
 }
 
 impl<Fs> Clone for Operations<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     #[inline]
     fn clone(&self) -> Self {

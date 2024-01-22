@@ -15,8 +15,8 @@ pub enum CheckOutStatus {
 
 #[derive(Debug, Clone)]
 pub struct Checkout<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     working: WorkingIo<Fs>,
     heads: HeadIo<Fs>,
@@ -25,8 +25,8 @@ pub struct Checkout<Fs>
 }
 
 impl<Fs> Checkout<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Checkout<Fs> {
         Self {
@@ -39,8 +39,8 @@ impl<Fs> Checkout<Fs>
 }
 
 impl<Fs> Checkout<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     pub fn execute(&self, target_branch: &BranchName) -> error::Result<CheckOutStatus> {
         let working = self.working.read()?.unwrap_or(BranchName::owner());
@@ -70,10 +70,10 @@ impl<Fs> Checkout<Fs>
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::FileSystem;
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
-    use crate::operation::checkout::{Checkout, CheckOutStatus};
+    use crate::operation::checkout::{CheckOutStatus, Checkout};
     use crate::operation::commit::Commit;
     use crate::operation::new_branch::NewBranch;
     use crate::operation::stage::Stage;
@@ -131,12 +131,8 @@ mod tests {
         checkout.execute(&b1).unwrap();
 
         fs.force_write("workspace/hello.txt", b"hello");
-        Stage::new(fs.clone())
-            .execute(&b1, "hello.txt")
-            .unwrap();
-        Commit::new(fs.clone())
-            .execute(&b1, "commit text")
-            .unwrap();
+        Stage::new(fs.clone()).execute(&b1, "hello.txt").unwrap();
+        Commit::new(fs.clone()).execute(&b1, "commit text").unwrap();
 
         checkout.execute(&b2).unwrap();
 

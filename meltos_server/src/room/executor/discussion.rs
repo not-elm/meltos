@@ -12,8 +12,8 @@ pub struct DiscussionCommandExecutor<'a, Global: ?Sized> {
 }
 
 impl<'a, Global> DiscussionCommandExecutor<'a, Global>
-    where
-        Global: DiscussionIo + ?Sized,
+where
+    Global: DiscussionIo + ?Sized,
 {
     #[inline]
     pub const fn new(
