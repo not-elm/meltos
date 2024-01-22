@@ -1,9 +1,11 @@
-use crate::encode::Decodable;
+use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::{FilePath, FileSystem};
+use crate::io::atomic::head::HeadIo;
+use crate::io::trace_tree::TraceTreeIo;
+use crate::object::{AsMeta, Obj, ObjHash};
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
-use crate::object::{AsMeta, Obj, ObjHash};
 
 pub struct ChangeFileMeta {
     pub path: FilePath,
@@ -18,20 +20,45 @@ pub enum ChangeFile {
 
 #[derive(Debug, Clone)]
 pub struct WorkspaceIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     fs: Fs,
+    head: HeadIo<Fs>,
+    trace: TraceTreeIo<Fs>,
 }
 
 impl<Fs> WorkspaceIo<Fs>
-where
-    Fs: FileSystem,
+    where Fs: FileSystem + Clone
 {
-    #[inline]
-    pub const fn new(fs: Fs) -> WorkspaceIo<Fs> {
+    #[inline(always)]
+    pub fn new(fs: Fs) -> WorkspaceIo<Fs> {
         Self {
+            head: HeadIo::new(fs.clone()),
+            trace: TraceTreeIo::new(fs.clone()),
             fs,
+        }
+    }
+}
+
+
+impl<Fs> WorkspaceIo<Fs>
+    where
+        Fs: FileSystem,
+{
+    pub fn is_change(&self, branch: &BranchName, path: &FilePath) -> error::Result<bool> {
+        let head = self.head.try_read(branch)?;
+        let trace = self.trace.read(&head)?;
+        let file_obj = self.read(path)?;
+
+        if let Some(current_obj_hash) = trace.get(&FilePath(self.as_path(path))) {
+            if let Some(file_obj) = file_obj {
+                Ok(&file_obj.as_meta()?.hash != current_obj_hash)
+            } else {
+                Ok(true)
+            }
+        } else {
+            Ok(file_obj.is_some())
         }
     }
 
@@ -121,7 +148,8 @@ where
         let Some(buf) = self.fs.read_file(&self.as_path(file_path))? else {
             return Ok(None);
         };
-        Ok(Some(FileObj::decode(&buf)?))
+
+        Ok(Some(FileObj(buf)))
     }
 
     pub fn unpack(&self, file_path: &FilePath, obj: &Obj) -> error::Result<()> {
@@ -140,13 +168,13 @@ where
 
     #[inline(always)]
     fn as_path(&self, path: &str) -> String {
-        format!("workspace/{path}")
+        format!("workspace/{}", path.trim_start_matches("workspace/"))
     }
 }
 
 pub struct ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     files: Vec<String>,
     index: usize,
@@ -154,8 +182,8 @@ where
 }
 
 impl<'a, Fs> Iterator for ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     type Item = std::io::Result<(FilePath, FileObj)>;
 
@@ -171,8 +199,8 @@ where
 }
 
 impl<'a, Fs> ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     fn read_to_obj(&self) -> std::io::Result<(FilePath, FileObj)> {
         let path = self.files.get(self.index).unwrap();
@@ -185,12 +213,16 @@ where
 mod tests {
     use std::collections::HashSet;
 
-    use crate::file_system::mock::MockFileSystem;
+    use crate::branch::BranchName;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::workspace::WorkspaceIo;
-    use crate::object::file::FileObj;
     use crate::object::{AsMeta, Obj, ObjHash};
+    use crate::object::file::FileObj;
+    use crate::operation::commit::Commit;
+    use crate::operation::stage::Stage;
+    use crate::tests::init_owner_branch;
 
     #[test]
     fn read_all_objects_in_dir() {
@@ -245,8 +277,89 @@ mod tests {
                 "workspace/hello.txt".to_string(),
                 "workspace/dist/index.js".to_string(),
             ]
-            .into_iter()
-            .collect::<HashSet<String>>()
+                .into_iter()
+                .collect::<HashSet<String>>()
         );
+    }
+
+    #[test]
+    fn return_true_if_file_created() {
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
+        let workspace = WorkspaceIo::new(fs.clone());
+        fs.force_write("workspace/hello.txt", b"hello");
+
+        let is_change = workspace.is_change(&BranchName::owner(), &FilePath("hello.txt".to_string())).unwrap();
+        assert!(is_change);
+    }
+
+    #[test]
+    fn return_true_if_file_changed() {
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
+        let branch = BranchName::owner();
+        let workspace = WorkspaceIo::new(fs.clone());
+        fs.force_write("workspace/hello.txt", b"hello");
+        Stage::new(fs.clone()).execute(&branch, ".").unwrap();
+        Commit::new(fs.clone()).execute(&branch, "").unwrap();
+        fs.force_write("workspace/hello.txt", b"hello2");
+        let is_change = workspace.is_change(&branch, &FilePath("hello.txt".to_string())).unwrap();
+        assert!(is_change);
+    }
+
+    #[test]
+    fn return_false_if_file_not_changed() {
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
+        let branch = BranchName::owner();
+        let workspace = WorkspaceIo::new(fs.clone());
+        fs.force_write("workspace/hello.txt", b"hello");
+        Stage::new(fs.clone()).execute(&branch, ".").unwrap();
+        Commit::new(fs.clone()).execute(&branch, "").unwrap();
+
+        let is_change = workspace.is_change(&branch, &FilePath("hello.txt".to_string())).unwrap();
+        assert!(!is_change);
+    }
+
+
+    #[test]
+    fn return_true_if_file_deleted() {
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
+        let branch = BranchName::owner();
+        let workspace = WorkspaceIo::new(fs.clone());
+        fs.force_write("workspace/hello.txt", b"hello");
+        Stage::new(fs.clone()).execute(&branch, ".").unwrap();
+        Commit::new(fs.clone()).execute(&branch, "").unwrap();
+        fs.delete("workspace/hello.txt").unwrap();
+
+        let is_change = workspace.is_change(&branch, &FilePath("hello.txt".to_string())).unwrap();
+        assert!(is_change);
+    }
+
+
+    #[test]
+    fn return_false_if_not_exists_both_workspace_and_traces() {
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
+        let branch = BranchName::owner();
+        let workspace = WorkspaceIo::new(fs.clone());
+
+        let is_change = workspace.is_change(&branch, &FilePath("hello.txt".to_string())).unwrap();
+        assert!(!is_change);
+    }
+
+    #[test]
+    fn return_false_if_not_exists_both_workspace_and_traces2() {
+        let fs = MockFileSystem::default();
+        init_owner_branch(fs.clone());
+        let branch = BranchName::owner();
+        let workspace = WorkspaceIo::new(fs.clone());
+
+        fs.force_write("workspace/hello.txt", b"hello");
+        fs.delete("workspace/hello.txt").unwrap();
+
+        let is_change = workspace.is_change(&branch, &FilePath("hello.txt".to_string())).unwrap();
+        assert!(!is_change);
     }
 }

@@ -4,6 +4,7 @@ use meltos_client::config::SessionConfigs;
 use meltos_client::error;
 use meltos_client::error::JsResult;
 use meltos_client::tvc::{BranchCommitMeta, TvcClient};
+use meltos_tvc::file_system::FilePath;
 use meltos_tvc::io::bundle::Bundle;
 use meltos_tvc::object::commit::CommitHash;
 use meltos_tvc::object::ObjHash;
@@ -100,15 +101,21 @@ impl WasmTvcClient {
         Ok(branches)
     }
 
+
+    #[inline(always)]
+    pub fn is_change(&self, file_path: &str) -> JsResult<bool> {
+        Ok(self.0.is_change(&FilePath(file_path.to_string()))?)
+    }
+
+
     #[inline(always)]
     pub fn find_obj_hash_from_traces(&self, file_path: &str) -> JsResult<Option<ObjHash>> {
         let obj_hash = self.0.find_obj_hash_from_traces(file_path)?;
         Ok(obj_hash)
     }
 
-    #[inline(always)]
-    pub fn save_bundle(&self, bundle: Bundle) -> JsResult {
-        self.0.save_bundle(bundle)?;
+    pub fn save_bundle(&self, bundle: &Bundle) -> JsResult {
+        self.0.save_bundle(bundle.clone())?;
         Ok(())
     }
 

@@ -12,12 +12,13 @@ use meltos_tvc::io::bundle::Bundle;
 use meltos_tvc::io::commit_hashes::CommitHashIo;
 use meltos_tvc::io::commit_obj::CommitObjIo;
 use meltos_tvc::io::trace_tree::TraceTreeIo;
+use meltos_tvc::io::workspace::WorkspaceIo;
 use meltos_tvc::object::commit::CommitHash;
-use meltos_tvc::object::tree::TreeObj;
 use meltos_tvc::object::ObjHash;
+use meltos_tvc::object::tree::TreeObj;
 use meltos_tvc::operation::merge::MergedStatus;
-use meltos_tvc::operation::push::Pushable;
 use meltos_tvc::operation::Operations;
+use meltos_tvc::operation::push::Pushable;
 
 use crate::config::SessionConfigs;
 use crate::error;
@@ -55,6 +56,7 @@ pub struct TvcClient<Fs: FileSystem + Clone> {
     trace: TraceTreeIo<Fs>,
     commit_obj: CommitObjIo<Fs>,
     commit_hashes: CommitHashIo<Fs>,
+    workspace: WorkspaceIo<Fs>,
     obj: ObjIo<Fs>,
     fs: Fs,
     branch_name: BranchName,
@@ -69,6 +71,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             trace: TraceTreeIo::new(fs.clone()),
             commit_obj: CommitObjIo::new(fs.clone()),
             commit_hashes: CommitHashIo::new(fs.clone()),
+            workspace: WorkspaceIo::new(fs.clone()),
             obj: ObjIo::new(fs.clone()),
             fs,
             branch_name: BranchName(branch_name),
@@ -242,6 +245,12 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         Ok(trace_tree.get(&FilePath::from(file_path)).cloned())
     }
 
+
+    #[inline(always)]
+    pub fn is_change(&self, file_path: &FilePath) -> error::Result<bool> {
+        Ok(self.workspace.is_change(&self.branch_name, file_path)?)
+    }
+
     #[inline(always)]
     pub fn save_bundle(&self, bundle: Bundle) -> error::Result {
         self.operations.save.execute(bundle)?;
@@ -270,7 +279,7 @@ impl Pushable<SessionConfigs> for OpenSender {
             self.user_id.clone().map(UserId::from),
             self.lifetime_sec,
         )
-        .await?;
+            .await?;
         Ok(http.configs().clone())
     }
 }

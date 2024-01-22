@@ -7,14 +7,14 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::commit_obj::CommitObjIo;
 use crate::io::trace_tree::TraceTreeIo;
+use crate::object::{AsMeta, ObjMeta};
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::tree::TreeObj;
-use crate::object::{AsMeta, ObjMeta};
 
 #[derive(Debug, Clone)]
 pub struct Commit<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     commit_obj: CommitObjIo<Fs>,
     head: HeadIo<Fs>,
@@ -25,8 +25,8 @@ where
 }
 
 impl<Fs> Commit<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Commit<Fs> {
         Self {
@@ -41,8 +41,8 @@ where
 }
 
 impl<Fs> Commit<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     pub fn execute(
         &self,
@@ -62,6 +62,7 @@ where
         let pre_head = self.head.read(branch_name)?;
         let head_commit_hash = self.commit(branch_name, commit)?;
         self.update_trace(stage_tree, &head_commit_hash, &pre_head)?;
+        self.head.write(branch_name, &head_commit_hash)?;
         Ok(head_commit_hash)
     }
 
@@ -78,6 +79,7 @@ where
         let commit_hash = self.commit(branch_name, null_commit)?;
         self.update_trace(null_staging, &commit_hash, &None)?;
         self.staging.reset()?;
+        self.head.write(branch_name, &commit_hash)?;
         Ok(commit_hash)
     }
 
@@ -121,16 +123,16 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::head::{CommitText, HeadIo};
     use crate::io::atomic::local_commits::LocalCommitsIo;
     use crate::io::atomic::object::ObjIo;
     use crate::io::atomic::staging::StagingIo;
+    use crate::object::{AsMeta, ObjHash};
     use crate::object::commit::CommitObj;
     use crate::object::local_commits::LocalCommitsObj;
     use crate::object::tree::TreeObj;
-    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::tests::init_owner_branch;

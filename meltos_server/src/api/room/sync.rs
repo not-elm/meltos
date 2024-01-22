@@ -14,13 +14,13 @@ pub async fn sync(SessionRoom(room): SessionRoom, SessionUser(_): SessionUser) -
 mod tests {
     use axum::http::StatusCode;
 
-    use meltos::discussion::message::MessageText;
     use meltos::discussion::{DiscussionBundle, MessageBundle};
+    use meltos::discussion::message::MessageText;
     use meltos::schema::discussion::global::{Created, Speak, Spoke};
     use meltos::schema::room::Opened;
     use meltos_tvc::branch::BranchName;
-    use meltos_tvc::file_system::mock::MockFileSystem;
     use meltos_tvc::file_system::FilePath;
+    use meltos_tvc::file_system::mock::MockFileSystem;
     use meltos_tvc::io::bundle::BundleIo;
     use meltos_tvc::io::trace_tree::TraceTreeIo;
     use meltos_tvc::operation::commit::Commit;
@@ -30,7 +30,7 @@ mod tests {
 
     use crate::api::test_util::{
         http_call, http_create_discussion, http_open_room, http_speak, http_sync, mock_app,
-        open_room_request_with_options, MockServerClient, ResponseConvertable,
+        MockServerClient, open_room_request_with_options, ResponseConvertable,
     };
 
     #[tokio::test]
@@ -59,7 +59,7 @@ mod tests {
                 text: MessageText("speak".to_string()),
             },
         )
-        .await;
+            .await;
 
         let room_bundle = http_sync(&mut app, &room_id, &session_id).await;
         assert_eq!(
@@ -111,8 +111,9 @@ mod tests {
         assert_eq!(room_bundle.tvc.branches[0].branch_name, branch.clone());
 
         assert_eq!(room_bundle.tvc.traces.len(), 2);
+
         let hello_txt_hash = traces
-            .read(&room_bundle.tvc.traces[1].commit_hash)
+            .read(&room_bundle.tvc.traces[0].commit_hash)
             .unwrap()
             .get(&FilePath::from_path("workspace/hello.txt"))
             .unwrap()
