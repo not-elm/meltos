@@ -37,7 +37,7 @@ mod tests {
     use axum::http::StatusCode;
 
     use meltos::room::RoomId;
-    use meltos::schema::error::ErrorResponse;
+    use meltos::schema::error::ErrorResponseBodyBase;
     use meltos::schema::room::{Joined, Opened};
     use meltos::user::UserId;
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
@@ -77,8 +77,7 @@ mod tests {
         let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
         let fs = MockFileSystem::default();
         let branch = BranchName::owner();
-        fs.write_file("workspace/some_text.txt", b"text file")
-            .unwrap();
+        fs.force_write("workspace/some_text.txt", b"text file");
         Init::new(fs.clone()).execute(&branch).unwrap();
         let bundle = BundleIo::new(fs.clone()).create().unwrap();
         let open_request = open_room_request_with_options(Some(bundle), None, None);
@@ -111,8 +110,8 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let response = http_join(&mut app, &opened.room_id, Some(UserId::from("user1"))).await;
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
-        let error = response.deserialize::<ErrorResponse>().await;
-        assert_eq!(error, ErrorResponse{
+        let error = response.deserialize::<ErrorResponseBodyBase>().await;
+        assert_eq!(error, ErrorResponseBodyBase {
             error_type: "session".to_string(),
             message: "user id conflict; id: user1".to_string()
         });

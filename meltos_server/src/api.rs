@@ -42,25 +42,12 @@ for std::result::Result<T, meltos_tvc::error::Error>
     }
 }
 
-impl<T> IntoHttpResult<T, meltos_backend::error::Error>
-for std::result::Result<T, meltos_backend::error::Error>
+impl<T> IntoHttpResult<T, meltos_backend::error::Error> for std::result::Result<T, meltos_backend::error::Error>
 {
     fn into_http_result(self) -> HttpResult<T> {
         match self {
             Ok(v) => Ok(v),
-            Err(meltos_backend::error::Error::SessionIdNotExists) => {
-                Err(response_error(
-                    StatusCode::UNAUTHORIZED,
-                    meltos_backend::error::Error::SessionIdNotExists,
-                ))
-            }
-            Err(meltos_backend::error::Error::DiscussionNotExists(id)) => {
-                Err(response_error(
-                    StatusCode::UNAUTHORIZED,
-                    meltos_backend::error::Error::DiscussionNotExists(id),
-                ))
-            }
-            Err(e) => Err(response_error(StatusCode::INTERNAL_SERVER_ERROR, e)),
+            Err(e) => Err(e.into()),
         }
     }
 }

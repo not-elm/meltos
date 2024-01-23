@@ -19,6 +19,11 @@ use crate::room::{Room, Rooms};
 use crate::state::config::AppConfigs;
 
 /// 新規Roomを開きます。
+///
+/// # Errors
+///
+/// - [`meltos_backend::error::Error::UserIdConflict`]
+/// - []
 #[tracing::instrument]
 pub async fn open<Session, Discussion>(
     State(rooms): State<Rooms>,
@@ -85,6 +90,7 @@ mod tests {
     use axum::http::StatusCode;
     use tower::ServiceExt;
 
+    use meltos::schema::error::ErrorResponseBodyBase;
     use meltos::schema::room::Opened;
     use meltos_tvc::file_system::mock::MockFileSystem;
     use meltos_tvc::io::bundle::{Bundle, BundleObject};
@@ -166,6 +172,11 @@ mod tests {
             open_room_request_with_options(Some(create_bundle_more_than_1025bytes()), None, None);
         let response = http_call(&mut app, request).await;
         assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
+        let error = response.deserialize::<ErrorResponseBodyBase>().await;
+        assert_eq!(error, ErrorResponseBodyBase {
+            error_type: "tvc".to_string(),
+            message: "bundle size to exceed; actual_bundle_size: 1025, limit_bundle_size: 1024".to_string(),
+        });
     }
 
     fn create_bundle_less_than_1024bytes() -> Bundle {

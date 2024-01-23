@@ -2,11 +2,9 @@ use axum::body::Body;
 use axum::http::StatusCode;
 use axum::response::Response;
 use thiserror::Error;
-use tokio::task::JoinError;
 
 use meltos::discussion::id::DiscussionId;
-use meltos::room::RoomId;
-use meltos::user::UserId;
+use meltos::schema::error::{ErrorResponseBodyBase, ExceedBundleSizeBody};
 
 pub type Result<T = ()> = std::result::Result<T, Error>;
 
@@ -21,23 +19,14 @@ pub enum Error {
     #[error("failed discussion io message: {0}")]
     FailedDiscussionIo(String),
 
-    #[error(transparent)]
-    Meltos(#[from] meltos::error::Error),
+    #[error("bundle size to exceed; actual_bundle_size: {actual_bundle_size}, limit_bundle_size: {limit_bundle_size}")]
+    ExceedBundleSize {
+        actual_bundle_size: usize,
+        limit_bundle_size: usize,
+    },
 
     #[error(transparent)]
     Axum(#[from] axum::Error),
-
-    #[error(transparent)]
-    TaskJoin(#[from] JoinError),
-
-    #[error("failed sent server schema error")]
-    SendServerOrder,
-
-    #[error("failed sent remote schema error")]
-    SendClientOrder,
-
-    #[error("room_id {0} was already created")]
-    RoomAlreadyExists(RoomId),
 
     #[error("failed create room message: {0}")]
     FailedCreateDiscussionIo(String),
@@ -45,23 +34,50 @@ pub enum Error {
     #[error("failed create session io message: {0}")]
     FailedCreateSessionIo(String),
 
-    #[error("user_id {0} was already joined in session {1}")]
-    RoomJoin(UserId, RoomId),
-
-    #[error("websocket has been disconnected")]
-    Disconnected,
-
     #[error("discussion id = {0} is not exists")]
     DiscussionNotExists(DiscussionId),
 
-    #[error("session not exists: session id = {0}")]
-    SessionNotExists(RoomId),
-
     #[error("failed to send channel message : {0}")]
     FailedSendChannelMessage(String),
+}
 
-    #[error("websocket message invalid schema")]
-    InvalidOrder,
+
+impl Error {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            Error::ExceedBundleSize { .. } => StatusCode::PAYLOAD_TOO_LARGE,
+            Error::DiscussionNotExists(_) => StatusCode::BAD_REQUEST,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
+    fn error_type(&self) -> &str {
+        match self {
+            Error::ExceedBundleSize { .. } => "tvc",
+            _ => "unknown"
+        }
+    }
+
+    fn as_body_base(&self) -> ErrorResponseBodyBase {
+        ErrorResponseBodyBase {
+            error_type: self.error_type().to_string(),
+            message: self.to_string(),
+        }
+    }
+
+    fn into_body(self) -> String {
+        let base = self.as_body_base();
+        match self {
+            Error::ExceedBundleSize { limit_bundle_size, actual_bundle_size } => {
+                serde_json::to_string(&ExceedBundleSizeBody {
+                    base,
+                    limit_bundle_size,
+                    actual_bundle_size,
+                }).unwrap()
+            }
+            _ => serde_json::to_string(&base).unwrap()
+        }
+    }
 }
 
 impl From<Error> for String {
@@ -70,18 +86,30 @@ impl From<Error> for String {
     }
 }
 
-impl From<Error> for Response {
-    fn from(value: Error) -> Self {
-        let status_code = match value {
-            Error::DiscussionNotExists(_) => StatusCode::BAD_REQUEST,
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
-        };
 
+impl From<Error> for Response {
+    #[inline(always)]
+    fn from(e: Error) -> Self {
+        let status_code = e.status_code();
         Response::builder()
             .status(status_code)
-            .body(Body::new(value.to_string()))
+            .body(Body::new(e.into_body()))
             .unwrap()
     }
 }
 
-unsafe impl Send for Error {}
+
+#[cfg(test)]
+mod tests {
+    use axum::http::StatusCode;
+
+    use crate::error::Error;
+
+    #[test]
+    fn status_code_is_payload_too_large() {
+        assert_eq!(Error::ExceedBundleSize {
+            limit_bundle_size: 100,
+            actual_bundle_size: 101,
+        }.status_code(), StatusCode::PAYLOAD_TOO_LARGE);
+    }
+}
