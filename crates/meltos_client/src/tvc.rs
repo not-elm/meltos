@@ -65,7 +65,7 @@ pub struct TvcClient<Fs: FileSystem + Clone> {
 }
 
 impl<Fs: FileSystem + Clone> TvcClient<Fs> {
-    pub fn new(fs: Fs) -> Self {
+    pub fn new(fs: Fs, branch_name: Option<BranchName>) -> Self {
         Self {
             operations: Operations::new(fs.clone()),
             staging: StagingIo::new(fs.clone()),
@@ -77,7 +77,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             workspace: WorkspaceIo::new(fs.clone()),
             obj: ObjIo::new(fs.clone()),
             fs,
-            branch_name: None,
+            branch_name,
         }
     }
 
@@ -276,6 +276,9 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         self.operations.save.execute(bundle)?;
         Ok(())
     }
+
+
+
 
     pub fn close(&self) -> error::Result {
         self.fs.delete(".")?;

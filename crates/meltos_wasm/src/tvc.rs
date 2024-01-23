@@ -1,10 +1,11 @@
 use wasm_bindgen::prelude::wasm_bindgen;
-use meltos::user::UserId;
 
+use meltos::user::UserId;
 use meltos_client::config::SessionConfigs;
 use meltos_client::error;
 use meltos_client::error::JsResult;
 use meltos_client::tvc::{BranchCommitMeta, TvcClient};
+use meltos_tvc::branch::BranchName;
 use meltos_tvc::file_system::FilePath;
 use meltos_tvc::io::bundle::Bundle;
 use meltos_tvc::object::commit::CommitHash;
@@ -20,8 +21,8 @@ pub struct WasmTvcClient(TvcClient<VscodeNodeFs>);
 #[wasm_bindgen]
 impl WasmTvcClient {
     #[wasm_bindgen(constructor)]
-    pub fn new(fs: VscodeNodeFs) -> Self {
-        Self(TvcClient::new(fs))
+    pub fn new(fs: VscodeNodeFs, branch_name: Option<String>) -> Self {
+        Self(TvcClient::new(fs, branch_name.map(BranchName)))
     }
 
     #[inline]
@@ -101,9 +102,9 @@ impl WasmTvcClient {
         let branches = self.0.all_branch_commit_metas()?;
         Ok(branches)
     }
-    
+
     #[inline(always)]
-    pub fn can_push(&self) -> JsResult<bool>{
+    pub fn can_push(&self) -> JsResult<bool> {
         Ok(self.0.can_push()?)
     }
 
@@ -120,8 +121,15 @@ impl WasmTvcClient {
         Ok(obj_hash)
     }
 
-    pub fn save_bundle(&self, bundle: &Bundle) -> JsResult {
-        self.0.save_bundle(bundle.clone())?;
+    pub fn save_bundle(&self, bundle: &str) -> JsResult {
+        self.0.save_bundle(serde_json::from_str(bundle).unwrap())?;
+        Ok(())
+    }
+
+
+    #[inline(always)]
+    pub async fn leave(&self, session_configs: &SessionConfigs) -> JsResult {
+        self.0.leave(session_configs.clone()).await?;
         Ok(())
     }
 
