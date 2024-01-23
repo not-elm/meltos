@@ -1,4 +1,5 @@
 use wasm_bindgen::prelude::wasm_bindgen;
+use meltos::user::UserId;
 
 use meltos_client::config::SessionConfigs;
 use meltos_client::error;
@@ -19,8 +20,8 @@ pub struct WasmTvcClient(TvcClient<VscodeNodeFs>);
 #[wasm_bindgen]
 impl WasmTvcClient {
     #[wasm_bindgen(constructor)]
-    pub fn new(branch_name: &str, fs: VscodeNodeFs) -> Self {
-        Self(TvcClient::new(branch_name.to_string(), fs))
+    pub fn new(fs: VscodeNodeFs) -> Self {
+        Self(TvcClient::new(fs))
     }
 
     #[inline]
@@ -30,14 +31,14 @@ impl WasmTvcClient {
     }
 
     #[inline(always)]
-    pub async fn open_room(&self, lifetime_sec: Option<u64>, user_limits: Option<u64>) -> JsResult<SessionConfigs> {
-        let session_configs = self.0.open_room(lifetime_sec, user_limits).await?;
+    pub async fn open_room(&mut self, lifetime_sec: Option<u64>, capacity: Option<u64>) -> JsResult<SessionConfigs> {
+        let session_configs = self.0.open_room(lifetime_sec, capacity).await?;
         Ok(session_configs)
     }
 
     #[inline(always)]
-    pub async fn join_room(&self, room_id: String, user_id: String) -> JsResult<SessionConfigs> {
-        let session_configs = self.0.join_room(room_id, user_id).await?;
+    pub async fn join_room(&mut self, room_id: String, user_id: Option<String>) -> JsResult<SessionConfigs> {
+        let session_configs = self.0.join_room(room_id, user_id.map(UserId)).await?;
         Ok(session_configs)
     }
 

@@ -47,8 +47,9 @@ impl Open {
 
 
     #[inline(always)]
-    pub fn get_user_limits(&self, max_user_limits: u64) -> u64 {
-        self.user_limits.map(|limits| limits.min(max_user_limits)).unwrap_or(max_user_limits)
+    pub fn get_capacity(&self, max_user_limits: u64) -> u64 {
+        let capacity = self.user_limits.map(|limits| limits.min(max_user_limits)).unwrap_or(max_user_limits);
+        capacity.max(1)
     }
 }
 
@@ -68,7 +69,7 @@ pub struct Opened {
     pub session_id: SessionId,
 
     /// ルームの定員
-    pub user_limits: u64,
+    pub capacity: u64,
 }
 
 #[cfg(test)]

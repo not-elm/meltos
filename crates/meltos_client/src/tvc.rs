@@ -61,11 +61,11 @@ pub struct TvcClient<Fs: FileSystem + Clone> {
     workspace: WorkspaceIo<Fs>,
     obj: ObjIo<Fs>,
     fs: Fs,
-    branch_name: BranchName,
+    branch_name: Option<BranchName>,
 }
 
 impl<Fs: FileSystem + Clone> TvcClient<Fs> {
-    pub fn new(branch_name: String, fs: Fs) -> Self {
+    pub fn new(fs: Fs) -> Self {
         Self {
             operations: Operations::new(fs.clone()),
             staging: StagingIo::new(fs.clone()),
@@ -77,18 +77,20 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             workspace: WorkspaceIo::new(fs.clone()),
             obj: ObjIo::new(fs.clone()),
             fs,
-            branch_name: BranchName(branch_name),
+            branch_name: None,
         }
     }
 
     /// このメソッドはクライアントツール側でテストを実行する際に使用する想定です。
     pub fn init_repository(&self) -> error::Result<CommitHash> {
-        let commit_hash = self.operations.init.execute(&self.branch_name)?;
+        let commit_hash = self.operations.init.execute(self.branch_name()?)?;
         Ok(commit_hash)
     }
 
-    pub async fn open_room(&self, lifetime_sec: Option<u64>, user_limits: Option<u64>) -> error::Result<SessionConfigs> {
-        self.operations.init.execute(&self.branch_name)?;
+    pub async fn open_room(&mut self, lifetime_sec: Option<u64>, user_limits: Option<u64>) -> error::Result<SessionConfigs> {
+        let branch = BranchName::owner();
+        self.branch_name.replace(branch.clone());
+        self.operations.init.execute(&branch)?;
         let mut sender = OpenSender {
             lifetime_sec,
             user_limits,
@@ -97,22 +99,24 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         let session_configs = self
             .operations
             .push
-            .execute(self.branch_name.clone(), &mut sender)
+            .execute(branch, &mut sender)
             .await?;
         Ok(session_configs)
     }
 
     pub async fn join_room(
-        &self,
+        &mut self,
         room_id: String,
-        user_id: String,
+        user_id: Option<UserId>,
     ) -> error::Result<SessionConfigs> {
-        let (http, bundle) =
-            HttpClient::join(BASE, RoomId(room_id), Some(UserId(user_id.clone()))).await?;
+        let (http, bundle) = HttpClient::join(BASE, RoomId(room_id), user_id).await?;
+        let branch = BranchName(http.configs().user_id.0.clone());
+
         self.fs.create_dir("workspace")?;
         self.operations.save.execute(bundle)?;
-        self.operations.checkout.execute(&BranchName(user_id))?;
-        self.operations.unzip.execute(&self.branch_name)?;
+        self.operations.checkout.execute(&branch)?;
+        self.operations.unzip.execute(&branch)?;
+        self.branch_name.replace(branch);
 
         Ok(http.configs().clone())
     }
@@ -132,7 +136,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
 
     #[inline(always)]
     pub fn stage(&self, path: String) -> error::Result {
-        self.operations.stage.execute(&self.branch_name, &path)?;
+        self.operations.stage.execute(self.branch_name()?, &path)?;
         Ok(())
     }
 
@@ -153,7 +157,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         Ok(self
             .operations
             .commit
-            .execute(&self.branch_name, commit_text)?)
+            .execute(self.branch_name()?, commit_text)?)
     }
 
     pub async fn push(&mut self, session_configs: SessionConfigs) -> error::Result {
@@ -162,13 +166,13 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         };
         self.operations
             .push
-            .execute(self.branch_name.clone(), &mut sender)
+            .execute(self.branch_name()?.clone(), &mut sender)
             .await?;
         Ok(())
     }
 
     pub fn merge(&self, source_commit_hash: CommitHash) -> error::Result<MergedStatus> {
-        let dist = self.branch_name.clone();
+        let dist = self.branch_name()?.clone();
         let status = self.operations.merge.execute(source_commit_hash, dist)?;
         Ok(status)
     }
@@ -191,6 +195,13 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             });
         }
         Ok(branches)
+    }
+
+    #[inline(always)]
+    fn branch_name(&self) -> error::Result<&BranchName> {
+        self.branch_name
+            .as_ref()
+            .ok_or(error::Error::NotInitialized)
     }
 
     fn all_commit_metas(&self, branch_name: &BranchName) -> error::Result<Vec<CommitMeta>> {
@@ -226,7 +237,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
 
     #[inline(always)]
     pub fn can_push(&self) -> error::Result<bool> {
-        Ok(self.local_commits.read(&self.branch_name)?.is_some_and(|commits| !commits.is_empty()))
+        Ok(self.local_commits.read(self.branch_name()?)?.is_some_and(|commits| !commits.is_empty()))
     }
 
 
@@ -239,7 +250,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 
     pub fn traces(&self) -> error::Result<Option<TreeObj>> {
-        let Some(head) = self.head.read(&self.branch_name)? else {
+        let Some(head) = self.head.read(self.branch_name()?)? else {
             return Ok(None);
         };
         let trace_tree = self.trace.read(&head)?;
@@ -247,7 +258,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 
     pub fn find_obj_hash_from_traces(&self, file_path: &str) -> error::Result<Option<ObjHash>> {
-        let Some(head) = self.head.read(&self.branch_name)? else {
+        let Some(head) = self.head.read(self.branch_name()?)? else {
             return Ok(None);
         };
         let trace_tree = self.trace.read(&head)?;
@@ -257,7 +268,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
 
     #[inline(always)]
     pub fn is_change(&self, file_path: &FilePath) -> error::Result<bool> {
-        Ok(self.workspace.is_change(&self.branch_name, file_path)?)
+        Ok(self.workspace.is_change(self.branch_name()?, file_path)?)
     }
 
     #[inline(always)]

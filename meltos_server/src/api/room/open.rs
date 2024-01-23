@@ -15,7 +15,6 @@ use meltos_util::serde::SerializeJson;
 
 use crate::api::HttpResult;
 use crate::api::room::response_error_exceed_bundle_size;
-
 use crate::room::{Room, Rooms};
 use crate::state::config::AppConfigs;
 
@@ -23,8 +22,11 @@ use crate::state::config::AppConfigs;
 ///
 /// # Errors
 ///
+/// ## StatusCode: 400(BAD_REQUEST)
+///
 /// - [`ExceedBundleSize`](crate::error::Error::ExceedBundleSize) : リクエスト時に送信されたバンドルのサイズが上限値を超えた場合
-#[tracing::instrument]
+///
+#[tracing::instrument(ret)]
 pub async fn open<Session, Discussion>(
     State(rooms): State<Rooms>,
     State(configs): State<AppConfigs>,
@@ -46,7 +48,7 @@ pub async fn open<Session, Discussion>(
         ));
     }
 
-    let capacity = param.get_user_limits(configs.max_user_limits);
+    let capacity = param.get_capacity(configs.max_user_limits);
     let life_time = param.lifetime_duration(configs.room_limit_life_time_sec);
     // 現状Roomオーナーは`owner`固定
     let user_id = UserId::from("owner");
@@ -76,7 +78,7 @@ fn response_success_create_room(
                 room_id,
                 user_id,
                 session_id,
-                user_limits,
+                capacity: user_limits,
             }
                 .as_json(),
         ))
@@ -137,21 +139,31 @@ mod tests {
         let app = mock_app();
         let response = app.oneshot(open_room_request_with_options(None, None, Some(1))).await.unwrap();
         let opened = response.deserialize::<Opened>().await;
-        assert_eq!(opened.user_limits, 1);
+        assert_eq!(opened.capacity, 1);
 
         Ok(())
     }
 
 
-    /// サーバ側で設定された上限値を超えた場合、上限値がuser_limitsになる。
+    /// サーバ側で設定された上限値を超えた場合、上限値がcapacityになる。
     ///
     /// テスト時の上限値は100
     #[tokio::test]
-    async fn user_limits_is_100_if_over() -> error::Result {
+    async fn capacity_is_100_if_over() -> error::Result {
         let app = mock_app();
         let response = app.oneshot(open_room_request_with_options(None, None, Some(101))).await.unwrap();
         let opened = response.deserialize::<Opened>().await;
-        assert_eq!(opened.user_limits, 100);
+        assert_eq!(opened.capacity, 100);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn capacity_is_1_if_specified_0() -> error::Result {
+        let app = mock_app();
+        let response = app.oneshot(open_room_request_with_options(None, None, Some(0))).await.unwrap();
+        let opened = response.deserialize::<Opened>().await;
+        assert_eq!(opened.capacity, 1);
 
         Ok(())
     }

@@ -15,6 +15,9 @@ pub enum Error {
     #[error(transparent)]
     Http(#[from] reqwest::Error),
 
+    #[error("please open or join room")]
+    NotInitialized,
+
     #[error(transparent)]
     Tvc(#[from] meltos_tvc::error::Error),
 
