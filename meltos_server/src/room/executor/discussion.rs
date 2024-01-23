@@ -31,8 +31,7 @@ where
         let discussion_meta = self
             .global_io
             .new_discussion(title, self.user_id)
-            .await
-            .map_err(|e| error::Error::FailedDiscussionIo(e.to_string()))?;
+            .await?;
         Ok(Created {
             meta: discussion_meta,
         })
@@ -43,8 +42,7 @@ where
         let message = self
             .global_io
             .speak(&speak.discussion_id, self.user_id, speak.text)
-            .await
-            .map_err(|e| error::Error::FailedDiscussionIo(e.to_string()))?;
+            .await?;
         Ok(Spoke {
             discussion_id: speak.discussion_id,
             message,
@@ -55,9 +53,8 @@ where
     pub async fn reply(self, reply: Reply) -> error::Result<Replied> {
         let reply_message = self
             .global_io
-            .reply(self.user_id, reply.to.clone(), reply.text)
-            .await
-            .map_err(|e| error::Error::FailedDiscussionIo(e.to_string()))?;
+            .reply(reply.discussion_id.clone(), self.user_id, reply.to.clone(), reply.text)
+            .await?;
 
         Ok(Replied {
             discussion_id: reply.discussion_id,
@@ -70,8 +67,7 @@ where
     pub async fn close(self, discussion_id: DiscussionId) -> error::Result<Closed> {
         self.global_io
             .close_discussion(&discussion_id)
-            .await
-            .map_err(|_| error::Error::DiscussionNotExists(discussion_id.clone()))?;
+            .await?;
         Ok(Closed {
             discussion_id,
         })

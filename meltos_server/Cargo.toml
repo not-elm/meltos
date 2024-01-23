@@ -27,3 +27,4 @@ futures = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 config = { version = "0.13.4", features = ["toml"] }
+strum = "0.25.0"

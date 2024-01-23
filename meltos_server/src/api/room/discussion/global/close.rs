@@ -27,7 +27,7 @@ pub async fn close(
         from: user_id,
         message: MessageData::DiscussionClosed(closed.clone()),
     })
-    .await?;
+        .await?;
 
     Ok(closed.as_success_response())
 }
@@ -40,12 +40,12 @@ mod tests {
     use axum::http::{header, StatusCode};
     use tower::ServiceExt;
 
+    use meltos::discussion::id::DiscussionId;
+    use meltos::schema::error::{DiscussionNotExistsBody, ErrorResponseBodyBase};
     use meltos::schema::room::Opened;
     use meltos_tvc::file_system::mock::MockFileSystem;
 
-    use crate::api::test_util::{
-        http_create_discussion, http_discussion_close, http_open_room, mock_app,
-    };
+    use crate::api::test_util::{http_create_discussion, http_discussion_close, http_open_room, mock_app, ResponseConvertable};
 
     #[tokio::test]
     async fn failed_if_not_exists_query() {
@@ -95,6 +95,17 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        let error = response
+            .deserialize::<DiscussionNotExistsBody>()
+            .await;
+        assert_eq!(error, DiscussionNotExistsBody {
+            base: ErrorResponseBodyBase {
+                category: "discussion".to_string(),
+                error_type: "DiscussionNotExists".to_string(),
+                message: "discussion not exists; id: 23232ada".to_string(),
+            },
+            discussion_id: DiscussionId("23232ada".to_string()),
+        });
     }
 
     #[tokio::test]

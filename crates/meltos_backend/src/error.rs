@@ -1,16 +1,18 @@
 use axum::body::Body;
 use axum::http::StatusCode;
-use axum::response::{Response};
+use axum::response::Response;
+use strum::AsRefStr;
 use thiserror::Error;
 
 use meltos::discussion::id::DiscussionId;
+use meltos::discussion::message::MessageId;
 use meltos::room::RoomId;
-use meltos::schema::error::ErrorResponseBodyBase;
+use meltos::schema::error::{DiscussionNotExistsBody, ErrorResponseBodyBase, MessageNotExistsBody};
 use meltos::user::UserId;
 
 pub type Result<T = ()> = std::result::Result<T, Error>;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, AsRefStr)]
 pub enum Error {
     #[error("session id not exists")]
     SessionIdNotExists,
@@ -21,8 +23,11 @@ pub enum Error {
     #[error("The number of users in the room has reached its limit; limits: {0}")]
     ReachedNumberOfUsersLimits(usize),
 
-    #[error("discussion not exists id: {0}")]
+    #[error("discussion not exists; id: {0}")]
     DiscussionNotExists(DiscussionId),
+
+    #[error("message not exists; id: {0}")]
+    MessageNotExists(MessageId),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -36,26 +41,58 @@ pub enum Error {
 
 
 impl Error {
-    fn status_code(&self) -> StatusCode {
+    pub fn status_code(&self) -> StatusCode {
         match self {
             Error::SessionIdNotExists => StatusCode::UNAUTHORIZED,
-            Error::ReachedNumberOfUsersLimits(_) | Error::DiscussionNotExists(_) | Error::UserIdConflict(_) => StatusCode::BAD_REQUEST,
+            Error::ReachedNumberOfUsersLimits(_) |
+            Error::DiscussionNotExists(_) |
+            Error::UserIdConflict(_) |
+            Error::MessageNotExists(_)
+            => StatusCode::BAD_REQUEST,
             _ => StatusCode::INTERNAL_SERVER_ERROR
         }
     }
-}
 
-impl From<Error> for ErrorResponseBodyBase {
-    #[inline]
-    fn from(e: Error) -> ErrorResponseBodyBase {
-        let error_type = match &e {
+    #[inline(always)]
+    pub fn category(&self) -> &str {
+        match self {
             Error::UserIdConflict(_) | Error::SessionIdNotExists | Error::ReachedNumberOfUsersLimits(_) => "session",
             Error::DatabaseAlreadyRemoved(_) | Error::Io(_) | Error::Sqlite(_) => "io",
-            Error::DiscussionNotExists(_) => "discussion"
-        };
+            Error::DiscussionNotExists(_) | Error::MessageNotExists(_) => "discussion"
+        }
+    }
+
+
+    #[inline(always)]
+    pub fn error_type(&self) -> &str {
+        self.as_ref()
+    }
+
+    pub fn into_body(self) -> String {
+        let base = self.body_base();
+        match self {
+            Error::DiscussionNotExists(discussion_id) => {
+                serde_json::to_string(&DiscussionNotExistsBody {
+                    base,
+                    discussion_id,
+                }).unwrap()
+            }
+            Error::MessageNotExists(message_id) => {
+                serde_json::to_string(&MessageNotExistsBody {
+                    base,
+                    message_id,
+                }).unwrap()
+            }
+            _ => serde_json::to_string(&base).unwrap()
+        }
+    }
+
+    #[inline(always)]
+    fn body_base(&self) -> ErrorResponseBodyBase {
         ErrorResponseBodyBase {
-            error_type: error_type.to_string(),
-            message: e.to_string(),
+            category: self.category().to_string(),
+            error_type: self.error_type().to_string(),
+            message: self.to_string(),
         }
     }
 }
@@ -64,10 +101,9 @@ impl From<Error> for ErrorResponseBodyBase {
 impl From<Error> for Response {
     fn from(e: Error) -> Self {
         let status_code = e.status_code();
-        let error_response: ErrorResponseBodyBase = e.into();
         Response::builder()
             .status(status_code)
-            .body(Body::from(serde_json::to_string(&error_response).unwrap()))
+            .body(Body::from(e.into_body()))
             .unwrap()
     }
 }
@@ -95,5 +131,10 @@ mod tests {
     #[test]
     fn it_return_bad_request_code_if_discussion_id_not_exists() {
         assert_eq!(error::Error::DiscussionNotExists(DiscussionId("discussion_id".to_string())).status_code(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn error_type_is_discussion_not_exists() {
+        assert_eq!(error::Error::DiscussionNotExists(DiscussionId("discussion_id".to_string())).error_type(), "DiscussionNotExists");
     }
 }

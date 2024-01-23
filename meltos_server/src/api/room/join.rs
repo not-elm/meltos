@@ -112,7 +112,8 @@ mod tests {
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
         let error = response.deserialize::<ErrorResponseBodyBase>().await;
         assert_eq!(error, ErrorResponseBodyBase {
-            error_type: "session".to_string(),
+            category: "session".to_string(),
+            error_type: "UserIdConflict".to_string(),
             message: "user id conflict; id: user1".to_string()
         });
     }

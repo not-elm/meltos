@@ -15,6 +15,7 @@ use meltos_util::serde::SerializeJson;
 
 use crate::api::HttpResult;
 use crate::api::room::response_error_exceed_bundle_size;
+
 use crate::room::{Room, Rooms};
 use crate::state::config::AppConfigs;
 
@@ -22,8 +23,7 @@ use crate::state::config::AppConfigs;
 ///
 /// # Errors
 ///
-/// - [`meltos_backend::error::Error::UserIdConflict`]
-/// - []
+/// - [`ExceedBundleSize`](crate::error::Error::ExceedBundleSize) : リクエスト時に送信されたバンドルのサイズが上限値を超えた場合
 #[tracing::instrument]
 pub async fn open<Session, Discussion>(
     State(rooms): State<Rooms>,
@@ -174,7 +174,8 @@ mod tests {
         assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
         let error = response.deserialize::<ErrorResponseBodyBase>().await;
         assert_eq!(error, ErrorResponseBodyBase {
-            error_type: "tvc".to_string(),
+            category: "tvc".to_string(),
+            error_type: "ExceedBundleSize".to_string(),
             message: "bundle size to exceed; actual_bundle_size: 1025, limit_bundle_size: 1024".to_string(),
         });
     }

@@ -1,10 +1,6 @@
-use std::fmt::Display;
-
 use axum::body::Body;
-use axum::http::StatusCode;
 use axum::response::Response;
 use serde::Serialize;
-use serde_json::json;
 
 use meltos_util::serde::SerializeJson;
 
@@ -31,19 +27,10 @@ pub trait IntoHttpResult<T, E> {
     fn into_http_result(self) -> HttpResult<T>;
 }
 
-impl<T> IntoHttpResult<T, meltos_tvc::error::Error>
-for std::result::Result<T, meltos_tvc::error::Error>
-{
-    fn into_http_result(self) -> HttpResult<T> {
-        match self {
-            Ok(v) => Ok(v),
-            Err(e) => Err(response_error(StatusCode::INTERNAL_SERVER_ERROR, e)),
-        }
-    }
-}
 
 impl<T> IntoHttpResult<T, meltos_backend::error::Error> for std::result::Result<T, meltos_backend::error::Error>
 {
+    #[inline(always)]
     fn into_http_result(self) -> HttpResult<T> {
         match self {
             Ok(v) => Ok(v),
@@ -52,17 +39,6 @@ impl<T> IntoHttpResult<T, meltos_backend::error::Error> for std::result::Result<
     }
 }
 
-fn response_error(status: StatusCode, e: impl Display) -> Response {
-    Response::builder()
-        .status(status)
-        .body(Body::from(
-            json!({
-                "message" : e.to_string()
-            })
-                .to_string(),
-        ))
-        .unwrap()
-}
 
 #[cfg(test)]
 mod test_util {
@@ -232,15 +208,23 @@ mod test_util {
     ) -> Replied {
         http_call_with_deserialize(
             app,
-            Request::builder()
-                .method(http::Method::POST)
-                .header(header::SET_COOKIE, format!("session_id={session_id}"))
-                .header("Content-Type", "application/json")
-                .uri(format!("/room/{room_id}/discussion/global/reply"))
-                .body(Body::from(reply.as_json()))
-                .unwrap(),
+            reply_request(room_id, session_id, reply),
         )
             .await
+    }
+
+    pub fn reply_request(
+        room_id: &RoomId,
+        session_id: &SessionId,
+        reply: Reply,
+    ) -> Request {
+        Request::builder()
+            .method(http::Method::POST)
+            .header(header::SET_COOKIE, format!("session_id={session_id}"))
+            .header("Content-Type", "application/json")
+            .uri(format!("/room/{room_id}/discussion/global/reply"))
+            .body(Body::from(reply.as_json()))
+            .unwrap()
     }
 
     pub async fn http_discussion_close(

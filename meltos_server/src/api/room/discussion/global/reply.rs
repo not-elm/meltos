@@ -21,22 +21,24 @@ pub async fn reply(
         from: user_id,
         message: MessageData::DiscussionReplied(replied.clone()),
     })
-    .await?;
+        .await?;
 
     Ok(replied.as_success_response())
 }
 
 #[cfg(test)]
 mod tests {
-    use meltos::discussion::message::{Message, MessageText};
-    use meltos::schema::discussion::global::{Reply, Speak};
+    use axum::http::StatusCode;
+
+    use meltos::discussion::id::DiscussionId;
+    use meltos::discussion::message::{Message, MessageId, MessageText};
+    use meltos::schema::discussion::global::{Created, Reply, Speak};
+    use meltos::schema::error::{DiscussionNotExistsBody, ErrorResponseBodyBase, MessageNotExistsBody};
     use meltos::schema::room::Opened;
     use meltos::user::UserId;
     use meltos_tvc::file_system::mock::MockFileSystem;
 
-    use crate::api::test_util::{
-        http_create_discussion, http_open_room, http_reply, http_speak, mock_app,
-    };
+    use crate::api::test_util::{http_call, http_create_discussion, http_open_room, http_reply, http_speak, mock_app, reply_request, ResponseConvertable};
 
     #[tokio::test]
     async fn return_replied_command() {
@@ -59,7 +61,7 @@ mod tests {
                 text: MessageText::from("message"),
             },
         )
-        .await;
+            .await;
         let replied = http_reply(
             &mut app,
             &room_id,
@@ -70,7 +72,7 @@ mod tests {
                 text: MessageText::from("reply"),
             },
         )
-        .await;
+            .await;
 
         assert_eq!(&replied.to, &spoke.message.id);
         assert_eq!(
@@ -81,5 +83,92 @@ mod tests {
                 text: MessageText::from("reply"),
             }
         )
+    }
+
+    #[tokio::test]
+    async fn failed_if_not_exists_discussion() {
+        let mut app = mock_app();
+        let fs = MockFileSystem::default();
+        let Opened {
+            session_id,
+            room_id,
+            ..
+        } = http_open_room(&mut app, fs).await;
+
+        let response = http_call(
+            &mut app,
+            reply_request(
+                &room_id,
+                &session_id,
+                Reply {
+                    discussion_id: DiscussionId("id".to_string()),
+                    to: Default::default(),
+                    text: MessageText("MESSAGE".to_string()),
+                },
+            ),
+        )
+            .await;
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        let error = response
+            .deserialize::<DiscussionNotExistsBody>()
+            .await;
+        assert_eq!(error, DiscussionNotExistsBody {
+            base: ErrorResponseBodyBase {
+                category: "discussion".to_string(),
+                error_type: "DiscussionNotExists".to_string(),
+                message: "discussion not exists; id: id".to_string(),
+            },
+            discussion_id: DiscussionId("id".to_string()),
+        });
+    }
+
+
+    #[tokio::test]
+    async fn failed_if_not_exists_message() {
+        let mut app = mock_app();
+        let fs = MockFileSystem::default();
+        let Opened {
+            session_id,
+            room_id,
+            ..
+        } = http_open_room(&mut app, fs).await;
+
+        let Created{
+            meta
+        } = http_create_discussion(
+            &mut app,
+            &session_id,
+            "title".to_string(),
+            room_id.clone()
+        )
+            .await;
+
+        let response = http_call(
+            &mut app,
+            reply_request(
+                &room_id,
+                &session_id,
+                Reply {
+                    discussion_id: meta.id,
+                    to: MessageId("Null".to_string()),
+                    text: MessageText("MESSAGE".to_string()),
+                },
+            ),
+        )
+            .await;
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        let error = response
+            .deserialize::<MessageNotExistsBody>()
+            .await;
+        assert_eq!(error, MessageNotExistsBody {
+            base: ErrorResponseBodyBase {
+                category: "discussion".to_string(),
+                error_type: "MessageNotExists".to_string(),
+                message: "message not exists; id: Null".to_string(),
+            },
+            message_id: MessageId("Null".to_string())
+        });
     }
 }

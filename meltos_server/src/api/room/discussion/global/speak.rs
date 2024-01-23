@@ -21,19 +21,22 @@ pub async fn speak(
         from: user_id,
         message: MessageData::DiscussionSpoke(spoke.clone()),
     })
-    .await?;
+        .await?;
 
     Ok(spoke.as_success_response())
 }
 
 #[cfg(test)]
 mod tests {
+    use axum::http::StatusCode;
+    use meltos::discussion::id::DiscussionId;
     use meltos::discussion::message::MessageText;
     use meltos::schema::discussion::global::Speak;
+    use meltos::schema::error::{DiscussionNotExistsBody, ErrorResponseBodyBase};
     use meltos::schema::room::Opened;
     use meltos_tvc::file_system::mock::MockFileSystem;
 
-    use crate::api::test_util::{http_create_discussion, http_open_room, http_speak, mock_app};
+    use crate::api::test_util::{http_call, http_create_discussion, http_open_room, http_speak, mock_app, ResponseConvertable, speak_request};
 
     #[tokio::test]
     async fn return_spoke() {
@@ -56,9 +59,47 @@ mod tests {
                 text: MessageText::from("Message"),
             },
         )
-        .await;
+            .await;
 
         assert_eq!(&spoke.message.text, &MessageText::from("Message"));
         assert_eq!(&spoke.discussion_id, &created.meta.id);
+    }
+
+
+    #[tokio::test]
+    async fn failed_if_not_exists_discussion() {
+        let mut app = mock_app();
+        let fs = MockFileSystem::default();
+        let Opened {
+            session_id,
+            room_id,
+            ..
+        } = http_open_room(&mut app, fs).await;
+
+        let response = http_call(
+            &mut app,
+            speak_request(
+                Speak {
+                    discussion_id: DiscussionId("ID".to_string()),
+                    text: MessageText::from("Message"),
+                },
+                &room_id,
+                &session_id,
+            )
+        )
+            .await;
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        let error = response
+            .deserialize::<DiscussionNotExistsBody>()
+            .await;
+        assert_eq!(error, DiscussionNotExistsBody{
+            base: ErrorResponseBodyBase{
+                category: "discussion".to_string(),
+                error_type: "DiscussionNotExists".to_string(),
+                message: "discussion not exists; id: ID".to_string()
+            },
+            discussion_id: DiscussionId("ID".to_string())
+        });
     }
 }

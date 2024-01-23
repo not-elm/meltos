@@ -1,6 +1,6 @@
+use meltos::discussion::{Discussion, DiscussionBundle, DiscussionMeta, MessageBundle};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
-use meltos::discussion::{Discussion, DiscussionBundle, DiscussionMeta, MessageBundle};
 use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_util::macros::Deref;
@@ -96,18 +96,26 @@ impl DiscussionIo for MockGlobalDiscussionIo {
 
     async fn reply(
         &self,
+        discussion_id: DiscussionId,
         user_id: UserId,
-        message_id: MessageId,
+        to: MessageId,
         text: MessageText,
     ) -> error::Result<Message> {
+        if !self.discussions.lock().await.contains_key(&discussion_id) {
+            return Err(error::Error::DiscussionNotExists(discussion_id));
+        }
+        if !self.messages.lock().await.contains_key(&to){
+            return Err(error::Error::MessageNotExists(to));
+        }
+
         let reply = Message::new(user_id.0, text.0);
         let mut discussion = self.reply_discussions.lock().await;
-        if !discussion.contains_key(&message_id) {
-            discussion.insert(message_id.clone(), vec![]);
+        if !discussion.contains_key(&to) {
+            discussion.insert(to.clone(), vec![]);
         }
 
         discussion
-            .get_mut(&message_id)
+            .get_mut(&to)
             .unwrap()
             .push(reply.id.clone());
         Ok(reply)
@@ -167,3 +175,59 @@ struct Messages(ArcHashMap<MessageId, Message>);
 
 #[derive(Debug, Default, Clone, Deref)]
 struct ReplyDiscussions(ArcHashMap<MessageId, Vec<MessageId>>);
+
+
+#[cfg(test)]
+mod tests {
+    use meltos::discussion::id::DiscussionId;
+    use meltos::discussion::message::{MessageId, MessageText};
+    use meltos::user::UserId;
+
+    use crate::discussion::DiscussionIo;
+    use crate::discussion::global::mock::MockGlobalDiscussionIo;
+    use crate::error;
+
+    #[tokio::test]
+    async fn failed_reply_if_not_discussion() {
+        let discussion = MockGlobalDiscussionIo::default();
+
+        match discussion
+            .reply(
+                DiscussionId("ID".to_string()),
+                UserId("user".to_string()),
+                MessageId("Null".to_string()),
+                MessageText::from("reply"),
+            )
+            .await {
+            Err(error::Error::DiscussionNotExists(id)) => {
+                assert_eq!(id, DiscussionId("ID".to_string()))
+            }
+            result => panic!("expected DiscussionNotExists bad was {result:?}")
+        }
+    }
+
+    #[tokio::test]
+    async fn failed_reply_if_not_exists_message() {
+        let discussion = MockGlobalDiscussionIo::default();
+        let meta = discussion
+            .new_discussion(
+                "title".to_string(),
+                UserId("user".to_string()),
+            )
+            .await
+            .unwrap();
+        match discussion
+            .reply(
+                meta.id,
+                UserId("user".to_string()),
+                MessageId("Null".to_string()),
+                MessageText::from("reply"),
+            )
+            .await {
+            Err(error::Error::MessageNotExists(id)) => {
+                assert_eq!(id, MessageId("Null".to_string()))
+            }
+            result => panic!("expected DiscussionNotExists bad was {result:?}")
+        }
+    }
+}

@@ -25,7 +25,7 @@ use meltos_tvc::file_system::std_fs::StdFileSystem;
 use meltos_tvc::io::bundle::Bundle;
 use meltos_util::macros::Deref;
 
-use crate::api::{HttpResult, IntoHttpResult};
+use crate::api::HttpResult;
 use crate::error;
 use crate::room::executor::discussion::DiscussionCommandExecutor;
 
@@ -73,7 +73,7 @@ impl RoomMap {
                     json!({
                         "error": format!("room_id {room_id} is not exists")
                     })
-                    .to_string(),
+                        .to_string(),
                 ))
                 .unwrap(),
         )
@@ -87,14 +87,14 @@ pub struct Room {
     pub tvc: TvcBackendIo<StdFileSystem>,
     pub session: Arc<dyn SessionIo>,
     discussion: Arc<dyn DiscussionIo>,
-    channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error = error::Error>>>>>,
+    channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error=error::Error>>>>>,
 }
 
 impl Room {
     pub fn open<Discussion, Session>(owner: UserId) -> error::Result<Self>
-    where
-        Discussion: DiscussionIo + NewDiscussIo + 'static,
-        Session: SessionIo + NewSessionIo + 'static,
+        where
+            Discussion: DiscussionIo + NewDiscussIo + 'static,
+            Session: SessionIo + NewSessionIo + 'static,
     {
         let room_id = RoomId::default();
         create_resource_dir(&room_id)?;
@@ -114,9 +114,13 @@ impl Room {
         })
     }
 
-    pub async fn room_bundle(&self) -> HttpResult<RoomBundle> {
-        let discussion = self.discussion.all_discussions().await.into_http_result()?;
-        let tvc = self.tvc.bundle().into_http_result()?;
+    pub async fn room_bundle(&self) -> error::Result<RoomBundle> {
+        let discussion = self
+            .discussion
+            .all_discussions()
+            .await
+            .map_err(|e| crate::error::Error::Backend(e))?;
+        let tvc = self.tvc.bundle()?;
 
         Ok(RoomBundle {
             tvc,
@@ -126,7 +130,7 @@ impl Room {
 
     pub async fn insert_channel(
         &self,
-        channel: impl ChannelMessageSendable<Error = error::Error> + 'static,
+        channel: impl ChannelMessageSendable<Error=error::Error> + 'static,
     ) {
         let mut channels = self.channels.lock().await;
         channels.push(Box::new(channel));
@@ -152,13 +156,13 @@ impl Room {
     }
 
     #[inline(always)]
-    pub fn tvc_repository_size(&self) -> HttpResult<usize> {
-        self.tvc.total_objs_size().into_http_result()
+    pub fn tvc_repository_size(&self) -> error::Result<usize> {
+        self.tvc.total_objs_size().map_err(crate::error::Error::Tvc)
     }
 
     #[inline(always)]
-    pub fn save_bundle(&self, bundle: Bundle) -> std::result::Result<(), Response> {
-        self.tvc.save(bundle).into_http_result()?;
+    pub fn save_bundle(&self, bundle: Bundle) -> error::Result {
+        self.tvc.save(bundle)?;
         Ok(())
     }
 
@@ -168,15 +172,15 @@ impl Room {
     }
 
     #[inline(always)]
-    pub fn create_bundle(&self) -> std::result::Result<Bundle, Response> {
-        self.tvc.bundle().into_http_result()
+    pub fn create_bundle(&self) -> error::Result<Bundle> {
+        self.tvc.bundle().map_err(crate::error::Error::Tvc)
     }
 
     pub async fn global_discussion<'a, F, O, S>(&'a self, user_id: UserId, f: F) -> error::Result<S>
-    where
-        F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
-        O: Future<Output = error::Result<S>>,
-        S: Serialize,
+        where
+            F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
+            O: Future<Output=error::Result<S>>,
+            S: Serialize,
     {
         let command = f(self.as_global_discussion_executor(user_id)).await?;
         Ok(command)
