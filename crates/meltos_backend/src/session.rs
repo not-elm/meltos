@@ -1,7 +1,6 @@
 use async_trait::async_trait;
-use auto_delegate::delegate;
-use meltos::room::RoomId;
 
+use meltos::room::RoomId;
 use meltos::user::{SessionId, UserId};
 
 use crate::error;
@@ -15,7 +14,6 @@ pub trait NewSessionIo: Sized {
 }
 
 #[async_trait]
-#[delegate]
 pub trait SessionIo: Send + Sync {
     /// ユーザーを登録します。
     ///
@@ -35,4 +33,10 @@ pub trait SessionIo: Send + Sync {
     ///
     /// - [`error::Error::SessionIdNotExists`] : 存在しない[`SessionId`]が指定された場合
     async fn fetch(&self, session_id: SessionId) -> error::Result<UserId>;
+
+
+    /// ルーム内の現在のユーザー数を返します。
+    ///
+    /// ルームオーナーも含まれます。
+    async fn user_count(&self) -> error::Result<u64>;
 }

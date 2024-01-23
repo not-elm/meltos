@@ -1,12 +1,9 @@
 use axum::async_trait;
-use axum::body::Body;
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
 use axum::response::Response;
 use axum_extra::routing::TypedPath;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use tokio_tungstenite::tungstenite::http::StatusCode;
 
 use meltos::room::RoomId;
 
@@ -26,17 +23,7 @@ impl PathParam {
     pub async fn new(parts: &mut Parts, state: &AppState) -> Result<Self, Response> {
         let param = PathParam::from_request_parts(parts, state)
             .await
-            .map_err(|e| {
-                Response::builder()
-                    .status(StatusCode::BAD_REQUEST)
-                    .body(Body::from(
-                        json!({
-                            "error" : e.to_string()
-                        })
-                        .to_string(),
-                    ))
-                    .unwrap()
-            })?;
+            .map_err(|_| crate::error::Error::RoomNotExists)?;
         Ok(param)
     }
 }

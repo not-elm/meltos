@@ -4,11 +4,8 @@ use std::future::Future;
 use std::sync::Arc;
 use std::time::Duration;
 
-use axum::body::Body;
-use axum::http::StatusCode;
 use axum::response::Response;
 use serde::Serialize;
-use serde_json::json;
 use tokio::sync::Mutex;
 
 use meltos::channel::{ChannelMessage, ChannelMessageSendable};
@@ -65,18 +62,8 @@ impl RoomMap {
         Ok(self.room_mut(room_id)?.clone())
     }
 
-    pub fn room_mut(&mut self, room_id: &RoomId) -> std::result::Result<&mut Room, Response> {
-        self.0.get_mut(room_id).ok_or(
-            Response::builder()
-                .status(StatusCode::NOT_FOUND)
-                .body(Body::from(
-                    json!({
-                        "error": format!("room_id {room_id} is not exists")
-                    })
-                        .to_string(),
-                ))
-                .unwrap(),
-        )
+    pub fn room_mut(&mut self, room_id: &RoomId) -> error::Result<&mut Room> {
+        self.0.get_mut(room_id).ok_or(error::Error::RoomNotExists)
     }
 }
 
@@ -86,12 +73,13 @@ pub struct Room {
     pub id: RoomId,
     pub tvc: TvcBackendIo<StdFileSystem>,
     pub session: Arc<dyn SessionIo>,
+    capacity: u64,
     discussion: Arc<dyn DiscussionIo>,
     channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error=error::Error>>>>>,
 }
 
 impl Room {
-    pub fn open<Discussion, Session>(owner: UserId) -> error::Result<Self>
+    pub fn open<Discussion, Session>(owner: UserId, capacity: u64) -> error::Result<Self>
         where
             Discussion: DiscussionIo + NewDiscussIo + 'static,
             Session: SessionIo + NewSessionIo + 'static,
@@ -101,6 +89,7 @@ impl Room {
         Ok(Self {
             id: room_id.clone(),
             owner: owner.clone(),
+            capacity,
             discussion: Arc::new(
                 Discussion::new(room_id.clone())
                     .map_err(|e| error::Error::FailedCreateDiscussionIo(e.to_string()))?,
@@ -114,12 +103,22 @@ impl Room {
         })
     }
 
+    #[inline(always)]
+    pub async fn error_if_reached_capacity(&self) -> error::Result{
+        let current_user_count = self.session.user_count().await?;
+        if self.capacity <= current_user_count{
+            Err(error::Error::ReachedCapacity(self.capacity))
+        }else{
+            Ok(())
+        }
+    }
+
+
     pub async fn room_bundle(&self) -> error::Result<RoomBundle> {
         let discussion = self
             .discussion
             .all_discussions()
-            .await
-            .map_err(|e| crate::error::Error::Backend(e))?;
+            .await?;
         let tvc = self.tvc.bundle()?;
 
         Ok(RoomBundle {

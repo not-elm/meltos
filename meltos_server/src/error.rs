@@ -4,12 +4,18 @@ use axum::response::Response;
 use strum::AsRefStr;
 use thiserror::Error;
 
-use meltos::schema::error::{ErrorResponseBodyBase, ExceedBundleSizeBody};
+use meltos::schema::error::{ErrorResponseBodyBase, ExceedBundleSizeBody, ReachedCapacityBody};
 
 pub type Result<T = ()> = std::result::Result<T, Error>;
 
 #[derive(Error, Debug, AsRefStr)]
 pub enum Error {
+    #[error("room not exists")]
+    RoomNotExists,
+
+    #[error("reached capacity; capacity: {0}")]
+    ReachedCapacity(u64),
+
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
@@ -45,6 +51,8 @@ pub enum Error {
 impl Error {
     fn status_code(&self) -> StatusCode {
         match self {
+            Error::ReachedCapacity(_) => StatusCode::TOO_MANY_REQUESTS,
+            Error::RoomNotExists => StatusCode::NOT_FOUND,
             Error::Backend(e) => e.status_code(),
             Error::ExceedBundleSize { .. } => StatusCode::PAYLOAD_TOO_LARGE,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
@@ -53,6 +61,7 @@ impl Error {
 
     fn category(&self) -> &str {
         match self {
+            Error::RoomNotExists | Error::ReachedCapacity(_) => "session",
             Error::ExceedBundleSize { .. } | Error::Tvc(_) => "tvc",
             Error::Backend(e) => e.category(),
             _ => "unknown"
@@ -83,6 +92,12 @@ impl Error {
                     base,
                     limit_bundle_size,
                     actual_bundle_size,
+                }).unwrap()
+            }
+            Error::ReachedCapacity(capacity) => {
+                serde_json::to_string(&ReachedCapacityBody {
+                    base,
+                    capacity,
                 }).unwrap()
             }
             _ => serde_json::to_string(&base).unwrap()

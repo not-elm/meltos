@@ -6,12 +6,29 @@ use meltos::schema::room::{Join, Joined};
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
 
-/// RoomIdに対応するRoomに参加
-/// Roomが存在しない場合はstatus code404が返される
+/// RoomIdに対応するRoomに参加します。
 ///
-/// レスポンスはRoomのメタデータ
+///
+/// # Errors
+/// ## StatusCode: 400(BAD_REQUEST)
+///
+/// - [`UserIdConflict`](meltos::schema::error::ErrorResponseBodyBase) : 既に同名のユーザーIDが存在していた場合
+///
+/// ## StatusCode: 401(UNAUTHORIZED)
+///
+/// - [`UserUnauthorized`](meltos::schema::error::ErrorResponseBodyBase) : 無効なセッションIDが指定された場合
+///
+/// ## StatusCode: 404(NOT_FOUND)
+///
+/// - [`RoomNotFound`](meltos::schema::error::ErrorResponseBodyBase) : Roomが存在しない場合
+///
+/// ## StatusCode: 429(TOO_MANY_REQUESTS)
+///
+/// - [`ReachedCapacity`](meltos::schema::error::ReachedCapacityBody) : ルームの定員に達した場合
 ///
 pub async fn join(SessionRoom(room): SessionRoom, Json(join): Json<Join>) -> HttpResult {
+    room.error_if_reached_capacity().await?;
+
     let (user_id, session_id) = room.session.register(join.user_id).await?;
     let bundle = room.create_bundle()?;
     let discussions = room.discussions().await?;
@@ -37,7 +54,7 @@ mod tests {
     use axum::http::StatusCode;
 
     use meltos::room::RoomId;
-    use meltos::schema::error::ErrorResponseBodyBase;
+    use meltos::schema::error::{ErrorResponseBodyBase, ReachedCapacityBody};
     use meltos::schema::room::{Joined, Opened};
     use meltos::user::UserId;
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
@@ -60,6 +77,14 @@ mod tests {
         let response = http_join(&mut app, &RoomId("invalid_id".to_string()), None).await;
 
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        let error = response
+            .deserialize::<ErrorResponseBodyBase>()
+            .await;
+        assert_eq!(error, ErrorResponseBodyBase {
+            category: "session".to_string(),
+            error_type: "RoomNotExists".to_string(),
+            message: "room not exists".to_string(),
+        })
     }
 
     #[tokio::test]
@@ -70,6 +95,32 @@ mod tests {
         let opened = http_open_room(&mut app, fs.clone()).await;
         let response = http_join(&mut app, &opened.room_id, None).await;
         assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn failed_if_reached_capacity() {
+        let mut app = mock_app();
+
+        let opened: Opened = http_call_with_deserialize(&mut app, open_room_request_with_options(
+            None,
+            None,
+            Some(1), // room capacity
+        ))
+            .await;
+
+        let response = http_join(&mut app, &opened.room_id, None).await;
+        assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
+        let error = response
+            .deserialize::<ReachedCapacityBody>()
+            .await;
+        assert_eq!(error, ReachedCapacityBody {
+            base: ErrorResponseBodyBase {
+                category: "session".to_string(),
+                error_type: "ReachedCapacity".to_string(),
+                message: "reached capacity; capacity: 1".to_string(),
+            },
+            capacity: 1,
+        });
     }
 
     #[tokio::test]
@@ -114,7 +165,7 @@ mod tests {
         assert_eq!(error, ErrorResponseBodyBase {
             category: "session".to_string(),
             error_type: "UserIdConflict".to_string(),
-            message: "user id conflict; id: user1".to_string()
+            message: "user id conflict; id: user1".to_string(),
         });
     }
 }

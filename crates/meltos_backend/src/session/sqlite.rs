@@ -99,6 +99,16 @@ impl SessionIo for SqliteSessionIo {
             Err(e) => Err(error::Error::Sqlite(e)),
         }
     }
+
+    async fn user_count(&self) -> error::Result<u64> {
+        let db = self.db.lock().await;
+        let user_count: usize = db.query_row(
+            "SELECT count(user_id) FROM session",
+            (),
+            |row| Ok(row.get(0).unwrap()),
+        )?;
+        Ok(user_count as u64)
+    }
 }
 
 #[cfg(test)]
@@ -236,6 +246,52 @@ mod tests {
             .await;
     }
 
+
+    #[tokio::test]
+    async fn it_return_user_count() {
+        try_execute(|db| {
+            async move {
+                let count = db.user_count().await?;
+                assert_eq!(count, 0);
+
+                db.register(None).await?;
+                let count = db.user_count().await?;
+                assert_eq!(count, 1);
+
+                db.register(None).await?;
+                let count = db.user_count().await?;
+                assert_eq!(count, 2);
+
+                db.register(None).await?;
+                let count = db.user_count().await?;
+                assert_eq!(count, 3);
+
+                Ok(())
+            }
+        })
+            .await;
+    }
+
+    #[tokio::test]
+    async fn decrement_user_count_if_unregistered() {
+        try_execute(|db| {
+            async move {
+                let count = db.user_count().await?;
+                assert_eq!(count, 0);
+
+                let (user_id, _) = db.register(None).await?;
+                let count = db.user_count().await?;
+                assert_eq!(count, 1);
+
+                db.unregister(user_id).await?;
+                let count = db.user_count().await?;
+                assert_eq!(count, 0);
+
+                Ok(())
+            }
+        })
+            .await;
+    }
 
     async fn try_execute<F: Future<Output=crate::error::Result>>(
         f: impl FnOnce(SqliteSessionIo) -> F,

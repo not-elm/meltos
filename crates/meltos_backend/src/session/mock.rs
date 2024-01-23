@@ -63,6 +63,7 @@ impl NewSessionIo for MockSessionIo {
 
 #[async_trait]
 impl SessionIo for MockSessionIo {
+
     async fn register(&self, user_id: Option<UserId>) -> crate::error::Result<(UserId, SessionId)> {
         let create_count = self.create_count.fetch_add(1, Ordering::Relaxed);
 
@@ -101,6 +102,12 @@ impl SessionIo for MockSessionIo {
             .get(&user_token)
             .cloned()
             .ok_or(error::Error::SessionIdNotExists)
+    }
+
+
+    #[inline(always)]
+    async fn user_count(&self) -> error::Result<u64> {
+        Ok(self.map.lock().await.len() as u64)
     }
 }
 

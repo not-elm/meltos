@@ -35,6 +35,18 @@ pub struct ExceedBundleSizeBody {
 }
 
 
+
+/// ルームの定員に達したことを表します。
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
+pub struct ReachedCapacityBody {
+    #[serde(flatten)]
+    pub base: ErrorResponseBodyBase,
+
+    /// ルームの定員
+    pub capacity: u64
+}
+
+
 /// リクエスト時に送信した[`DiscussionId`](crate::discussion::id::DiscussionId)に対応するディスカッションが見つからない場合のレスポンスボディを表します。。
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
 pub struct DiscussionNotExistsBody {

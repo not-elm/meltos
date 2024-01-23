@@ -45,13 +45,13 @@ pub async fn open<Session, Discussion>(
             configs.limit_bundle_size,
         ));
     }
-    let user_limits = param.get_user_limits(configs.max_user_limits);
 
+    let capacity = param.get_user_limits(configs.max_user_limits);
     let life_time = param.lifetime_duration(configs.room_limit_life_time_sec);
     // 現状Roomオーナーは`owner`固定
     let user_id = UserId::from("owner");
 
-    let room = Room::open::<Discussion, Session>(user_id.clone())?;
+    let room = Room::open::<Discussion, Session>(user_id.clone(), capacity)?;
     let (user_id, session_id) = room.session.register(Some(user_id)).await?;
     let room_id = room.id.clone();
 
@@ -61,7 +61,7 @@ pub async fn open<Session, Discussion>(
 
     rooms.insert_room(room, life_time).await;
 
-    Ok(response_success_create_room(room_id, user_id, session_id, user_limits))
+    Ok(response_success_create_room(room_id, user_id, session_id, capacity))
 }
 
 fn response_success_create_room(
