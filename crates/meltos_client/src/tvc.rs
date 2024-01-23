@@ -87,11 +87,11 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         Ok(commit_hash)
     }
 
-    pub async fn open_room(&self, lifetime_sec: Option<u64>) -> error::Result<SessionConfigs> {
+    pub async fn open_room(&self, lifetime_sec: Option<u64>, user_limits: Option<u64>) -> error::Result<SessionConfigs> {
         self.operations.init.execute(&self.branch_name)?;
         let mut sender = OpenSender {
-            user_id: Some(BranchName::owner().0),
             lifetime_sec,
+            user_limits,
         };
 
         let session_configs = self
@@ -273,8 +273,8 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
 }
 
 struct OpenSender {
-    user_id: Option<String>,
     lifetime_sec: Option<u64>,
+    user_limits: Option<u64>,
 }
 
 #[async_trait(? Send)]
@@ -285,8 +285,8 @@ impl Pushable<SessionConfigs> for OpenSender {
         let http = HttpClient::open(
             "http://127.0.0.1:3000",
             Some(bundle),
-            self.user_id.clone().map(UserId::from),
             self.lifetime_sec,
+            self.user_limits,
         )
             .await?;
         Ok(http.configs().clone())

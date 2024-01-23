@@ -30,8 +30,8 @@ impl WasmTvcClient {
     }
 
     #[inline(always)]
-    pub async fn open_room(&self, lifetime_sec: Option<u64>) -> JsResult<SessionConfigs> {
-        let session_configs = self.0.open_room(lifetime_sec).await?;
+    pub async fn open_room(&self, lifetime_sec: Option<u64>, user_limits: Option<u64>) -> JsResult<SessionConfigs> {
+        let session_configs = self.0.open_room(lifetime_sec, user_limits).await?;
         Ok(session_configs)
     }
 

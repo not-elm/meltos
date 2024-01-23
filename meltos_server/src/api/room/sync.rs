@@ -87,7 +87,7 @@ mod tests {
         let traces = TraceTreeIo::new(fs.clone());
 
         init.execute(&branch).unwrap();
-        let open_request = open_room_request_with_options(Some(bundle.create().unwrap()), None);
+        let open_request = open_room_request_with_options(Some(bundle.create().unwrap()), None, None);
         let Opened {
             room_id,
             session_id,

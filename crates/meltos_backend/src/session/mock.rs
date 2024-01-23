@@ -1,16 +1,20 @@
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use async_trait::async_trait;
-use meltos::room::RoomId;
 
+use meltos::room::RoomId;
 use meltos::user::{SessionId, UserId};
 
 use crate::error;
 use crate::session::{NewSessionIo, SessionIo};
 use crate::sync::arc_mutex::ArcMutex;
 
-#[derive(Debug, Default, Clone)]
-pub struct MockSessionIo(ArcMutex<HashMap<SessionId, UserId>>);
+#[derive(Debug)]
+pub struct MockSessionIo {
+    map: ArcMutex<HashMap<SessionId, UserId>>,
+    create_count: AtomicUsize,
+}
 
 impl MockSessionIo {
     pub async fn with_mock_users() -> Self {
@@ -23,13 +27,13 @@ impl MockSessionIo {
     }
 
     pub async fn force_register(&self, session_id: SessionId, user_id: UserId) {
-        self.0.lock().await.insert(session_id, user_id);
+        self.map.lock().await.insert(session_id, user_id);
     }
 }
 
 impl MockSessionIo {
     async fn generate_session_id(&self) -> SessionId {
-        let map = self.0.lock().await;
+        let map = self.map.lock().await;
         loop {
             let session_id = SessionId::new();
             if !map.contains_key(&session_id) {
@@ -37,14 +41,15 @@ impl MockSessionIo {
             }
         }
     }
+}
 
-    async fn generate_user_id(&self) -> UserId {
-        let map = self.0.lock().await;
-        loop {
-            let user_id = UserId::new();
-            if !map.values().any(|id| id == &user_id) {
-                return user_id;
-            }
+
+impl Default for MockSessionIo {
+    #[inline(always)]
+    fn default() -> Self {
+        Self {
+            map: ArcMutex::default(),
+            create_count: AtomicUsize::new(1),
         }
     }
 }
@@ -59,16 +64,20 @@ impl NewSessionIo for MockSessionIo {
 #[async_trait]
 impl SessionIo for MockSessionIo {
     async fn register(&self, user_id: Option<UserId>) -> crate::error::Result<(UserId, SessionId)> {
+        let create_count = self.create_count.fetch_add(1, Ordering::Relaxed);
+
         let session_id = self.generate_session_id().await;
         if let Some(user_id) = user_id {
-            self.0
-                .lock()
-                .await
-                .insert(session_id.clone(), user_id.clone());
-            Ok((user_id, session_id))
+            let mut map = self.map.lock().await;
+            if map.values().any(|user| user == &user_id) {
+                Err(error::Error::UserIdConflict(user_id))
+            } else {
+                map.insert(session_id.clone(), user_id.clone());
+                Ok((user_id, session_id))
+            }
         } else {
-            let random_user = self.generate_user_id().await;
-            self.0
+            let random_user = UserId(format!("guest{create_count}"));
+            self.map
                 .lock()
                 .await
                 .insert(session_id.clone(), random_user.clone());
@@ -77,7 +86,7 @@ impl SessionIo for MockSessionIo {
     }
 
     async fn unregister(&self, user_id: UserId) -> error::Result {
-        let mut map = self.0.lock().await;
+        let mut map = self.map.lock().await;
         if let Some((session_id, _)) = map.clone().iter().find(|(_, v)| v == &&user_id) {
             map.remove(session_id);
         }
@@ -86,11 +95,46 @@ impl SessionIo for MockSessionIo {
     }
 
     async fn fetch(&self, user_token: SessionId) -> crate::error::Result<UserId> {
-        self.0
+        self.map
             .lock()
             .await
             .get(&user_token)
             .cloned()
             .ok_or(error::Error::SessionIdNotExists)
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use meltos::user::UserId;
+
+    use crate::error::Error;
+    use crate::session::mock::MockSessionIo;
+    use crate::session::SessionIo;
+
+    #[tokio::test]
+    async fn failed_if_conflicts_user_ids() {
+        let session = MockSessionIo::default();
+        let user_id = UserId::from("user1");
+        session.register(Some(user_id.clone())).await.unwrap();
+        match session.register(Some(user_id.clone())).await.unwrap_err() {
+            Error::UserIdConflict(id) => assert_eq!(id, user_id),
+            _ => panic!("expected conflicts user_ids but did not")
+        }
+    }
+
+    #[tokio::test]
+    async fn create_guest_ids() {
+        let session = MockSessionIo::default();
+
+        let (user_id, _) = session.register(None).await.unwrap();
+        assert_eq!(user_id, UserId::from("guest1"));
+
+        let (user_id, _) = session.register(None).await.unwrap();
+        assert_eq!(user_id, UserId::from("guest2"));
+
+        let (user_id, _) = session.register(None).await.unwrap();
+        assert_eq!(user_id, UserId::from("guest3"));
     }
 }

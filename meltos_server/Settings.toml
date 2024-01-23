@@ -1,6 +1,5 @@
 # roomの最大生存期間
-# ユーザーがroomをopenする際にlife_time_secを指定していない場合はこの値が反映される
-# ユーザーが指定していた場合、この設定値を超えていない場合はユーザーの生存期間が反映され、超えている場合は設定値が反映される。
+# ユーザーがroomをopenする際にlifetime_secsを指定していない、またはこの上限値を超えた場合場合はこの値が反映される。
 # 24H
 room_limit_life_time_sec = 86400
 
@@ -14,3 +13,7 @@ limit_bundle_size = 104857600
 # リポジトリサイズは.meltos/objs内のバッファサイズの合計値
 # 1GIB
 limit_tvc_repository_size = 1073741824
+
+# ルームの定員の上限値
+# ユーザーがroomをopenする際にuser_limitsを指定していない、またはこの上限値を超えた場合はこの値が反映される
+max_user_limits = 100

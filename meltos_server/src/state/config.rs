@@ -8,14 +8,17 @@ pub struct AppConfigs {
     pub limit_bundle_size: usize,
 
     /// roomの最大生存期間
-    /// ユーザーがroomをopenする際にlife_time_secを指定していない場合はこの値が反映される
-    /// ユーザーが指定していた場合、この設定値を超えていない場合はユーザーの生存期間が反映され、超えている場合は設定値が反映される。
+    /// ユーザーがroomをopenする際にlifetime_secsを指定していない、またはこの上限値を超えた場合場合はこの値が反映される。
     pub room_limit_life_time_sec: u64,
 
     /// TVCのリポジトリの最大サイズ
     /// bundleがpushされる際にリポジトリサイズが許容値を超えないかを確認するために使用される。
     /// リポジトリサイズは.meltos/objs内のバッファサイズの合計値
     pub limit_tvc_repository_size: usize,
+
+    /// ルームの定員の上限値
+    /// ユーザーがroomをopenする際にuser_limitsを指定していない、またはこの上限値を超えた場合はこの値が反映される
+    pub max_user_limits: u64,
 }
 
 impl Default for AppConfigs {
@@ -31,7 +34,7 @@ impl Default for AppConfigs {
 
 fn source() -> &'static str {
     #[cfg(not(test))]
-    return "./Settings.toml";
+    return "./meltos_server/Settings.toml";
     #[cfg(test)]
     return "SettingsTest.toml";
 }
@@ -56,5 +59,12 @@ mod tests {
     fn it_read_limit_tvc_repository_size() {
         let config = AppConfigs::default();
         assert_eq!(config.limit_tvc_repository_size, 3072);
+    }
+
+
+    #[test]
+    fn it_read_max_user_limits() {
+        let config = AppConfigs::default();
+        assert_eq!(config.max_user_limits, 100);
     }
 }

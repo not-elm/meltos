@@ -74,15 +74,15 @@ impl HttpClient {
     pub async fn open(
         base_uri: &str,
         bundle: Option<Bundle>,
-        user_id: Option<UserId>,
-        life_time_minute: Option<u64>,
+        lifetime_secs: Option<u64>,
+        user_limits: Option<u64>
     ) -> error::Result<Self> {
         let client = Client::new();
         let response = client
             .post(format!("{base_uri}/room/open"))
             .json(&Open {
-                user_id,
-                lifetime_secs: life_time_minute,
+                lifetime_secs,
+                user_limits,
                 bundle,
             })
             .send()

@@ -1,7 +1,8 @@
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use async_trait::async_trait;
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, ffi, params};
 use tokio::sync::Mutex;
 
 use meltos::room::RoomId;
@@ -16,6 +17,11 @@ use crate::session::{NewSessionIo, SessionIo};
 #[derive(Debug)]
 pub struct SqliteSessionIo {
     db: Mutex<Connection>,
+
+    /// ユーザーが作成された回数
+    /// ゲストIDの作成に使用されます。
+    /// 現在のユーザー数を表す値ではない点に注意してください。
+    create_user_count: AtomicUsize,
 }
 
 fn create_session_table(db: &Connection) -> rusqlite::Result<usize> {
@@ -23,7 +29,7 @@ fn create_session_table(db: &Connection) -> rusqlite::Result<usize> {
         "
             CREATE TABLE session(
             session_id TEXT NOT NULL PRIMARY KEY,
-            user_id TEXT NOT NULL
+            user_id TEXT NOT NULL UNIQUE
             )
         ",
         (),
@@ -50,6 +56,7 @@ impl NewSessionIo for SqliteSessionIo {
 
         Ok(Self {
             db: Mutex::new(db),
+            create_user_count: AtomicUsize::new(1),
         })
     }
 }
@@ -58,14 +65,19 @@ impl NewSessionIo for SqliteSessionIo {
 impl SessionIo for SqliteSessionIo {
     async fn register(&self, user_id: Option<UserId>) -> crate::error::Result<(UserId, SessionId)> {
         let session_id = SessionId::new();
-        let user_id = user_id.unwrap_or_default();
+        let create_count = self.create_user_count.fetch_add(1, Ordering::Relaxed);
+        let user_id = user_id.unwrap_or_else(|| UserId(format!("guest{create_count}")));
         let db = self.db.lock().await;
-        db.execute(
+        match db.execute(
             "INSERT INTO session(session_id, user_id) VALUES($1, $2)",
             params![session_id.to_string(), user_id.to_string()],
-        )?;
-
-        Ok((user_id, session_id))
+        ) {
+            Ok(_) => Ok((user_id, session_id)),
+            Err(rusqlite::Error::SqliteFailure(ffi::Error { code: _, extended_code: _s @ 2067 }, _)) => {
+                Err(error::Error::UserIdConflict(user_id))
+            }
+            Err(e) => Err(error::Error::Sqlite(e))
+        }
     }
 
     async fn unregister(&self, user_id: UserId) -> crate::error::Result {
@@ -99,8 +111,8 @@ mod tests {
     use meltos::user::{SessionId, UserId};
 
     use crate::error;
-    use crate::session::sqlite::{delete_database, SqliteSessionIo};
     use crate::session::{NewSessionIo, SessionIo};
+    use crate::session::sqlite::{delete_database, SqliteSessionIo};
 
     #[tokio::test]
     async fn created_owner_id() {
@@ -114,7 +126,7 @@ mod tests {
                 Ok(())
             }
         })
-        .await;
+            .await;
     }
 
     #[tokio::test]
@@ -127,7 +139,7 @@ mod tests {
                 Ok(())
             }
         })
-        .await;
+            .await;
     }
 
     #[tokio::test]
@@ -142,10 +154,90 @@ mod tests {
                 Ok(())
             }
         })
-        .await;
+            .await;
     }
 
-    async fn try_execute<F: Future<Output = crate::error::Result>>(
+
+    #[tokio::test]
+    async fn failed_if_conflict_user_ids() {
+        try_execute(|db| {
+            async move {
+                let user_id = UserId::from("user1");
+                db.register(Some(user_id.clone())).await?;
+                match db
+                    .register(Some(user_id.clone()))
+                    .await {
+                    Err(error::Error::UserIdConflict(id)) => assert_eq!(id, user_id),
+                    _ => panic!("expect occurs conflicts user id but it did not.")
+                }
+                Ok(())
+            }
+        })
+            .await;
+    }
+
+    #[tokio::test]
+    async fn success_if_deleted_unique_user_id() {
+        try_execute(|db| {
+            async move {
+                let user_id = UserId::from("user1");
+                db.register(Some(user_id.clone())).await?;
+                db.unregister(user_id.clone()).await?;
+                db.register(Some(user_id.clone())).await?;
+
+                Ok(())
+            }
+        })
+            .await;
+    }
+
+
+    #[tokio::test]
+    async fn create_guest_ids_not_specified_user_id() {
+        try_execute(|db| {
+            async move {
+                let (user_id, _) = db.register(None).await?;
+                assert_eq!(user_id, UserId::from("guest1"));
+
+                let (user_id, _) = db.register(None).await?;
+                assert_eq!(user_id, UserId::from("guest2"));
+
+                let (user_id, _) = db.register(None).await?;
+                assert_eq!(user_id, UserId::from("guest3"));
+
+                Ok(())
+            }
+        })
+            .await;
+    }
+
+    #[tokio::test]
+    async fn guest_id_continues_to_increase_regardless_of_to_delete_user() {
+        try_execute(|db| {
+            async move {
+                let (user_id, _) = db.register(None).await?;
+                assert_eq!(user_id, UserId::from("guest1"));
+                db.unregister(user_id).await?;
+
+                let (user_id, _) = db.register(None).await?;
+                assert_eq!(user_id, UserId::from("guest2"));
+
+                let (user_id, _) = db.register(None).await?;
+                assert_eq!(user_id, UserId::from("guest3"));
+                db.unregister(user_id).await?;
+
+                let (user_id, _) = db.register(None).await?;
+                assert_eq!(user_id, UserId::from("guest4"));
+                db.unregister(user_id).await?;
+
+                Ok(())
+            }
+        })
+            .await;
+    }
+
+
+    async fn try_execute<F: Future<Output=crate::error::Result>>(
         f: impl FnOnce(SqliteSessionIo) -> F,
     ) {
         let room_id = RoomId::new();
