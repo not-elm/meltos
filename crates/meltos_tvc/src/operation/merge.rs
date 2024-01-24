@@ -9,15 +9,15 @@ use crate::io::atomic::staging::StagingIo;
 use crate::io::commit_hashes::CommitHashIo;
 use crate::io::commit_obj::CommitObjIo;
 use crate::object::commit::CommitHash;
-use crate::object::ObjHash;
 use crate::object::tree::TreeObj;
+use crate::object::ObjHash;
 use crate::operation::commit::Commit;
 use crate::operation::unzip::UnZip;
 
 #[derive(Debug)]
 pub struct Merge<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     head: HeadIo<Fs>,
     commit_hashes: CommitHashIo<Fs>,
@@ -28,8 +28,8 @@ pub struct Merge<Fs>
 }
 
 impl<Fs> Merge<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Merge<Fs> {
         Self {
@@ -60,31 +60,34 @@ pub struct Conflict {
 }
 
 impl<Fs> Merge<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     #[inline]
-    pub fn execute_from_branch(
+    pub async fn execute_from_branch(
         &self,
         source: BranchName,
         dist: BranchName,
     ) -> crate::error::Result<MergedStatus> {
-        let source_head = self.read_source_head(&source)?;
-        self.execute(source_head, dist)
+        let source_head = self.read_source_head(&source).await?;
+        self.execute(source_head, dist).await
     }
 
-    pub fn execute(
+    pub async fn execute(
         &self,
         source: CommitHash,
         dist: BranchName,
     ) -> crate::error::Result<MergedStatus> {
-        let dist_head = self.head.try_read(&dist)?;
-        let source_hashes = self.commit_hashes.read_all(source.clone(), &None)?;
-        let dist_hashes = self.commit_hashes.read_all(dist_head.clone(), &None)?;
+        let dist_head = self.head.try_read(&dist).await?;
+        let source_hashes = self.commit_hashes.read_all(source.clone(), &None).await?;
+        let dist_hashes = self
+            .commit_hashes
+            .read_all(dist_head.clone(), &None)
+            .await?;
 
         if source_hashes.contains(&dist_head) {
-            self.head.write(&dist, &source)?;
-            self.unzip.execute(&dist)?;
+            self.head.write(&dist, &source).await?;
+            self.unzip.execute(&dist).await?;
             return Ok(MergedStatus::FastSource);
         }
 
@@ -92,36 +95,40 @@ impl<Fs> Merge<Fs>
             return Ok(MergedStatus::FastDist);
         }
 
-        match self.inspect_merges(source_hashes, dist_hashes)? {
+        match self.inspect_merges(source_hashes, dist_hashes).await? {
             InspectStatus::CanMerge(tree) => {
-                self.head.write(&dist, &source)?;
-                self.staging.write_tree(&tree)?;
+                self.head.write(&dist, &source).await?;
+                self.staging.write_tree(&tree).await?;
                 self.commit
-                    .execute(&dist, format!("merged {source} to {dist}"))?;
-                self.unzip.execute(&dist)?;
+                    .execute(&dist, format!("merged {source} to {dist}"))
+                    .await?;
+                self.unzip.execute(&dist).await?;
                 Ok(MergedStatus::Merged)
             }
             InspectStatus::Conflict(conflicts) => Ok(MergedStatus::Conflicted(conflicts)),
         }
     }
 
-    fn read_source_head(&self, source: &BranchName) -> crate::error::Result<CommitHash> {
-        if let Some(head) = self.head.read(source)? {
+    async fn read_source_head(&self, source: &BranchName) -> crate::error::Result<CommitHash> {
+        if let Some(head) = self.head.read(source).await? {
             Ok(head)
         } else {
-            self.head.try_read_remote(source)
+            self.head.try_read_remote(source).await
         }
     }
 
-    fn inspect_merges(
+    async fn inspect_merges(
         &self,
         source_hashes: Vec<CommitHash>,
         dist_hashes: Vec<CommitHash>,
     ) -> crate::error::Result<InspectStatus> {
         let merge_origin = self.merge_origin(&source_hashes, &dist_hashes)?;
-        let mut dist_tree = self.commit_tree(dist_hashes.into_iter().collect(), &merge_origin)?;
-        let source_tree =
-            self.commit_tree(source_hashes.into_iter().collect(), &merge_origin)?;
+        let mut dist_tree = self
+            .commit_tree(dist_hashes.into_iter().collect(), &merge_origin)
+            .await?;
+        let source_tree = self
+            .commit_tree(source_hashes.into_iter().collect(), &merge_origin)
+            .await?;
         let conflicts = Vec::new();
 
         for (path, _) in source_tree.iter() {
@@ -146,7 +153,7 @@ impl<Fs> Merge<Fs>
         }
     }
 
-    fn commit_tree(
+    async fn commit_tree(
         &self,
         mut commit_hashes: VecDeque<CommitHash>,
         merge_origin: &CommitHash,
@@ -158,7 +165,7 @@ impl<Fs> Merge<Fs>
             if merge_origin == &hash {
                 break;
             }
-            let commit_tree = commit_obj_io.read_commit_tree(&hash)?;
+            let commit_tree = commit_obj_io.read_commit_tree(&hash).await?;
             tree.replace_by(commit_tree);
         }
         Ok(tree)
@@ -189,8 +196,8 @@ enum InspectStatus {
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::{FilePath, FileSystem};
     use crate::io::workspace::WorkspaceIo;
     use crate::operation::checkout::Checkout;
     use crate::operation::commit::Commit;
@@ -199,87 +206,94 @@ mod tests {
     use crate::operation::stage::Stage;
     use crate::tests::init_owner_branch;
 
-    #[test]
-    fn fast_merge() {
+    #[tokio::test]
+    async fn fast_merge() {
         let fs = MockFileSystem::default();
-        init_owner_branch(fs.clone());
+        init_owner_branch(fs.clone()).await;
 
         let second = BranchName::from("second");
-        Checkout::new(fs.clone()).execute(&second).unwrap();
+        Checkout::new(fs.clone()).execute(&second).await.unwrap();
 
         fs.force_write("workspace/hello.txt", b"hello");
-        Stage::new(fs.clone()).execute(&second, ".").unwrap();
+        Stage::new(fs.clone()).execute(&second, ".").await.unwrap();
         Commit::new(fs.clone())
             .execute(&second, "commit text")
+            .await
             .unwrap();
-        fs.delete("workspace/hello.txt").unwrap();
+        fs.delete("workspace/hello.txt").await.unwrap();
 
         Checkout::new(fs.clone())
             .execute(&BranchName::owner())
+            .await
             .unwrap();
         let status = Merge::new(fs.clone())
             .execute_from_branch(second, BranchName::owner())
+            .await
             .unwrap();
         assert_eq!(status, MergedStatus::FastSource);
         let file = WorkspaceIo::new(fs.clone())
             .read(&FilePath::from_path("hello.txt"))
+            .await
             .unwrap();
         assert!(file.is_some());
     }
 
-    #[test]
-    fn fast_merge_from_dist() {
+    #[tokio::test]
+    async fn fast_merge_from_dist() {
         let fs = MockFileSystem::default();
-        init_owner_branch(fs.clone());
+        init_owner_branch(fs.clone()).await;
 
         let branch = BranchName::owner();
         let second = BranchName::from("second");
-        Checkout::new(fs.clone()).execute(&second).unwrap();
+        Checkout::new(fs.clone()).execute(&second).await.unwrap();
 
-        Checkout::new(fs.clone()).execute(&branch).unwrap();
+        Checkout::new(fs.clone()).execute(&branch).await.unwrap();
 
         fs.force_write("workspace/hello.txt", b"hello");
-        Stage::new(fs.clone()).execute(&branch, ".").unwrap();
+        Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
         Commit::new(fs.clone())
             .execute(&branch, "commit text")
+            .await
             .unwrap();
 
         let status = Merge::new(fs.clone())
             .execute_from_branch(second, BranchName::owner())
+            .await
             .unwrap();
         assert_eq!(status, MergedStatus::FastDist);
         let file = WorkspaceIo::new(fs.clone())
             .read(&FilePath::from_path("hello.txt"))
+            .await
             .unwrap();
         assert!(file.is_some());
     }
 
-    #[test]
-    fn success_merged() {
+    #[tokio::test]
+    async fn success_merged() {
         let fs = MockFileSystem::default();
 
         let b1 = BranchName::owner();
         let b2 = BranchName::from("session");
         let init = Init::new(fs.clone());
         let checkout = Checkout::new(fs.clone());
-        init.execute(&b1).unwrap();
-        checkout.execute(&b2).unwrap();
-        checkout.execute(&b1).unwrap();
+        init.execute(&b1).await.unwrap();
+        checkout.execute(&b2).await.unwrap();
+        checkout.execute(&b1).await.unwrap();
         fs.force_write("workspace/hello.txt", b"hello");
-        Stage::new(fs.clone()).execute(&b2, ".").unwrap();
-        Commit::new(fs.clone()).execute(&b2, "TEXT").unwrap();
+        Stage::new(fs.clone()).execute(&b2, ".").await.unwrap();
+        Commit::new(fs.clone()).execute(&b2, "TEXT").await.unwrap();
 
-        checkout.execute(&b2).unwrap();
+        checkout.execute(&b2).await.unwrap();
         fs.force_write("workspace/test.txt", b"HELLO");
-        Stage::new(fs.clone()).execute(&b1, ".").unwrap();
-        Commit::new(fs.clone()).execute(&b1, "TEXT").unwrap();
+        Stage::new(fs.clone()).execute(&b1, ".").await.unwrap();
+        Commit::new(fs.clone()).execute(&b1, "TEXT").await.unwrap();
 
         let merge = Merge::new(fs.clone());
-        let status = merge.execute_from_branch(b1, b2).unwrap();
+        let status = merge.execute_from_branch(b1, b2).await.unwrap();
         assert!(matches!(status, MergedStatus::Merged));
 
-        assert!(fs.read_file("workspace/hello.txt").unwrap().is_some());
-        assert!(fs.read_file("workspace/test.txt").unwrap().is_some());
+        assert!(fs.read_file("workspace/hello.txt").await.unwrap().is_some());
+        assert!(fs.read_file("workspace/test.txt").await.unwrap().is_some());
     }
 
     // TODO: 現状はコンフリクト関連が未実装のため実装された際にこのテストも展開します。

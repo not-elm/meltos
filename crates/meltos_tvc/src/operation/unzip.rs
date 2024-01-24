@@ -38,13 +38,14 @@ where
     Fs: FileSystem,
 {
     /// Restore committed data into the workspace.
-    pub fn execute(&self, branch_name: &BranchName) -> error::Result {
-        self.fs.delete("workspace")?;
-        let head = self.head.try_read(branch_name)?;
-        let trace_tree = self.trace_tree.read(&head)?;
+    pub async fn execute(&self, branch_name: &BranchName) -> error::Result {
+        self.fs.delete("workspace").await?;
+        let head = self.head.try_read(branch_name).await?;
+        let trace_tree = self.trace_tree.read(&head).await?;
         for (path, hash) in trace_tree.iter() {
             self.workspace
-                .unpack(path, &self.object.try_read_obj(hash)?)?;
+                .unpack(path, &self.object.try_read_obj(hash).await?)
+                .await?;
         }
         Ok(())
     }
@@ -61,23 +62,23 @@ mod tests {
     use crate::operation::unzip::UnZip;
     use crate::tests::init_owner_branch;
 
-    #[test]
-    fn success_if_committed() -> error::Result {
+    #[tokio::test]
+    async fn success_if_committed() -> error::Result {
         let fs = MockFileSystem::default();
-        init_owner_branch(fs.clone());
+        init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
 
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
         let unzip = UnZip::new(fs.clone());
 
-        fs.write_file("workspace/hello", b"hello")?;
-        stage.execute(&branch, "hello")?;
-        commit.execute(&branch, "commit text")?;
-        fs.delete("workspace/hello")?;
+        fs.write_file("workspace/hello", b"hello").await?;
+        stage.execute(&branch, "hello").await?;
+        commit.execute(&branch, "commit text").await?;
+        fs.delete("workspace/hello").await?;
 
-        unzip.execute(&branch)?;
-        assert_eq!(fs.try_read_file("workspace/hello")?, b"hello");
+        unzip.execute(&branch).await?;
+        assert_eq!(fs.try_read_file("workspace/hello").await?, b"hello");
         Ok(())
     }
 }

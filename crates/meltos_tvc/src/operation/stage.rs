@@ -6,15 +6,15 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::io::workspace::WorkspaceIo;
+use crate::object::{AsMeta, ObjHash};
 use crate::object::delete::DeleteObj;
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
-use crate::object::{AsMeta, ObjHash};
 
 #[derive(Debug, Clone)]
 pub struct Stage<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     trace_tree: TraceTreeIo<Fs>,
     staging: StagingIo<Fs>,
@@ -24,8 +24,8 @@ where
 }
 
 impl<Fs> Stage<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     #[inline]
     pub fn new(fs: Fs) -> Stage<Fs> {
@@ -40,21 +40,23 @@ where
 }
 
 impl<Fs> Stage<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
-    pub fn execute(&self, branch_name: &BranchName, workspace_path: &str) -> error::Result {
-        let mut stage_tree = self.staging.read()?.unwrap_or_default();
+    pub async fn execute(&self, branch_name: &BranchName, workspace_path: &str) -> error::Result {
+        let mut stage_tree = self.staging.read().await?.unwrap_or_default();
 
         let trace_tree = {
-            if let Some(head) = self.head.read(branch_name)? {
-                self.trace_tree.read(&head)?
+            if let Some(head) = self.head.read(branch_name).await? {
+                self.trace_tree.read(&head).await?
             } else {
                 TreeObj::default()
             }
         };
         let mut changed = false;
-        for result in self.workspace.convert_to_objs(workspace_path)? {
+
+        let mut objs = self.workspace.convert_to_objs(workspace_path).await?;
+        while let Some(result) = objs.next().await {
             let (file_path, file_obj) = result?;
             self.stage_file(
                 &mut stage_tree,
@@ -62,23 +64,25 @@ where
                 &trace_tree,
                 file_path,
                 file_obj,
-            )?;
+            ).await?;
         }
+
         self.add_delete_objs_into_staging(
             &mut stage_tree,
             &mut changed,
             &trace_tree,
             workspace_path,
-        )?;
+        ).await?;
+
         if !changed {
             return Err(error::Error::ChangedFileNotExits);
         }
 
-        self.staging.write_tree(&stage_tree)?;
+        self.staging.write_tree(&stage_tree).await?;
         Ok(())
     }
 
-    fn stage_file(
+    async fn stage_file(
         &self,
         stage: &mut TreeObj,
         changed: &mut bool,
@@ -93,35 +97,35 @@ where
 
         if stage.changed_hash(&file_path, &meta.hash) {
             *changed = true;
-            self.object.write_obj(&file_obj)?;
+            self.object.write_obj(&file_obj).await?;
             stage.insert(file_path, meta.hash);
         }
         Ok(())
     }
 
-    fn add_delete_objs_into_staging(
+    async fn add_delete_objs_into_staging(
         &self,
         staging: &mut TreeObj,
         changed: &mut bool,
         trace_tree: &TreeObj,
         work_space_path: &str,
     ) -> error::Result {
-        for (path, hash) in self.scan_deleted_files(trace_tree, work_space_path)? {
+        for (path, hash) in self.scan_deleted_files(trace_tree, work_space_path).await? {
             *changed = true;
             let delete_obj = DeleteObj(hash);
             let delete_meta = delete_obj.as_meta()?;
-            self.object.write_obj(&delete_obj)?;
+            self.object.write_obj(&delete_obj).await?;
             staging.insert(path, delete_meta.hash);
         }
         Ok(())
     }
 
-    fn scan_deleted_files(
+    async fn scan_deleted_files(
         &self,
         trace_tree: &TreeObj,
         workspace_path: &str,
     ) -> error::Result<Vec<(FilePath, ObjHash)>> {
-        let work_space_files = self.workspace.files(".")?;
+        let work_space_files = self.workspace.files(".").await?;
         Ok(trace_tree
             .iter()
             .filter_map(|(path, hash)| {
@@ -139,34 +143,39 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
+    use crate::object::{AsMeta, ObjHash};
     use crate::object::delete::DeleteObj;
     use crate::object::file::FileObj;
-    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::tests::init_owner_branch;
 
-    #[test]
-    fn create_obj_file_after_staged() {
+    #[tokio::test]
+    async fn create_obj_file_after_staged() {
         let fs = MockFileSystem::default();
-        init_owner_branch(fs.clone());
+        init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
-        fs.write_file(&FilePath::from_path("workspace/hello"), b"hello")
+        fs
+            .write_file(&FilePath::from_path("workspace/hello"), b"hello")
+            .await
             .unwrap();
-        fs.write_file(
-            &FilePath::from_path("workspace/src/main.rs"),
-            "dasds日本語".as_bytes(),
-        )
-        .unwrap();
-        stage.execute(&branch, ".").unwrap();
+        fs
+            .write_file(
+                &FilePath::from_path("workspace/src/main.rs"),
+                "dasds日本語".as_bytes(),
+            )
+            .await
+            .unwrap();
+        stage.execute(&branch, ".").await.unwrap();
 
         let obj = ObjIo::new(fs);
         let obj1 = obj
             .read_obj(&ObjHash::new(b"FILE\0hello"))
+            .await
             .unwrap()
             .unwrap()
             .file()
@@ -177,6 +186,7 @@ mod tests {
 
         let obj2 = obj
             .read_obj(&ObjHash::new("FILE\0dasds日本語".as_bytes()))
+            .await
             .unwrap()
             .unwrap()
             .file()
@@ -185,21 +195,21 @@ mod tests {
         assert_eq!(obj2, "dasds日本語".as_bytes());
     }
 
-    #[test]
-    fn create_delete_obj() {
+    #[tokio::test]
+    async fn create_delete_obj() {
         let fs = MockFileSystem::default();
-        init_owner_branch(fs.clone());
+        init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
 
-        fs.write_file("workspace/hello.txt", b"hello").unwrap();
-        stage.execute(&branch, "hello.txt").unwrap();
-        commit.execute(&branch, "add hello.txt").unwrap();
+        fs.write_file("workspace/hello.txt", b"hello").await.unwrap();
+        stage.execute(&branch, "hello.txt").await.unwrap();
+        commit.execute(&branch, "add hello.txt").await.unwrap();
 
-        fs.delete("workspace/hello.txt").unwrap();
-        stage.execute(&branch, "hello.txt").unwrap();
-        commit.execute(&branch, "delete hello.txt").unwrap();
+        fs.delete("workspace/hello.txt").await.unwrap();
+        stage.execute(&branch, "hello.txt").await.unwrap();
+        commit.execute(&branch, "delete hello.txt").await.unwrap();
 
         let hello_hash = FileObj(b"hello".to_vec()).as_meta().unwrap().hash;
         let delete_hello = DeleteObj(hello_hash).as_meta().unwrap();
@@ -207,6 +217,7 @@ mod tests {
 
         let buf = ObjIo::new(fs)
             .read_obj(&delete_hello_hash)
+            .await
             .unwrap()
             .unwrap()
             .as_meta()
@@ -215,18 +226,18 @@ mod tests {
         assert_eq!(buf, delete_hello.buf);
     }
 
-    #[test]
-    fn no_moved_if_not_changed_file() {
+    #[tokio::test]
+    async fn no_moved_if_not_changed_file() {
         let fs = MockFileSystem::default();
-        init_owner_branch(fs.clone());
+        init_owner_branch(fs.clone()).await;
 
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
 
-        fs.write_file("workspace/hello.txt", b"hello").unwrap();
-        stage.execute(&branch, ".").unwrap();
+        fs.write_file("workspace/hello.txt", b"hello").await.unwrap();
+        stage.execute(&branch, ".").await.unwrap();
 
-        match stage.execute(&branch, ".") {
+        match stage.execute(&branch, ".").await {
             Err(error::Error::ChangedFileNotExits) => {}
             _ => panic!("expected the [error::Error::ChangedFileNotExits] bad was."),
         }

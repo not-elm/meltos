@@ -123,17 +123,17 @@ where
         }
     }
 
-    pub fn create(&self) -> error::Result<Bundle> {
-        let branches = self.read_branch_heads()?;
+    pub async fn create(&self) -> error::Result<Bundle> {
+        let branches = self.read_branch_heads().await?;
         Ok(Bundle {
             branches,
-            objs: self.object.read_all()?,
-            traces: self.trace.read_all()?,
+            objs: self.object.read_all().await?,
+            traces: self.trace.read_all().await?,
         })
     }
 
-    fn read_branch_heads(&self) -> error::Result<Vec<BundleBranch>> {
-        let head_files = self.read_all_branch_head_path()?;
+    async fn read_branch_heads(&self) -> error::Result<Vec<BundleBranch>> {
+        let head_files = self.read_all_branch_head_path().await?;
         let mut branches = Vec::with_capacity(head_files.len());
         for path in head_files {
             let Some(branch_name) = Path::new(&path).file_name().and_then(|name| name.to_str())
@@ -142,7 +142,7 @@ where
             };
 
             let branch_name = BranchName::from(branch_name);
-            let head = HeadIo::new(self.fs.clone()).try_read(&branch_name)?;
+            let head = HeadIo::new(self.fs.clone()).try_read(&branch_name).await?;
             branches.push(BundleBranch {
                 commits: vec![head],
                 branch_name,
@@ -153,8 +153,8 @@ where
     }
 
     #[inline]
-    fn read_all_branch_head_path(&self) -> error::Result<Vec<String>> {
-        Ok(self.fs.all_files_in(".meltos/refs/heads")?)
+    async fn read_all_branch_head_path(&self) -> error::Result<Vec<String>> {
+        Ok(self.fs.all_files_in(".meltos/refs/heads").await?)
     }
 }
 
@@ -170,29 +170,30 @@ mod tests {
     use crate::operation::stage::Stage;
     use crate::tests::init_owner_branch;
 
-    #[test]
-    fn read_head() {
+    #[tokio::test]
+    async fn read_head() {
         let fs = MockFileSystem::default();
         let bundle_io = BundleIo::new(fs.clone());
-        let null_commit_hash = init_owner_branch(fs.clone());
-        let bundle = bundle_io.create().unwrap();
+        let null_commit_hash = init_owner_branch(fs.clone()).await;
+        let bundle = bundle_io.create().await.unwrap();
         assert_eq!(bundle.branches.len(), 1);
         assert_eq!(&bundle.branches[0].branch_name, &BranchName::owner());
         assert_eq!(&bundle.branches[0].commits[0], &null_commit_hash);
     }
 
-    #[test]
-    fn read_2_heads() {
+  #[tokio::test]
+    async fn read_2_heads() {
         let fs = MockFileSystem::default();
         let new_branch = NewBranch::new(fs.clone());
         let bundle_io = BundleIo::new(fs.clone());
 
-        let null_commit = init_owner_branch(fs.clone());
+        let null_commit = init_owner_branch(fs.clone()).await;
         new_branch
             .execute(BranchName::owner(), BranchName::from("branch2"))
+            .await
             .unwrap();
 
-        let mut bundle = bundle_io.create().unwrap();
+        let mut bundle = bundle_io.create().await.unwrap();
         assert_eq!(bundle.branches.len(), 2);
         bundle.branches.sort();
         assert_eq!(
@@ -209,11 +210,11 @@ mod tests {
         let commit = Commit::new(fs.clone());
         let branch = BranchName::from("branch2");
 
-        working.write(&BranchName::from("branch2")).unwrap();
-        fs.write_file("workspace/hello.txt", b"hello").unwrap();
-        stage.execute(&branch, ".").unwrap();
-        let commit_hash = commit.execute(&branch, "text").unwrap();
-        let mut bundle = bundle_io.create().unwrap();
+        working.write(&BranchName::from("branch2")).await.unwrap();
+        fs.write_file("workspace/hello.txt", b"hello").await.unwrap();
+        stage.execute(&branch, ".").await.unwrap();
+        let commit_hash = commit.execute(&branch, "text").await.unwrap();
+        let mut bundle = bundle_io.create().await.unwrap();
         bundle.branches.sort();
         assert_eq!(
             &bundle.branches[0].branch_name,
@@ -225,16 +226,16 @@ mod tests {
         assert_eq!(&bundle.branches[1].commits[0], &null_commit);
     }
 
-    #[test]
-    fn read_all_objs() {
+  #[tokio::test]
+    async fn read_all_objs() {
         let fs = MockFileSystem::default();
-        init_owner_branch(fs.clone());
+        init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
-        fs.write_file("workspace/hello.txt", b"hello").unwrap();
-        Stage::new(fs.clone()).execute(&branch, ".").unwrap();
-        Commit::new(fs.clone()).execute(&branch, "commit").unwrap();
-        let bundle = BundleIo::new(fs.clone()).create().unwrap();
-        let objs_count = fs.all_files_in(".meltos/objects").unwrap().len();
+        fs.write_file("workspace/hello.txt", b"hello").await.unwrap();
+        Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
+        Commit::new(fs.clone()).execute(&branch, "commit").await.unwrap();
+        let bundle = BundleIo::new(fs.clone()).create().await.unwrap();
+        let objs_count = fs.all_files_in(".meltos/objects").await.unwrap().len();
 
         assert_eq!(objs_count, bundle.objs.len());
     }

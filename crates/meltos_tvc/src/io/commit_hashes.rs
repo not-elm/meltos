@@ -5,15 +5,15 @@ use crate::object::commit::CommitHash;
 
 #[derive(Debug, Clone)]
 pub struct CommitHashIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     commit_obj: CommitObjIo<Fs>,
 }
 
 impl<Fs> CommitHashIo<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     #[inline(always)]
     pub fn new(fs: Fs) -> CommitHashIo<Fs> {
@@ -24,30 +24,31 @@ where
 }
 
 impl<Fs> CommitHashIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
-    pub fn read_all(
+    pub async fn read_all(
         &self,
         from: CommitHash,
         to: &Option<CommitHash>,
     ) -> error::Result<Vec<CommitHash>> {
         let mut hashes = Vec::new();
-        self.read_obj(&mut hashes, from, to)?;
+        self.read_obj(&mut hashes, from, to).await?;
         Ok(hashes)
     }
 
-    fn read_obj(
+    #[async_recursion::async_recursion]
+    async fn read_obj(
         &self,
         hashes: &mut Vec<CommitHash>,
         commit_hash: CommitHash,
         to: &Option<CommitHash>,
-    ) -> error::Result {
-        let obj = self.commit_obj.read(&commit_hash)?;
+    ) -> error::Result<()> {
+        let obj = self.commit_obj.read(&commit_hash).await?;
         hashes.push(commit_hash.clone());
         if !to.as_ref().is_some_and(|to| to == &commit_hash) {
             for parent_hash in obj.parents {
-                self.read_obj(hashes, parent_hash, to)?;
+                self.read_obj(hashes, parent_hash, to).await?;
             }
         }
         Ok(())
@@ -62,33 +63,33 @@ mod tests {
     use crate::operation::stage::Stage;
     use crate::tests::init_owner_branch;
 
-    #[test]
-    fn read_only_null() {
+    #[tokio::test]
+    async fn read_only_null() {
         let fs = MockFileSystem::default();
         let commit_hashes = crate::io::commit_hashes::CommitHashIo::new(fs.clone());
-        let null_commit = init_owner_branch(fs.clone());
-        let hashes = commit_hashes.read_all(null_commit.clone(), &None).unwrap();
+        let null_commit = init_owner_branch(fs.clone()).await;
+        let hashes = commit_hashes.read_all(null_commit.clone(), &None).await.unwrap();
         assert_eq!(hashes, vec![null_commit]);
     }
 
-    #[test]
-    fn read_with_parents() {
+    #[tokio::test]
+    async fn read_with_parents() {
         let fs = MockFileSystem::default();
         let branch = BranchName::owner();
         let commit_hashes = crate::io::commit_hashes::CommitHashIo::new(fs.clone());
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
-        let commit0 = init_owner_branch(fs.clone());
+        let commit0 = init_owner_branch(fs.clone()).await;
 
         fs.force_write("workspace/test.txt", b"hello");
-        stage.execute(&branch, ".").unwrap();
-        let commit1 = commit.execute(&branch, "commit").unwrap();
+        stage.execute(&branch, ".").await.unwrap();
+        let commit1 = commit.execute(&branch, "commit").await.unwrap();
 
         fs.force_write("workspace/test2.txt", b"hello2");
-        stage.execute(&branch, ".").unwrap();
-        let commit2 = commit.execute(&branch, "commit").unwrap();
+        stage.execute(&branch, ".").await.unwrap();
+        let commit2 = commit.execute(&branch, "commit").await.unwrap();
 
-        let hashes = commit_hashes.read_all(commit2.clone(), &None).unwrap();
+        let hashes = commit_hashes.read_all(commit2.clone(), &None).await.unwrap();
         assert_eq!(hashes, vec![commit2, commit1, commit0]);
     }
 }

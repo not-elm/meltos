@@ -82,15 +82,15 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 
     /// このメソッドはクライアントツール側でテストを実行する際に使用する想定です。
-    pub fn init_repository(&self) -> error::Result<CommitHash> {
-        let commit_hash = self.operations.init.execute(self.branch_name()?)?;
+    pub async fn init_repository(&self) -> error::Result<CommitHash> {
+        let commit_hash = self.operations.init.execute(self.branch_name()?).await?;
         Ok(commit_hash)
     }
 
     pub async fn open_room(&mut self, lifetime_sec: Option<u64>, user_limits: Option<u64>) -> error::Result<SessionConfigs> {
         let branch = BranchName::owner();
         self.branch_name.replace(branch.clone());
-        self.operations.init.execute(&branch)?;
+        self.operations.init.execute(&branch).await?;
         let mut sender = OpenSender {
             lifetime_sec,
             user_limits,
@@ -112,10 +112,10 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         let (http, bundle) = HttpClient::join(BASE, RoomId(room_id), user_id).await?;
         let branch = BranchName(http.configs().user_id.0.clone());
 
-        self.fs.create_dir("workspace")?;
-        self.operations.save.execute(bundle)?;
-        self.operations.checkout.execute(&branch)?;
-        self.operations.unzip.execute(&branch)?;
+        self.fs.create_dir("workspace").await?;
+        self.operations.save.execute(bundle).await?;
+        self.operations.checkout.execute(&branch).await?;
+        self.operations.unzip.execute(&branch).await?;
         self.branch_name.replace(branch);
 
         Ok(http.configs().clone())
@@ -130,34 +130,35 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     pub async fn fetch(&self, session_config: SessionConfigs) -> error::Result {
         let http = HttpClient::new(BASE, session_config);
         let bundle = http.fetch().await?;
-        self.operations.save.execute(bundle)?;
+        self.operations.save.execute(bundle).await?;
         Ok(())
     }
 
     #[inline(always)]
-    pub fn stage(&self, path: String) -> error::Result {
-        self.operations.stage.execute(self.branch_name()?, &path)?;
+    pub async fn stage(&self, path: String) -> error::Result {
+        self.operations.stage.execute(self.branch_name()?, &path).await?;
         Ok(())
     }
 
     #[inline(always)]
-    pub fn un_stage(&self, file_path: &str) -> error::Result {
-        self.operations.un_stage.execute(file_path)?;
+    pub async fn un_stage(&self, file_path: &str) -> error::Result {
+        self.operations.un_stage.execute(file_path).await?;
         Ok(())
     }
 
     #[inline(always)]
-    pub fn un_stage_all(&self) -> error::Result {
-        self.operations.un_stage.execute_all()?;
+    pub async fn un_stage_all(&self) -> error::Result {
+        self.operations.un_stage.execute_all().await?;
         Ok(())
     }
 
     #[inline(always)]
-    pub fn commit(&self, commit_text: String) -> error::Result<CommitHash> {
+    pub async fn commit(&self, commit_text: String) -> error::Result<CommitHash> {
         Ok(self
             .operations
             .commit
-            .execute(self.branch_name()?, commit_text)?)
+            .execute(self.branch_name()?, commit_text)
+            .await?)
     }
 
     pub async fn push(&mut self, session_configs: SessionConfigs) -> error::Result {
@@ -171,26 +172,26 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         Ok(())
     }
 
-    pub fn merge(&self, source_commit_hash: CommitHash) -> error::Result<MergedStatus> {
+    pub async fn merge(&self, source_commit_hash: CommitHash) -> error::Result<MergedStatus> {
         let dist = self.branch_name()?.clone();
-        let status = self.operations.merge.execute(source_commit_hash, dist)?;
+        let status = self.operations.merge.execute(source_commit_hash, dist).await?;
         Ok(status)
     }
 
-    pub fn read_file_from_hash(&self, obj_hash: &ObjHash) -> error::Result<Option<String>> {
-        let Some(file_obj) = self.obj.try_read_to_file(obj_hash)? else {
+    pub async fn read_file_from_hash(&self, obj_hash: &ObjHash) -> error::Result<Option<String>> {
+        let Some(file_obj) = self.obj.try_read_to_file(obj_hash).await? else {
             return Ok(None);
         };
 
         Ok(Some(String::from_utf8(file_obj.0).unwrap()))
     }
 
-    pub fn all_branch_commit_metas(&self) -> error::Result<Vec<BranchCommitMeta>> {
-        let heads = self.head.read_all()?;
+    pub async fn all_branch_commit_metas(&self) -> error::Result<Vec<BranchCommitMeta>> {
+        let heads = self.head.read_all().await?;
         let mut branches = Vec::with_capacity(heads.len());
         for (branch, _) in heads {
             branches.push(BranchCommitMeta {
-                commits: self.all_commit_metas(&branch)?,
+                commits: self.all_commit_metas(&branch).await?,
                 name: branch.0,
             });
         }
@@ -204,21 +205,21 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             .ok_or(error::Error::NotInitialized)
     }
 
-    fn all_commit_metas(&self, branch_name: &BranchName) -> error::Result<Vec<CommitMeta>> {
-        let Some(head) = self.head.read(branch_name)? else {
+    async fn all_commit_metas(&self, branch_name: &BranchName) -> error::Result<Vec<CommitMeta>> {
+        let Some(head) = self.head.read(branch_name).await? else {
             return Ok(Vec::with_capacity(0));
         };
-        let hashes = self.commit_hashes.read_all(head, &None)?;
+        let hashes = self.commit_hashes.read_all(head, &None).await?;
         let mut metas = Vec::with_capacity(hashes.len());
         for commit_hash in hashes {
-            metas.push(self.read_commit_meta(&commit_hash)?);
+            metas.push(self.read_commit_meta(&commit_hash).await?);
         }
         Ok(metas)
     }
 
-    pub fn read_commit_meta(&self, commit_hash: &CommitHash) -> error::Result<CommitMeta> {
-        let obj = self.commit_obj.read(commit_hash)?;
-        let tree = self.commit_obj.read_commit_tree(commit_hash)?;
+    pub async fn read_commit_meta(&self, commit_hash: &CommitHash) -> error::Result<CommitMeta> {
+        let obj = self.commit_obj.read(commit_hash).await?;
+        let tree = self.commit_obj.read_commit_tree(commit_hash).await?;
         Ok(CommitMeta {
             hash: commit_hash.to_string(),
             message: obj.text.0,
@@ -236,52 +237,49 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 
     #[inline(always)]
-    pub fn can_push(&self) -> error::Result<bool> {
-        Ok(self.local_commits.read(self.branch_name()?)?.is_some_and(|commits| !commits.is_empty()))
+    pub async fn can_push(&self) -> error::Result<bool> {
+        Ok(self.local_commits.read(self.branch_name()?).await?.is_some_and(|commits| !commits.is_empty()))
     }
 
 
-    pub fn staging_files(&self) -> error::Result<Vec<String>> {
-        let tree = self.staging.read()?;
+    pub async fn staging_files(&self) -> error::Result<Vec<String>> {
+        let tree = self.staging.read().await?;
         Ok(tree
             .as_ref()
             .map(|tree| tree.keys().map(|path| path.to_string()).collect())
             .unwrap_or_default())
     }
 
-    pub fn traces(&self) -> error::Result<Option<TreeObj>> {
-        let Some(head) = self.head.read(self.branch_name()?)? else {
+    pub async fn traces(&self) -> error::Result<Option<TreeObj>> {
+        let Some(head) = self.head.read(self.branch_name()?).await? else {
             return Ok(None);
         };
-        let trace_tree = self.trace.read(&head)?;
+        let trace_tree = self.trace.read(&head).await?;
         Ok(Some(trace_tree))
     }
 
-    pub fn find_obj_hash_from_traces(&self, file_path: &str) -> error::Result<Option<ObjHash>> {
-        let Some(head) = self.head.read(self.branch_name()?)? else {
+    pub async fn find_obj_hash_from_traces(&self, file_path: &str) -> error::Result<Option<ObjHash>> {
+        let Some(head) = self.head.read(self.branch_name()?).await? else {
             return Ok(None);
         };
-        let trace_tree = self.trace.read(&head)?;
+        let trace_tree = self.trace.read(&head).await?;
         Ok(trace_tree.get(&FilePath::from(file_path)).cloned())
     }
 
 
     #[inline(always)]
-    pub fn is_change(&self, file_path: &FilePath) -> error::Result<bool> {
-        Ok(self.workspace.is_change(self.branch_name()?, file_path)?)
+    pub async fn is_change(&self, file_path: &FilePath) -> error::Result<bool> {
+        Ok(self.workspace.is_change(self.branch_name()?, file_path).await?)
     }
 
     #[inline(always)]
-    pub fn save_bundle(&self, bundle: Bundle) -> error::Result {
-        self.operations.save.execute(bundle)?;
+    pub async fn save_bundle(&self, bundle: Bundle) -> error::Result {
+        self.operations.save.execute(bundle).await?;
         Ok(())
     }
 
-
-
-
-    pub fn close(&self) -> error::Result {
-        self.fs.delete(".")?;
+    pub async fn close(&self) -> error::Result {
+        self.fs.delete(".").await?;
         Ok(())
     }
 }

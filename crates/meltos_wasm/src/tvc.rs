@@ -2,15 +2,12 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos::user::UserId;
 use meltos_client::config::SessionConfigs;
-use meltos_client::error;
 use meltos_client::error::JsResult;
 use meltos_client::tvc::{BranchCommitMeta, TvcClient};
 use meltos_tvc::branch::BranchName;
 use meltos_tvc::file_system::FilePath;
-use meltos_tvc::io::bundle::Bundle;
 use meltos_tvc::object::commit::CommitHash;
 use meltos_tvc::object::ObjHash;
-use meltos_util::console_log;
 
 use crate::file_system::vscode_node::VscodeNodeFs;
 
@@ -26,8 +23,8 @@ impl WasmTvcClient {
     }
 
     #[inline]
-    pub fn init_repository(&self) -> JsResult<CommitHash> {
-        let commit_hash = self.0.init_repository()?;
+    pub async fn init_repository(&self) -> JsResult<CommitHash> {
+        let commit_hash = self.0.init_repository().await?;
         Ok(commit_hash)
     }
 
@@ -44,38 +41,37 @@ impl WasmTvcClient {
     }
 
     #[inline(always)]
-    pub fn stage(&self, path: String) -> JsResult {
-        self.0.stage(path)?;
+    pub async fn stage(&self, path: String) -> JsResult {
+        self.0.stage(path).await?;
         Ok(())
     }
 
     #[inline(always)]
-    pub fn un_stage(&self, file_path: &str) -> JsResult {
-        self.0.un_stage(file_path)?;
+    pub async fn un_stage(&self, file_path: &str) -> JsResult {
+        self.0.un_stage(file_path).await?;
         Ok(())
     }
 
     #[inline(always)]
-    pub fn un_stage_all(&self) -> JsResult {
-        self.0.un_stage_all()?;
+    pub async fn un_stage_all(&self) -> JsResult {
+        self.0.un_stage_all().await?;
         Ok(())
     }
 
     #[inline(always)]
-    pub fn commit(&self, text: String) -> JsResult<CommitHash> {
-        Ok(self.0.commit(text)?)
+    pub async fn commit(&self, text: String) -> JsResult<CommitHash> {
+        Ok(self.0.commit(text).await?)
     }
 
     #[inline(always)]
     pub async fn push(&mut self, session_configs: &SessionConfigs) -> JsResult {
-        console_log!("PUSH!!!!!!!!!!!!!");
         self.0.push(session_configs.clone()).await?;
         Ok(())
     }
 
     #[inline(always)]
-    pub fn merge(&self, source_commit_hash: String) -> JsResult {
-        let _ = self.0.merge(CommitHash(ObjHash(source_commit_hash)))?;
+    pub async fn merge(&self, source_commit_hash: String) -> JsResult {
+        let _ = self.0.merge(CommitHash(ObjHash(source_commit_hash))).await?;
         Ok(())
     }
 
@@ -86,43 +82,43 @@ impl WasmTvcClient {
     }
 
     #[inline(always)]
-    pub fn staging_files(&self) -> JsResult<Vec<String>> {
-        let files = self.0.staging_files()?;
+    pub async fn staging_files(&self) -> JsResult<Vec<String>> {
+        let files = self.0.staging_files().await?;
         Ok(files)
     }
 
     #[inline(always)]
-    pub fn read_file_from_hash(&self, obj_hash: String) -> JsResult<Option<String>> {
-        let content = self.0.read_file_from_hash(&ObjHash(obj_hash))?;
+    pub async fn read_file_from_hash(&self, obj_hash: String) -> JsResult<Option<String>> {
+        let content = self.0.read_file_from_hash(&ObjHash(obj_hash)).await?;
         Ok(content)
     }
 
     #[inline(always)]
-    pub fn all_branch_commit_metas(&self) -> error::Result<Vec<BranchCommitMeta>> {
-        let branches = self.0.all_branch_commit_metas()?;
+    pub async fn all_branch_commit_metas(&self) -> JsResult<Vec<BranchCommitMeta>> {
+        let branches = self.0.all_branch_commit_metas().await?;
         Ok(branches)
     }
 
     #[inline(always)]
-    pub fn can_push(&self) -> JsResult<bool> {
-        Ok(self.0.can_push()?)
+    pub async fn can_push(&self) -> JsResult<bool> {
+        Ok(self.0.can_push().await?)
     }
 
 
     #[inline(always)]
-    pub fn is_change(&self, file_path: &str) -> JsResult<bool> {
-        Ok(self.0.is_change(&FilePath(file_path.to_string()))?)
+    pub async fn is_change(&self, file_path: &str) -> JsResult<bool> {
+        Ok(self.0.is_change(&FilePath(file_path.to_string())).await?)
     }
 
 
     #[inline(always)]
-    pub fn find_obj_hash_from_traces(&self, file_path: &str) -> JsResult<Option<ObjHash>> {
-        let obj_hash = self.0.find_obj_hash_from_traces(file_path)?;
+    pub async fn find_obj_hash_from_traces(&self, file_path: &str) -> JsResult<Option<ObjHash>> {
+        let obj_hash = self.0.find_obj_hash_from_traces(file_path).await?;
         Ok(obj_hash)
     }
 
-    pub fn save_bundle(&self, bundle: &str) -> JsResult {
-        self.0.save_bundle(serde_json::from_str(bundle).unwrap())?;
+    pub async fn sync_bundle(&self, bundle: &str) -> JsResult {
+        self.0.save_bundle(serde_json::from_str(bundle).unwrap()).await?;
         Ok(())
     }
 
@@ -134,8 +130,8 @@ impl WasmTvcClient {
     }
 
     #[inline]
-    pub fn close(&self) -> JsResult {
-        self.0.close()?;
+    pub async fn close(&self) -> JsResult {
+        self.0.close().await?;
         Ok(())
     }
 }

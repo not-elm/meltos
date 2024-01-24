@@ -4,7 +4,7 @@ use crate::middleware::user::SessionUser;
 
 #[tracing::instrument]
 pub async fn fetch(SessionRoom(room): SessionRoom, SessionUser(_): SessionUser) -> HttpResult {
-    let bundle = room.create_bundle()?;
+    let bundle = room.create_bundle().await?;
     Ok(bundle.as_success_response())
 }
 

@@ -13,15 +13,15 @@ use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct HeadIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     fs: Fs,
 }
 
 impl<Fs> HeadIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     pub const fn new(fs: Fs) -> HeadIo<Fs> {
         Self {
@@ -30,7 +30,7 @@ where
     }
 
     #[inline]
-    pub fn write_remote(
+    pub async fn write_remote(
         &self,
         branch_name: &BranchName,
         commit_hash: &CommitHash,
@@ -38,58 +38,60 @@ where
         self.fs.write_file(
             &format!(".meltos/refs/remotes/{branch_name}"),
             &commit_hash.encode()?,
-        )?;
+        ).await?;
         Ok(())
     }
 
     #[inline]
-    pub fn write(&self, branch_name: &BranchName, commit_hash: &CommitHash) -> error::Result<()> {
+    pub async fn write(&self, branch_name: &BranchName, commit_hash: &CommitHash) -> error::Result<()> {
         self.fs.write_file(
             &format!(".meltos/refs/heads/{branch_name}"),
             &commit_hash.encode()?,
-        )?;
+        ).await?;
         Ok(())
     }
 
     #[inline]
-    pub fn try_read_remote(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
-        self.read_remote(branch_name)?
+    pub async fn try_read_remote(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
+        self.read_remote(branch_name)
+            .await?
             .ok_or_else(|| error::Error::NotfoundHead(branch_name.clone()))
     }
 
     #[inline]
-    pub fn read_remote(&self, branch_name: &BranchName) -> error::Result<Option<CommitHash>> {
-        self._read(".meltos/refs/remotes/", branch_name)
+    pub async fn read_remote(&self, branch_name: &BranchName) -> error::Result<Option<CommitHash>> {
+        self._read(".meltos/refs/remotes/", branch_name).await
     }
 
     #[inline]
-    pub fn try_read(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
-        self.read(branch_name)?
+    pub async fn try_read(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
+        self.read(branch_name)
+            .await?
             .ok_or_else(|| error::Error::NotfoundHead(branch_name.clone()))
     }
 
     #[inline]
-    pub fn read(&self, branch_name: &BranchName) -> error::Result<Option<CommitHash>> {
-        self._read(".meltos/refs/heads/", branch_name)
+    pub async fn read(&self, branch_name: &BranchName) -> error::Result<Option<CommitHash>> {
+        self._read(".meltos/refs/heads/", branch_name).await
     }
 
-    pub fn read_all(&self) -> error::Result<Vec<(BranchName, CommitHash)>> {
-        let files = self.fs.all_files_in(".meltos/refs/heads/")?;
+    pub async fn read_all(&self) -> error::Result<Vec<(BranchName, CommitHash)>> {
+        let files = self.fs.all_files_in(".meltos/refs/heads/").await?;
         let mut branches = Vec::with_capacity(files.len());
         for path in files {
             let Some(file_name) = Path::new(&path).file_name().and_then(|name| name.to_str())
-            else {
-                continue;
-            };
+                else {
+                    continue;
+                };
             let branch_name = BranchName::from(file_name);
-            let commit_hash = self.try_read(&branch_name)?;
+            let commit_hash = self.try_read(&branch_name).await?;
             branches.push((branch_name, commit_hash))
         }
         Ok(branches)
     }
 
-    fn _read(&self, dir: &str, branch_name: &BranchName) -> error::Result<Option<CommitHash>> {
-        let Some(buf) = self.fs.read_file(&format!("{dir}{branch_name}"))? else {
+    async fn _read(&self, dir: &str, branch_name: &BranchName) -> error::Result<Option<CommitHash>> {
+        let Some(buf) = self.fs.read_file(&format!("{dir}{branch_name}")).await? else {
             return Ok(None);
         };
         Ok(Some(CommitHash(ObjHash::decode(&buf)?)))

@@ -7,8 +7,8 @@ use crate::io::bundle::Bundle;
 
 #[derive(Debug, Clone)]
 pub struct Patch<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     obj: ObjIo<Fs>,
     head: HeadIo<Fs>,
@@ -16,8 +16,8 @@ where
 }
 
 impl<Fs> Patch<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Patch<Fs> {
         Self {
@@ -29,18 +29,21 @@ where
 }
 
 impl<Fs> Patch<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
-    pub fn execute(&self, bundle: &Bundle) -> error::Result {
-        self.trace.write_all(&bundle.traces)?;
+    pub async fn execute(&self, bundle: &Bundle) -> error::Result {
+        self.trace.write_all(&bundle.traces).await?;
         for branch in &bundle.branches {
-            self.head.write_remote(
-                &branch.branch_name,
-                &branch.commits[branch.commits.len() - 1],
-            )?;
+            self
+                .head
+                .write_remote(
+                    &branch.branch_name,
+                    &branch.commits[branch.commits.len() - 1],
+                )
+                .await?;
         }
-        self.obj.write_all(&bundle.objs)?;
+        self.obj.write_all(&bundle.objs).await?;
         Ok(())
     }
 }

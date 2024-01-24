@@ -20,7 +20,7 @@ impl FileDiff {
         }
     }
 
-    pub fn from_obj_hashes<Fs>(fs: Fs, lhs: &ObjHash, rhs: &ObjHash) -> error::Result<Option<Self>>
+    pub async fn from_obj_hashes<Fs>(fs: Fs, lhs: &ObjHash, rhs: &ObjHash) -> error::Result<Option<Self>>
     where
         Fs: FileSystem,
     {
@@ -28,8 +28,8 @@ impl FileDiff {
             Ok(None)
         } else {
             let obj = ObjIo::new(fs);
-            let lhs_file = obj.read_to_file(lhs)?;
-            let rhs_file = obj.read_to_file(rhs)?;
+            let lhs_file = obj.read_to_file(lhs).await?;
+            let rhs_file = obj.read_to_file(rhs).await?;
             Ok(Some(Self {
                 old: String::from_utf8(lhs_file.0)?,
                 new: String::from_utf8(rhs_file.0)?,

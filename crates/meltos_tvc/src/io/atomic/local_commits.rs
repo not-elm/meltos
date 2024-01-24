@@ -24,31 +24,32 @@ where
         }
     }
 
-    pub fn write(
+    pub async fn write(
         &self,
         local_commits: &LocalCommitsObj,
         branch_name: &BranchName,
     ) -> error::Result {
         self.fs
-            .write_file(&self.file_path(branch_name), &local_commits.encode()?)?;
+            .write_file(&self.file_path(branch_name), &local_commits.encode()?)
+            .await?;
         Ok(())
     }
 
-    pub fn append(&self, commit_hash: CommitHash, branch_name: &BranchName) -> error::Result {
-        let mut local_commits = self.read(branch_name)?.unwrap_or_default();
+    pub async fn append(&self, commit_hash: CommitHash, branch_name: &BranchName) -> error::Result {
+        let mut local_commits = self.read(branch_name).await?.unwrap_or_default();
         local_commits.push(commit_hash);
-        self.write(&local_commits, branch_name)
+        self.write(&local_commits, branch_name).await
     }
 
-    pub fn try_read(&self, branch_name: &BranchName) -> error::Result<LocalCommitsObj> {
-        let Some(local_commits) = self.read(branch_name)? else {
+    pub async fn try_read(&self, branch_name: &BranchName) -> error::Result<LocalCommitsObj> {
+        let Some(local_commits) = self.read(branch_name).await? else {
             return Err(error::Error::NotfoundLocalCommits);
         };
         Ok(local_commits)
     }
 
-    pub fn read(&self, branch_name: &BranchName) -> error::Result<Option<LocalCommitsObj>> {
-        let Some(buf) = self.fs.read_file(&self.file_path(branch_name))? else {
+    pub async fn read(&self, branch_name: &BranchName) -> error::Result<Option<LocalCommitsObj>> {
+        let Some(buf) = self.fs.read_file(&self.file_path(branch_name)).await? else {
             return Ok(None);
         };
 
@@ -70,13 +71,13 @@ mod tests {
     use crate::object::local_commits::LocalCommitsObj;
     use crate::object::ObjHash;
 
-    #[test]
-    fn append_one_commit() {
+    #[tokio::test]
+    async fn append_one_commit() {
         let hash = CommitHash(ObjHash::new(b"commit hash"));
         let branch_name = BranchName::owner();
         let io = LocalCommitsIo::new(MockFileSystem::default());
-        io.append(hash.clone(), &branch_name).unwrap();
-        let local_commits = io.read(&branch_name).unwrap().unwrap();
+        io.append(hash.clone(), &branch_name).await.unwrap();
+        let local_commits = io.read(&branch_name).await.unwrap().unwrap();
         assert_eq!(local_commits, LocalCommitsObj(vec![hash]));
     }
 }

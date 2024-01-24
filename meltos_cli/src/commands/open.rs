@@ -2,7 +2,6 @@ use async_trait::async_trait;
 use clap::Args;
 
 use meltos_client::tvc::TvcClient;
-use meltos_tvc::branch::BranchName;
 use meltos_tvc::file_system::std_fs::StdFileSystem;
 
 use crate::commands::{CommandExecutable, save_configs};
@@ -19,7 +18,7 @@ pub struct OpenArgs {
 #[async_trait(? Send)]
 impl CommandExecutable for OpenArgs {
     async fn execute(self) -> meltos_client::error::Result {
-        let tvc = TvcClient::new(BranchName::owner().0, StdFileSystem);
+        let mut tvc = TvcClient::new(StdFileSystem, None);
         let session_configs = tvc.open_room(self.lifetime_secs, self.user_limits).await?;
         save_configs(&session_configs)?;
         println!("opened = {session_configs:?}");

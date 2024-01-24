@@ -2,6 +2,7 @@ use std::io::ErrorKind;
 use std::path::Path;
 use std::time::UNIX_EPOCH;
 
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -58,47 +59,48 @@ pub enum StatType {
     Dir,
 }
 
-pub trait FileSystem {
+#[async_trait]
+pub trait FileSystem: Send + Sync {
     /// エントリのStatを取得します。
     ///
     /// パスが存在しない場合、`None`が返されます。
-    fn stat(&self, path: &str) -> std::io::Result<Option<Stat>>;
+    async fn stat(&self, path: &str) -> std::io::Result<Option<Stat>>;
 
     /// 対象のパスにファイルを書き込みます。
     ///
     /// ファイルが存在しない場合は新規作成されます。
     /// 親ディレクトリが存在しない場合、親となるディレクトリを全て作成します。
-    fn write_file(&self, path: &str, buf: &[u8]) -> std::io::Result<()>;
+    async fn write_file(&self, path: &str, buf: &[u8]) -> std::io::Result<()>;
 
     /// ディレクトリを作成します。
     ///
     /// 親ディレクトリが存在しない場合、再帰的に作成します。
-    fn create_dir(&self, path: &str) -> std::io::Result<()>;
+    async fn create_dir(&self, path: &str) -> std::io::Result<()>;
 
     /// ファイルバッファを読み込みます。
     ///
     /// 対象のパスにファイルが存在しない場合、`None`が返されます。
-    fn read_file(&self, path: &str) -> std::io::Result<Option<Vec<u8>>>;
+    async fn read_file(&self, path: &str) -> std::io::Result<Option<Vec<u8>>>;
 
     /// ディレクトリ内のエントリパスをすべて取得します。
-    fn read_dir(&self, path: &str) -> std::io::Result<Option<Vec<String>>>;
+    async fn read_dir(&self, path: &str) -> std::io::Result<Option<Vec<String>>>;
 
     /// 指定したパスがディレクトリの場合、子孫となるファイルパスを全て返します。
     /// ファイルの場合、そのファイルパスを返します。
     ///
     /// ファイルパスはファイルシステムのルートからの相対パスになります。
-    fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>>;
+    async fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>>;
 
     ///　エントリを強制的に削除します。
     ///
     /// ディレクトリの場合、子孫も削除されます。
-    fn delete(&self, path: &str) -> std::io::Result<()>;
+    async fn delete(&self, path: &str) -> std::io::Result<()>;
 
     /// ファイルバッファを読み込みます。
     ///
     /// ファイルが存在しない場合`Error`が返されます。
-    fn try_read_file(&self, path: &str) -> std::io::Result<Vec<u8>> {
-        self.read_file(path).and_then(|buf| {
+    async fn try_read_file(&self, path: &str) -> std::io::Result<Vec<u8>> {
+        self.read_file(path).await.and_then(|buf| {
             match buf {
                 Some(buf) => Ok(buf),
                 None => {
@@ -114,8 +116,10 @@ pub trait FileSystem {
     /// ファイルバッファを読み込みます。
     ///
     /// ファイルが存在しない場合`Error`が返されます。
-    fn try_read_dir(&self, path: &str) -> std::io::Result<Vec<String>> {
-        self.read_dir(path).and_then(|buf| {
+    async fn try_read_dir(&self, path: &str) -> std::io::Result<Vec<String>> {
+        self.read_dir(path)
+            .await
+            .and_then(|buf| {
             match buf {
                 Some(files) => Ok(files),
                 None => {
@@ -129,41 +133,41 @@ pub trait FileSystem {
     }
 
     /// TVCのデータ構造が既に存在するかを検査します。
-    fn project_already_initialized(&self) -> std::io::Result<bool> {
-        let files = self.all_files_in("./.meltos")?;
+    async fn project_already_initialized(&self) -> std::io::Result<bool> {
+        let files = self.all_files_in("./.meltos").await?;
         Ok(!files.is_empty())
     }
 }
-
-impl FileSystem for Box<dyn FileSystem> {
-    fn stat(&self, path: &str) -> std::io::Result<Option<Stat>> {
-        self.as_ref().stat(path)
-    }
-
-    fn write_file(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
-        self.as_ref().write_file(path, buf)
-    }
-
-    fn create_dir(&self, path: &str) -> std::io::Result<()> {
-        self.as_ref().create_dir(path)
-    }
-
-    fn read_file(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
-        self.as_ref().read_file(path)
-    }
-
-    fn read_dir(&self, path: &str) -> std::io::Result<Option<Vec<String>>> {
-        self.as_ref().read_dir(path)
-    }
-
-    fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
-        self.as_ref().all_files_in(path)
-    }
-
-    fn delete(&self, path: &str) -> std::io::Result<()> {
-        self.as_ref().delete(path)
-    }
-}
+//
+// impl FileSystem for Box<dyn FileSystem> {
+//     fn stat(&self, path: &str) -> std::io::Result<Option<Stat>> {
+//         self.as_ref().stat(path)
+//     }
+//
+//     fn write_file(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
+//         self.as_ref().write_file(path, buf)
+//     }
+//
+//     fn create_dir(&self, path: &str) -> std::io::Result<()> {
+//         self.as_ref().create_dir(path)
+//     }
+//
+//     fn read_file(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
+//         self.as_ref().read_file(path)
+//     }
+//
+//     fn read_dir(&self, path: &str) -> std::io::Result<Option<Vec<String>>> {
+//         self.as_ref().read_dir(path)
+//     }
+//
+//     fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
+//         self.as_ref().all_files_in(path)
+//     }
+//
+//     fn delete(&self, path: &str) -> std::io::Result<()> {
+//         self.as_ref().delete(path)
+//     }
+// }
 
 #[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]

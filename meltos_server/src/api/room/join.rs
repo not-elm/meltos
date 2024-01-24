@@ -30,7 +30,7 @@ pub async fn join(SessionRoom(room): SessionRoom, Json(join): Json<Join>) -> Htt
     room.error_if_reached_capacity().await?;
 
     let (user_id, session_id) = room.session.register(join.user_id).await?;
-    let bundle = room.create_bundle()?;
+    let bundle = room.create_bundle().await?;
     let discussions = room.discussions().await?;
     let joined = Joined {
         user_id: user_id.clone(),
@@ -91,7 +91,7 @@ mod tests {
     async fn status_code_is_ok_if_joined_exists_room() {
         let mut app = mock_app();
         let fs = MockFileSystem::default();
-        fs.write_file("./some_text.txt", b"text file").unwrap();
+        fs.write_file("./some_text.txt", b"text file").await.unwrap();
         let opened = http_open_room(&mut app, fs.clone()).await;
         let response = http_join(&mut app, &opened.room_id, None).await;
         assert_eq!(response.status(), StatusCode::OK);
@@ -129,8 +129,8 @@ mod tests {
         let fs = MockFileSystem::default();
         let branch = BranchName::owner();
         fs.force_write("workspace/some_text.txt", b"text file");
-        Init::new(fs.clone()).execute(&branch).unwrap();
-        let bundle = BundleIo::new(fs.clone()).create().unwrap();
+        Init::new(fs.clone()).execute(&branch).await.unwrap();
+        let bundle = BundleIo::new(fs.clone()).create().await.unwrap();
         let open_request = open_room_request_with_options(Some(bundle), None, None);
         let room_id = http_call_with_deserialize::<Opened>(&mut app, open_request)
             .await
@@ -144,7 +144,7 @@ mod tests {
     async fn it_return_user_id() {
         let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
         let fs = MockFileSystem::default();
-        fs.write_file("./some_text.txt", b"text file").unwrap();
+        fs.write_file("./some_text.txt", b"text file").await.unwrap();
         let opened = http_open_room(&mut app, fs.clone()).await;
         let response = http_join(&mut app, &opened.room_id, Some(UserId::from("tvc"))).await;
         let meta = response.deserialize::<Joined>().await;

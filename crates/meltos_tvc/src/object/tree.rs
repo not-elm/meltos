@@ -28,40 +28,41 @@ where
         }
     }
 
-    pub fn write_tree(&self, tree: &TreeObj) -> error::Result<()> {
-        self.fs.write_file(&self.file_path, &tree.encode()?)?;
+    pub async fn write_tree(&self, tree: &TreeObj) -> error::Result<()> {
+        self.fs.write_file(&self.file_path, &tree.encode()?).await?;
         Ok(())
     }
 
-    pub fn read(&self) -> error::Result<Option<TreeObj>> {
-        let Some(buf) = self.fs.read_file(&self.file_path)? else {
+    pub async fn read(&self) -> error::Result<Option<TreeObj>> {
+        let Some(buf) = self.fs.read_file(&self.file_path).await? else {
             return Ok(None);
         };
 
         Ok(Some(TreeObj::decode(&buf)?))
     }
 
-    pub fn reset(&self) -> error::Result<()> {
+    pub async fn reset(&self) -> error::Result<()> {
         self.fs
-            .write_file(&self.file_path, &TreeObj::default().encode()?)?;
+            .write_file(&self.file_path, &TreeObj::default().encode()?)
+            .await?;
         Ok(())
     }
 
-    pub fn read_object_hash(&self, file_path: &FilePath) -> error::Result<Option<ObjHash>> {
-        let Some(tree) = self.read()? else {
+    pub async fn read_object_hash(&self, file_path: &FilePath) -> error::Result<Option<ObjHash>> {
+        let Some(tree) = self.read().await? else {
             return Ok(None);
         };
         Ok(tree.0.get(file_path).cloned())
     }
 
-    pub fn write_object_hash(
+    pub async fn write_object_hash(
         &self,
         target_path: FilePath,
         object_hash: ObjHash,
     ) -> error::Result<()> {
-        let mut tree = self.read()?.unwrap_or_default();
+        let mut tree = self.read().await?.unwrap_or_default();
         tree.0.insert(target_path, object_hash);
-        self.fs.write_file(&self.file_path, &tree.encode()?)?;
+        self.fs.write_file(&self.file_path, &tree.encode()?).await?;
         Ok(())
     }
 }

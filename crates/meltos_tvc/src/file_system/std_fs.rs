@@ -2,14 +2,17 @@ use std::fs::{DirEntry, File};
 use std::io::{ErrorKind, Read, Write};
 use std::path::Path;
 use std::time::UNIX_EPOCH;
+use async_trait::async_trait;
 
 use crate::file_system::{FileSystem, Stat, StatType};
 
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct StdFileSystem;
 
+
+#[async_trait]
 impl FileSystem for StdFileSystem {
-    fn stat(&self, path: &str) -> std::io::Result<Option<Stat>> {
+    async fn stat(&self, path: &str) -> std::io::Result<Option<Stat>> {
         let path = Path::new(path);
         if !path.exists() {
             return Ok(None);
@@ -41,7 +44,7 @@ impl FileSystem for StdFileSystem {
         }))
     }
 
-    fn write_file(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
+    async fn write_file(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
         let path: &Path = path.as_ref();
         if path.is_dir() {
             return Err(std::io::Error::other("path type should be file"));
@@ -53,11 +56,11 @@ impl FileSystem for StdFileSystem {
         File::create(path)?.write_all(buf)
     }
 
-    fn create_dir(&self, path: &str) -> std::io::Result<()> {
+    async fn create_dir(&self, path: &str) -> std::io::Result<()> {
         std::fs::create_dir_all(path)
     }
 
-    fn read_file(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
+    async fn read_file(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
         match File::open(path) {
             Ok(mut file) => {
                 let mut buf = Vec::new();
@@ -75,7 +78,7 @@ impl FileSystem for StdFileSystem {
         }
     }
 
-    fn read_dir(&self, path: &str) -> std::io::Result<Option<Vec<String>>> {
+    async fn read_dir(&self, path: &str) -> std::io::Result<Option<Vec<String>>> {
         if !Path::new(path).exists() {
             return Ok(None);
         }
@@ -94,11 +97,11 @@ impl FileSystem for StdFileSystem {
         Ok(Some(entries))
     }
 
-    fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
+    async fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
         if Path::new(path).is_dir() {
             let mut p = Vec::new();
             for entry in std::fs::read_dir(path)? {
-                p.extend(self.all_files_in(entry?.path().to_str().unwrap())?);
+                p.extend(self.all_files_in(entry?.path().to_str().unwrap()).await?);
             }
             Ok(p)
         } else if std::fs::File::open(path).is_ok() {
@@ -108,7 +111,7 @@ impl FileSystem for StdFileSystem {
         }
     }
 
-    fn delete(&self, path: &str) -> std::io::Result<()> {
+    async fn delete(&self, path: &str) -> std::io::Result<()> {
         let path: &Path = path.as_ref();
         if !path.exists() {
             return Ok(());
@@ -138,69 +141,69 @@ mod tests {
         format!("{}/{path}", tmp_dir())
     }
 
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn return_none_if_not_exists() {
+    async fn return_none_if_not_exists() {
         let fs = StdFileSystem;
         let path = as_path("dir");
-        fs.delete(&path).unwrap();
+        fs.delete(&path).await.unwrap();
 
-        assert!(fs.read_dir(&as_path("dir")).unwrap().is_none());
+        assert!(fs.read_dir(&as_path("dir")).await.unwrap().is_none());
     }
 
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn create_dir() {
+    async fn create_dir() {
         let fs = StdFileSystem;
-        fs.create_dir(&as_path("dir")).unwrap();
-        assert_eq!(fs.read_dir(&as_path("dir")).unwrap().unwrap().len(), 0);
+        fs.create_dir(&as_path("dir")).await.unwrap();
+        assert_eq!(fs.read_dir(&as_path("dir")).await.unwrap().unwrap().len(), 0);
     }
 
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn create_parent_dirs_when_write_file() {
-        let fs = StdFileSystem;
-        let path = as_path("dir/hello.txt");
-        fs.delete(&path).unwrap();
-        fs.write_file(&path, b"hello").unwrap();
-        assert_eq!(fs.read_file(&path).unwrap().unwrap(), b"hello");
-    }
-
-    #[test]
-    #[ignore]
-    fn delete_file() {
+    async fn create_parent_dirs_when_write_file() {
         let fs = StdFileSystem;
         let path = as_path("dir/hello.txt");
-        fs.write_file(&path, b"hello").unwrap();
-        fs.delete(&path).unwrap();
-        assert!(fs.read_file(&path).unwrap().is_none());
+        fs.delete(&path).await.unwrap();
+        fs.write_file(&path, b"hello").await.unwrap();
+        assert_eq!(fs.read_file(&path).await.unwrap().unwrap(), b"hello");
     }
 
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn stat_file() {
+    async fn delete_file() {
         let fs = StdFileSystem;
         let path = as_path("dir/hello.txt");
-        fs.write_file(&path, b"hello").unwrap();
-        let stat = fs.stat(&path).unwrap().unwrap();
+        fs.write_file(&path, b"hello").await.unwrap();
+        fs.delete(&path).await.unwrap();
+        assert!(fs.read_file(&path).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn stat_file() {
+        let fs = StdFileSystem;
+        let path = as_path("dir/hello.txt");
+        fs.write_file(&path, b"hello").await.unwrap();
+        let stat = fs.stat(&path).await.unwrap().unwrap();
         assert_eq!(stat.ty, StatType::File);
         assert_eq!(stat.size, b"hello".len() as u64);
     }
 
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn stat_dir() {
+    async fn stat_dir() {
         let fs = StdFileSystem;
         let path = as_path("dir");
-        fs.delete(&as_path("dir")).unwrap();
-        fs.create_dir(&as_path("dir/sample")).unwrap();
+        fs.delete(&as_path("dir")).await.unwrap();
+        fs.create_dir(&as_path("dir/sample")).await.unwrap();
 
-        let stat = fs.stat(&as_path("dir")).unwrap().unwrap();
+        let stat = fs.stat(&as_path("dir")).await.unwrap().unwrap();
         assert_eq!(stat.ty, StatType::Dir);
         assert_eq!(stat.size, 1);
 
-        fs.write_file(&as_path("dir/hello.txt"), b"hello").unwrap();
-        let stat = fs.stat(&path).unwrap().unwrap();
+        fs.write_file(&as_path("dir/hello.txt"), b"hello").await.unwrap();
+        let stat = fs.stat(&path).await.unwrap().unwrap();
         assert_eq!(stat.ty, StatType::Dir);
         assert_eq!(stat.size, 2);
     }

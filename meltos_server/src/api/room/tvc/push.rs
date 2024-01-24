@@ -30,7 +30,7 @@ pub async fn push(
         ));
     }
 
-    let repository_size = room.tvc_repository_size()?;
+    let repository_size = room.tvc_repository_size().await?;
     let actual_size = bundle_data_size + repository_size;
     if configs.limit_tvc_repository_size < actual_size {
         return Err(response_error_exceed_tvc_repository_size(
@@ -39,7 +39,7 @@ pub async fn push(
         ));
     }
 
-    room.save_bundle(bundle.clone())?;
+    room.save_bundle(bundle.clone()).await?;
     room.send_all_users(ChannelMessage {
         from: user_id,
         message: MessageData::Pushed(bundle),
@@ -93,7 +93,7 @@ mod tests {
             session_id,
             ..
         } = http_open_room(&mut app, fs.clone()).await;
-        fs.write_file("workspace/src/hello.txt", b"hello").unwrap();
+        fs.write_file("workspace/src/hello.txt", b"hello").await.unwrap();
         let response = execute_tvc_operations(&mut app, &fs, room_id, session_id, branch).await;
         assert_eq!(response.status(), StatusCode::OK);
     }
@@ -176,8 +176,8 @@ mod tests {
         session_id: SessionId,
         branch: BranchName,
     ) -> Response {
-        stage::Stage::new(fs.clone()).execute(&branch, ".").unwrap();
-        Commit::new(fs.clone()).execute(&branch, "commit").unwrap();
+        stage::Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
+        Commit::new(fs.clone()).execute(&branch, "commit").await.unwrap();
         let mut sender = MockServerClient::new(app, room_id, session_id);
         operation::push::Push::new(fs.clone())
             .execute(branch, &mut sender)

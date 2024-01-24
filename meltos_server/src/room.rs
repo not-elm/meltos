@@ -119,7 +119,7 @@ impl Room {
             .discussion
             .all_discussions()
             .await?;
-        let tvc = self.tvc.bundle()?;
+        let tvc = self.tvc.bundle().await?;
 
         Ok(RoomBundle {
             tvc,
@@ -155,13 +155,13 @@ impl Room {
     }
 
     #[inline(always)]
-    pub fn tvc_repository_size(&self) -> error::Result<usize> {
-        self.tvc.total_objs_size().map_err(crate::error::Error::Tvc)
+    pub async fn tvc_repository_size(&self) -> error::Result<usize> {
+        self.tvc.total_objs_size().await.map_err(crate::error::Error::Tvc)
     }
 
     #[inline(always)]
-    pub fn save_bundle(&self, bundle: Bundle) -> error::Result {
-        self.tvc.save(bundle)?;
+    pub async fn save_bundle(&self, bundle: Bundle) -> error::Result {
+        self.tvc.save(bundle).await?;
         Ok(())
     }
 
@@ -171,8 +171,8 @@ impl Room {
     }
 
     #[inline(always)]
-    pub fn create_bundle(&self) -> error::Result<Bundle> {
-        self.tvc.bundle().map_err(crate::error::Error::Tvc)
+    pub async fn create_bundle(&self) -> error::Result<Bundle> {
+        self.tvc.bundle().await.map_err(crate::error::Error::Tvc)
     }
 
     pub async fn global_discussion<'a, F, O, S>(&'a self, user_id: UserId, f: F) -> error::Result<S>

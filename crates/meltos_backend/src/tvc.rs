@@ -26,17 +26,17 @@ impl<Fs: FileSystem + Clone> TvcBackendIo<Fs> {
     }
 
     #[inline(always)]
-    pub fn total_objs_size(&self) -> meltos_tvc::error::Result<usize> {
-        self.obj.total_objs_size()
+    pub async fn total_objs_size(&self) -> meltos_tvc::error::Result<usize> {
+        self.obj.total_objs_size().await
     }
 
     #[inline(always)]
-    pub fn save(&self, bundle: Bundle) -> meltos_tvc::error::Result {
-        self.save.execute(bundle)
+    pub async fn save(&self, bundle: Bundle) -> meltos_tvc::error::Result {
+        self.save.execute(bundle).await
     }
 
     #[inline(always)]
-    pub fn bundle(&self) -> meltos_tvc::error::Result<Bundle> {
-        self.bundle.create()
+    pub async fn bundle(&self) -> meltos_tvc::error::Result<Bundle> {
+        self.bundle.create().await
     }
 }

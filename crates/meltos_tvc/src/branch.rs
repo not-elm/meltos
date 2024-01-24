@@ -19,10 +19,10 @@ impl BranchName {
         Self::from("owner")
     }
 
-    pub fn working<Fs>(fs: Fs) -> error::Result<Self>
+    pub async fn working<Fs>(fs: Fs) -> error::Result<Self>
     where
         Fs: FileSystem,
     {
-        WorkingIo::new(fs).try_read()
+        WorkingIo::new(fs).try_read().await
     }
 }

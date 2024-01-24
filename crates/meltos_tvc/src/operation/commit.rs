@@ -44,25 +44,26 @@ impl<Fs> Commit<Fs>
     where
         Fs: FileSystem,
 {
-    pub fn execute(
+    pub async fn execute(
         &self,
         branch_name: &BranchName,
         commit_text: impl Into<CommitText>,
     ) -> error::Result<CommitHash> {
-        let Some(stage_tree) = self.staging.read()? else {
+        let Some(stage_tree) = self.staging.read().await? else {
             return Err(error::Error::NotfoundStages);
         };
-        self.staging.reset()?;
+        self.staging.reset().await?;
         let stage_meta = stage_tree.as_meta()?;
-        self.object.write_obj(&stage_tree)?;
+        self.object.write_obj(&stage_tree).await?;
 
         let commit = self
             .commit_obj
-            .create(commit_text, stage_meta.hash, branch_name)?;
-        let pre_head = self.head.read(branch_name)?;
-        let head_commit_hash = self.commit(branch_name, commit)?;
-        self.update_trace(stage_tree, &head_commit_hash, &pre_head)?;
-        self.head.write(branch_name, &head_commit_hash)?;
+            .create(commit_text, stage_meta.hash, branch_name)
+            .await?;
+        let pre_head = self.head.read(branch_name).await?;
+        let head_commit_hash = self.commit(branch_name, commit).await?;
+        self.update_trace(stage_tree, &head_commit_hash, &pre_head).await?;
+        self.head.write(branch_name, &head_commit_hash).await?;
         Ok(head_commit_hash)
     }
 
@@ -70,16 +71,17 @@ impl<Fs> Commit<Fs>
     /// * create `head file` and write `null commit hash`
     /// * create `trace file` named `null commit hash`.
     /// * create `local commits file` and append `null commit hash`
-    pub fn execute_null_commit(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
+    pub async fn execute_null_commit(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
         let null_staging = TreeObj::default();
         let null_staging_meta = null_staging.as_meta()?;
         let null_commit = self.create_null_commit(null_staging_meta);
         self.head
-            .write(branch_name, &CommitHash(null_commit.as_meta()?.hash))?;
-        let commit_hash = self.commit(branch_name, null_commit)?;
-        self.update_trace(null_staging, &commit_hash, &None)?;
-        self.staging.reset()?;
-        self.head.write(branch_name, &commit_hash)?;
+            .write(branch_name, &CommitHash(null_commit.as_meta()?.hash))
+            .await?;
+        let commit_hash = self.commit(branch_name, null_commit).await?;
+        self.update_trace(null_staging, &commit_hash, &None).await?;
+        self.staging.reset().await?;
+        self.head.write(branch_name, &commit_hash).await?;
         Ok(commit_hash)
     }
 
@@ -91,30 +93,32 @@ impl<Fs> Commit<Fs>
         }
     }
 
-    fn update_trace(
+    async fn update_trace(
         &self,
         staging_tree: TreeObj,
         commit_hash: &CommitHash,
         pre_head: &Option<CommitHash>,
     ) -> error::Result {
         let mut trace_tree = match pre_head {
-            Some(head) => self.trace_tree.read(head).unwrap_or_default(),
+            Some(head) => self.trace_tree.read(head).await.unwrap_or_default(),
             None => TreeObj::default(),
         };
 
         trace_tree.replace_by(staging_tree);
-        self.trace_tree.write(&trace_tree, commit_hash)?;
+        self.trace_tree.write(&trace_tree, commit_hash).await?;
 
         Ok(())
     }
 
-    fn commit(&self, branch_name: &BranchName, commit: CommitObj) -> error::Result<CommitHash> {
+    async fn commit(&self, branch_name: &BranchName, commit: CommitObj) -> error::Result<CommitHash> {
         let commit_meta = commit.as_meta()?;
-        self.object.write_obj(&commit)?;
+        self.object.write_obj(&commit).await?;
         self.head
-            .write(branch_name, &CommitHash(commit_meta.hash.clone()))?;
+            .write(branch_name, &CommitHash(commit_meta.hash.clone()))
+            .await?;
         self.local_commits
-            .append(CommitHash(commit_meta.hash.clone()), branch_name)?;
+            .append(CommitHash(commit_meta.hash.clone()), branch_name)
+            .await?;
         Ok(CommitHash(commit_meta.hash.clone()))
     }
 }
@@ -137,47 +141,47 @@ mod tests {
     use crate::operation::stage::Stage;
     use crate::tests::init_owner_branch;
 
-    #[test]
-    fn failed_if_never_staged() {
+    #[tokio::test]
+    async fn failed_if_never_staged() {
         let fs = MockFileSystem::default();
         let branch = BranchName::owner();
         let commit = Commit::new(fs);
-        match commit.execute(&branch, "") {
+        match commit.execute(&branch, "").await {
             Err(error::Error::NotfoundStages) => {}
             _ => panic!("expect return error::Error::NotfoundStages bad none"),
         }
     }
 
-    #[test]
-    fn reset_staging_after_committed() {
+    #[tokio::test]
+    async fn reset_staging_after_committed() {
         let fs = MockFileSystem::default();
-        init_owner_branch(fs.clone());
+        init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
         let staging = StagingIo::new(fs.clone());
-        fs.write_file("workspace/hello", b"hello").unwrap();
-        stage.execute(&branch, ".").unwrap();
-        commit.execute(&branch, "test").unwrap();
-        let staging_tree = staging.read().unwrap().unwrap();
+        fs.write_file("workspace/hello", b"hello").await.unwrap();
+        stage.execute(&branch, ".").await.unwrap();
+        commit.execute(&branch, "test").await.unwrap();
+        let staging_tree = staging.read().await.unwrap().unwrap();
 
         assert_eq!(staging_tree.len(), 0);
     }
 
-    #[test]
-    fn update_head_commit_hash() {
+    #[tokio::test]
+    async fn update_head_commit_hash() {
         let fs = MockFileSystem::default();
         let branch = BranchName::owner();
-        let null_commit_hash = init_owner_branch(fs.clone());
+        let null_commit_hash = init_owner_branch(fs.clone()).await;
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
-        fs.write_file("workspace/hello", b"hello").unwrap();
-        stage.execute(&branch, ".").unwrap();
-        commit.execute(&branch, "test").unwrap();
+        fs.write_file("workspace/hello", b"hello").await.unwrap();
+        stage.execute(&branch, ".").await.unwrap();
+        commit.execute(&branch, "test").await.unwrap();
 
         let head = HeadIo::new(fs.clone());
-        let head_hash = head.try_read(&BranchName::owner()).unwrap();
-        let commit = ObjIo::new(fs).read_to_commit(&head_hash).unwrap();
+        let head_hash = head.try_read(&BranchName::owner()).await.unwrap();
+        let commit = ObjIo::new(fs).read_to_commit(&head_hash).await.unwrap();
 
         let mut tree = TreeObj::default();
         tree.insert(
@@ -194,37 +198,37 @@ mod tests {
         );
     }
 
-    #[test]
-    fn append_to_local_commit() {
+    #[tokio::test]
+    async fn append_to_local_commit() {
         let fs = MockFileSystem::default();
         let branch = BranchName::owner();
-        let null_commit_hash = init_owner_branch(fs.clone());
+        let null_commit_hash = init_owner_branch(fs.clone()).await;
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
         let local_commits = LocalCommitsIo::new(fs.clone());
-        fs.write_file("workspace/hello", b"hello").unwrap();
-        stage.execute(&branch, ".").unwrap();
-        let commit_hash = commit.execute(&branch, "test").unwrap();
-        let local = local_commits.read(&branch).unwrap().unwrap();
+        fs.write_file("workspace/hello", b"hello").await.unwrap();
+        stage.execute(&branch, ".").await.unwrap();
+        let commit_hash = commit.execute(&branch, "test").await.unwrap();
+        let local = local_commits.read(&branch).await.unwrap().unwrap();
         assert_eq!(local, LocalCommitsObj(vec![null_commit_hash, commit_hash]))
     }
 
-    #[test]
-    fn exists_2_local_commits() {
+    #[tokio::test]
+    async fn exists_2_local_commits() {
         let fs = MockFileSystem::default();
         let branch = BranchName::owner();
-        let null_commit_hash = init_owner_branch(fs.clone());
+        let null_commit_hash = init_owner_branch(fs.clone()).await;
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
         let local_commits = LocalCommitsIo::new(fs.clone());
-        fs.write_file("workspace/hello", b"hello").unwrap();
-        stage.execute(&branch, ".").unwrap();
-        let commit_hash1 = commit.execute(&branch, "1").unwrap();
-        fs.write_file("workspace/hello2", b"hello2").unwrap();
-        stage.execute(&branch, ".").unwrap();
-        let commit_hash2 = commit.execute(&branch, "2").unwrap();
+        fs.write_file("workspace/hello", b"hello").await.unwrap();
+        stage.execute(&branch, ".").await.unwrap();
+        let commit_hash1 = commit.execute(&branch, "1").await.unwrap();
+        fs.write_file("workspace/hello2", b"hello2").await.unwrap();
+        stage.execute(&branch, ".").await.unwrap();
+        let commit_hash2 = commit.execute(&branch, "2").await.unwrap();
 
-        let local = local_commits.read(&branch).unwrap().unwrap();
+        let local = local_commits.read(&branch).await.unwrap().unwrap();
         assert_eq!(
             local,
             LocalCommitsObj(vec![null_commit_hash, commit_hash1, commit_hash2])

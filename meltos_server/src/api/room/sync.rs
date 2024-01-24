@@ -86,8 +86,8 @@ mod tests {
         let bundle = BundleIo::new(fs.clone());
         let traces = TraceTreeIo::new(fs.clone());
 
-        init.execute(&branch).unwrap();
-        let open_request = open_room_request_with_options(Some(bundle.create().unwrap()), None, None);
+        init.execute(&branch).await.unwrap();
+        let open_request = open_room_request_with_options(Some(bundle.create().await.unwrap()), None, None);
         let Opened {
             room_id,
             session_id,
@@ -95,8 +95,8 @@ mod tests {
         } = http_call(&mut app, open_request).await.deserialize().await;
 
         fs.force_write("workspace/hello.txt", b"hello world!");
-        stage.execute(&branch, ".").unwrap();
-        commit.execute(&branch, "commit text").unwrap();
+        stage.execute(&branch, ".").await.unwrap();
+        commit.execute(&branch, "commit text").await.unwrap();
         let response = push
             .execute(
                 branch.clone(),
@@ -114,6 +114,7 @@ mod tests {
 
         let hello_txt_hash = traces
             .read(&room_bundle.tvc.traces[0].commit_hash)
+            .await
             .unwrap()
             .get(&FilePath::from_path("workspace/hello.txt"))
             .unwrap()

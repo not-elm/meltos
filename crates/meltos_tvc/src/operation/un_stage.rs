@@ -16,17 +16,17 @@ impl<Fs: FileSystem> UnStage<Fs> {
         }
     }
 
-    pub fn execute(&self, file_path: &str) -> error::Result {
-        if let Some(mut staging) = self.staging.read()? {
+    pub async fn execute(&self, file_path: &str) -> error::Result {
+        if let Some(mut staging) = self.staging.read().await? {
             staging.remove(&FilePath::from_path(file_path));
-            self.staging.write_tree(&staging)?;
+            self.staging.write_tree(&staging).await?;
         }
         Ok(())
     }
 
     #[inline(always)]
-    pub fn execute_all(&self) -> error::Result {
-        self.staging.write_tree(&TreeObj::default())?;
+    pub async fn execute_all(&self) -> error::Result {
+        self.staging.write_tree(&TreeObj::default()).await?;
         Ok(())
     }
 }
@@ -42,8 +42,8 @@ mod tests {
     use crate::operation::stage::Stage;
     use crate::operation::un_stage::UnStage;
 
-    #[test]
-    fn deleted_hello_from_staging() {
+    #[tokio::test]
+    async fn deleted_hello_from_staging() {
         let fs = MockFileSystem::default();
         let branch = BranchName::owner();
         let init = Init::new(fs.clone());
@@ -52,46 +52,48 @@ mod tests {
         let staging = StagingIo::new(fs.clone());
         let file_path = "workspace/hello.txt";
 
-        init.execute(&branch).unwrap();
+        init.execute(&branch).await.unwrap();
         fs.force_write(file_path, b"hello");
-        println!("{fs:?}");
-        stage.execute(&branch, file_path).unwrap();
+
+        stage.execute(&branch, file_path).await.unwrap();
 
         assert!(staging
             .read()
+            .await
             .unwrap()
             .unwrap()
             .contains_key(&FilePath::from_path(file_path)));
-        un_stage.execute(file_path).unwrap();
+        un_stage.execute(file_path).await.unwrap();
         assert!(!staging
             .read()
+            .await
             .unwrap()
             .unwrap()
             .contains_key(&FilePath::from_path(file_path)));
     }
 
-    #[test]
-    fn delete_all_files_from_staging() {
+    #[tokio::test]
+    async fn delete_all_files_from_staging() {
         let fs = MockFileSystem::default();
         let branch = BranchName::owner();
         let init = Init::new(fs.clone());
         let stage = Stage::new(fs.clone());
         let un_stage = UnStage::new(fs.clone());
         let staging = StagingIo::new(fs.clone());
-        init.execute(&branch).unwrap();
+        init.execute(&branch).await.unwrap();
 
         fs.force_write("workspace/hello1.txt", b"hello");
         fs.force_write("workspace/hello2.txt", b"hello");
         fs.force_write("workspace/hello3.txt", b"hello");
-        stage.execute(&branch, ".").unwrap();
+        stage.execute(&branch, ".").await.unwrap();
 
-        let current_stagings = staging.read().unwrap().unwrap();
+        let current_stagings = staging.read().await.unwrap().unwrap();
         assert!(current_stagings.contains_key(&FilePath::from_path("workspace/hello1.txt")));
         assert!(current_stagings.contains_key(&FilePath::from_path("workspace/hello2.txt")));
         assert!(current_stagings.contains_key(&FilePath::from_path("workspace/hello3.txt")));
 
-        un_stage.execute_all().unwrap();
-        let current_stagings = staging.read().unwrap().unwrap();
+        un_stage.execute_all().await.unwrap();
+        let current_stagings = staging.read().await.unwrap().unwrap();
         assert!(!current_stagings.contains_key(&FilePath::from_path("workspace/hello1.txt")));
         assert!(!current_stagings.contains_key(&FilePath::from_path("workspace/hello2.txt")));
         assert!(!current_stagings.contains_key(&FilePath::from_path("workspace/hello3.txt")));

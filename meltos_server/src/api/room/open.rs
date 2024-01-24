@@ -58,7 +58,7 @@ pub async fn open<Session, Discussion>(
     let room_id = room.id.clone();
 
     if let Some(bundle) = param.bundle {
-        room.save_bundle(bundle)?;
+        room.save_bundle(bundle).await?;
     }
 
     rooms.insert_room(room, life_time).await;
@@ -108,7 +108,7 @@ mod tests {
     async fn it_return_room_id_and_session_id() -> error::Result {
         let app = mock_app();
         let fs = MockFileSystem::default();
-        let response = app.oneshot(open_room_request(fs)).await.unwrap();
+        let response = app.oneshot(open_room_request(fs).await).await.unwrap();
         let opened = response.deserialize::<Opened>().await;
         assert_eq!(opened.room_id.0.len(), 40);
         assert_eq!(opened.session_id.0.len(), 40);
