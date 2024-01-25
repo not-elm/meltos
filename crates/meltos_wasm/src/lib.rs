@@ -2,6 +2,7 @@ mod error;
 pub mod file_system;
 
 pub mod tvc;
+mod js_vec;
 
 // #[cfg(test)]
 // pub mod tests {

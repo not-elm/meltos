@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos::room::RoomId;
@@ -26,14 +27,14 @@ use crate::error;
 use crate::http::HttpClient;
 
 #[wasm_bindgen(getter_with_clone)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ObjMeta {
     pub file_path: String,
     pub hash: String,
 }
 
 #[wasm_bindgen(getter_with_clone)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CommitMeta {
     pub hash: String,
     pub message: String,
@@ -41,11 +42,12 @@ pub struct CommitMeta {
 }
 
 #[wasm_bindgen(getter_with_clone)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BranchCommitMeta {
     pub name: String,
     pub commits: Vec<CommitMeta>,
 }
+
 
 pub const BASE: &str = "http://127.0.0.1:3000";
 

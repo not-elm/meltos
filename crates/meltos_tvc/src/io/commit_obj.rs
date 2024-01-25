@@ -136,7 +136,7 @@ where
         }
     }
 
-    #[async_recursion::async_recursion]
+   #[async_recursion::async_recursion(?Send)]
     async fn scan_commit_obj(
         &self,
         obj_hashes: &mut HashSet<ObjHash>,
@@ -151,7 +151,7 @@ where
         Ok(())
     }
 
-    #[async_recursion::async_recursion]
+    #[async_recursion::async_recursion(?Send)]
     async fn scan_commit_tree(
         &self,
         obj_hashes: &mut HashSet<ObjHash>,

@@ -3,23 +3,24 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use meltos::user::UserId;
 use meltos_client::config::SessionConfigs;
 use meltos_client::error::JsResult;
-use meltos_client::tvc::{BranchCommitMeta, TvcClient};
+use meltos_client::tvc::TvcClient;
 use meltos_tvc::branch::BranchName;
 use meltos_tvc::file_system::FilePath;
 use meltos_tvc::object::commit::CommitHash;
 use meltos_tvc::object::ObjHash;
 
-use crate::file_system::vscode_node::VscodeNodeFs;
+use crate::file_system::vscode_node::{VscodeNodeFs, WasmFileSystem};
+use crate::js_vec::{JsVecBranchCommitMeta, JsVecString};
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Clone)]
-pub struct WasmTvcClient(TvcClient<VscodeNodeFs>);
+pub struct WasmTvcClient(TvcClient<WasmFileSystem>);
 
 #[wasm_bindgen]
 impl WasmTvcClient {
     #[wasm_bindgen(constructor)]
     pub fn new(fs: VscodeNodeFs, branch_name: Option<String>) -> Self {
-        Self(TvcClient::new(fs, branch_name.map(BranchName)))
+        Self(TvcClient::new(fs.into(), branch_name.map(BranchName)))
     }
 
     #[inline]
@@ -82,9 +83,9 @@ impl WasmTvcClient {
     }
 
     #[inline(always)]
-    pub async fn staging_files(&self) -> JsResult<Vec<String>> {
+    pub async fn staging_files(&self) -> JsResult<JsVecString> {
         let files = self.0.staging_files().await?;
-        Ok(files)
+        Ok(JsVecString(files))
     }
 
     #[inline(always)]
@@ -94,9 +95,9 @@ impl WasmTvcClient {
     }
 
     #[inline(always)]
-    pub async fn all_branch_commit_metas(&self) -> JsResult<Vec<BranchCommitMeta>> {
+    pub async fn all_branch_commit_metas(&self) -> JsResult<JsVecBranchCommitMeta> {
         let branches = self.0.all_branch_commit_metas().await?;
-        Ok(branches)
+        Ok(JsVecBranchCommitMeta(branches))
     }
 
     #[inline(always)]

@@ -37,7 +37,7 @@ impl<Fs> CommitHashIo<Fs>
         Ok(hashes)
     }
 
-    #[async_recursion::async_recursion]
+    #[async_recursion::async_recursion(?Send)]
     async fn read_obj(
         &self,
         hashes: &mut Vec<CommitHash>,
