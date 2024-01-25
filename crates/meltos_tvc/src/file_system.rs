@@ -9,6 +9,8 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use meltos_util::impl_string_new_type;
 
 pub mod mock;
+
+
 pub mod std_fs;
 
 #[wasm_bindgen(getter_with_clone)]
@@ -59,7 +61,8 @@ pub enum StatType {
     Dir,
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait FileSystem: Send + Sync {
     /// エントリのStatを取得します。
     ///

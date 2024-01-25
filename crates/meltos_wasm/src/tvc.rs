@@ -9,7 +9,7 @@ use meltos_tvc::file_system::FilePath;
 use meltos_tvc::object::commit::CommitHash;
 use meltos_tvc::object::ObjHash;
 
-use crate::file_system::vscode_node::{VscodeNodeFs, WasmFileSystem};
+use crate::file_system::vscode_node::{MemoryFileSystem, WasmFileSystem};
 use crate::js_vec::{JsVecBranchCommitMeta, JsVecString};
 
 #[wasm_bindgen(getter_with_clone)]
@@ -19,7 +19,7 @@ pub struct WasmTvcClient(TvcClient<WasmFileSystem>);
 #[wasm_bindgen]
 impl WasmTvcClient {
     #[wasm_bindgen(constructor)]
-    pub fn new(fs: VscodeNodeFs, branch_name: Option<String>) -> Self {
+    pub fn new(fs: MemoryFileSystem, branch_name: Option<String>) -> Self {
         Self(TvcClient::new(fs.into(), branch_name.map(BranchName)))
     }
 
@@ -27,6 +27,11 @@ impl WasmTvcClient {
     pub async fn init_repository(&self) -> JsResult<CommitHash> {
         let commit_hash = self.0.init_repository().await?;
         Ok(commit_hash)
+    }
+
+    pub async fn unzip(&self) -> JsResult{
+        self.0.unzip().await?;
+        Ok(())
     }
 
     #[inline(always)]

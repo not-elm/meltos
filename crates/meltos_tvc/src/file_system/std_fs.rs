@@ -10,7 +10,8 @@ use crate::file_system::{FileSystem, Stat, StatType};
 pub struct StdFileSystem;
 
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl FileSystem for StdFileSystem {
     async fn stat(&self, path: &str) -> std::io::Result<Option<Stat>> {
         let path = Path::new(path);

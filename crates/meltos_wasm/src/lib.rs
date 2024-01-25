@@ -1,6 +1,7 @@
 mod error;
+#[cfg(target_arch = "wasm32")]
 pub mod file_system;
-
+#[cfg(target_arch = "wasm32")]
 pub mod tvc;
 mod js_vec;
 

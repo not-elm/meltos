@@ -89,6 +89,13 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         Ok(commit_hash)
     }
 
+
+    #[inline(always)]
+    pub async fn unzip(&self) -> error::Result{
+        self.operations.unzip.execute(self.branch_name()?).await?;
+        Ok(())
+    }
+
     pub async fn open_room(&mut self, lifetime_sec: Option<u64>, user_limits: Option<u64>) -> error::Result<SessionConfigs> {
         let branch = BranchName::owner();
         self.branch_name.replace(branch.clone());

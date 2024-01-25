@@ -3,9 +3,9 @@ use crate::error;
 use crate::file_system::{FilePath, FileSystem};
 use crate::io::atomic::head::HeadIo;
 use crate::io::trace_tree::TraceTreeIo;
+use crate::object::{AsMeta, Obj, ObjHash};
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
-use crate::object::{AsMeta, Obj, ObjHash};
 
 pub struct ChangeFileMeta {
     pub path: FilePath,
@@ -20,8 +20,8 @@ pub enum ChangeFile {
 
 #[derive(Debug, Clone)]
 pub struct WorkspaceIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     fs: Fs,
     head: HeadIo<Fs>,
@@ -29,8 +29,8 @@ where
 }
 
 impl<Fs> WorkspaceIo<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     #[inline(always)]
     pub fn new(fs: Fs) -> WorkspaceIo<Fs> {
@@ -43,8 +43,8 @@ where
 }
 
 impl<Fs> WorkspaceIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     pub async fn try_read(&self, file_path: &FilePath) -> error::Result<FileObj> {
         match self.read(file_path).await? {
@@ -106,8 +106,8 @@ where
     #[inline(always)]
     pub async fn files(&self, path: &str) -> error::Result<Vec<String>> {
         let path = match path {
-            "." | "./" => "workspace".to_string(),
-            path => format!("workspace/{}", path.trim_start_matches("workspace/")),
+            "." | "./" => "/workspace".to_string(),
+            path => format!("/workspace/{}", path.trim_start_matches("/workspace/")),
         };
         Ok(self.fs.all_files_in(&path).await?)
     }
@@ -170,13 +170,13 @@ where
 
     #[inline(always)]
     fn as_path(&self, path: &str) -> String {
-        format!("workspace/{}", path.trim_start_matches("workspace/"))
+        format!("/workspace/{}", path.trim_start_matches("/workspace/"))
     }
 }
 
 pub struct ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     files: Vec<String>,
     index: usize,
@@ -184,8 +184,8 @@ where
 }
 
 impl<'a, Fs> ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     pub async fn next(&mut self) -> Option<std::io::Result<(FilePath, FileObj)>> {
         if self.index == self.files.len() {
@@ -207,8 +207,8 @@ where
 }
 
 impl<'a, Fs> ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     async fn read_to_obj(&self) -> std::io::Result<(FilePath, FileObj)> {
         let path = self.files.get(self.index).unwrap();
@@ -222,12 +222,12 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::mock::MockFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::workspace::WorkspaceIo;
-    use crate::object::file::FileObj;
     use crate::object::{AsMeta, Obj, ObjHash};
+    use crate::object::file::FileObj;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::tests::init_owner_branch;
@@ -236,13 +236,13 @@ mod tests {
     async fn read_all_objects_in_dir() {
         let fs = MockFileSystem::default();
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.write_file("workspace/hello/hello.txt", b"hello")
+        fs.write_file("/workspace/hello/hello.txt", b"hello")
             .await
             .unwrap();
-        fs.write_file("workspace/hello/world", b"world")
+        fs.write_file("/workspace/hello/world", b"world")
             .await
             .unwrap();
-        fs.write_file("workspace/hello/dir/main.sh", b"echo hi ")
+        fs.write_file("/workspace/hello/dir/main.sh", b"echo hi ")
             .await
             .unwrap();
         let mut hashes = workspace
@@ -296,8 +296,8 @@ mod tests {
                 "workspace/hello.txt".to_string(),
                 "workspace/dist/index.js".to_string(),
             ]
-            .into_iter()
-            .collect::<HashSet<String>>()
+                .into_iter()
+                .collect::<HashSet<String>>()
         );
     }
 

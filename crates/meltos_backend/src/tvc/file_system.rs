@@ -1,4 +1,6 @@
+use std::path::PathBuf;
 use async_trait::async_trait;
+use axum::extract::Path;
 use meltos::room::RoomId;
 use meltos_tvc::file_system::std_fs::StdFileSystem;
 use meltos_tvc::file_system::{FileSystem, Stat};
@@ -22,23 +24,21 @@ impl<Fs> BackendFileSystem<Fs> {
 
     #[inline(always)]
     fn trim(&self, path: String) -> String {
-        path.trim_start_matches(&format!(
-            "{}/",
-            room_resource_dir(&self.room_id)
+println!("TR path={path}");
+        path.trim_start_matches(&format!("/{}", room_resource_dir(&self.room_id)
                 .to_str()
                 .unwrap()
-                .replace('\\', "/")
-        ))
-        .trim_start_matches("./")
+                .replace('\\', "/")))
+
         .to_string()
     }
 
     #[inline(always)]
     fn as_path(&self, path: &str) -> String {
         let dir = room_resource_dir(&self.room_id);
-        let dir = dir.to_str().unwrap().replace('\\', "/");
-        let path = path.trim_start_matches(&dir);
-        format!("{}/{}", dir, path.trim_start_matches('/'))
+        let uri = dir.join(path.trim_start_matches("/")).to_str().unwrap().replace('\\', "/").to_string();
+        println!("dad path={path} {uri}");
+        uri
     }
 }
 
@@ -103,13 +103,13 @@ mod tests {
     async fn read_files_in_dir() {
         let fs = MockFileSystem::default();
         let fs = BackendFileSystem::new(RoomId::new(), fs.clone());
-        fs.write_file("dir/hello.txt", b"hello").await.unwrap();
-        fs.write_file("hello2.txt", b"hello").await.unwrap();
+        fs.write_file("/dir/hello.txt", b"hello").await.unwrap();
+        fs.write_file("/hello2.txt", b"hello").await.unwrap();
         let mut files = fs.all_files_in(".").await.unwrap();
         files.sort();
         assert_eq!(
             files,
-            vec!["dir/hello.txt".to_string(), "hello2.txt".to_string(),]
+            vec!["/dir/hello.txt".to_string(), "/hello2.txt".to_string(),]
         )
     }
 }
