@@ -223,7 +223,7 @@ mod tests {
 
     use crate::branch::BranchName;
     use crate::file_system::{FilePath, FileSystem};
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::workspace::WorkspaceIo;
     use crate::object::{AsMeta, Obj, ObjHash};
@@ -234,7 +234,7 @@ mod tests {
 
     #[tokio::test]
     async fn read_all_objects_in_dir() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let workspace = WorkspaceIo::new(fs.clone());
         fs.write_file("/workspace/hello/hello.txt", b"hello")
             .await
@@ -267,7 +267,7 @@ mod tests {
 
     #[tokio::test]
     async fn decode_buffer() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let workspace = WorkspaceIo::new(fs.clone());
         let obj = FileObj(b"hello".to_vec());
         let meta = obj.as_meta().unwrap();
@@ -284,11 +284,11 @@ mod tests {
 
     #[tokio::test]
     async fn read_all_files() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
 
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.force_write("workspace/hello.txt", b"hello");
-        fs.force_write("workspace/dist/index.js", b"index");
+        fs.write_sync("workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/dist/index.js", b"index");
         let files = workspace.files(".").await.unwrap();
         assert_eq!(
             files.into_iter().collect::<HashSet<String>>(),
@@ -303,10 +303,10 @@ mod tests {
 
     #[tokio::test]
     async fn return_true_if_file_created() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.force_write("workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/hello.txt", b"hello");
 
         let is_change = workspace
             .is_change(&BranchName::owner(), &FilePath("hello.txt".to_string()))
@@ -317,14 +317,14 @@ mod tests {
 
     #[tokio::test]
     async fn return_true_if_file_changed() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.force_write("workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
         Commit::new(fs.clone()).execute(&branch, "").await.unwrap();
-        fs.force_write("workspace/hello.txt", b"hello2");
+        fs.write_sync("workspace/hello.txt", b"hello2");
         let is_change = workspace
             .is_change(&branch, &FilePath("hello.txt".to_string()))
             .await
@@ -334,11 +334,11 @@ mod tests {
 
     #[tokio::test]
     async fn return_false_if_file_not_changed() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.force_write("workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
         Commit::new(fs.clone()).execute(&branch, "").await.unwrap();
 
@@ -351,11 +351,11 @@ mod tests {
 
     #[tokio::test]
     async fn return_true_if_file_deleted() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.force_write("workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
         Commit::new(fs.clone()).execute(&branch, "").await.unwrap();
         fs.delete("workspace/hello.txt").await.unwrap();
@@ -369,7 +369,7 @@ mod tests {
 
     #[tokio::test]
     async fn return_false_if_not_exists_both_workspace_and_traces() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let workspace = WorkspaceIo::new(fs.clone());
@@ -383,12 +383,12 @@ mod tests {
 
     #[tokio::test]
     async fn return_false_if_not_exists_both_workspace_and_traces2() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let workspace = WorkspaceIo::new(fs.clone());
 
-        fs.force_write("workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/hello.txt", b"hello");
         fs.delete("workspace/hello.txt").await.unwrap();
 
         let is_change = workspace

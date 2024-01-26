@@ -8,7 +8,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos_util::impl_string_new_type;
 
-pub mod mock;
+pub mod memory;
 
 
 pub mod std_fs;
@@ -61,7 +61,7 @@ pub enum StatType {
     Dir,
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(target_arch = "wasm32", async_trait(? Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait FileSystem: Send + Sync {
     /// エントリのStatを取得します。
@@ -88,16 +88,32 @@ pub trait FileSystem: Send + Sync {
     /// ディレクトリ内のエントリパスをすべて取得します。
     async fn read_dir(&self, path: &str) -> std::io::Result<Option<Vec<String>>>;
 
-    /// 指定したパスがディレクトリの場合、子孫となるファイルパスを全て返します。
-    /// ファイルの場合、そのファイルパスを返します。
-    ///
-    /// ファイルパスはファイルシステムのルートからの相対パスになります。
-    async fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>>;
-
     ///　エントリを強制的に削除します。
     ///
     /// ディレクトリの場合、子孫も削除されます。
     async fn delete(&self, path: &str) -> std::io::Result<()>;
+
+
+    /// 指定したパスがディレクトリの場合、子孫となるファイルパスを全て返します。
+    /// ファイルの場合、そのファイルパスを返します。
+    ///
+    /// ファイルパスはファイルシステムのルートからの相対パスになります。
+    async fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
+        println!("path = {path}");
+        let mut files = Vec::new();
+        let Some(stat) = self.stat(path).await? else {
+            return Ok(Vec::with_capacity(0));
+        };
+        if stat.is_dir() {
+            for entry_uri in self.read_dir(path).await?.unwrap_or_default() {
+                files.extend(self.all_files_in(&entry_uri).await?);
+            }
+        } else {
+            files.push(path.to_string())
+        }
+        Ok(files)
+    }
+
 
     /// ファイルバッファを読み込みます。
     ///
@@ -123,16 +139,16 @@ pub trait FileSystem: Send + Sync {
         self.read_dir(path)
             .await
             .and_then(|buf| {
-            match buf {
-                Some(files) => Ok(files),
-                None => {
-                    Err(std::io::Error::new(
-                        ErrorKind::NotFound,
-                        format!("not found dir path = {path}"),
-                    ))
+                match buf {
+                    Some(files) => Ok(files),
+                    None => {
+                        Err(std::io::Error::new(
+                            ErrorKind::NotFound,
+                            format!("not found dir path = {path}"),
+                        ))
+                    }
                 }
-            }
-        })
+            })
     }
 
     /// TVCのデータ構造が既に存在するかを検査します。

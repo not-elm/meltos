@@ -20,7 +20,7 @@ mod tests {
     use meltos::schema::room::Opened;
     use meltos_tvc::branch::BranchName;
     use meltos_tvc::file_system::FilePath;
-    use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::memory::MemoryFileSystem;
     use meltos_tvc::io::bundle::BundleIo;
     use meltos_tvc::io::trace_tree::TraceTreeIo;
     use meltos_tvc::operation::commit::Commit;
@@ -36,7 +36,7 @@ mod tests {
     #[tokio::test]
     async fn it_return_discussion_states() {
         let mut app = mock_app();
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let Opened {
             room_id,
             session_id,
@@ -77,7 +77,7 @@ mod tests {
     #[tokio::test]
     async fn it_read_tvc_bundle() {
         let mut app = mock_app();
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let init = Init::new(fs.clone());
         let stage = Stage::new(fs.clone());
@@ -94,7 +94,7 @@ mod tests {
             ..
         } = http_call(&mut app, open_request).await.deserialize().await;
 
-        fs.force_write("workspace/hello.txt", b"hello world!");
+        fs.write_sync("workspace/hello.txt", b"hello world!");
         stage.execute(&branch, ".").await.unwrap();
         commit.execute(&branch, "commit text").await.unwrap();
         let response = push

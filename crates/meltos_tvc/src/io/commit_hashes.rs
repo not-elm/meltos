@@ -58,14 +58,14 @@ impl<Fs> CommitHashIo<Fs>
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::tests::init_owner_branch;
 
     #[tokio::test]
     async fn read_only_null() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let commit_hashes = crate::io::commit_hashes::CommitHashIo::new(fs.clone());
         let null_commit = init_owner_branch(fs.clone()).await;
         let hashes = commit_hashes.read_all(null_commit.clone(), &None).await.unwrap();
@@ -74,18 +74,18 @@ mod tests {
 
     #[tokio::test]
     async fn read_with_parents() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let commit_hashes = crate::io::commit_hashes::CommitHashIo::new(fs.clone());
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
         let commit0 = init_owner_branch(fs.clone()).await;
 
-        fs.force_write("workspace/test.txt", b"hello");
+        fs.write_sync("workspace/test.txt", b"hello");
         stage.execute(&branch, ".").await.unwrap();
         let commit1 = commit.execute(&branch, "commit").await.unwrap();
 
-        fs.force_write("workspace/test2.txt", b"hello2");
+        fs.write_sync("workspace/test2.txt", b"hello2");
         stage.execute(&branch, ".").await.unwrap();
         let commit2 = commit.execute(&branch, "commit").await.unwrap();
 

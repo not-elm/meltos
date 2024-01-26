@@ -61,7 +61,7 @@ mod test_util {
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::branch::BranchName;
-    use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::memory::MemoryFileSystem;
     use meltos_tvc::io::bundle::Bundle;
     use meltos_tvc::operation::init::Init;
     use meltos_tvc::operation::push::Pushable;
@@ -147,7 +147,7 @@ mod test_util {
         app::<MockSessionIo, MockGlobalDiscussionIo>()
     }
 
-    pub async fn http_open_room(app: &mut Router, mock: MockFileSystem) -> Opened {
+    pub async fn http_open_room(app: &mut Router, mock: MemoryFileSystem) -> Opened {
         http_call_with_deserialize::<Opened>(app, open_room_request(mock).await).await
     }
 
@@ -247,7 +247,7 @@ mod test_util {
             .await
     }
 
-    pub async fn open_room_request(fs: MockFileSystem) -> Request {
+    pub async fn open_room_request(fs: MemoryFileSystem) -> Request {
         Init::new(fs.clone()).execute(&BranchName::owner()).await.unwrap();
 
         Request::builder()

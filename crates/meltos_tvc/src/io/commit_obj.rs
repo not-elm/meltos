@@ -182,7 +182,7 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::file_system::{FilePath, FileSystem};
     use crate::io::atomic::local_commits::LocalCommitsIo;
     use crate::io::atomic::object::ObjIo;
@@ -196,7 +196,7 @@ mod tests {
 
     #[tokio::test]
     async fn local_commits_is_empty_if_not_committed() {
-        let local_commit_objs = CommitObjIo::new(MockFileSystem::default())
+        let local_commit_objs = CommitObjIo::new(MemoryFileSystem::default())
             .read_local_commits(&BranchName::owner())
             .await
             .unwrap();
@@ -205,7 +205,7 @@ mod tests {
 
     #[tokio::test]
     async fn local_commit_count_is_2() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
@@ -230,7 +230,7 @@ mod tests {
 
     #[tokio::test]
     async fn read_objs_associated_with_all_commits() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let null_commit_hash = init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
@@ -303,14 +303,14 @@ mod tests {
     /// 直前にコミットされたオブジェクトに関連するデータだけが取得されること
     #[tokio::test]
     async fn read_only_objs_relative_to_local() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
         let local_commit = LocalCommitsIo::new(fs.clone());
         init_owner_branch(fs.clone()).await;
 
-        fs.force_write("workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/hello.txt", b"hello");
         stage.execute(&branch, ".").await.unwrap();
         commit.execute(&branch, "").await.unwrap();
         // pushされたと仮定してローカルコミットを削除
@@ -319,7 +319,7 @@ mod tests {
             .await
             .unwrap();
 
-        fs.force_write("workspace/hello2.txt", b"hello2");
+        fs.write_sync("workspace/hello2.txt", b"hello2");
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash = commit.execute(&branch, "").await.unwrap();
 

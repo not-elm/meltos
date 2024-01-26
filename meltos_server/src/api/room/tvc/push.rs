@@ -75,7 +75,7 @@ mod tests {
     use meltos::schema::room::Opened;
     use meltos::user::SessionId;
     use meltos_tvc::branch::BranchName;
-    use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::memory::MemoryFileSystem;
     use meltos_tvc::file_system::FileSystem;
     use meltos_tvc::operation;
     use meltos_tvc::operation::commit::Commit;
@@ -85,7 +85,7 @@ mod tests {
 
     #[tokio::test]
     async fn success_send_bundle() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let mut app = mock_app();
         let Opened {
@@ -100,7 +100,7 @@ mod tests {
 
     #[tokio::test]
     async fn failed_if_exceed_bundle_size() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let mut app = mock_app();
         let Opened {
@@ -108,7 +108,7 @@ mod tests {
             session_id,
             ..
         } = http_open_room(&mut app, fs.clone()).await;
-        fs.force_write("workspace/src/hello.txt", &dummy_large_buf());
+        fs.write_sync("workspace/src/hello.txt", &dummy_large_buf());
         let response = execute_tvc_operations(&mut app, &fs, room_id, session_id, branch).await;
         assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
     }
@@ -119,7 +119,7 @@ mod tests {
     /// Test中はTVCのリポジトリサイズが4048バイト
     #[tokio::test]
     async fn failed_if_reached_limit_tvc_repository_size() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let mut app = mock_app();
         let Opened {
@@ -128,7 +128,7 @@ mod tests {
             ..
         } = http_open_room(&mut app, fs.clone()).await;
         // push1
-        fs.force_write("workspace/src/hello2.txt", &dummy_buf(1));
+        fs.write_sync("workspace/src/hello2.txt", &dummy_buf(1));
         let response = execute_tvc_operations(
             &mut app,
             &fs,
@@ -140,7 +140,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
 
         // push2
-        fs.force_write("workspace/src/hello3.txt", &dummy_buf(2));
+        fs.write_sync("workspace/src/hello3.txt", &dummy_buf(2));
         let response = execute_tvc_operations(
             &mut app,
             &fs,
@@ -152,7 +152,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
 
         // push3
-        fs.force_write("workspace/src/hello4.txt", &dummy_buf(3));
+        fs.write_sync("workspace/src/hello4.txt", &dummy_buf(3));
         let response = execute_tvc_operations(
             &mut app,
             &fs,
@@ -164,7 +164,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
 
         // push3
-        fs.force_write("workspace/src/hello5.txt", &dummy_buf(4));
+        fs.write_sync("workspace/src/hello5.txt", &dummy_buf(4));
         let response = execute_tvc_operations(&mut app, &fs, room_id, session_id, branch).await;
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     }

@@ -36,14 +36,14 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::operation::new_branch::NewBranch;
     use crate::tests::init_owner_branch;
 
     #[tokio::test]
     async fn copy_head_file() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let null_commit_hash = init_owner_branch(fs.clone()).await;
 
         let new_branch = NewBranch::new(fs.clone());

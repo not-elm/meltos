@@ -1,52 +1,39 @@
-use std::fmt::{Debug, Formatter};
-use std::sync::{Arc, Mutex};
+use std::fmt::Debug;
+use std::path::Path;
 
 use async_trait::async_trait;
 
+use meltos_util::path::AsUri;
+
 use crate::file_system::{FileSystem, Stat};
-use crate::file_system::mock::entry::dir::MockDir;
+use crate::file_system::memory::entry::dir::MemoryDir;
 
 mod entry;
 
-#[derive(Clone)]
-pub struct MockFileSystem(pub Arc<Mutex<MockDir>>);
+#[derive(Clone, Debug)]
+pub struct MemoryFileSystem(pub MemoryDir);
 
 
-impl Default for MockFileSystem {
+impl Default for MemoryFileSystem {
+    #[inline(always)]
     fn default() -> Self {
-        let root = MockDir::new("", None);
-        Self(Arc::new(Mutex::new(root)))
+        Self(MemoryDir::root())
     }
 }
 
-impl MockFileSystem {
+impl MemoryFileSystem {
     #[allow(unused)]
-    pub fn force_write(&self, path: &str, buf: &[u8]) {
-        let mut root = self.0.lock().unwrap();
-        root.write_file(path, buf);
-    }
-
-    #[inline]
-    fn all_files_in_sync(&self, path: &str) -> std::io::Result<Vec<String>> {
-        let root = self.0.lock().unwrap();
-        let Some(entry) = root.read(path) else {
-            return Ok(Vec::with_capacity(0));
-        };
-        if let Ok(relative) = entry.dir() {
-            Ok(relative.all_files())
-        } else {
-            Ok(vec![path.to_string()])
-        }
+    pub fn write_sync(&self, path: &str, buf: &[u8]) {
+        self.0.write_file(path, buf);
     }
 }
 
 
 #[cfg_attr(target_arch = "wasm32", async_trait(? Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-impl FileSystem for MockFileSystem {
+impl FileSystem for MemoryFileSystem {
     async fn stat(&self, path: &str) -> std::io::Result<Option<Stat>> {
-        let root = self.0.lock().unwrap();
-        let Some(entry) = root.read(path) else {
+        let Some(entry) = self.0.read(path) else {
             return Ok(None);
         };
 
@@ -54,71 +41,51 @@ impl FileSystem for MockFileSystem {
     }
 
     async fn write_file(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
-        let root = self.0.lock().unwrap();
-        root.write_file(path, buf);
-
+        self.0.write_file(path, buf);
         Ok(())
     }
 
     async fn create_dir(&self, path: &str) -> std::io::Result<()> {
-        let root = self.0.lock().unwrap();
-        root.create_dir(path);
-
+        self.0.create_dir(path);
         Ok(())
     }
 
     async fn read_file(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
-        let root = self.0.lock().unwrap();
-        let Some(entry) = root.read(path) else {
+        let Some(entry) = self.0.read(path) else {
             return Ok(None);
         };
         Ok(Some(entry.file()?.buf()))
     }
 
     async fn read_dir(&self, path: &str) -> std::io::Result<Option<Vec<String>>> {
-        let root = self.0.lock().unwrap();
-        let Some(entry) = root.read(path) else {
+        let Some(entry) = self.0.read(path) else {
             return Ok(None);
         };
 
         Ok(Some(entry.dir()?.entry_names()))
     }
 
-    #[inline]
-    async fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
-        self.all_files_in_sync(path)
-    }
 
     async fn delete(&self, path: &str) -> std::io::Result<()> {
-        let root = self.0.lock().unwrap();
-        if let Some(parent) = root.lookup_parent_dir(path) {
+        if let Some(parent) = self.0.lookup_parent_dir(path) {
             parent.delete(&entry_name(path));
         } else {
-            root.delete(path);
+            self.0.delete(path);
         }
         Ok(())
     }
 }
 
-impl Debug for MockFileSystem {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for file in self.all_files_in_sync(".").unwrap() {
-            f.write_fmt(format_args!("{file:?}\n"))?;
-        }
-        Ok(())
-    }
-}
-
-fn as_schemes(path: &str) -> Vec<&str> {
-    let schemes = path.split('/').filter(|s| !s.is_empty()).collect::<Vec<&str>>();
-
-    schemes
+fn as_schemes(path: &str) -> Vec<String> {
+    Path::new(path)
+        .iter()
+        .map(|name| name.to_str().unwrap())
+        .map(|name| name.replace('\\', "/"))
+        .collect::<Vec<String>>()
 }
 
 fn parent_path(path: &str) -> Option<String> {
-    let mut ps: Vec<&str> = as_schemes(path);
-    ps.pop();
-    Some(ps.join("/"))
+    Some(Path::new(path).parent()?.as_uri())
 }
 
 fn entry_name(path: &str) -> String {
@@ -132,21 +99,21 @@ mod tests {
     use std::time::Duration;
 
     use crate::file_system::FileSystem;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
 
     #[tokio::test]
     async fn read_root_dir() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let dir = fs.read_dir(".").await.unwrap();
         assert_eq!(dir.unwrap().len(), 0);
     }
 
     #[tokio::test]
     async fn read_root_dir_with_files() {
-        let fs = MockFileSystem::default();
-        fs.force_write("1.txt", b"1");
-        fs.force_write("2.txt", b"2");
-        fs.force_write("3.txt", b"3");
+        let fs = MemoryFileSystem::default();
+        fs.write_sync("1.txt", b"1");
+        fs.write_sync("2.txt", b"2");
+        fs.write_sync("3.txt", b"3");
 
         let dir = fs.read_dir(".").await.unwrap();
         assert_eq!(dir.unwrap().len(), 3);
@@ -154,34 +121,33 @@ mod tests {
 
     #[tokio::test]
     async fn create_src_dir() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         fs.create_dir("/src").await.unwrap();
         let dir = fs.try_read_dir("/src").await.unwrap();
         assert_eq!(dir.len(), 0);
 
-        fs.force_write("/src/hello.txt", b"hello");
+        fs.write_sync("/src/hello.txt", b"hello");
         let src = fs.try_read_dir("/src").await.unwrap();
         assert_eq!(src.len(), 1);
     }
 
     #[tokio::test]
     async fn create_parent_dirs() {
-        let fs = MockFileSystem::default();
-        fs.force_write("/dist/hello.txt", b"hello");
-        fs.force_write("/dist/hello2.txt", b"hello");
-        fs.force_write("/dist/hello3.txt", b"hello");
+        let fs = MemoryFileSystem::default();
+        fs.write_sync("/dist/hello.txt", b"hello");
+        fs.write_sync("/dist/hello2.txt", b"hello");
+        fs.write_sync("/dist/hello3.txt", b"hello");
 
         let dist = fs.try_read_dir("/dist").await.unwrap();
-
         assert_eq!(dist.len(), 3);
     }
 
     #[tokio::test]
     async fn read_hello_world() {
-        let fs = MockFileSystem::default();
-        fs.force_write("/hello.txt", b"hello world");
-        fs.force_write("/dist/hello.txt", b"hello world");
-        fs.force_write("/dist/sample/hello.txt", b"hello world");
+        let fs = MemoryFileSystem::default();
+        fs.write_sync("/hello.txt", b"hello world");
+        fs.write_sync("/dist/hello.txt", b"hello world");
+        fs.write_sync("/dist/sample/hello.txt", b"hello world");
 
         let buf = fs.read_file("/hello.txt").await.unwrap();
         assert_eq!(buf, Some(b"hello world".to_vec()));
@@ -193,10 +159,10 @@ mod tests {
 
     #[tokio::test]
     async fn read_file_start_with_period() {
-        let fs = MockFileSystem::default();
-        fs.force_write("hello.txt", b"hello world");
-        fs.force_write("dist/hello.txt", b"hello world");
-        fs.force_write("dist/sample/hello.txt", b"hello world");
+        let fs = MemoryFileSystem::default();
+        fs.write_sync("hello.txt", b"hello world");
+        fs.write_sync("dist/hello.txt", b"hello world");
+        fs.write_sync("dist/sample/hello.txt", b"hello world");
 
         let buf = fs.read_file("./hello.txt").await.unwrap();
         assert_eq!(buf, Some(b"hello world".to_vec()));
@@ -208,8 +174,8 @@ mod tests {
 
     #[tokio::test]
     async fn delete_file() {
-        let fs = MockFileSystem::default();
-        fs.force_write("hello.txt", b"hello world");
+        let fs = MemoryFileSystem::default();
+        fs.write_sync("hello.txt", b"hello world");
         fs.delete("hello.txt").await.unwrap();
 
         assert_eq!(fs.read_file("hello.txt").await.unwrap(), None);
@@ -217,12 +183,12 @@ mod tests {
 
     #[tokio::test]
     async fn delete_dir() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         fs.create_dir("src").await.unwrap();
         fs.write_file("src/hello.txt", b"hello").await.unwrap();
 
-        fs.force_write("dist/hello.txt", b"hello");
-        fs.force_write("dist/sample/sample.js", b"console.log(`sample`)");
+        fs.write_sync("dist/hello.txt", b"hello");
+        fs.write_sync("dist/sample/sample.js", b"console.log(`sample`)");
 
         assert_eq!(fs.read_dir("src").await.unwrap().unwrap().len(), 1);
         assert_eq!(fs.read_dir("dist/sample").await.unwrap().unwrap().len(), 1);
@@ -240,63 +206,73 @@ mod tests {
 
     #[tokio::test]
     async fn all_files_with_in_children() {
-        let fs = MockFileSystem::default();
-        fs.force_write("hello1.txt", b"hello");
-        fs.force_write("hello2.txt", b"hello");
-        fs.force_write("hello3.txt", b"hello");
+        let fs = MemoryFileSystem::default();
+        fs.write_sync("/hello1.txt", b"hello");
+        fs.write_sync("/hello2.txt", b"hello");
+        fs.write_sync("/hello3.txt", b"hello");
 
         let mut files = fs.all_files_in(".").await.unwrap();
         files.sort();
         assert_eq!(
             files,
             vec![
-                "hello1.txt".to_string(),
-                "hello2.txt".to_string(),
-                "hello3.txt".to_string(),
+                "/hello1.txt".to_string(),
+                "/hello2.txt".to_string(),
+                "/hello3.txt".to_string(),
             ]
         );
     }
 
     #[tokio::test]
     async fn all_files_recursive() {
-        let fs = MockFileSystem::default();
-        fs.force_write("/hello1.txt", b"hello");
-        fs.force_write("/src/hello2.txt", b"hello");
-        fs.force_write("/src/dist/hello3.txt", b"hello");
+        let fs = MemoryFileSystem::default();
+        fs.write_sync("/hello1.txt", b"hello");
+        fs.write_sync("/src/hello2.txt", b"hello");
+        fs.write_sync("/src/dist/hello3.txt", b"hello");
 
         let mut files = fs.all_files_in(".").await.unwrap();
         files.sort();
         assert_eq!(
             files,
             vec![
-                "hello1.txt".to_string(),
-                "src/dist/hello3.txt".to_string(),
-                "src/hello2.txt".to_string(),
+                "/hello1.txt".to_string(),
+                "/src/dist/hello3.txt".to_string(),
+                "/src/hello2.txt".to_string(),
             ]
         );
     }
 
     #[tokio::test]
     async fn all_files_relative_to_src() {
-        let fs = MockFileSystem::default();
-        fs.force_write("/hello1.txt", b"hello");
-        fs.force_write("/src/hello2.txt", b"hello");
-        fs.force_write("/src/dist/hello3.txt", b"hello");
+        let fs = MemoryFileSystem::default();
+        fs.write_sync("/hello1.txt", b"hello");
+        fs.write_sync("/src/hello2.txt", b"hello");
+        fs.write_sync("/src/dist/hello3.txt", b"hello");
 
-        let mut files = fs.all_files_in("src").await.unwrap();
+        let mut files = fs.all_files_in("/src").await.unwrap();
         files.sort();
         assert_eq!(
             files,
             vec![
-                "src/dist/hello3.txt".to_string(),
-                "src/hello2.txt".to_string(),
+                "/src/dist/hello3.txt".to_string(),
+                "/src/hello2.txt".to_string(),
             ]
         );
     }
 
+
+    #[tokio::test]
+    async fn all_files_specified_direct_file_uri() {
+        let fs = MemoryFileSystem::default();
+        fs.write_sync("/hello1.txt", b"hello");
+
+        let files = fs.all_files_in("/hello1.txt").await.unwrap();
+        assert_eq!(files, vec!["/hello1.txt".to_string()]);
+    }
+
     #[tokio::test]
     async fn return_none_if_not_exists_entry() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         fs.create_dir("src").await.unwrap();
         let stat = fs.stat("/hello.txt").await.unwrap();
         assert_eq!(stat, None);
@@ -306,7 +282,7 @@ mod tests {
 
     #[tokio::test]
     async fn stat_file() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         fs.write_file("src/hello.txt", b"hello").await.unwrap();
         let stat = fs.stat("src/hello.txt").await.unwrap().unwrap();
         assert!(stat.is_file());
@@ -315,7 +291,7 @@ mod tests {
 
     #[tokio::test]
     async fn stat_dir() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         fs.create_dir("src").await.unwrap();
         let stat = fs.stat("src").await.unwrap().unwrap();
         assert!(stat.is_dir());
@@ -324,7 +300,7 @@ mod tests {
 
     #[tokio::test]
     async fn update_dir_stat() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         fs.create_dir("src").await.unwrap();
 
         fs.create_dir("src/dist").await.unwrap();
@@ -338,7 +314,7 @@ mod tests {
 
     #[tokio::test]
     async fn update_file_stat() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         fs.write_file("src/hello.txt", b"hello world").await.unwrap();
         let stat1 = fs.stat("src/hello.txt").await.unwrap().unwrap();
         sleep(Duration::new(1, 100));
@@ -354,7 +330,7 @@ mod tests {
     async fn read() {
         let buf1 = [0, 1, 2, 3];
         let buf2 = [5, 6, 7, 8];
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
 
         fs.write_file("buf1", &buf1).await.unwrap();
         fs.write_file("buf2", &buf2).await.unwrap();

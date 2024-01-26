@@ -72,7 +72,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::file_system::FileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
     use crate::operation::checkout::{CheckOutStatus, Checkout};
@@ -83,7 +83,7 @@ mod tests {
 
     #[tokio::test]
     async fn not_checkout_if_already_working() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let checked = Checkout::new(fs.clone())
             .execute(&BranchName::owner())
@@ -96,7 +96,7 @@ mod tests {
 
     #[tokio::test]
     async fn checkout_if_exists_local() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let second = BranchName::from("second");
         NewBranch::new(fs.clone())
@@ -113,7 +113,7 @@ mod tests {
 
     #[tokio::test]
     async fn create_new_branch_if_not_exists() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let second = BranchName::from("second");
         assert_eq!(
@@ -126,7 +126,7 @@ mod tests {
 
     #[tokio::test]
     async fn remote_hello_txt() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let checkout = Checkout::new(fs.clone());
         let b1 = BranchName::owner();
@@ -134,7 +134,7 @@ mod tests {
         checkout.execute(&b2).await.unwrap();
         checkout.execute(&b1).await.unwrap();
 
-        fs.force_write("workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/hello.txt", b"hello");
         Stage::new(fs.clone())
             .execute(&b1, "hello.txt")
             .await
@@ -175,6 +175,6 @@ mod tests {
     //     NewBranch::new(fs.clone())
     //         .execute(BranchName::main(), BranchName::from("second"))
     //         .unwrap();
-    //     MockRemoteClient::new(mock)
+    //     MockRemoteClient::new(memory)
     // }
 }

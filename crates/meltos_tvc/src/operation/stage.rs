@@ -144,7 +144,7 @@ mod tests {
     use crate::branch::BranchName;
     use crate::error;
     use crate::file_system::{FilePath, FileSystem};
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::object::{AsMeta, ObjHash};
     use crate::object::delete::DeleteObj;
@@ -155,7 +155,7 @@ mod tests {
 
     #[tokio::test]
     async fn create_obj_file_after_staged() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
@@ -197,7 +197,7 @@ mod tests {
 
     #[tokio::test]
     async fn create_delete_obj() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
@@ -228,7 +228,7 @@ mod tests {
 
     #[tokio::test]
     async fn no_moved_if_not_changed_file() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
 
         let branch = BranchName::owner();

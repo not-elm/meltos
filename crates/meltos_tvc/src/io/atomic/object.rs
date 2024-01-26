@@ -133,7 +133,7 @@ mod tests {
 
     use crate::encode::Decodable;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::file_system::FileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::workspace::WorkspaceIo;
@@ -143,8 +143,8 @@ mod tests {
     #[tokio::test]
     async fn write_object_file() -> error::Result{
         let buf = b"hello world!";
-        let fs = MockFileSystem::default();
-        fs.force_write("workspace/test/hello.txt", buf);
+        let fs = MemoryFileSystem::default();
+        fs.write_sync("workspace/test/hello.txt", buf);
 
         let io = ObjIo::new(fs.clone());
         let workspace = WorkspaceIo::new(fs.clone());
@@ -164,7 +164,7 @@ mod tests {
 
     #[tokio::test]
     async fn read_obj() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let io = ObjIo::new(fs.clone());
         let obj = ObjMeta::compress(b"FILE\0hello world!".to_vec()).unwrap();
         io.write_obj(&FileObj::decode(b"FILE\0hello world!").unwrap())

@@ -55,7 +55,7 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::file_system::FileSystem;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
@@ -64,7 +64,7 @@ mod tests {
 
     #[tokio::test]
     async fn success_if_committed() -> error::Result {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
 

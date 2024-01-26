@@ -52,7 +52,7 @@ impl<Fs> Patch<Fs>
 mod tests {
     // use crate::branch::BranchName;
     // use crate::file_system::FileSystem;
-    // use crate::file_system::mock::MockFileSystem;
+    // use crate::file_system::memory::MockFileSystem;
     // use crate::io::atomic::head::HeadIo;
     // use crate::io::atomic::object::ObjIo;
     // use crate::io::atomic::trace::TraceIo;
@@ -111,7 +111,7 @@ mod tests {
     //
     // fn create_mock_server_file_system() -> (MockRemoteClient, CommitHash) {
     //     let fs = MockFileSystem::default();
-    //     mock.write("./hello.txt", b"hello").unwrap();
+    //     memory.write("./hello.txt", b"hello").unwrap();
     //     init_main_branch(fs.clone());
     //     Stage::new(BranchName::main(), fs.clone())
     //         .execute(".")
@@ -119,6 +119,6 @@ mod tests {
     //     let commit_hash = Commit::new(BranchName::main(), fs.clone())
     //         .execute("commit text")
     //         .unwrap();
-    //     (MockRemoteClient::new(mock), commit_hash)
+    //     (MockRemoteClient::new(memory), commit_hash)
     // }
 }

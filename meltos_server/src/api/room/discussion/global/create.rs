@@ -34,7 +34,7 @@ mod tests {
 
     use meltos::schema::discussion::global::Created;
     use meltos::schema::room::Opened;
-    use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::memory::MemoryFileSystem;
 
     use crate::api::test_util::{create_discussion_request, http_open_room, mock_app};
     use crate::error;
@@ -42,7 +42,7 @@ mod tests {
     #[tokio::test]
     async fn return_created_command() -> error::Result {
         let mut app = mock_app();
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let Opened {
             room_id,
             session_id,

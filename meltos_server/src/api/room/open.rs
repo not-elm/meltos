@@ -94,7 +94,7 @@ mod tests {
 
     use meltos::schema::error::ErrorResponseBodyBase;
     use meltos::schema::room::Opened;
-    use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::memory::MemoryFileSystem;
     use meltos_tvc::io::bundle::{Bundle, BundleObject};
     use meltos_tvc::object::{CompressedBuf, ObjHash};
 
@@ -107,7 +107,7 @@ mod tests {
     #[tokio::test]
     async fn it_return_room_id_and_session_id() -> error::Result {
         let app = mock_app();
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let response = app.oneshot(open_room_request(fs).await).await.unwrap();
         let opened = response.deserialize::<Opened>().await;
         assert_eq!(opened.room_id.0.len(), 40);

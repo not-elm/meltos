@@ -65,7 +65,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::io::atomic::local_commits::LocalCommitsIo;
     use crate::object::commit::CommitHash;
     use crate::object::local_commits::LocalCommitsObj;
@@ -75,7 +75,7 @@ mod tests {
     async fn append_one_commit() {
         let hash = CommitHash(ObjHash::new(b"commit hash"));
         let branch_name = BranchName::owner();
-        let io = LocalCommitsIo::new(MockFileSystem::default());
+        let io = LocalCommitsIo::new(MemoryFileSystem::default());
         io.append(hash.clone(), &branch_name).await.unwrap();
         let local_commits = io.read(&branch_name).await.unwrap().unwrap();
         assert_eq!(local_commits, LocalCommitsObj(vec![hash]));

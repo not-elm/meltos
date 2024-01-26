@@ -161,7 +161,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::file_system::FileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
     use crate::io::bundle::BundleIo;
@@ -172,7 +172,7 @@ mod tests {
 
     #[tokio::test]
     async fn read_head() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let bundle_io = BundleIo::new(fs.clone());
         let null_commit_hash = init_owner_branch(fs.clone()).await;
         let bundle = bundle_io.create().await.unwrap();
@@ -183,7 +183,7 @@ mod tests {
 
   #[tokio::test]
     async fn read_2_heads() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let new_branch = NewBranch::new(fs.clone());
         let bundle_io = BundleIo::new(fs.clone());
 
@@ -228,7 +228,7 @@ mod tests {
 
   #[tokio::test]
     async fn read_all_objs() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         fs.write_file("workspace/hello.txt", b"hello").await.unwrap();

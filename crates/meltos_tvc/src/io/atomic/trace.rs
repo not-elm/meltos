@@ -80,7 +80,7 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::file_system::FileSystem;
     use crate::io::atomic::trace::TraceIo;
     use crate::operation::commit::Commit;
@@ -89,7 +89,7 @@ mod tests {
 
     #[tokio::test]
     async fn read_all_traces() -> error::Result {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
 
         let branch = BranchName::owner();

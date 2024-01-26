@@ -128,7 +128,7 @@ mod tests {
     use crate::branch::BranchName;
     use crate::error;
     use crate::file_system::{FilePath, FileSystem};
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::io::atomic::head::{CommitText, HeadIo};
     use crate::io::atomic::local_commits::LocalCommitsIo;
     use crate::io::atomic::object::ObjIo;
@@ -143,7 +143,7 @@ mod tests {
 
     #[tokio::test]
     async fn failed_if_never_staged() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let commit = Commit::new(fs);
         match commit.execute(&branch, "").await {
@@ -154,7 +154,7 @@ mod tests {
 
     #[tokio::test]
     async fn reset_staging_after_committed() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
@@ -170,7 +170,7 @@ mod tests {
 
     #[tokio::test]
     async fn update_head_commit_hash() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let null_commit_hash = init_owner_branch(fs.clone()).await;
         let stage = Stage::new(fs.clone());
@@ -200,7 +200,7 @@ mod tests {
 
     #[tokio::test]
     async fn append_to_local_commit() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let null_commit_hash = init_owner_branch(fs.clone()).await;
         let stage = Stage::new(fs.clone());
@@ -215,7 +215,7 @@ mod tests {
 
     #[tokio::test]
     async fn exists_2_local_commits() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let null_commit_hash = init_owner_branch(fs.clone()).await;
         let stage = Stage::new(fs.clone());

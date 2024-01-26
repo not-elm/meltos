@@ -101,7 +101,7 @@ mod tests {
 
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::file_system::FileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::bundle::Bundle;
@@ -132,7 +132,7 @@ mod tests {
 
     #[tokio::test]
     async fn failed_if_no_commit() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let push = Push::new(fs);
         match push
             .execute(BranchName::owner(), &mut MockRemoteClient::default())
@@ -145,7 +145,7 @@ mod tests {
 
     #[tokio::test]
     async fn success_if_committed() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
@@ -163,7 +163,7 @@ mod tests {
 
     #[tokio::test]
     async fn local_commits_is_cleared_if_succeed() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let commit_obj = CommitObjIo::new(fs.clone());
@@ -182,7 +182,7 @@ mod tests {
 
     #[tokio::test]
     async fn push_param() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());

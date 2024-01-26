@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -7,48 +7,48 @@ use crate::time::since_epoch_secs;
 
 #[repr(transparent)]
 #[derive(Debug, Clone)]
-pub struct MockFile(Arc<Mutex<MockFileInner>>);
+pub struct MemoryFile(Arc<RwLock<MemoryFileInner>>);
 
 
-impl MockFile {
+impl MemoryFile {
     #[inline(always)]
     pub fn new(buf: Vec<u8>) -> Self {
-        Self(Arc::new(Mutex::new(MockFileInner::new(buf))))
+        Self(Arc::new(RwLock::new(MemoryFileInner::new(buf))))
     }
 
     #[inline(always)]
-    pub fn stat(&self) -> Stat{
-        self.0.lock().unwrap().stat()
-    }
-
-
-    #[inline(always)]
-    pub fn buf(&self) -> Vec<u8>{
-        self.0.lock().unwrap().buf.clone()
+    pub fn stat(&self) -> Stat {
+        self.0.read().unwrap().stat()
     }
 
 
     #[inline(always)]
-    pub fn write(&self, buf: Vec<u8>){
-        self.0.lock().unwrap().buf = buf;
+    pub fn buf(&self) -> Vec<u8> {
+        self.0.read().unwrap().buf.clone()
     }
 
 
-        #[inline(always)]
-    pub fn set_update_time(&self, update_time: u64){
-        self.0.lock().unwrap().update_time = update_time;
+    #[inline(always)]
+    pub fn write(&self, buf: Vec<u8>) {
+        self.0.write().unwrap().buf = buf;
+    }
+
+
+    #[inline(always)]
+    pub fn set_update_time(&self, update_time: u64) {
+        self.0.write().unwrap().update_time = update_time;
     }
 }
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Debug, Eq, PartialEq, Clone)]
-pub struct MockFileInner {
+struct MemoryFileInner {
     pub create_time: u64,
     pub update_time: u64,
     pub buf: Vec<u8>,
 }
 
-impl MockFileInner {
+impl MemoryFileInner {
     #[inline]
     pub fn new(buf: Vec<u8>) -> Self {
         let create_time = since_epoch_secs();

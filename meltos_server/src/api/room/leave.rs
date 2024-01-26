@@ -53,7 +53,7 @@ mod tests {
     use meltos::user::{SessionId, UserId};
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::session::mock::MockSessionIo;
-    use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::memory::MemoryFileSystem;
 
     use crate::api::test_util::{
         fetch_request, http_call, http_join, mock_app, open_room_request, ResponseConvertable,
@@ -63,7 +63,7 @@ mod tests {
     #[tokio::test]
     async fn delete_room_if_owner_left() -> error::Result {
         let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let response = http_call(&mut app, open_room_request(fs.clone()).await).await;
         let opened = response.deserialize::<Opened>().await;
         let response = http_leave(&mut app, &opened.room_id, &opened.session_id).await;
@@ -76,7 +76,7 @@ mod tests {
     #[tokio::test]
     async fn not_delete_room_if_user_left() -> error::Result {
         let mut app = mock_app();
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let response = http_call(&mut app, open_room_request(fs.clone()).await).await;
         let opened = response.deserialize::<Opened>().await;
         let joined = http_join(&mut app, &opened.room_id, Some(UserId::from("session")))

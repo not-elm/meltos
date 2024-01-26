@@ -94,14 +94,14 @@ impl<Fs: FileSystem> FileSystem for BackendFileSystem<Fs> {
 #[cfg(test)]
 mod tests {
     use meltos::room::RoomId;
-    use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::memory::MemoryFileSystem;
     use meltos_tvc::file_system::FileSystem;
 
     use crate::tvc::file_system::BackendFileSystem;
 
     #[tokio::test]
     async fn read_files_in_dir() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let fs = BackendFileSystem::new(RoomId::new(), fs.clone());
         fs.write_file("/dir/hello.txt", b"hello").await.unwrap();
         fs.write_file("/hello2.txt", b"hello").await.unwrap();

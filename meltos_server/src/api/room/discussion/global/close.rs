@@ -43,14 +43,14 @@ mod tests {
     use meltos::discussion::id::DiscussionId;
     use meltos::schema::error::{DiscussionNotExistsBody, ErrorResponseBodyBase};
     use meltos::schema::room::Opened;
-    use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::memory::MemoryFileSystem;
 
     use crate::api::test_util::{http_create_discussion, http_discussion_close, http_open_room, mock_app, ResponseConvertable};
 
     #[tokio::test]
     async fn failed_if_not_exists_query() {
         let mut app = mock_app();
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let Opened {
             room_id,
             session_id,
@@ -75,7 +75,7 @@ mod tests {
     #[tokio::test]
     async fn failed_no_exists_discussion() {
         let mut app = mock_app();
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let Opened {
             session_id,
             room_id,
@@ -111,7 +111,7 @@ mod tests {
     #[tokio::test]
     async fn return_closed_command() {
         let mut app = mock_app();
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let Opened {
             session_id,
             room_id,

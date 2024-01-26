@@ -69,7 +69,7 @@ where
 mod tests {
     use crate::branch::BranchName;
     use crate::encode::Encodable;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::file_system::FileSystem;
     use crate::io::atomic::head::HeadIo;
     use crate::io::atomic::object::ObjIo;
@@ -81,14 +81,14 @@ mod tests {
 
     #[tokio::test]
     async fn init() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let init = Init::new(fs.clone());
         init.execute(&BranchName::owner()).await.unwrap();
     }
 
     #[tokio::test]
     async fn failed_init_if_has_been_initialized() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let init = Init::new(fs.clone());
         init.execute(&branch).await.unwrap();
@@ -97,7 +97,7 @@ mod tests {
 
     #[tokio::test]
     async fn created_head_file() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let init = Init::new(fs.clone());
 
@@ -113,7 +113,7 @@ mod tests {
 
     #[tokio::test]
     async fn created_trace_file_named_null_commit_hash() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let init = Init::new(fs.clone());
 
@@ -132,8 +132,8 @@ mod tests {
 
     #[tokio::test]
     async fn staged_workspace_files() {
-        let fs = MockFileSystem::default();
-        fs.force_write("workspace/src/test.rs", b"test");
+        let fs = MemoryFileSystem::default();
+        fs.write_sync("workspace/src/test.rs", b"test");
         let branch = BranchName::owner();
         let init = Init::new(fs.clone());
         init.execute(&branch).await.unwrap();
@@ -144,7 +144,7 @@ mod tests {
             .is_some());
     }
 
-    async fn read_head_commit_hash(mock: MockFileSystem) -> CommitHash {
+    async fn read_head_commit_hash(mock: MemoryFileSystem) -> CommitHash {
         let head = HeadIo::new(mock);
         head.try_read(&BranchName::owner()).await.unwrap()
     }

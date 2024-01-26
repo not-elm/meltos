@@ -34,7 +34,7 @@ impl<Fs: FileSystem> UnStage<Fs> {
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::file_system::FilePath;
     use crate::io::atomic::staging::StagingIo;
     use crate::object::tree::TreeObj;
@@ -44,7 +44,7 @@ mod tests {
 
     #[tokio::test]
     async fn deleted_hello_from_staging() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let init = Init::new(fs.clone());
         let stage = Stage::new(fs.clone());
@@ -53,7 +53,7 @@ mod tests {
         let file_path = "workspace/hello.txt";
 
         init.execute(&branch).await.unwrap();
-        fs.force_write(file_path, b"hello");
+        fs.write_sync(file_path, b"hello");
 
         stage.execute(&branch, file_path).await.unwrap();
 
@@ -74,7 +74,7 @@ mod tests {
 
     #[tokio::test]
     async fn delete_all_files_from_staging() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let init = Init::new(fs.clone());
         let stage = Stage::new(fs.clone());
@@ -82,9 +82,9 @@ mod tests {
         let staging = StagingIo::new(fs.clone());
         init.execute(&branch).await.unwrap();
 
-        fs.force_write("workspace/hello1.txt", b"hello");
-        fs.force_write("workspace/hello2.txt", b"hello");
-        fs.force_write("workspace/hello3.txt", b"hello");
+        fs.write_sync("workspace/hello1.txt", b"hello");
+        fs.write_sync("workspace/hello2.txt", b"hello");
+        fs.write_sync("workspace/hello3.txt", b"hello");
         stage.execute(&branch, ".").await.unwrap();
 
         let current_stagings = staging.read().await.unwrap().unwrap();

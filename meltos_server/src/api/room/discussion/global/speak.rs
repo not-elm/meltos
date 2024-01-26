@@ -34,14 +34,14 @@ mod tests {
     use meltos::schema::discussion::global::Speak;
     use meltos::schema::error::{DiscussionNotExistsBody, ErrorResponseBodyBase};
     use meltos::schema::room::Opened;
-    use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::memory::MemoryFileSystem;
 
     use crate::api::test_util::{http_call, http_create_discussion, http_open_room, http_speak, mock_app, ResponseConvertable, speak_request};
 
     #[tokio::test]
     async fn return_spoke() {
         let mut app = mock_app();
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let Opened {
             session_id,
             room_id,
@@ -69,7 +69,7 @@ mod tests {
     #[tokio::test]
     async fn failed_if_not_exists_discussion() {
         let mut app = mock_app();
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let Opened {
             session_id,
             room_id,

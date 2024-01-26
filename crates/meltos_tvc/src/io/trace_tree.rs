@@ -51,7 +51,7 @@ mod tests {
     use crate::branch::BranchName;
     use crate::encode::Encodable;
     use crate::file_system::{FilePath, FileSystem};
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::io::trace_tree::TraceTreeIo;
     use crate::object::{AsMeta, ObjHash};
     use crate::object::commit::CommitHash;
@@ -60,7 +60,7 @@ mod tests {
 
     #[tokio::test]
     async fn success_read_trace_tree() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
         let init = init::Init::new(fs.clone());
         let trace_tree = TraceTreeIo::new(fs.clone());
@@ -82,7 +82,7 @@ mod tests {
 
     #[tokio::test]
     async fn read_tree_after_wrote() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let trace_tre = TraceTreeIo::new(fs);
         let mut staging = TreeObj::default();
         staging.insert(FilePath::from_path("./src/hello"), ObjHash::new(b"hello"));

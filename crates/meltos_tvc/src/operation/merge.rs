@@ -196,7 +196,7 @@ enum InspectStatus {
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::file_system::{FilePath, FileSystem};
     use crate::io::workspace::WorkspaceIo;
     use crate::operation::checkout::Checkout;
@@ -208,13 +208,13 @@ mod tests {
 
     #[tokio::test]
     async fn fast_merge() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
 
         let second = BranchName::from("second");
         Checkout::new(fs.clone()).execute(&second).await.unwrap();
 
-        fs.force_write("workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&second, ".").await.unwrap();
         Commit::new(fs.clone())
             .execute(&second, "commit text")
@@ -240,7 +240,7 @@ mod tests {
 
     #[tokio::test]
     async fn fast_merge_from_dist() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
 
         let branch = BranchName::owner();
@@ -249,7 +249,7 @@ mod tests {
 
         Checkout::new(fs.clone()).execute(&branch).await.unwrap();
 
-        fs.force_write("workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
         Commit::new(fs.clone())
             .execute(&branch, "commit text")
@@ -270,7 +270,7 @@ mod tests {
 
     #[tokio::test]
     async fn success_merged() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
 
         let b1 = BranchName::owner();
         let b2 = BranchName::from("session");
@@ -279,12 +279,12 @@ mod tests {
         init.execute(&b1).await.unwrap();
         checkout.execute(&b2).await.unwrap();
         checkout.execute(&b1).await.unwrap();
-        fs.force_write("workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&b2, ".").await.unwrap();
         Commit::new(fs.clone()).execute(&b2, "TEXT").await.unwrap();
 
         checkout.execute(&b2).await.unwrap();
-        fs.force_write("workspace/test.txt", b"HELLO");
+        fs.write_sync("workspace/test.txt", b"HELLO");
         Stage::new(fs.clone()).execute(&b1, ".").await.unwrap();
         Commit::new(fs.clone()).execute(&b1, "TEXT").await.unwrap();
 

@@ -77,7 +77,7 @@ mod tests {
     use crate::branch::BranchName;
     use crate::encode::Encodable;
     use crate::file_system::FileSystem;
-    use crate::file_system::mock::MockFileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::io::bundle::{Bundle, BundleBranch};
     use crate::object::commit::CommitHash;
     use crate::object::ObjHash;
@@ -85,7 +85,7 @@ mod tests {
 
     #[tokio::test]
     async fn created_head_file() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let save = Save::new(fs.clone());
 
         let head = CommitHash(ObjHash::new(b"commit hash"));

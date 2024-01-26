@@ -15,13 +15,13 @@ mod tests {
     use axum::http::StatusCode;
 
     use meltos::schema::room::Opened;
-    use meltos_tvc::file_system::mock::MockFileSystem;
+    use meltos_tvc::file_system::memory::MemoryFileSystem;
 
     use crate::api::test_util::{http_call, http_fetch, http_open_room, mock_app};
 
     #[tokio::test]
     async fn failed_if_not_logged_in() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let mut app = mock_app();
         let Opened {
             room_id, ..
@@ -39,7 +39,7 @@ mod tests {
 
     #[tokio::test]
     async fn fetch() {
-        let fs = MockFileSystem::default();
+        let fs = MemoryFileSystem::default();
         let mut app = mock_app();
         let opened = http_open_room(&mut app, fs.clone()).await;
         let _bundle = http_fetch(&mut app, &opened.room_id, &opened.session_id).await;
