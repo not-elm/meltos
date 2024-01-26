@@ -18,7 +18,7 @@ pub struct JoinArgs {
 #[async_trait(? Send)]
 impl CommandExecutable for JoinArgs {
     async fn execute(self) -> meltos_client::error::Result {
-        let mut tvc = TvcClient::new(StdFileSystem, None);
+        let mut tvc = TvcClient::new(StdFileSystem);
         let configs = tvc.join_room(self.room_id, self.user_id.map(UserId)).await?;
         save_configs(&configs)?;
         println!("joined = {configs:?}");

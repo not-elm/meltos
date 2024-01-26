@@ -1,44 +1,58 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf, StripPrefixError};
+
 use async_trait::async_trait;
-use axum::extract::Path;
+
 use meltos::room::RoomId;
-use meltos_tvc::file_system::std_fs::StdFileSystem;
 use meltos_tvc::file_system::{FileSystem, Stat};
+use meltos_tvc::file_system::std_fs::StdFileSystem;
+use meltos_util::path::AsUri;
 
 use crate::path::room_resource_dir;
 
 #[derive(Debug, Clone)]
 pub struct BackendFileSystem<Fs = StdFileSystem> {
-    room_id: RoomId,
     fs: Fs,
+    resource_dir_uri: PathBuf,
+    resource_dir_uri_with_root: PathBuf,
 }
 
 impl<Fs> BackendFileSystem<Fs> {
     #[inline]
-    pub const fn new(room_id: RoomId, fs: Fs) -> BackendFileSystem<Fs> {
+    pub fn new(room_id: RoomId, fs: Fs) -> BackendFileSystem<Fs> {
         Self {
-            room_id,
+            resource_dir_uri: room_resource_dir(&room_id),
+            resource_dir_uri_with_root: room_resource_dir(&room_id).join("root"),
             fs,
         }
     }
 
     #[inline(always)]
     fn trim(&self, path: String) -> String {
-println!("TR path={path}");
-        path.trim_start_matches(&format!("/{}", room_resource_dir(&self.room_id)
-                .to_str()
-                .unwrap()
-                .replace('\\', "/")))
-
-        .to_string()
+        let p = Path::new(&path);
+        let p = self.strip_resource_dir(p);
+        p.map(|p| p.as_uri()).unwrap_or(path)
     }
+
+    fn strip_resource_dir(&self, p: &Path) -> std::result::Result<PathBuf, StripPrefixError> {
+        if let Ok(path) = p.strip_prefix(&self.resource_dir_uri_with_root) {
+            Ok(Path::new("/").join(path))
+        } else {
+            Ok(p.strip_prefix(&self.resource_dir_uri)?.to_path_buf())
+        }
+    }
+
 
     #[inline(always)]
     fn as_path(&self, path: &str) -> String {
-        let dir = room_resource_dir(&self.room_id);
-        let uri = dir.join(path.trim_start_matches("/")).to_str().unwrap().replace('\\', "/").to_string();
-        println!("dad path={path} {uri}");
-        uri
+        let p = Path::new(path);
+
+        let new_uri = if p.has_root() {
+            self.resource_dir_uri_with_root.join(p.strip_prefix("/").unwrap())
+        } else {
+            self.resource_dir_uri.join(p)
+        };
+
+        new_uri.as_uri()
     }
 }
 
@@ -75,17 +89,6 @@ impl<Fs: FileSystem> FileSystem for BackendFileSystem<Fs> {
     }
 
     #[inline(always)]
-    async fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
-        Ok(self
-            .fs
-            .all_files_in(&self.as_path(path))
-            .await?
-            .into_iter()
-            .map(|file| self.trim(file))
-            .collect())
-    }
-
-    #[inline(always)]
     async fn delete(&self, path: &str) -> std::io::Result<()> {
         self.fs.delete(&self.as_path(path)).await
     }
@@ -94,8 +97,8 @@ impl<Fs: FileSystem> FileSystem for BackendFileSystem<Fs> {
 #[cfg(test)]
 mod tests {
     use meltos::room::RoomId;
-    use meltos_tvc::file_system::memory::MemoryFileSystem;
     use meltos_tvc::file_system::FileSystem;
+    use meltos_tvc::file_system::memory::MemoryFileSystem;
 
     use crate::tvc::file_system::BackendFileSystem;
 
@@ -109,7 +112,21 @@ mod tests {
         files.sort();
         assert_eq!(
             files,
-            vec!["/dir/hello.txt".to_string(), "/hello2.txt".to_string(),]
+            vec!["/dir/hello.txt".to_string(), "/hello2.txt".to_string()]
+        )
+    }
+
+    #[tokio::test]
+    async fn read_files_without_root() {
+        let fs = MemoryFileSystem::default();
+        let fs = BackendFileSystem::new(RoomId::new(), fs.clone());
+        fs.write_file("dir/hello.txt", b"hello").await.unwrap();
+        fs.write_file("hello2.txt", b"hello").await.unwrap();
+        let mut files = fs.all_files_in(".").await.unwrap();
+        files.sort();
+        assert_eq!(
+            files,
+            vec!["dir/hello.txt".to_string(), "hello2.txt".to_string()]
         )
     }
 }

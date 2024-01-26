@@ -6,6 +6,7 @@ pub trait IntoJsResult<T> {
     fn into_js_result(self) -> Result<T>;
 }
 
+
 impl<T> IntoJsResult<T> for std::io::Result<T> {
     fn into_js_result(self) -> Result<T> {
         match self {

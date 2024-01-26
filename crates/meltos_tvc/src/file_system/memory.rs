@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use std::path::Path;
 
 use async_trait::async_trait;
+use meltos_util::console_log;
 
 use meltos_util::path::AsUri;
 

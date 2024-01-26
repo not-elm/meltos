@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use clap::Parser;
 
 use meltos_client::config::SessionConfigs;
+use meltos_tvc::branch::BranchName;
 
 use crate::commands::commit::CommitArgs;
 use crate::commands::fetch::FetchArgs;
@@ -66,8 +67,8 @@ impl CommandExecutable for Commands {
 const PATH: &str = "configs.json";
 
 #[inline(always)]
-fn load_branch_name() -> meltos_tvc::error::Result<String> {
-    Ok(load_configs()?.user_id.0)
+fn load_branch_name() -> meltos_tvc::error::Result<BranchName> {
+    Ok(BranchName(load_configs()?.user_id.0))
 }
 
 #[inline(always)]

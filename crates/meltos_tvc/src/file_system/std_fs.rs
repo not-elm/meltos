@@ -2,7 +2,9 @@ use std::fs::{DirEntry, File};
 use std::io::{ErrorKind, Read, Write};
 use std::path::Path;
 use std::time::UNIX_EPOCH;
+
 use async_trait::async_trait;
+use meltos_util::path::AsUri;
 
 use crate::file_system::{FileSystem, Stat, StatType};
 
@@ -10,7 +12,7 @@ use crate::file_system::{FileSystem, Stat, StatType};
 pub struct StdFileSystem;
 
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(target_arch = "wasm32", async_trait(? Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl FileSystem for StdFileSystem {
     async fn stat(&self, path: &str) -> std::io::Result<Option<Stat>> {
@@ -69,7 +71,6 @@ impl FileSystem for StdFileSystem {
                 Ok(Some(buf))
             }
             Err(error) => {
-                println!("{error:?} {path}");
                 if error.kind() == ErrorKind::NotFound {
                     Ok(None)
                 } else {
@@ -86,16 +87,21 @@ impl FileSystem for StdFileSystem {
         let mut entries = Vec::new();
         for entry in std::fs::read_dir(path)? {
             let entry = entry?;
-            entries.push(
-                entry
-                    .path()
-                    .to_str()
-                    .unwrap()
-                    .to_string()
-                    .replace('\\', "/"),
-            );
+            entries.push(entry.path().as_uri());
         }
         Ok(Some(entries))
+    }
+
+    async fn delete(&self, path: &str) -> std::io::Result<()> {
+        let path: &Path = path.as_ref();
+        if !path.exists() {
+            return Ok(());
+        }
+        if path.is_dir() {
+            std::fs::remove_dir_all(path)
+        } else {
+            std::fs::remove_file(path)
+        }
     }
 
     async fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
@@ -111,24 +117,17 @@ impl FileSystem for StdFileSystem {
             Ok(Vec::with_capacity(0))
         }
     }
-
-    async fn delete(&self, path: &str) -> std::io::Result<()> {
-        let path: &Path = path.as_ref();
-        if !path.exists() {
-            return Ok(());
-        }
-        if path.is_dir() {
-            std::fs::remove_dir_all(path)
-        } else {
-            std::fs::remove_file(path)
-        }
-    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::file_system::std_fs::StdFileSystem;
+    use std::path::Path;
+
+    use meltos_util::path::AsUri;
+
+    use crate::error;
     use crate::file_system::{FileSystem, StatType};
+    use crate::file_system::std_fs::StdFileSystem;
 
     fn tmp_dir() -> String {
         let path = directories::BaseDirs::new()
@@ -139,52 +138,47 @@ mod tests {
     }
 
     fn as_path(path: &str) -> String {
-        format!("{}/{path}", tmp_dir())
+        Path::new(&tmp_dir()).join(path).as_uri()
     }
 
     #[tokio::test]
-    #[ignore]
     async fn return_none_if_not_exists() {
         let fs = StdFileSystem;
-        let path = as_path("dir");
+        let path = as_path("dir1");
         fs.delete(&path).await.unwrap();
 
-        assert!(fs.read_dir(&as_path("dir")).await.unwrap().is_none());
+        assert!(fs.read_dir(&as_path("dir1")).await.unwrap().is_none());
     }
 
     #[tokio::test]
-    #[ignore]
     async fn create_dir() {
         let fs = StdFileSystem;
-        fs.create_dir(&as_path("dir")).await.unwrap();
-        assert_eq!(fs.read_dir(&as_path("dir")).await.unwrap().unwrap().len(), 0);
+        fs.create_dir(&as_path("dir2")).await.unwrap();
+        assert_eq!(fs.read_dir(&as_path("dir2")).await.unwrap().unwrap().len(), 0);
     }
 
     #[tokio::test]
-    #[ignore]
     async fn create_parent_dirs_when_write_file() {
         let fs = StdFileSystem;
-        let path = as_path("dir/hello.txt");
+        let path = as_path("dir3/hello.txt");
         fs.delete(&path).await.unwrap();
         fs.write_file(&path, b"hello").await.unwrap();
         assert_eq!(fs.read_file(&path).await.unwrap().unwrap(), b"hello");
     }
 
     #[tokio::test]
-    #[ignore]
     async fn delete_file() {
         let fs = StdFileSystem;
-        let path = as_path("dir/hello.txt");
+        let path = as_path("dir4/hello.txt");
         fs.write_file(&path, b"hello").await.unwrap();
         fs.delete(&path).await.unwrap();
         assert!(fs.read_file(&path).await.unwrap().is_none());
     }
 
     #[tokio::test]
-    #[ignore]
     async fn stat_file() {
         let fs = StdFileSystem;
-        let path = as_path("dir/hello.txt");
+        let path = as_path("dir5/hello.txt");
         fs.write_file(&path, b"hello").await.unwrap();
         let stat = fs.stat(&path).await.unwrap().unwrap();
         assert_eq!(stat.ty, StatType::File);
@@ -192,20 +186,36 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn stat_dir() {
         let fs = StdFileSystem;
-        let path = as_path("dir");
-        fs.delete(&as_path("dir")).await.unwrap();
-        fs.create_dir(&as_path("dir/sample")).await.unwrap();
+        let path = as_path("dir6");
+        fs.delete(&as_path("dir6")).await.unwrap();
+        fs.create_dir(&as_path("dir6/sample")).await.unwrap();
 
-        let stat = fs.stat(&as_path("dir")).await.unwrap().unwrap();
+        let stat = fs.stat(&as_path("dir6")).await.unwrap().unwrap();
         assert_eq!(stat.ty, StatType::Dir);
         assert_eq!(stat.size, 1);
 
-        fs.write_file(&as_path("dir/hello.txt"), b"hello").await.unwrap();
+        fs.write_file(&as_path("dir6/hello.txt"), b"hello").await.unwrap();
         let stat = fs.stat(&path).await.unwrap().unwrap();
         assert_eq!(stat.ty, StatType::Dir);
         assert_eq!(stat.size, 2);
+    }
+
+
+    #[tokio::test]
+    async fn it_read_dir() -> error::Result {
+        let fs = StdFileSystem;
+        let path = as_path("dir7");
+        fs.create_dir(&path).await?;
+        fs.create_dir(&as_path("dir7/child")).await?;
+        fs.write_file(&as_path("dir7/hello.txt"), b"hello").await?;
+
+        let entries = fs.try_read_dir(&path).await?;
+        assert_eq!(entries, vec![
+            as_path("dir7/child"),
+            as_path("dir7/hello.txt"),
+        ]);
+        Ok(())
     }
 }

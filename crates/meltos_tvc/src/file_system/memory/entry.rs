@@ -29,21 +29,21 @@ impl MemoryEntry {
     pub fn file_mut(&mut self) -> std::io::Result<&mut MemoryFile> {
         match self {
             MemoryEntry::File(file) => Ok(file),
-            MemoryEntry::Dir(_) => Err(std::io::Error::other("expect file bad was dir.")),
+            MemoryEntry::Dir(_) => Err(std::io::Error::other("expect file mut bad was dir")),
         }
     }
 
     pub fn dir_mut(&mut self) -> std::io::Result<&mut MemoryDir> {
         match self {
             MemoryEntry::Dir(dir) => Ok(dir),
-            MemoryEntry::File(_) => Err(std::io::Error::other("expect dir bad was file.")),
+            MemoryEntry::File(_) => Err(std::io::Error::other("expect dir mut bad was file.")),
         }
     }
 
     pub fn dir_ref(&self) -> std::io::Result<&MemoryDir> {
         match self {
             MemoryEntry::Dir(dir) => Ok(dir),
-            MemoryEntry::File(_) => Err(std::io::Error::other("expect dir bad was file.")),
+            MemoryEntry::File(_) => Err(std::io::Error::other("expect dir ref bad was file.")),
         }
     }
 

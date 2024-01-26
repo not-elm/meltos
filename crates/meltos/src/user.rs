@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
 
+use meltos_tvc::branch::BranchName;
 use meltos_util::impl_string_new_type;
 use meltos_util::macros::{Display, Sha1};
 
@@ -20,6 +21,18 @@ impl UserId {
     #[wasm_bindgen(js_name = toString)]
     pub fn js_to_string(&self) -> String {
         self.0.clone()
+    }
+
+    #[wasm_bindgen(js_name = intoBranchName)]
+    pub fn into_branch_name(self) -> BranchName {
+        BranchName(self.0)
+    }
+}
+
+impl From<UserId> for BranchName{
+    #[inline(always)]
+    fn from(value: UserId) -> Self {
+        BranchName(value.0)
     }
 }
 

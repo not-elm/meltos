@@ -1,4 +1,4 @@
-use crate::commands::{load_configs, CommandExecutable};
+use crate::commands::{load_configs, CommandExecutable, load_branch_name};
 use async_trait::async_trait;
 use clap::Args;
 use meltos_client::tvc::TvcClient;
@@ -12,7 +12,7 @@ pub struct PushArgs;
 impl CommandExecutable for PushArgs {
     async fn execute(self) -> meltos_client::error::Result {
         let configs = load_configs()?;
-        let mut tvc = TvcClient::new(StdFileSystem, Some(BranchName(configs.user_id.to_string())));
+        let mut tvc = TvcClient::new(StdFileSystem);
         tvc.push(configs).await?;
         Ok(())
     }

@@ -13,8 +13,8 @@ pub struct CommitArgs {
 #[async_trait(?Send)]
 impl CommandExecutable for CommitArgs {
     async fn execute(self) -> meltos_client::error::Result {
-        let tvc = TvcClient::new(StdFileSystem, Some(BranchName(load_branch_name()?)));
-        tvc.commit(self.commit_text).await?;
+        let tvc = TvcClient::new(StdFileSystem);
+        tvc.commit(&load_branch_name()?, self.commit_text).await?;
         println!("committed");
         Ok(())
     }

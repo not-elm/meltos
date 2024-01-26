@@ -2,7 +2,6 @@ use async_trait::async_trait;
 use clap::Args;
 
 use meltos_client::tvc::TvcClient;
-use meltos_tvc::branch::BranchName;
 use meltos_tvc::file_system::std_fs::StdFileSystem;
 
 use crate::commands::{CommandExecutable, load_configs};
@@ -14,7 +13,7 @@ pub struct FetchArgs;
 impl CommandExecutable for FetchArgs {
     async fn execute(self) -> meltos_client::error::Result {
         let configs = load_configs()?;
-        let tvc = TvcClient::new(StdFileSystem, Some(BranchName(configs.user_id.clone().0)));
+        let tvc = TvcClient::new(StdFileSystem);
         tvc.fetch(configs).await?;
         println!("fetched");
         Ok(())

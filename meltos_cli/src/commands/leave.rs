@@ -5,7 +5,7 @@ use meltos_client::tvc::TvcClient;
 use meltos_tvc::branch::BranchName;
 use meltos_tvc::file_system::std_fs::StdFileSystem;
 
-use crate::commands::{load_configs, CommandExecutable};
+use crate::commands::{load_configs, CommandExecutable, load_branch_name};
 
 #[derive(Debug, Clone, Args)]
 pub struct LeaveArgs {}
@@ -14,7 +14,7 @@ pub struct LeaveArgs {}
 impl CommandExecutable for LeaveArgs {
     async fn execute(self) -> meltos_client::error::Result {
         let configs = load_configs()?;
-        let tvc = TvcClient::new(StdFileSystem, Some(BranchName(configs.user_id.to_string())));
+        let tvc = TvcClient::new(StdFileSystem);
         tvc.leave(configs).await?;
         Ok(())
     }

@@ -19,8 +19,7 @@ pub struct MemoryDir(Arc<RwLock<MemoryDirInner>>);
 impl MemoryDir {
     #[inline(always)]
     pub fn root() -> Self {
-        let root = Self::new("", None);
-        root
+        Self::new("", None)
     }
 
     #[inline(always)]
@@ -28,13 +27,12 @@ impl MemoryDir {
         self.0.read().unwrap().name.clone()
     }
 
-
     #[inline(always)]
     pub fn new(name: impl Into<String>, parent: Option<MemoryDir>) -> Self {
         let dir = Self(Arc::new(RwLock::new(MemoryDirInner::new(name.into()))));
-        dir.0.write().unwrap().entries.insert(".".to_string(), MemoryEntry::Dir(dir.clone()));
+        dir.set_dir(".", dir.clone());
         if let Some(parent) = parent {
-            dir.0.write().unwrap().entries.insert("..".to_string(), MemoryEntry::Dir(parent));
+            dir.set_dir("..", parent);
         }
         dir
     }
@@ -45,17 +43,18 @@ impl MemoryDir {
         inner.stat()
     }
 
-
     #[inline(always)]
     pub fn set_dir(&self, entry_name: impl Into<String>, dir: MemoryDir) {
-        self.0.write().unwrap().entries.insert(entry_name.into(), MemoryEntry::Dir(dir));
+        self.0
+            .write()
+            .unwrap()
+            .entries
+            .insert(entry_name.into(), MemoryEntry::Dir(dir));
     }
-
 
     #[inline(always)]
     pub fn entry_names(&self) -> Vec<String> {
-        self
-            .0
+        self.0
             .read()
             .unwrap()
             .entries
@@ -65,12 +64,10 @@ impl MemoryDir {
             .collect()
     }
 
-
     #[inline(always)]
     pub fn delete(&self, entry_name: &str) {
         self.0.write().unwrap().entries.remove(entry_name);
     }
-
 
     pub fn try_read(&self, path: &str) -> std::io::Result<MemoryEntry> {
         self.read(path).ok_or_else(|| {
@@ -95,21 +92,25 @@ impl MemoryDir {
         self.update_time_recursive(&path);
     }
 
-
     pub fn create_dir(&self, path: &str) -> MemoryDir {
         let mut dir = self.clone();
         dir.update_time_recursive(path);
         for name in as_schemes(path) {
             if dir.0.read().unwrap().entries.contains_key(&name) {
-                dir = dir
-                    .read(&name)
-                    .and_then(|entry| entry.dir().ok())
-                    .unwrap();
+                dir = dir.read(&name).and_then(|entry| entry.dir().ok()).unwrap();
             } else {
                 let mut inner = dir.0.write().unwrap();
                 let child = MemoryDir::new(name.to_string(), Some(dir.clone()));
-                inner.entries.insert(name.to_string(), MemoryEntry::Dir(child.clone()));
-                let child = inner.entries.get_mut(&name).unwrap().dir_mut().unwrap().clone();
+                inner
+                    .entries
+                    .insert(name.to_string(), MemoryEntry::Dir(child.clone()));
+                let child = inner
+                    .entries
+                    .get_mut(&name)
+                    .unwrap()
+                    .dir_mut()
+                    .unwrap()
+                    .clone();
                 drop(inner);
                 dir = child;
             }
@@ -117,7 +118,6 @@ impl MemoryDir {
 
         dir
     }
-
 
     #[inline(always)]
     pub fn exists(&self, path: &str) -> bool {
@@ -135,10 +135,7 @@ impl MemoryDir {
 
     pub fn all_files(&self) -> Vec<String> {
         let mut files = Vec::new();
-        let lock = self
-            .0
-            .read()
-            .unwrap();
+        let lock = self.0.read().unwrap();
         let entries: Vec<(String, MemoryEntry)> = lock
             .entries
             .iter()
@@ -158,10 +155,7 @@ impl MemoryDir {
     }
 
     fn as_absolute_uri(&self, entry_name: &str) -> String {
-        self
-            .parent_path_buf()
-            .join(entry_name)
-            .as_uri()
+        self.parent_path_buf().join(entry_name).as_uri()
     }
 
     fn parent_path_buf(&self) -> PathBuf {
@@ -204,7 +198,6 @@ impl MemoryDir {
         self._update_time_recursive(update_time, &ps);
     }
 
-
     #[inline(always)]
     fn _write_file(&self, entry_name: String, buf: Vec<u8>) {
         let mut inner = self.0.write().unwrap();
@@ -220,7 +213,6 @@ impl MemoryDir {
                 .insert(entry_name, MemoryEntry::File(MemoryFile::new(buf)));
         }
     }
-
 
     #[inline(always)]
     fn _update_time_recursive(&self, update_time: u64, path: &[&str]) {
@@ -252,7 +244,6 @@ struct MemoryDirInner {
     entries: HashMap<String, MemoryEntry>,
 }
 
-
 impl MemoryDirInner {
     pub fn new(name: String) -> Self {
         let create_time = since_epoch_secs();
@@ -274,7 +265,6 @@ impl MemoryDirInner {
     }
 }
 
-
 impl Debug for MemoryDirInner {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut fmt = f.debug_struct("MemoryDir");
@@ -285,13 +275,11 @@ impl Debug for MemoryDirInner {
     }
 }
 
-
 #[inline(always)]
 fn ignore_name(name: impl AsRef<str>) -> bool {
     let name: &str = name.as_ref();
     !(name == "." || name == "..")
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -300,7 +288,14 @@ mod tests {
     #[test]
     fn it_ignored_mine() {
         let root = MemoryDir::root();
-        let entries = root.0.read().unwrap().entries.keys().cloned().collect::<Vec<String>>();
+        let entries = root
+            .0
+            .read()
+            .unwrap()
+            .entries
+            .keys()
+            .cloned()
+            .collect::<Vec<String>>();
         // 実際には自身(root)を表すエントリーが存在する
         assert_eq!(entries, vec!["."]);
 
@@ -314,7 +309,10 @@ mod tests {
         let root = MemoryDir::root();
         root.write_file("hello.txt", b"hello");
 
-        assert_eq!(root.read(".").unwrap().dir_ref().unwrap().all_files(), vec!["hello.txt"]);
+        assert_eq!(
+            root.read(".").unwrap().dir_ref().unwrap().all_files(),
+            vec!["hello.txt"]
+        );
     }
 
     #[test]
@@ -322,9 +320,9 @@ mod tests {
         let root = MemoryDir::root();
         root.write_file("a.txt", b"hello");
         root.write_file("dir/b.txt", b"hello");
-        assert_eq!(root.read(".").unwrap().dir_ref().unwrap().all_files(), vec![
-            "a.txt",
-            "dir/b.txt",
-        ]);
+        assert_eq!(
+            root.read(".").unwrap().dir_ref().unwrap().all_files(),
+            vec!["a.txt", "dir/b.txt"]
+        );
     }
 }

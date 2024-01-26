@@ -13,8 +13,8 @@ pub struct StageArgs {
 #[async_trait(?Send)]
 impl CommandExecutable for StageArgs {
     async fn execute(self) -> meltos_client::error::Result {
-        let tvc = TvcClient::new(StdFileSystem, Some(BranchName(load_branch_name()?)));
-        tvc.stage(self.path).await?;
+        let tvc = TvcClient::new(StdFileSystem);
+        tvc.stage(&load_branch_name()?, self.path).await?;
         println!("staged");
         Ok(())
     }

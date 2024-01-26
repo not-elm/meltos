@@ -4,6 +4,7 @@ members = [
     "meltos_cli",
     "meltos_server",
 ]
+
 resolver = "2"
 
 

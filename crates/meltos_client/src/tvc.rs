@@ -63,11 +63,10 @@ pub struct TvcClient<Fs: FileSystem + Clone> {
     workspace: WorkspaceIo<Fs>,
     obj: ObjIo<Fs>,
     fs: Fs,
-    branch_name: Option<BranchName>,
 }
 
 impl<Fs: FileSystem + Clone> TvcClient<Fs> {
-    pub fn new(fs: Fs, branch_name: Option<BranchName>) -> Self {
+    pub fn new(fs: Fs) -> Self {
         Self {
             operations: Operations::new(fs.clone()),
             staging: StagingIo::new(fs.clone()),
@@ -79,26 +78,25 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             workspace: WorkspaceIo::new(fs.clone()),
             obj: ObjIo::new(fs.clone()),
             fs,
-            branch_name,
         }
     }
 
     /// このメソッドはクライアントツール側でテストを実行する際に使用する想定です。
-    pub async fn init_repository(&self) -> error::Result<CommitHash> {
-        let commit_hash = self.operations.init.execute(self.branch_name()?).await?;
+    pub async fn init_repository(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
+        let commit_hash = self.operations.init.execute(branch_name).await?;
         Ok(commit_hash)
     }
 
 
     #[inline(always)]
-    pub async fn unzip(&self) -> error::Result{
-        self.operations.unzip.execute(self.branch_name()?).await?;
+    pub async fn unzip(&self, branch_name: &BranchName) -> error::Result {
+        self.operations.unzip.execute(branch_name).await?;
         Ok(())
     }
 
     pub async fn open_room(&mut self, lifetime_sec: Option<u64>, user_limits: Option<u64>) -> error::Result<SessionConfigs> {
         let branch = BranchName::owner();
-        self.branch_name.replace(branch.clone());
+
         self.operations.init.execute(&branch).await?;
         let mut sender = OpenSender {
             lifetime_sec,
@@ -125,7 +123,6 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         self.operations.save.execute(bundle).await?;
         self.operations.checkout.execute(&branch).await?;
         self.operations.unzip.execute(&branch).await?;
-        self.branch_name.replace(branch);
 
         Ok(http.configs().clone())
     }
@@ -144,8 +141,8 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 
     #[inline(always)]
-    pub async fn stage(&self, path: String) -> error::Result {
-        self.operations.stage.execute(self.branch_name()?, &path).await?;
+    pub async fn stage(&self, branch_name: &BranchName, path: String) -> error::Result {
+        self.operations.stage.execute(branch_name, &path).await?;
         Ok(())
     }
 
@@ -162,27 +159,27 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 
     #[inline(always)]
-    pub async fn commit(&self, commit_text: String) -> error::Result<CommitHash> {
+    pub async fn commit(&self, branch_name: &BranchName, commit_text: String) -> error::Result<CommitHash> {
         Ok(self
             .operations
             .commit
-            .execute(self.branch_name()?, commit_text)
+            .execute(branch_name, commit_text)
             .await?)
     }
 
     pub async fn push(&mut self, session_configs: SessionConfigs) -> error::Result {
+        let branch_name = session_configs.user_id.clone().into();
         let mut sender = PushSender {
             session_configs,
         };
         self.operations
             .push
-            .execute(self.branch_name()?.clone(), &mut sender)
+            .execute(branch_name, &mut sender)
             .await?;
         Ok(())
     }
 
-    pub async fn merge(&self, source_commit_hash: CommitHash) -> error::Result<MergedStatus> {
-        let dist = self.branch_name()?.clone();
+    pub async fn merge(&self, dist: BranchName, source_commit_hash: CommitHash) -> error::Result<MergedStatus> {
         let status = self.operations.merge.execute(source_commit_hash, dist).await?;
         Ok(status)
     }
@@ -207,12 +204,6 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         Ok(branches)
     }
 
-    #[inline(always)]
-    fn branch_name(&self) -> error::Result<&BranchName> {
-        self.branch_name
-            .as_ref()
-            .ok_or(error::Error::NotInitialized)
-    }
 
     async fn all_commit_metas(&self, branch_name: &BranchName) -> error::Result<Vec<CommitMeta>> {
         let Some(head) = self.head.read(branch_name).await? else {
@@ -246,8 +237,8 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 
     #[inline(always)]
-    pub async fn can_push(&self) -> error::Result<bool> {
-        Ok(self.local_commits.read(self.branch_name()?).await?.is_some_and(|commits| !commits.is_empty()))
+    pub async fn can_push(&self, branch_name: &BranchName) -> error::Result<bool> {
+        Ok(self.local_commits.read(branch_name).await?.is_some_and(|commits| !commits.is_empty()))
     }
 
 
@@ -259,16 +250,16 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             .unwrap_or_default())
     }
 
-    pub async fn traces(&self) -> error::Result<Option<TreeObj>> {
-        let Some(head) = self.head.read(self.branch_name()?).await? else {
+    pub async fn traces(&self, branch_name: &BranchName) -> error::Result<Option<TreeObj>> {
+        let Some(head) = self.head.read(branch_name).await? else {
             return Ok(None);
         };
         let trace_tree = self.trace.read(&head).await?;
         Ok(Some(trace_tree))
     }
 
-    pub async fn find_obj_hash_from_traces(&self, file_path: &str) -> error::Result<Option<ObjHash>> {
-        let Some(head) = self.head.read(self.branch_name()?).await? else {
+    pub async fn find_obj_hash_from_traces(&self, branch_name: &BranchName, file_path: &str) -> error::Result<Option<ObjHash>> {
+        let Some(head) = self.head.read(branch_name).await? else {
             return Ok(None);
         };
         let trace_tree = self.trace.read(&head).await?;
@@ -277,8 +268,8 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
 
 
     #[inline(always)]
-    pub async fn is_change(&self, file_path: &FilePath) -> error::Result<bool> {
-        Ok(self.workspace.is_change(self.branch_name()?, file_path).await?)
+    pub async fn is_change(&self, branch_name: &BranchName, file_path: &FilePath) -> error::Result<bool> {
+        Ok(self.workspace.is_change(branch_name, file_path).await?)
     }
 
     #[inline(always)]

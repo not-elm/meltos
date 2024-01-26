@@ -61,8 +61,8 @@ pub enum StatType {
     Dir,
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(? Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg(not(target_arch = "wasm32"))]
+#[async_trait]
 pub trait FileSystem: Send + Sync {
     /// エントリのStatを取得します。
     ///
@@ -99,7 +99,6 @@ pub trait FileSystem: Send + Sync {
     ///
     /// ファイルパスはファイルシステムのルートからの相対パスになります。
     async fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
-        println!("path = {path}");
         let mut files = Vec::new();
         let Some(stat) = self.stat(path).await? else {
             return Ok(Vec::with_capacity(0));
@@ -157,36 +156,104 @@ pub trait FileSystem: Send + Sync {
         Ok(!files.is_empty())
     }
 }
-//
-// impl FileSystem for Box<dyn FileSystem> {
-//     fn stat(&self, path: &str) -> std::io::Result<Option<Stat>> {
-//         self.as_ref().stat(path)
-//     }
-//
-//     fn write_file(&self, path: &str, buf: &[u8]) -> std::io::Result<()> {
-//         self.as_ref().write_file(path, buf)
-//     }
-//
-//     fn create_dir(&self, path: &str) -> std::io::Result<()> {
-//         self.as_ref().create_dir(path)
-//     }
-//
-//     fn read_file(&self, path: &str) -> std::io::Result<Option<Vec<u8>>> {
-//         self.as_ref().read_file(path)
-//     }
-//
-//     fn read_dir(&self, path: &str) -> std::io::Result<Option<Vec<String>>> {
-//         self.as_ref().read_dir(path)
-//     }
-//
-//     fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
-//         self.as_ref().all_files_in(path)
-//     }
-//
-//     fn delete(&self, path: &str) -> std::io::Result<()> {
-//         self.as_ref().delete(path)
-//     }
-// }
+
+
+#[cfg(target_arch = "wasm32")]
+#[async_trait(?Send)]
+pub trait FileSystem {
+    /// エントリのStatを取得します。
+    ///
+    /// パスが存在しない場合、`None`が返されます。
+    async fn stat(&self, path: &str) -> std::io::Result<Option<Stat>>;
+
+    /// 対象のパスにファイルを書き込みます。
+    ///
+    /// ファイルが存在しない場合は新規作成されます。
+    /// 親ディレクトリが存在しない場合、親となるディレクトリを全て作成します。
+    async fn write_file(&self, path: &str, buf: &[u8]) -> std::io::Result<()>;
+
+    /// ディレクトリを作成します。
+    ///
+    /// 親ディレクトリが存在しない場合、再帰的に作成します。
+    async fn create_dir(&self, path: &str) -> std::io::Result<()>;
+
+    /// ファイルバッファを読み込みます。
+    ///
+    /// 対象のパスにファイルが存在しない場合、`None`が返されます。
+    async fn read_file(&self, path: &str) -> std::io::Result<Option<Vec<u8>>>;
+
+    /// ディレクトリ内のエントリパスをすべて取得します。
+    async fn read_dir(&self, path: &str) -> std::io::Result<Option<Vec<String>>>;
+
+    ///　エントリを強制的に削除します。
+    ///
+    /// ディレクトリの場合、子孫も削除されます。
+    async fn delete(&self, path: &str) -> std::io::Result<()>;
+
+
+    /// 指定したパスがディレクトリの場合、子孫となるファイルパスを全て返します。
+    /// ファイルの場合、そのファイルパスを返します。
+    ///
+    /// ファイルパスはファイルシステムのルートからの相対パスになります。
+    async fn all_files_in(&self, path: &str) -> std::io::Result<Vec<String>> {
+        let mut files = Vec::new();
+        let Some(stat) = self.stat(path).await? else {
+            return Ok(Vec::with_capacity(0));
+        };
+        if stat.is_dir() {
+            for entry_uri in self.read_dir(path).await?.unwrap_or_default() {
+                files.extend(self.all_files_in(&entry_uri).await?);
+            }
+        } else {
+            files.push(path.to_string())
+        }
+        Ok(files)
+    }
+
+
+    /// ファイルバッファを読み込みます。
+    ///
+    /// ファイルが存在しない場合`Error`が返されます。
+    async fn try_read_file(&self, path: &str) -> std::io::Result<Vec<u8>> {
+        self.read_file(path).await.and_then(|buf| {
+            match buf {
+                Some(buf) => Ok(buf),
+                None => {
+                    Err(std::io::Error::new(
+                        ErrorKind::NotFound,
+                        format!("not found file path = {path}"),
+                    ))
+                }
+            }
+        })
+    }
+
+    /// ファイルバッファを読み込みます。
+    ///
+    /// ファイルが存在しない場合`Error`が返されます。
+    async fn try_read_dir(&self, path: &str) -> std::io::Result<Vec<String>> {
+        self.read_dir(path)
+            .await
+            .and_then(|buf| {
+                match buf {
+                    Some(files) => Ok(files),
+                    None => {
+                        Err(std::io::Error::new(
+                            ErrorKind::NotFound,
+                            format!("not found dir path = {path}"),
+                        ))
+                    }
+                }
+            })
+    }
+
+    /// TVCのデータ構造が既に存在するかを検査します。
+    async fn project_already_initialized(&self) -> std::io::Result<bool> {
+        let files = self.all_files_in("./.meltos").await?;
+        Ok(!files.is_empty())
+    }
+}
+
 
 #[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]
@@ -211,3 +278,5 @@ impl AsRef<String> for FilePath {
         &self.0
     }
 }
+
+

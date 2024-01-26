@@ -18,7 +18,7 @@ pub struct OpenArgs {
 #[async_trait(? Send)]
 impl CommandExecutable for OpenArgs {
     async fn execute(self) -> meltos_client::error::Result {
-        let mut tvc = TvcClient::new(StdFileSystem, None);
+        let mut tvc = TvcClient::new(StdFileSystem);
         let session_configs = tvc.open_room(self.lifetime_secs, self.user_limits).await?;
         save_configs(&session_configs)?;
         println!("opened = {session_configs:?}");

@@ -17,7 +17,7 @@ log = "0.4.20"
 similar = "2.3.0"
 wasm-bindgen = { workspace = true }
 async-recursion = "1.0.5"
-
+wasm-timer = "0.2.5"
 [dev-dependencies]
 tokio = { version = "1.34.0", features = ["full", "tracing"] }
 directories = "5.0.1"
