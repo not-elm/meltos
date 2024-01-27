@@ -35,7 +35,7 @@ pub fn tracing_init() {
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     env::set_var("RUST_LOG", "ERROR");
     tracing_init();
-    let listener = tokio::net::TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 3000))).await?;
+    let listener = tokio::net::TcpListener::bind(SocketAddr::from(([0, 0, 0, 0], 3000))).await?;
 
     axum::serve(listener, app::<SqliteSessionIo, SqliteDiscussionIo>()).await?;
     Ok(())

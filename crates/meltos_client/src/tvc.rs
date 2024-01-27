@@ -49,7 +49,7 @@ pub struct BranchCommitMeta {
 }
 
 
-pub const BASE: &str = "http://127.0.0.1:3000";
+pub const BASE: &str = "http://192.168.10.101:3000";
 
 #[derive(Clone)]
 pub struct TvcClient<Fs: FileSystem + Clone> {
@@ -295,7 +295,7 @@ impl Pushable<SessionConfigs> for OpenSender {
 
     async fn push(&mut self, bundle: Bundle) -> Result<SessionConfigs, Self::Error> {
         let http = HttpClient::open(
-            "http://127.0.0.1:3000",
+            BASE,
             Some(bundle),
             self.lifetime_sec,
             self.user_limits,
@@ -314,7 +314,7 @@ impl Pushable<()> for PushSender {
     type Error = String;
 
     async fn push(&mut self, bundle: Bundle) -> Result<(), Self::Error> {
-        let mut http = HttpClient::new("http://localhost:3000", self.session_configs.clone());
+        let mut http = HttpClient::new(BASE, self.session_configs.clone());
         http.push(bundle).await?;
 
         Ok(())
