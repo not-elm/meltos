@@ -44,7 +44,7 @@ pub async fn join(SessionRoom(room): SessionRoom, Json(join): Json<Join>) -> Htt
         },
         from: user_id,
     })
-        .await?;
+    .await?;
 
     Ok(joined.as_success_response())
 }
@@ -60,8 +60,8 @@ mod tests {
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::branch::BranchName;
-    use meltos_tvc::file_system::FileSystem;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
+    use meltos_tvc::file_system::FileSystem;
     use meltos_tvc::io::bundle::BundleIo;
     use meltos_tvc::operation::init::Init;
 
@@ -77,21 +77,24 @@ mod tests {
         let response = http_join(&mut app, &RoomId("invalid_id".to_string()), None).await;
 
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
-        let error = response
-            .deserialize::<ErrorResponseBodyBase>()
-            .await;
-        assert_eq!(error, ErrorResponseBodyBase {
-            category: "session".to_string(),
-            error_type: "RoomNotExists".to_string(),
-            message: "room not exists".to_string(),
-        })
+        let error = response.deserialize::<ErrorResponseBodyBase>().await;
+        assert_eq!(
+            error,
+            ErrorResponseBodyBase {
+                category: "session".to_string(),
+                error_type: "RoomNotExists".to_string(),
+                message: "room not exists".to_string(),
+            }
+        )
     }
 
     #[tokio::test]
     async fn status_code_is_ok_if_joined_exists_room() {
         let mut app = mock_app();
         let fs = MemoryFileSystem::default();
-        fs.write_file("./some_text.txt", b"text file").await.unwrap();
+        fs.write_file("./some_text.txt", b"text file")
+            .await
+            .unwrap();
         let opened = http_open_room(&mut app, fs.clone()).await;
         let response = http_join(&mut app, &opened.room_id, None).await;
         assert_eq!(response.status(), StatusCode::OK);
@@ -101,26 +104,30 @@ mod tests {
     async fn failed_if_reached_capacity() {
         let mut app = mock_app();
 
-        let opened: Opened = http_call_with_deserialize(&mut app, open_room_request_with_options(
-            None,
-            None,
-            Some(1), // room capacity
-        ))
-            .await;
+        let opened: Opened = http_call_with_deserialize(
+            &mut app,
+            open_room_request_with_options(
+                None,
+                None,
+                Some(1), // room capacity
+            ),
+        )
+        .await;
 
         let response = http_join(&mut app, &opened.room_id, None).await;
         assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
-        let error = response
-            .deserialize::<ReachedCapacityBody>()
-            .await;
-        assert_eq!(error, ReachedCapacityBody {
-            base: ErrorResponseBodyBase {
-                category: "session".to_string(),
-                error_type: "ReachedCapacity".to_string(),
-                message: "reached capacity; capacity: 1".to_string(),
-            },
-            capacity: 1,
-        });
+        let error = response.deserialize::<ReachedCapacityBody>().await;
+        assert_eq!(
+            error,
+            ReachedCapacityBody {
+                base: ErrorResponseBodyBase {
+                    category: "session".to_string(),
+                    error_type: "ReachedCapacity".to_string(),
+                    message: "reached capacity; capacity: 1".to_string(),
+                },
+                capacity: 1,
+            }
+        );
     }
 
     #[tokio::test]
@@ -128,7 +135,7 @@ mod tests {
         let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
         let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
-        fs.write_sync("workspace/some_text.txt", b"text file");
+        fs.write_sync("/workspace/some_text.txt", b"text file");
         Init::new(fs.clone()).execute(&branch).await.unwrap();
         let bundle = BundleIo::new(fs.clone()).create().await.unwrap();
         let open_request = open_room_request_with_options(Some(bundle), None, None);
@@ -144,7 +151,9 @@ mod tests {
     async fn it_return_user_id() {
         let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
         let fs = MemoryFileSystem::default();
-        fs.write_file("./some_text.txt", b"text file").await.unwrap();
+        fs.write_file("./some_text.txt", b"text file")
+            .await
+            .unwrap();
         let opened = http_open_room(&mut app, fs.clone()).await;
         let response = http_join(&mut app, &opened.room_id, Some(UserId::from("tvc"))).await;
         let meta = response.deserialize::<Joined>().await;
@@ -162,10 +171,13 @@ mod tests {
         let response = http_join(&mut app, &opened.room_id, Some(UserId::from("user1"))).await;
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
         let error = response.deserialize::<ErrorResponseBodyBase>().await;
-        assert_eq!(error, ErrorResponseBodyBase {
-            category: "session".to_string(),
-            error_type: "UserIdConflict".to_string(),
-            message: "user id conflict; id: user1".to_string(),
-        });
+        assert_eq!(
+            error,
+            ErrorResponseBodyBase {
+                category: "session".to_string(),
+                error_type: "UserIdConflict".to_string(),
+                message: "user id conflict; id: user1".to_string(),
+            }
+        );
     }
 }

@@ -66,7 +66,11 @@ where
     }
 
     pub async fn create_push_bundle(&self, branch_name: BranchName) -> error::Result<Bundle> {
-        let local_commits = self.local_commits.read(&branch_name).await?.unwrap_or_default();
+        let local_commits = self
+            .local_commits
+            .read(&branch_name)
+            .await?
+            .unwrap_or_default();
         if local_commits.is_empty() {
             return Err(error::Error::NotfoundLocalCommits);
         }
@@ -152,7 +156,9 @@ mod tests {
         let commit = Commit::new(fs.clone());
         let push = Push::new(fs.clone());
 
-        fs.write_file("workspace/hello.txt", b"hello").await.unwrap();
+        fs.write_file("/workspace/hello.txt", b"hello")
+            .await
+            .unwrap();
         stage.execute(&branch, ".").await.unwrap();
         commit.execute(&branch, "commit text").await.unwrap();
         assert!(push
@@ -170,14 +176,17 @@ mod tests {
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
         let push = Push::new(fs.clone());
-        fs.write_file("workspace/hello", b"hello").await.unwrap();
+        fs.write_file("/workspace/hello", b"hello").await.unwrap();
         stage.execute(&branch, ".").await.unwrap();
         commit.execute(&branch, "commit text").await.unwrap();
         push.execute(branch.clone(), &mut MockRemoteClient::default())
             .await
             .unwrap();
 
-        assert_eq!(commit_obj.read_local_commits(&branch).await.unwrap().len(), 0);
+        assert_eq!(
+            commit_obj.read_local_commits(&branch).await.unwrap().len(),
+            0
+        );
     }
 
     #[tokio::test]
@@ -189,7 +198,9 @@ mod tests {
         let commit = Commit::new(fs.clone());
         let push = Push::new(fs.clone());
 
-        fs.write_file("workspace/hello.txt", b"hello").await.unwrap();
+        fs.write_file("/workspace/hello.txt", b"hello")
+            .await
+            .unwrap();
         stage.execute(&branch, ".").await.unwrap();
         commit.execute(&branch, "commit text").await.unwrap();
         let mut remote = MockRemoteClient::default();

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Formatter, Pointer, Write};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
@@ -13,8 +13,16 @@ use crate::file_system::memory::entry::MemoryEntry;
 use crate::time::since_epoch_secs;
 
 #[repr(transparent)]
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct MemoryDir(Arc<RwLock<MemoryDirInner>>);
+
+impl Debug for MemoryDir{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let entry = self.0.read().unwrap();
+        f.write_fmt(format_args!("{entry:#?}"))
+    }
+}
+
 
 impl MemoryDir {
     #[inline(always)]
@@ -269,7 +277,14 @@ impl Debug for MemoryDirInner {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut fmt = f.debug_struct("MemoryDir");
         for (key, entry) in self.entries.iter() {
-            fmt.field(key, &entry.stat());
+            if key == "." || key == ".." {
+                continue;
+            }
+            if let MemoryEntry::Dir(dir) = entry {
+                fmt.field(key, &entry);
+            } else {
+                fmt.field(key, &entry.stat());
+            }
         }
         fmt.finish()
     }
@@ -320,8 +335,10 @@ mod tests {
         let root = MemoryDir::root();
         root.write_file("a.txt", b"hello");
         root.write_file("dir/b.txt", b"hello");
+        let mut files = root.read(".").unwrap().dir_ref().unwrap().all_files();
+        files.sort();
         assert_eq!(
-            root.read(".").unwrap().dir_ref().unwrap().all_files(),
+            files,
             vec!["a.txt", "dir/b.txt"]
         );
     }

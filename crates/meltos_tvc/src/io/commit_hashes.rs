@@ -5,15 +5,15 @@ use crate::object::commit::CommitHash;
 
 #[derive(Debug, Clone)]
 pub struct CommitHashIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     commit_obj: CommitObjIo<Fs>,
 }
 
 impl<Fs> CommitHashIo<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     #[inline(always)]
     pub fn new(fs: Fs) -> CommitHashIo<Fs> {
@@ -24,8 +24,8 @@ impl<Fs> CommitHashIo<Fs>
 }
 
 impl<Fs> CommitHashIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     pub async fn read_all(
         &self,
@@ -68,7 +68,10 @@ mod tests {
         let fs = MemoryFileSystem::default();
         let commit_hashes = crate::io::commit_hashes::CommitHashIo::new(fs.clone());
         let null_commit = init_owner_branch(fs.clone()).await;
-        let hashes = commit_hashes.read_all(null_commit.clone(), &None).await.unwrap();
+        let hashes = commit_hashes
+            .read_all(null_commit.clone(), &None)
+            .await
+            .unwrap();
         assert_eq!(hashes, vec![null_commit]);
     }
 
@@ -81,15 +84,18 @@ mod tests {
         let commit = Commit::new(fs.clone());
         let commit0 = init_owner_branch(fs.clone()).await;
 
-        fs.write_sync("workspace/test.txt", b"hello");
+        fs.write_sync("/workspace/test.txt", b"hello");
         stage.execute(&branch, ".").await.unwrap();
         let commit1 = commit.execute(&branch, "commit").await.unwrap();
 
-        fs.write_sync("workspace/test2.txt", b"hello2");
+        fs.write_sync("/workspace/test2.txt", b"hello2");
         stage.execute(&branch, ".").await.unwrap();
         let commit2 = commit.execute(&branch, "commit").await.unwrap();
 
-        let hashes = commit_hashes.read_all(commit2.clone(), &None).await.unwrap();
+        let hashes = commit_hashes
+            .read_all(commit2.clone(), &None)
+            .await
+            .unwrap();
         assert_eq!(hashes, vec![commit2, commit1, commit0]);
     }
 }

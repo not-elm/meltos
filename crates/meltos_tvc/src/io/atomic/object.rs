@@ -49,11 +49,9 @@ where
     }
 
     pub async fn try_read_obj(&self, object_hash: &ObjHash) -> error::Result<Obj> {
-        self.read_obj(object_hash).await.and_then(|obj| {
-            match obj {
-                Some(obj) => Ok(obj),
-                None => Err(error::Error::NotfoundObj(object_hash.clone())),
-            }
+        self.read_obj(object_hash).await.and_then(|obj| match obj {
+            Some(obj) => Ok(obj),
+            None => Err(error::Error::NotfoundObj(object_hash.clone())),
         })
     }
 
@@ -141,10 +139,10 @@ mod tests {
     use crate::object::{AsMeta, Obj, ObjMeta};
 
     #[tokio::test]
-    async fn write_object_file() -> error::Result{
+    async fn write_object_file() -> error::Result {
         let buf = b"hello world!";
         let fs = MemoryFileSystem::default();
-        fs.write_sync("workspace/test/hello.txt", buf);
+        fs.write_sync("/workspace/test/hello.txt", buf);
 
         let io = ObjIo::new(fs.clone());
         let workspace = WorkspaceIo::new(fs.clone());
@@ -170,6 +168,9 @@ mod tests {
         io.write_obj(&FileObj::decode(b"FILE\0hello world!").unwrap())
             .await
             .unwrap();
-        assert_eq!(io.try_read_obj(&obj.hash).await.unwrap().as_meta().unwrap(), obj);
+        assert_eq!(
+            io.try_read_obj(&obj.hash).await.unwrap().as_meta().unwrap(),
+            obj
+        );
     }
 }

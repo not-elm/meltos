@@ -7,14 +7,14 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::commit_obj::CommitObjIo;
 use crate::io::trace_tree::TraceTreeIo;
-use crate::object::{AsMeta, ObjMeta};
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::tree::TreeObj;
+use crate::object::{AsMeta, ObjMeta};
 
 #[derive(Debug, Clone)]
 pub struct Commit<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     commit_obj: CommitObjIo<Fs>,
     head: HeadIo<Fs>,
@@ -25,8 +25,8 @@ pub struct Commit<Fs>
 }
 
 impl<Fs> Commit<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Commit<Fs> {
         Self {
@@ -41,8 +41,8 @@ impl<Fs> Commit<Fs>
 }
 
 impl<Fs> Commit<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     pub async fn execute(
         &self,
@@ -62,7 +62,8 @@ impl<Fs> Commit<Fs>
             .await?;
         let pre_head = self.head.read(branch_name).await?;
         let head_commit_hash = self.commit(branch_name, commit).await?;
-        self.update_trace(stage_tree, &head_commit_hash, &pre_head).await?;
+        self.update_trace(stage_tree, &head_commit_hash, &pre_head)
+            .await?;
         self.head.write(branch_name, &head_commit_hash).await?;
         Ok(head_commit_hash)
     }
@@ -110,7 +111,11 @@ impl<Fs> Commit<Fs>
         Ok(())
     }
 
-    async fn commit(&self, branch_name: &BranchName, commit: CommitObj) -> error::Result<CommitHash> {
+    async fn commit(
+        &self,
+        branch_name: &BranchName,
+        commit: CommitObj,
+    ) -> error::Result<CommitHash> {
         let commit_meta = commit.as_meta()?;
         self.object.write_obj(&commit).await?;
         self.head
@@ -127,16 +132,16 @@ impl<Fs> Commit<Fs>
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::memory::MemoryFileSystem;
+    use crate::file_system::{FilePath, FileSystem};
     use crate::io::atomic::head::{CommitText, HeadIo};
     use crate::io::atomic::local_commits::LocalCommitsIo;
     use crate::io::atomic::object::ObjIo;
     use crate::io::atomic::staging::StagingIo;
-    use crate::object::{AsMeta, ObjHash};
     use crate::object::commit::CommitObj;
     use crate::object::local_commits::LocalCommitsObj;
     use crate::object::tree::TreeObj;
+    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::tests::init_owner_branch;
@@ -160,7 +165,7 @@ mod tests {
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
         let staging = StagingIo::new(fs.clone());
-        fs.write_file("workspace/hello", b"hello").await.unwrap();
+        fs.write_file("/workspace/hello", b"hello").await.unwrap();
         stage.execute(&branch, ".").await.unwrap();
         commit.execute(&branch, "test").await.unwrap();
         let staging_tree = staging.read().await.unwrap().unwrap();
@@ -175,7 +180,7 @@ mod tests {
         let null_commit_hash = init_owner_branch(fs.clone()).await;
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
-        fs.write_file("workspace/hello", b"hello").await.unwrap();
+        fs.write_file("/workspace/hello", b"hello").await.unwrap();
         stage.execute(&branch, ".").await.unwrap();
         commit.execute(&branch, "test").await.unwrap();
 
@@ -185,7 +190,7 @@ mod tests {
 
         let mut tree = TreeObj::default();
         tree.insert(
-            FilePath::from_path("workspace/hello"),
+            FilePath::from_path("/workspace/hello"),
             ObjHash::new(b"FILE\0hello"),
         );
         assert_eq!(
@@ -206,7 +211,7 @@ mod tests {
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
         let local_commits = LocalCommitsIo::new(fs.clone());
-        fs.write_file("workspace/hello", b"hello").await.unwrap();
+        fs.write_file("/workspace/hello", b"hello").await.unwrap();
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash = commit.execute(&branch, "test").await.unwrap();
         let local = local_commits.read(&branch).await.unwrap().unwrap();
@@ -221,10 +226,10 @@ mod tests {
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
         let local_commits = LocalCommitsIo::new(fs.clone());
-        fs.write_file("workspace/hello", b"hello").await.unwrap();
+        fs.write_file("/workspace/hello", b"hello").await.unwrap();
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash1 = commit.execute(&branch, "1").await.unwrap();
-        fs.write_file("workspace/hello2", b"hello2").await.unwrap();
+        fs.write_file("/workspace/hello2", b"hello2").await.unwrap();
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash2 = commit.execute(&branch, "2").await.unwrap();
 

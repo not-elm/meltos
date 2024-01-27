@@ -214,13 +214,13 @@ mod tests {
         let second = BranchName::from("second");
         Checkout::new(fs.clone()).execute(&second).await.unwrap();
 
-        fs.write_sync("workspace/hello.txt", b"hello");
+        fs.write_sync("/workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&second, ".").await.unwrap();
         Commit::new(fs.clone())
             .execute(&second, "commit text")
             .await
             .unwrap();
-        fs.delete("workspace/hello.txt").await.unwrap();
+        fs.delete("/workspace/hello.txt").await.unwrap();
 
         Checkout::new(fs.clone())
             .execute(&BranchName::owner())
@@ -249,7 +249,7 @@ mod tests {
 
         Checkout::new(fs.clone()).execute(&branch).await.unwrap();
 
-        fs.write_sync("workspace/hello.txt", b"hello");
+        fs.write_sync("/workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
         Commit::new(fs.clone())
             .execute(&branch, "commit text")
@@ -279,12 +279,12 @@ mod tests {
         init.execute(&b1).await.unwrap();
         checkout.execute(&b2).await.unwrap();
         checkout.execute(&b1).await.unwrap();
-        fs.write_sync("workspace/hello.txt", b"hello");
+        fs.write_sync("/workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&b2, ".").await.unwrap();
         Commit::new(fs.clone()).execute(&b2, "TEXT").await.unwrap();
 
         checkout.execute(&b2).await.unwrap();
-        fs.write_sync("workspace/test.txt", b"HELLO");
+        fs.write_sync("/workspace/test.txt", b"HELLO");
         Stage::new(fs.clone()).execute(&b1, ".").await.unwrap();
         Commit::new(fs.clone()).execute(&b1, "TEXT").await.unwrap();
 
@@ -292,8 +292,12 @@ mod tests {
         let status = merge.execute_from_branch(b1, b2).await.unwrap();
         assert!(matches!(status, MergedStatus::Merged));
 
-        assert!(fs.read_file("workspace/hello.txt").await.unwrap().is_some());
-        assert!(fs.read_file("workspace/test.txt").await.unwrap().is_some());
+        assert!(fs
+            .read_file("/workspace/hello.txt")
+            .await
+            .unwrap()
+            .is_some());
+        assert!(fs.read_file("/workspace/test.txt").await.unwrap().is_some());
     }
 
     // TODO: 現状はコンフリクト関連が未実装のため実装された際にこのテストも展開します。
@@ -308,12 +312,12 @@ mod tests {
     //     init.execute().unwrap();
     //     checkout.execute(&b2).unwrap();
     //     checkout.execute(&b1).unwrap();
-    //     fs.force_write("workspace/hello.txt", b"hello");
+    //     fs.force_write("/workspace/hello.txt", b"hello");
     //     Stage::new(b1.clone(), fs.clone()).execute(".").unwrap();
     //     Commit::new(b1.clone(), fs.clone()).execute("TEXT").unwrap();
     //
     //     checkout.execute(&b2).unwrap();
-    //     fs.force_write("workspace/hello.txt", b"HELLO");
+    //     fs.force_write("/workspace/hello.txt", b"HELLO");
     //     Stage::new(b2.clone(), fs.clone()).execute(".").unwrap();
     //     Commit::new(b2.clone(), fs.clone()).execute("TEXT").unwrap();
     //

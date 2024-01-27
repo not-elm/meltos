@@ -6,15 +6,15 @@ use crate::io::atomic::object::ObjIo;
 use crate::io::atomic::staging::StagingIo;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::io::workspace::WorkspaceIo;
-use crate::object::{AsMeta, ObjHash};
 use crate::object::delete::DeleteObj;
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
+use crate::object::{AsMeta, ObjHash};
 
 #[derive(Debug, Clone)]
 pub struct Stage<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     trace_tree: TraceTreeIo<Fs>,
     staging: StagingIo<Fs>,
@@ -24,8 +24,8 @@ pub struct Stage<Fs>
 }
 
 impl<Fs> Stage<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     #[inline]
     pub fn new(fs: Fs) -> Stage<Fs> {
@@ -40,8 +40,8 @@ impl<Fs> Stage<Fs>
 }
 
 impl<Fs> Stage<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     pub async fn execute(&self, branch_name: &BranchName, workspace_path: &str) -> error::Result {
         let mut stage_tree = self.staging.read().await?.unwrap_or_default();
@@ -64,7 +64,8 @@ impl<Fs> Stage<Fs>
                 &trace_tree,
                 file_path,
                 file_obj,
-            ).await?;
+            )
+            .await?;
         }
 
         self.add_delete_objs_into_staging(
@@ -72,7 +73,8 @@ impl<Fs> Stage<Fs>
             &mut changed,
             &trace_tree,
             workspace_path,
-        ).await?;
+        )
+        .await?;
 
         if !changed {
             return Err(error::Error::ChangedFileNotExits);
@@ -143,12 +145,12 @@ impl<Fs> Stage<Fs>
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::memory::MemoryFileSystem;
+    use crate::file_system::{FilePath, FileSystem};
     use crate::io::atomic::object::ObjIo;
-    use crate::object::{AsMeta, ObjHash};
     use crate::object::delete::DeleteObj;
     use crate::object::file::FileObj;
+    use crate::object::{AsMeta, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::tests::init_owner_branch;
@@ -159,17 +161,15 @@ mod tests {
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
-        fs
-            .write_file(&FilePath::from_path("workspace/hello"), b"hello")
+        fs.write_file(&FilePath::from_path("/workspace/hello"), b"hello")
             .await
             .unwrap();
-        fs
-            .write_file(
-                &FilePath::from_path("workspace/src/main.rs"),
-                "dasds日本語".as_bytes(),
-            )
-            .await
-            .unwrap();
+        fs.write_file(
+            &FilePath::from_path("/workspace/src/main.rs"),
+            "dasds日本語".as_bytes(),
+        )
+        .await
+        .unwrap();
         stage.execute(&branch, ".").await.unwrap();
 
         let obj = ObjIo::new(fs);
@@ -203,11 +203,13 @@ mod tests {
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
 
-        fs.write_file("workspace/hello.txt", b"hello").await.unwrap();
+        fs.write_file("/workspace/hello.txt", b"hello")
+            .await
+            .unwrap();
         stage.execute(&branch, "hello.txt").await.unwrap();
         commit.execute(&branch, "add hello.txt").await.unwrap();
 
-        fs.delete("workspace/hello.txt").await.unwrap();
+        fs.delete("/workspace/hello.txt").await.unwrap();
         stage.execute(&branch, "hello.txt").await.unwrap();
         commit.execute(&branch, "delete hello.txt").await.unwrap();
 
@@ -234,7 +236,9 @@ mod tests {
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
 
-        fs.write_file("workspace/hello.txt", b"hello").await.unwrap();
+        fs.write_file("/workspace/hello.txt", b"hello")
+            .await
+            .unwrap();
         stage.execute(&branch, ".").await.unwrap();
 
         match stage.execute(&branch, ".").await {

@@ -113,7 +113,7 @@ mod tests {
         assert_eq!(room_bundle.tvc.traces.len(), 2);
 
         let hello_txt_hash = traces
-            .read(&room_bundle.tvc.traces[0].commit_hash)
+            .read(&room_bundle.tvc.traces[1].commit_hash)
             .await
             .unwrap()
             .get(&FilePath::from_path("/workspace/hello.txt"))

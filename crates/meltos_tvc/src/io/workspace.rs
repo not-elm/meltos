@@ -3,9 +3,9 @@ use crate::error;
 use crate::file_system::{FilePath, FileSystem};
 use crate::io::atomic::head::HeadIo;
 use crate::io::trace_tree::TraceTreeIo;
-use crate::object::{AsMeta, Obj, ObjHash};
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
+use crate::object::{AsMeta, Obj, ObjHash};
 
 pub struct ChangeFileMeta {
     pub path: FilePath,
@@ -20,8 +20,8 @@ pub enum ChangeFile {
 
 #[derive(Debug, Clone)]
 pub struct WorkspaceIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     fs: Fs,
     head: HeadIo<Fs>,
@@ -29,8 +29,8 @@ pub struct WorkspaceIo<Fs>
 }
 
 impl<Fs> WorkspaceIo<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     #[inline(always)]
     pub fn new(fs: Fs) -> WorkspaceIo<Fs> {
@@ -43,8 +43,8 @@ impl<Fs> WorkspaceIo<Fs>
 }
 
 impl<Fs> WorkspaceIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     pub async fn try_read(&self, file_path: &FilePath) -> error::Result<FileObj> {
         match self.read(file_path).await? {
@@ -175,8 +175,8 @@ impl<Fs> WorkspaceIo<Fs>
 }
 
 pub struct ObjectIter<'a, Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     files: Vec<String>,
     index: usize,
@@ -184,8 +184,8 @@ pub struct ObjectIter<'a, Fs>
 }
 
 impl<'a, Fs> ObjectIter<'a, Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     pub async fn next(&mut self) -> Option<std::io::Result<(FilePath, FileObj)>> {
         if self.index == self.files.len() {
@@ -207,8 +207,8 @@ impl<'a, Fs> ObjectIter<'a, Fs>
 }
 
 impl<'a, Fs> ObjectIter<'a, Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     async fn read_to_obj(&self) -> std::io::Result<(FilePath, FileObj)> {
         let path = self.files.get(self.index).unwrap();
@@ -222,12 +222,12 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::branch::BranchName;
-    use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::memory::MemoryFileSystem;
+    use crate::file_system::{FilePath, FileSystem};
     use crate::io::atomic::object::ObjIo;
     use crate::io::workspace::WorkspaceIo;
-    use crate::object::{AsMeta, Obj, ObjHash};
     use crate::object::file::FileObj;
+    use crate::object::{AsMeta, Obj, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::tests::init_owner_branch;
@@ -287,17 +287,17 @@ mod tests {
         let fs = MemoryFileSystem::default();
 
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.write_sync("workspace/hello.txt", b"hello");
-        fs.write_sync("workspace/dist/index.js", b"index");
+        fs.write_sync("/workspace/hello.txt", b"hello");
+        fs.write_sync("/workspace/dist/index.js", b"index");
         let files = workspace.files(".").await.unwrap();
         assert_eq!(
             files.into_iter().collect::<HashSet<String>>(),
             vec![
-                "workspace/hello.txt".to_string(),
-                "workspace/dist/index.js".to_string(),
+                "/workspace/hello.txt".to_string(),
+                "/workspace/dist/index.js".to_string(),
             ]
-                .into_iter()
-                .collect::<HashSet<String>>()
+            .into_iter()
+            .collect::<HashSet<String>>()
         );
     }
 
@@ -306,7 +306,7 @@ mod tests {
         let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.write_sync("workspace/hello.txt", b"hello");
+        fs.write_sync("/workspace/hello.txt", b"hello");
 
         let is_change = workspace
             .is_change(&BranchName::owner(), &FilePath("hello.txt".to_string()))
@@ -321,10 +321,10 @@ mod tests {
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.write_sync("workspace/hello.txt", b"hello");
+        fs.write_sync("/workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
         Commit::new(fs.clone()).execute(&branch, "").await.unwrap();
-        fs.write_sync("workspace/hello.txt", b"hello2");
+        fs.write_sync("/workspace/hello.txt", b"hello2");
         let is_change = workspace
             .is_change(&branch, &FilePath("hello.txt".to_string()))
             .await
@@ -338,7 +338,7 @@ mod tests {
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.write_sync("workspace/hello.txt", b"hello");
+        fs.write_sync("/workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
         Commit::new(fs.clone()).execute(&branch, "").await.unwrap();
 
@@ -355,10 +355,10 @@ mod tests {
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.write_sync("workspace/hello.txt", b"hello");
+        fs.write_sync("/workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
         Commit::new(fs.clone()).execute(&branch, "").await.unwrap();
-        fs.delete("workspace/hello.txt").await.unwrap();
+        fs.delete("/workspace/hello.txt").await.unwrap();
 
         let is_change = workspace
             .is_change(&branch, &FilePath("hello.txt".to_string()))
@@ -388,8 +388,8 @@ mod tests {
         let branch = BranchName::owner();
         let workspace = WorkspaceIo::new(fs.clone());
 
-        fs.write_sync("workspace/hello.txt", b"hello");
-        fs.delete("workspace/hello.txt").await.unwrap();
+        fs.write_sync("/workspace/hello.txt", b"hello");
+        fs.delete("/workspace/hello.txt").await.unwrap();
 
         let is_change = workspace
             .is_change(&branch, &FilePath("hello.txt".to_string()))

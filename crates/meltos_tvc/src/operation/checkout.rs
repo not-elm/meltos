@@ -15,8 +15,8 @@ pub enum CheckOutStatus {
 
 #[derive(Debug, Clone)]
 pub struct Checkout<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     working: WorkingIo<Fs>,
     heads: HeadIo<Fs>,
@@ -25,8 +25,8 @@ where
 }
 
 impl<Fs> Checkout<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Checkout<Fs> {
         Self {
@@ -39,8 +39,8 @@ where
 }
 
 impl<Fs> Checkout<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     pub async fn execute(&self, target_branch: &BranchName) -> error::Result<CheckOutStatus> {
         let working = self.working.read().await?.unwrap_or(BranchName::owner());
@@ -72,10 +72,10 @@ where
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
-    use crate::file_system::memory::MemoryFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::io::atomic::work_branch::WorkingIo;
-    use crate::operation::checkout::{CheckOutStatus, Checkout};
+    use crate::operation::checkout::{Checkout, CheckOutStatus};
     use crate::operation::commit::Commit;
     use crate::operation::new_branch::NewBranch;
     use crate::operation::stage::Stage;
@@ -134,11 +134,12 @@ mod tests {
         checkout.execute(&b2).await.unwrap();
         checkout.execute(&b1).await.unwrap();
 
-        fs.write_sync("workspace/hello.txt", b"hello");
+        fs.write_sync("/workspace/hello.txt", b"hello");
         Stage::new(fs.clone())
             .execute(&b1, "hello.txt")
             .await
             .unwrap();
+
         Commit::new(fs.clone())
             .execute(&b1, "commit text")
             .await
@@ -146,35 +147,7 @@ mod tests {
 
         checkout.execute(&b2).await.unwrap();
 
-        let hello_txt = fs.read_file("workspace/hello.txt").await.unwrap();
+        let hello_txt = fs.read_file("/workspace/hello.txt").await.unwrap();
         assert!(hello_txt.is_none());
     }
-
-    // #[tokio::test]
-    // async fn checkout_from_remote_branch() {
-    //     let fs = MockFileSystem::default();
-    //     init_main_branch(fs.clone());
-    //     Patch::new(fs.clone(), mock_remote())
-    //         .execute(None)
-    //         .await
-    //         .unwrap();
-    //     let second = BranchName::from("second");
-    //     assert_eq!(
-    //         Checkout::new(fs.clone()).execute(&second).unwrap(),
-    //         CheckOutStatus::Checkout
-    //     );
-    //
-    //     let working = WorkingIo::new(fs.clone()).read().unwrap();
-    //     assert_eq!(second, working);
-    // }
-    //
-    //
-    // fn mock_remote() -> MockRemoteClient {
-    //     let fs = MockFileSystem::default();
-    //     init_main_branch(fs.clone());
-    //     NewBranch::new(fs.clone())
-    //         .execute(BranchName::main(), BranchName::from("second"))
-    //         .unwrap();
-    //     MockRemoteClient::new(memory)
-    // }
 }

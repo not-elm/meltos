@@ -39,7 +39,7 @@ where
 {
     /// Restore committed data into the workspace.
     pub async fn execute(&self, branch_name: &BranchName) -> error::Result {
-        self.fs.delete("workspace").await?;
+        self.fs.delete("/workspace").await?;
         let head = self.head.try_read(branch_name).await?;
         let trace_tree = self.trace_tree.read(&head).await?;
         for (path, hash) in trace_tree.iter() {
@@ -72,13 +72,13 @@ mod tests {
         let commit = Commit::new(fs.clone());
         let unzip = UnZip::new(fs.clone());
 
-        fs.write_file("workspace/hello", b"hello").await?;
+        fs.write_file("/workspace/hello", b"hello").await?;
         stage.execute(&branch, "hello").await?;
         commit.execute(&branch, "commit text").await?;
-        fs.delete("workspace/hello").await?;
+        fs.delete("/workspace/hello").await?;
 
         unzip.execute(&branch).await?;
-        assert_eq!(fs.try_read_file("workspace/hello").await?, b"hello");
+        assert_eq!(fs.try_read_file("/workspace/hello").await?, b"hello");
         Ok(())
     }
 }

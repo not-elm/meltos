@@ -181,7 +181,7 @@ mod tests {
         assert_eq!(&bundle.branches[0].commits[0], &null_commit_hash);
     }
 
-  #[tokio::test]
+    #[tokio::test]
     async fn read_2_heads() {
         let fs = MemoryFileSystem::default();
         let new_branch = NewBranch::new(fs.clone());
@@ -211,7 +211,9 @@ mod tests {
         let branch = BranchName::from("branch2");
 
         working.write(&BranchName::from("branch2")).await.unwrap();
-        fs.write_file("workspace/hello.txt", b"hello").await.unwrap();
+        fs.write_file("/workspace/hello.txt", b"hello")
+            .await
+            .unwrap();
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash = commit.execute(&branch, "text").await.unwrap();
         let mut bundle = bundle_io.create().await.unwrap();
@@ -226,14 +228,19 @@ mod tests {
         assert_eq!(&bundle.branches[1].commits[0], &null_commit);
     }
 
-  #[tokio::test]
+    #[tokio::test]
     async fn read_all_objs() {
         let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
-        fs.write_file("workspace/hello.txt", b"hello").await.unwrap();
+        fs.write_file("/workspace/hello.txt", b"hello")
+            .await
+            .unwrap();
         Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
-        Commit::new(fs.clone()).execute(&branch, "commit").await.unwrap();
+        Commit::new(fs.clone())
+            .execute(&branch, "commit")
+            .await
+            .unwrap();
         let bundle = BundleIo::new(fs.clone()).create().await.unwrap();
         let objs_count = fs.all_files_in(".meltos/objects").await.unwrap().len();
 

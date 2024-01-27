@@ -93,7 +93,7 @@ mod tests {
             session_id,
             ..
         } = http_open_room(&mut app, fs.clone()).await;
-        fs.write_file("workspace/src/hello.txt", b"hello").await.unwrap();
+        fs.write_file("/workspace/src/hello.txt", b"hello").await.unwrap();
         let response = execute_tvc_operations(&mut app, &fs, room_id, session_id, branch).await;
         assert_eq!(response.status(), StatusCode::OK);
     }
@@ -108,7 +108,7 @@ mod tests {
             session_id,
             ..
         } = http_open_room(&mut app, fs.clone()).await;
-        fs.write_sync("workspace/src/hello.txt", &dummy_large_buf());
+        fs.write_sync("/workspace/src/hello.txt", &dummy_large_buf());
         let response = execute_tvc_operations(&mut app, &fs, room_id, session_id, branch).await;
         assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
     }
@@ -128,7 +128,7 @@ mod tests {
             ..
         } = http_open_room(&mut app, fs.clone()).await;
         // push1
-        fs.write_sync("workspace/src/hello2.txt", &dummy_buf(1));
+        fs.write_sync("/workspace/src/hello2.txt", &dummy_buf(1));
         let response = execute_tvc_operations(
             &mut app,
             &fs,
@@ -140,7 +140,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
 
         // push2
-        fs.write_sync("workspace/src/hello3.txt", &dummy_buf(2));
+        fs.write_sync("/workspace/src/hello3.txt", &dummy_buf(2));
         let response = execute_tvc_operations(
             &mut app,
             &fs,
@@ -152,7 +152,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
 
         // push3
-        fs.write_sync("workspace/src/hello4.txt", &dummy_buf(3));
+        fs.write_sync("/workspace/src/hello4.txt", &dummy_buf(3));
         let response = execute_tvc_operations(
             &mut app,
             &fs,
@@ -164,7 +164,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
 
         // push3
-        fs.write_sync("workspace/src/hello5.txt", &dummy_buf(4));
+        fs.write_sync("/workspace/src/hello5.txt", &dummy_buf(4));
         let response = execute_tvc_operations(&mut app, &fs, room_id, session_id, branch).await;
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     }

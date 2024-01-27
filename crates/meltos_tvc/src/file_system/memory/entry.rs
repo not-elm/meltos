@@ -1,13 +1,24 @@
+use std::fmt::{Debug, Formatter, Write};
 use crate::file_system::memory::entry::dir::MemoryDir;
 use crate::file_system::memory::entry::file::MemoryFile;
 use crate::file_system::Stat;
 pub mod dir;
 pub mod file;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum MemoryEntry {
     File(MemoryFile),
     Dir(MemoryDir),
+}
+
+
+impl Debug for MemoryEntry {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MemoryEntry::Dir(dir) => f.write_fmt(format_args!("{dir:#?}")),
+            MemoryEntry::File(file) => f.write_fmt(format_args!("{file:#?}"))
+        }
+    }
 }
 
 impl MemoryEntry {

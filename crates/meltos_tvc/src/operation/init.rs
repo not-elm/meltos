@@ -122,7 +122,7 @@ mod tests {
         let head_commit_hash = read_head_commit_hash(fs.clone()).await;
         let trace_tree_hash = fs
             .read_file(&format!(".meltos/traces/{head_commit_hash}"))
-           .await
+            .await
             .unwrap();
         assert_eq!(
             trace_tree_hash,
@@ -133,13 +133,13 @@ mod tests {
     #[tokio::test]
     async fn staged_workspace_files() {
         let fs = MemoryFileSystem::default();
-        fs.write_sync("workspace/src/test.rs", b"test");
+        fs.write_sync("/workspace/src/test.rs", b"test");
         let branch = BranchName::owner();
         let init = Init::new(fs.clone());
         init.execute(&branch).await.unwrap();
         assert!(ObjIo::new(fs)
             .read(&ObjHash::new(b"FILE\0test"))
-           .await
+            .await
             .unwrap()
             .is_some());
     }
