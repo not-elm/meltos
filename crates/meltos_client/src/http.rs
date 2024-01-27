@@ -136,7 +136,8 @@ impl HttpClient {
         let response = self
             .client
             .get(format!(
-                "http:// 192.168.10.103:3000/room/{}/tvc/fetch",
+                "{}/room/{}/tvc/fetch",
+                self.base_uri,
                 self.configs.room_id
             ))
             .header(header::CONTENT_TYPE, "application/json")
