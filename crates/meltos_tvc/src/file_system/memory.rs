@@ -204,18 +204,18 @@ mod tests {
     #[tokio::test]
     async fn all_files_with_in_children() {
         let fs = MemoryFileSystem::default();
-        fs.write_sync("/hello1.txt", b"hello");
-        fs.write_sync("/hello2.txt", b"hello");
-        fs.write_sync("/hello3.txt", b"hello");
+        fs.write_sync("hello1.txt", b"hello");
+        fs.write_sync("hello2.txt", b"hello");
+        fs.write_sync("hello3.txt", b"hello");
 
         let mut files = fs.all_files_in(".").await.unwrap();
         files.sort();
         assert_eq!(
             files,
             vec![
-                "/hello1.txt".to_string(),
-                "/hello2.txt".to_string(),
-                "/hello3.txt".to_string(),
+                "hello1.txt".to_string(),
+                "hello2.txt".to_string(),
+                "hello3.txt".to_string(),
             ]
         );
     }

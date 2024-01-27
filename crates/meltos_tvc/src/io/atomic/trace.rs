@@ -33,14 +33,14 @@ where
 
     #[inline]
     pub async fn write(&self, commit_hash: &CommitHash, hash: &ObjHash) -> error::Result {
-        let file_path = format!("/.meltos/traces/{commit_hash}");
+        let file_path = format!(".meltos/traces/{commit_hash}");
         self.fs.write_file(&file_path, &hash.encode()?).await?;
         Ok(())
     }
 
     #[inline]
     pub async fn read_all(&self) -> error::Result<Vec<BundleTrace>> {
-        let files = self.fs.all_files_in("/.meltos/traces/").await?;
+        let files = self.fs.all_files_in(".meltos/traces/").await?;
         let mut traces = Vec::with_capacity(files.len());
         for file_path in files {
             let file_name = Path::new(&file_path)
@@ -66,7 +66,7 @@ where
 
     #[inline]
     pub async fn read(&self, commit_hash: &CommitHash) -> error::Result<ObjHash> {
-        let file_path = format!("/.meltos/traces/{commit_hash}");
+        let file_path = format!(".meltos/traces/{commit_hash}");
         let buf = self
             .fs
             .try_read_file(&file_path)
@@ -97,11 +97,11 @@ mod tests {
         let trace = TraceIo::new(fs.clone());
         let commit = Commit::new(fs.clone());
 
-        fs.write_file("/workspace/hello.txt", b"hello").await?;
+        fs.write_file("workspace/hello.txt", b"hello").await?;
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash1 = commit.execute(&branch, "text").await.unwrap();
 
-        fs.delete("/workspace/hello.txt").await?;
+        fs.delete("workspace/hello.txt").await?;
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash2 = commit.execute(&branch, "text").await.unwrap();
 

@@ -84,11 +84,11 @@ mod tests {
         let commit = Commit::new(fs.clone());
         let commit0 = init_owner_branch(fs.clone()).await;
 
-        fs.write_sync("/workspace/test.txt", b"hello");
+        fs.write_sync("workspace/test.txt", b"hello");
         stage.execute(&branch, ".").await.unwrap();
         let commit1 = commit.execute(&branch, "commit").await.unwrap();
 
-        fs.write_sync("/workspace/test2.txt", b"hello2");
+        fs.write_sync("workspace/test2.txt", b"hello2");
         stage.execute(&branch, ".").await.unwrap();
         let commit2 = commit.execute(&branch, "commit").await.unwrap();
 

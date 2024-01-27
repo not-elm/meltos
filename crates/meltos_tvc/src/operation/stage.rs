@@ -161,11 +161,11 @@ mod tests {
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
-        fs.write_file(&FilePath::from_path("/workspace/hello"), b"hello")
+        fs.write_file(&FilePath::from_path("workspace/hello"), b"hello")
             .await
             .unwrap();
         fs.write_file(
-            &FilePath::from_path("/workspace/src/main.rs"),
+            &FilePath::from_path("workspace/src/main.rs"),
             "dasds日本語".as_bytes(),
         )
         .await
@@ -203,13 +203,13 @@ mod tests {
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
 
-        fs.write_file("/workspace/hello.txt", b"hello")
+        fs.write_file("workspace/hello.txt", b"hello")
             .await
             .unwrap();
         stage.execute(&branch, "hello.txt").await.unwrap();
         commit.execute(&branch, "add hello.txt").await.unwrap();
 
-        fs.delete("/workspace/hello.txt").await.unwrap();
+        fs.delete("workspace/hello.txt").await.unwrap();
         stage.execute(&branch, "hello.txt").await.unwrap();
         commit.execute(&branch, "delete hello.txt").await.unwrap();
 
@@ -236,7 +236,7 @@ mod tests {
         let branch = BranchName::owner();
         let stage = Stage::new(fs.clone());
 
-        fs.write_file("/workspace/hello.txt", b"hello")
+        fs.write_file("workspace/hello.txt", b"hello")
             .await
             .unwrap();
         stage.execute(&branch, ".").await.unwrap();

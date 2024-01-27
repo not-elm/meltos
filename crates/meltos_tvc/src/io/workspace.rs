@@ -106,8 +106,8 @@ where
     #[inline(always)]
     pub async fn files(&self, path: &str) -> error::Result<Vec<String>> {
         let path = match path {
-            "." | "./" => "/workspace".to_string(),
-            path => format!("/workspace/{}", path.trim_start_matches("/workspace/")),
+            "." | "./" => "workspace".to_string(),
+            path => format!("workspace/{}", path.trim_start_matches("workspace/")),
         };
         Ok(self.fs.all_files_in(&path).await?)
     }
@@ -170,7 +170,7 @@ where
 
     #[inline(always)]
     fn as_path(&self, path: &str) -> String {
-        format!("/workspace/{}", path.trim_start_matches("/workspace/"))
+        format!("workspace/{}", path.trim_start_matches("workspace/"))
     }
 }
 
@@ -236,13 +236,13 @@ mod tests {
     async fn read_all_objects_in_dir() {
         let fs = MemoryFileSystem::default();
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.write_file("/workspace/hello/hello.txt", b"hello")
+        fs.write_file("workspace/hello/hello.txt", b"hello")
             .await
             .unwrap();
-        fs.write_file("/workspace/hello/world", b"world")
+        fs.write_file("workspace/hello/world", b"world")
             .await
             .unwrap();
-        fs.write_file("/workspace/hello/dir/main.sh", b"echo hi ")
+        fs.write_file("workspace/hello/dir/main.sh", b"echo hi ")
             .await
             .unwrap();
         let mut hashes = workspace
@@ -287,14 +287,14 @@ mod tests {
         let fs = MemoryFileSystem::default();
 
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.write_sync("/workspace/hello.txt", b"hello");
-        fs.write_sync("/workspace/dist/index.js", b"index");
+        fs.write_sync("workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/dist/index.js", b"index");
         let files = workspace.files(".").await.unwrap();
         assert_eq!(
             files.into_iter().collect::<HashSet<String>>(),
             vec![
-                "/workspace/hello.txt".to_string(),
-                "/workspace/dist/index.js".to_string(),
+                "workspace/hello.txt".to_string(),
+                "workspace/dist/index.js".to_string(),
             ]
             .into_iter()
             .collect::<HashSet<String>>()
@@ -306,7 +306,7 @@ mod tests {
         let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.write_sync("/workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/hello.txt", b"hello");
 
         let is_change = workspace
             .is_change(&BranchName::owner(), &FilePath("hello.txt".to_string()))
@@ -321,10 +321,10 @@ mod tests {
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.write_sync("/workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
         Commit::new(fs.clone()).execute(&branch, "").await.unwrap();
-        fs.write_sync("/workspace/hello.txt", b"hello2");
+        fs.write_sync("workspace/hello.txt", b"hello2");
         let is_change = workspace
             .is_change(&branch, &FilePath("hello.txt".to_string()))
             .await
@@ -338,7 +338,7 @@ mod tests {
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.write_sync("/workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
         Commit::new(fs.clone()).execute(&branch, "").await.unwrap();
 
@@ -355,10 +355,10 @@ mod tests {
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
         let workspace = WorkspaceIo::new(fs.clone());
-        fs.write_sync("/workspace/hello.txt", b"hello");
+        fs.write_sync("workspace/hello.txt", b"hello");
         Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();
         Commit::new(fs.clone()).execute(&branch, "").await.unwrap();
-        fs.delete("/workspace/hello.txt").await.unwrap();
+        fs.delete("workspace/hello.txt").await.unwrap();
 
         let is_change = workspace
             .is_change(&branch, &FilePath("hello.txt".to_string()))
@@ -388,8 +388,8 @@ mod tests {
         let branch = BranchName::owner();
         let workspace = WorkspaceIo::new(fs.clone());
 
-        fs.write_sync("/workspace/hello.txt", b"hello");
-        fs.delete("/workspace/hello.txt").await.unwrap();
+        fs.write_sync("workspace/hello.txt", b"hello");
+        fs.delete("workspace/hello.txt").await.unwrap();
 
         let is_change = workspace
             .is_change(&branch, &FilePath("hello.txt".to_string()))
