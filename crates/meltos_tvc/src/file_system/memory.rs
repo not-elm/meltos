@@ -2,18 +2,16 @@ use std::fmt::Debug;
 use std::path::Path;
 
 use async_trait::async_trait;
-use meltos_util::console_log;
 
 use meltos_util::path::AsUri;
 
-use crate::file_system::{FileSystem, Stat};
 use crate::file_system::memory::entry::dir::MemoryDir;
+use crate::file_system::{FileSystem, Stat};
 
 mod entry;
 
 #[derive(Clone, Debug)]
 pub struct MemoryFileSystem(pub MemoryDir);
-
 
 impl Default for MemoryFileSystem {
     #[inline(always)]
@@ -28,7 +26,6 @@ impl MemoryFileSystem {
         self.0.write_file(path, buf);
     }
 }
-
 
 #[cfg_attr(target_arch = "wasm32", async_trait(? Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
@@ -66,7 +63,6 @@ impl FileSystem for MemoryFileSystem {
         Ok(Some(entry.dir()?.entry_names()))
     }
 
-
     async fn delete(&self, path: &str) -> std::io::Result<()> {
         if let Some(parent) = self.0.lookup_parent_dir(path) {
             parent.delete(&entry_name(path));
@@ -99,8 +95,8 @@ mod tests {
     use std::thread::sleep;
     use std::time::Duration;
 
-    use crate::file_system::FileSystem;
     use crate::file_system::memory::MemoryFileSystem;
+    use crate::file_system::FileSystem;
 
     #[tokio::test]
     async fn read_root_dir() {
@@ -261,7 +257,6 @@ mod tests {
         );
     }
 
-
     #[tokio::test]
     async fn all_files_specified_direct_file_uri() {
         let fs = MemoryFileSystem::default();
@@ -308,7 +303,9 @@ mod tests {
         let stat = fs.stat("src").await.unwrap().unwrap();
         assert_eq!(stat.size, 1);
 
-        fs.write_file("src/hello.txt", b"hello world").await.unwrap();
+        fs.write_file("src/hello.txt", b"hello world")
+            .await
+            .unwrap();
         let stat = fs.stat("src").await.unwrap().unwrap();
         assert_eq!(stat.size, 2);
     }
@@ -316,7 +313,9 @@ mod tests {
     #[tokio::test]
     async fn update_file_stat() {
         let fs = MemoryFileSystem::default();
-        fs.write_file("src/hello.txt", b"hello world").await.unwrap();
+        fs.write_file("src/hello.txt", b"hello world")
+            .await
+            .unwrap();
         let stat1 = fs.stat("src/hello.txt").await.unwrap().unwrap();
         sleep(Duration::new(1, 100));
         fs.write_file("src/hello.txt", b"hello").await.unwrap();

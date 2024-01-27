@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fmt::{Debug, Formatter, Pointer, Write};
+use std::fmt::{Debug, Formatter};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
@@ -16,7 +16,7 @@ use crate::time::since_epoch_secs;
 #[derive(Clone)]
 pub struct MemoryDir(Arc<RwLock<MemoryDirInner>>);
 
-impl Debug for MemoryDir{
+impl Debug for MemoryDir {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let entry = self.0.read().unwrap();
         f.write_fmt(format_args!("{entry:#?}"))
@@ -280,7 +280,7 @@ impl Debug for MemoryDirInner {
             if key == "." || key == ".." {
                 continue;
             }
-            if let MemoryEntry::Dir(dir) = entry {
+            if let MemoryEntry::Dir(_) = entry {
                 fmt.field(key, &entry);
             } else {
                 fmt.field(key, &entry.stat());

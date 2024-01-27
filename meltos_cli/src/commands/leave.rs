@@ -2,10 +2,9 @@ use async_trait::async_trait;
 use clap::Args;
 
 use meltos_client::tvc::TvcClient;
-use meltos_tvc::branch::BranchName;
 use meltos_tvc::file_system::std_fs::StdFileSystem;
 
-use crate::commands::{load_configs, CommandExecutable, load_branch_name};
+use crate::commands::{CommandExecutable, load_configs};
 
 #[derive(Debug, Clone, Args)]
 pub struct LeaveArgs {}

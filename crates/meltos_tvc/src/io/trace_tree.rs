@@ -72,7 +72,7 @@ mod tests {
         let commit_hash = CommitHash(ObjHash::new(b"commit"));
         trace_tree.write(&tree, &commit_hash).await.unwrap();
         fs.write_file(
-            &format!(".meltos/branches/traces/{commit_hash}"),
+            &format!("/.meltos/branches/traces/{commit_hash}"),
             &tree.as_meta().unwrap().hash.encode().unwrap(),
         )
             .await

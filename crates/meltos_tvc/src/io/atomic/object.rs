@@ -74,7 +74,7 @@ where
     }
 
     pub async fn read_all(&self) -> error::Result<Vec<BundleObject>> {
-        let files = self.0.all_files_in(".meltos/objects").await?;
+        let files = self.0.all_files_in("/.meltos/objects").await?;
         let mut objs = Vec::with_capacity(files.len());
         for path in files {
             let buf = self.0.try_read_file(&path).await?;
@@ -90,7 +90,7 @@ where
     pub async fn read(&self, object_hash: &ObjHash) -> error::Result<Option<CompressedBuf>> {
         let Some(buf) = self
             .0
-            .read_file(&format!(".meltos/objects/{}", object_hash))
+            .read_file(&format!("/.meltos/objects/{}", object_hash))
             .await?
         else {
             return Ok(None);
@@ -118,7 +118,7 @@ where
     #[inline]
     pub async fn write(&self, hash: &ObjHash, compressed_buf: &CompressedBuf) -> error::Result {
         self.0
-            .write_file(&format!(".meltos/objects/{}", hash), compressed_buf)
+            .write_file(&format!("/.meltos/objects/{}", hash), compressed_buf)
             .await?;
         Ok(())
     }
@@ -152,7 +152,7 @@ mod tests {
 
         let hello_buf = fs
             .try_read_file(&format!(
-                ".meltos/objects/{}",
+                "/.meltos/objects/{}",
                 meltos_util::hash::hash(b"FILE\0hello world!")
             ))
             .await?;

@@ -13,7 +13,7 @@ where
     Fs: FileSystem,
 {
     pub fn new(fs: Fs) -> StagingIo<Fs> {
-        Self(TreeIo::new(FilePath::from(".meltos/stage"), fs))
+        Self(TreeIo::new(FilePath::from("/.meltos/stage"), fs))
     }
 }
 

@@ -49,7 +49,7 @@ pub struct BranchCommitMeta {
 }
 
 
-pub const BASE: &str = "http://192.168.10.101:3000";
+pub const BASE: &str = "http:// 192.168.10.103:3000";
 
 #[derive(Clone)]
 pub struct TvcClient<Fs: FileSystem + Clone> {
@@ -119,7 +119,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         let (http, bundle) = HttpClient::join(BASE, RoomId(room_id), user_id).await?;
         let branch = BranchName(http.configs().user_id.0.clone());
 
-        self.fs.create_dir("workspace").await?;
+        self.fs.create_dir("/workspace").await?;
         self.operations.save.execute(bundle).await?;
         self.operations.checkout.execute(&branch).await?;
         self.operations.unzip.execute(&branch).await?;

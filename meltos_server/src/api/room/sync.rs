@@ -106,12 +106,12 @@ mod tests {
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
 
-        let room_bundle = http_sync(&mut app, &room_id, &session_id).await;
+        let mut room_bundle = http_sync(&mut app, &room_id, &session_id).await;
         assert_eq!(room_bundle.tvc.branches.len(), 1);
         assert_eq!(room_bundle.tvc.branches[0].branch_name, branch.clone());
 
         assert_eq!(room_bundle.tvc.traces.len(), 2);
-
+        room_bundle.tvc.traces.sort();
         let hello_txt_hash = traces
             .read(&room_bundle.tvc.traces[1].commit_hash)
             .await

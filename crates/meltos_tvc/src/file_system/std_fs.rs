@@ -211,7 +211,8 @@ mod tests {
         fs.create_dir(&as_path("dir7/child")).await?;
         fs.write_file(&as_path("dir7/hello.txt"), b"hello").await?;
 
-        let entries = fs.try_read_dir(&path).await?;
+        let mut entries = fs.try_read_dir(&path).await?;
+        entries.sort();
         assert_eq!(entries, vec![
             as_path("dir7/child"),
             as_path("dir7/hello.txt"),
