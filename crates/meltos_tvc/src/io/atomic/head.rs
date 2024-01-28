@@ -51,6 +51,15 @@ impl<Fs> HeadIo<Fs>
         Ok(())
     }
 
+
+    #[inline]
+    pub async fn delete(&self, branch_name: &BranchName) -> error::Result<()> {
+        self.fs.delete(
+            &format!(".meltos/refs/heads/{branch_name}")
+        ).await?;
+        Ok(())
+    }
+
     #[inline]
     pub async fn try_read_remote(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
         self.read_remote(branch_name)

@@ -18,6 +18,7 @@ use meltos_backend::path::{create_resource_dir, room_resource_dir};
 use meltos_backend::session::{NewSessionIo, SessionIo};
 use meltos_backend::sync::arc_mutex::ArcMutex;
 use meltos_backend::tvc::TvcBackendIo;
+use meltos_tvc::branch::BranchName;
 use meltos_tvc::file_system::std_fs::StdFileSystem;
 use meltos_tvc::io::bundle::Bundle;
 use meltos_util::macros::Deref;
@@ -174,6 +175,19 @@ impl Room {
     pub async fn create_bundle(&self) -> error::Result<Bundle> {
         self.tvc.bundle().await.map_err(crate::error::Error::Tvc)
     }
+
+    #[inline(always)]
+    pub async fn write_head(&self, user_id: UserId) -> error::Result {
+        self.tvc.write_head(&BranchName(user_id.0)).await.map_err(crate::error::Error::Tvc)
+    }
+
+
+    pub async fn leave(&self, user_id: UserId) -> error::Result{
+        self.session.unregister(user_id.clone()).await?;
+        self.tvc.leave(user_id).await?;
+        Ok(())
+    }
+
 
     pub async fn global_discussion<'a, F, O, S>(&'a self, user_id: UserId, f: F) -> error::Result<S>
         where

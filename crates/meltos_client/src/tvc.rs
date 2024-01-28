@@ -87,6 +87,16 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         Ok(commit_hash)
     }
 
+    pub async fn branch_names(&self) -> error::Result<Vec<BranchName>> {
+        Ok(self
+            .head
+            .read_all()
+            .await?
+            .into_iter()
+            .map(|(branch_name, _)| branch_name)
+            .collect())
+    }
+    
 
     #[inline(always)]
     pub async fn unzip(&self, branch_name: &BranchName) -> error::Result {

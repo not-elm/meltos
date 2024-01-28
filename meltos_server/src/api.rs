@@ -62,7 +62,7 @@ mod test_util {
     use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::branch::BranchName;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
-    use meltos_tvc::io::bundle::Bundle;
+    use meltos_tvc::io::bundle::{Bundle, BundleIo};
     use meltos_tvc::operation::init::Init;
     use meltos_tvc::operation::push::Pushable;
     use meltos_util::serde::SerializeJson;
@@ -256,7 +256,7 @@ mod test_util {
             .uri("/room/open")
             .body(Body::from(
                 serde_json::to_string(&Open {
-                    bundle: None,
+                    bundle: Some(BundleIo::new(fs.clone()).create().await.unwrap()),
                     lifetime_secs: None,
                     user_limits: None,
                 })

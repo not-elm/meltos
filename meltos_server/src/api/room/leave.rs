@@ -20,13 +20,13 @@ pub async fn leave(
             from: user_id,
             message: MessageData::ClosedRoom,
         })
-        .await?;
+            .await?;
         let room_id = room.id.clone();
         drop(room);
         rooms.delete(&room_id);
         Ok(Response::default())
     } else {
-        room.session.unregister(user_id.clone()).await?;
+        room.leave(user_id.clone()).await?;
         let left = Left {
             user_id: user_id.clone(),
         };
@@ -35,18 +35,18 @@ pub async fn leave(
             from: user_id,
             message: MessageData::Left(left.clone()),
         })
-        .await?;
+            .await?;
         Ok(left.as_success_response())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use axum::{http, Router};
     use axum::body::Body;
     use axum::extract::Request;
     use axum::http::{header, StatusCode};
     use axum::response::Response;
-    use axum::{http, Router};
 
     use meltos::room::RoomId;
     use meltos::schema::room::{Joined, Opened};
@@ -55,10 +55,10 @@ mod tests {
     use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
 
+    use crate::{app, error};
     use crate::api::test_util::{
         fetch_request, http_call, http_join, mock_app, open_room_request, ResponseConvertable,
     };
-    use crate::{app, error};
 
     #[tokio::test]
     async fn delete_room_if_owner_left() -> error::Result {
@@ -96,6 +96,23 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let response = http_leave(&mut app, &opened.room_id, &opened.session_id).await;
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        Ok(())
+    }
+
+
+    #[tokio::test]
+    async fn deleted_joined_user_head() -> error::Result {
+        let mut app = mock_app();
+        let fs = MemoryFileSystem::default();
+        let response = http_call(&mut app, open_room_request(fs.clone()).await).await;
+        let opened = response.deserialize::<Opened>().await;
+        let joined = http_join(&mut app, &opened.room_id, Some(UserId::from("session")))
+            .await
+            .deserialize::<Joined>()
+            .await;
+        assert!(std::fs::read(format!("resources/{}/.meltos/refs/heads/{}", opened.room_id, joined.user_id)).is_ok());
+        let response = http_leave(&mut app, &opened.room_id, &joined.session_id).await;
+        assert!(std::fs::read(format!("resources/{}/.meltos/refs/heads/{}", opened.room_id, joined.user_id)).is_err());
         Ok(())
     }
 

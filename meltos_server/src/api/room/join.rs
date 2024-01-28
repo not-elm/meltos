@@ -30,6 +30,7 @@ pub async fn join(SessionRoom(room): SessionRoom, Json(join): Json<Join>) -> Htt
     room.error_if_reached_capacity().await?;
 
     let (user_id, session_id) = room.session.register(join.user_id).await?;
+    room.write_head(user_id.clone()).await?;
     let bundle = room.create_bundle().await?;
     let discussions = room.discussions().await?;
     let joined = Joined {
@@ -44,7 +45,7 @@ pub async fn join(SessionRoom(room): SessionRoom, Json(join): Json<Join>) -> Htt
         },
         from: user_id,
     })
-    .await?;
+        .await?;
 
     Ok(joined.as_success_response())
 }
@@ -60,8 +61,8 @@ mod tests {
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::branch::BranchName;
-    use meltos_tvc::file_system::memory::MemoryFileSystem;
     use meltos_tvc::file_system::FileSystem;
+    use meltos_tvc::file_system::memory::MemoryFileSystem;
     use meltos_tvc::io::bundle::BundleIo;
     use meltos_tvc::operation::init::Init;
 
@@ -112,7 +113,7 @@ mod tests {
                 Some(1), // room capacity
             ),
         )
-        .await;
+            .await;
 
         let response = http_join(&mut app, &opened.room_id, None).await;
         assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
@@ -179,5 +180,20 @@ mod tests {
                 message: "user id conflict; id: user1".to_string(),
             }
         );
+    }
+
+    /// roomユーザーが参加するとき、現在のownerのheadと同じ参照先を指定するHEADを作成する。
+    #[tokio::test]
+    async fn created_user_head() {
+        let mut app = mock_app();
+        let fs = MemoryFileSystem::default();
+
+        let opened = http_open_room(&mut app, fs.clone()).await;
+        let response = http_join(&mut app, &opened.room_id, Some(UserId::from("user1"))).await;
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let owner_head = std::fs::read(format!("resources/{}/.meltos/refs/heads/owner", opened.room_id)).unwrap();
+        let user_head = std::fs::read(format!("resources/{}/.meltos/refs/heads/user1", opened.room_id)).unwrap();
+        assert_eq!(owner_head, user_head);
     }
 }
