@@ -5,11 +5,12 @@ use crate::io::atomic::head::HeadIo;
 use crate::io::atomic::object::ObjIo;
 use crate::io::trace_tree::TraceTreeIo;
 use crate::io::workspace::WorkspaceIo;
+use crate::object::commit::CommitHash;
 
 #[derive(Debug, Clone)]
 pub struct UnZip<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     workspace: WorkspaceIo<Fs>,
     trace_tree: TraceTreeIo<Fs>,
@@ -19,8 +20,8 @@ where
 }
 
 impl<Fs> UnZip<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> UnZip<Fs> {
         Self {
@@ -34,14 +35,14 @@ where
 }
 
 impl<Fs> UnZip<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     /// Restore committed data into the workspace.
     pub async fn execute(&self, branch_name: &BranchName) -> error::Result {
         self.fs.delete("workspace").await?;
         self.fs.create_dir("workspace").await?;
-        let head = self.head.try_read(branch_name).await?;
+        let head = self.read_head(branch_name).await?;
         let trace_tree = self.trace_tree.read(&head).await?;
         for (path, hash) in trace_tree.iter() {
             self.workspace
@@ -50,14 +51,24 @@ where
         }
         Ok(())
     }
+
+    async fn read_head(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
+        if let Some(head) = self.head.read(branch_name).await? {
+            Ok(head)
+        } else {
+            let head = self.head.try_read(&BranchName::owner()).await?;
+            self.head.write(&branch_name, &head).await?;
+            Ok(head)
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::memory::MemoryFileSystem;
     use crate::file_system::FileSystem;
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::operation::unzip::UnZip;
