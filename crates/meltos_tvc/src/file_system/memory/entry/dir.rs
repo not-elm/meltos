@@ -185,7 +185,7 @@ impl MemoryDir {
 
         let name = &path[0];
         let entry = self.read_entry(name)?;
-        if path.len() == 1 || entry.stat().is_file() {
+        if path.len() == 1  {
             return Some(entry);
         }
 
