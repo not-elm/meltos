@@ -96,7 +96,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             .map(|(branch_name, _)| branch_name)
             .collect())
     }
-    
+
 
     #[inline(always)]
     pub async fn unzip(&self, branch_name: &BranchName) -> error::Result {
@@ -272,7 +272,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             return Ok(None);
         };
         let trace_tree = self.trace.read(&head).await?;
-        Ok(trace_tree.get(&FilePath::from(file_path)).cloned())
+        Ok(trace_tree.get(&FilePath::from(format!("workspace/{file_path}"))).cloned())
     }
 
 
