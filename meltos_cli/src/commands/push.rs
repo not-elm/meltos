@@ -13,7 +13,7 @@ pub struct PushArgs;
 impl CommandExecutable for PushArgs {
     async fn execute(self) -> meltos_client::error::Result {
         let configs = load_configs()?;
-        let mut tvc = TvcClient::new(StdFileSystem);
+        let tvc = TvcClient::new(StdFileSystem);
         tvc.push(configs).await?;
         Ok(())
     }

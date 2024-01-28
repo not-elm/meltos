@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use clap::Args;
 
 use meltos_client::tvc::TvcClient;
+use meltos_tvc::file_system::FileSystem;
 use meltos_tvc::file_system::std_fs::StdFileSystem;
 
 use crate::commands::{CommandExecutable, load_configs};
@@ -15,6 +16,8 @@ impl CommandExecutable for LeaveArgs {
         let configs = load_configs()?;
         let tvc = TvcClient::new(StdFileSystem);
         tvc.leave(configs).await?;
+        StdFileSystem.delete(".meltos").await?;
+        println!("left room");
         Ok(())
     }
 }

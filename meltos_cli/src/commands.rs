@@ -3,12 +3,14 @@ use clap::Parser;
 
 use meltos_client::config::SessionConfigs;
 use meltos_tvc::branch::BranchName;
+use crate::commands::all::AllArgs;
 
 use crate::commands::commit::CommitArgs;
 use crate::commands::fetch::FetchArgs;
 use crate::commands::join::JoinArgs;
 use crate::commands::leave::LeaveArgs;
 use crate::commands::merge::MergeArgs;
+use crate::commands::meta::MetaArgs;
 use crate::commands::open::OpenArgs;
 use crate::commands::push::PushArgs;
 use crate::commands::reply::ReplyArgs;
@@ -25,6 +27,8 @@ mod push;
 mod reply;
 mod speak;
 mod stage;
+mod all;
+mod meta;
 
 #[async_trait(?Send)]
 pub trait CommandExecutable {
@@ -44,6 +48,8 @@ pub enum Commands {
     Merge(MergeArgs),
     Speak(SpeakArgs),
     Reply(ReplyArgs),
+    All(AllArgs),
+    Meta(MetaArgs)
 }
 
 #[async_trait(?Send)]
@@ -60,6 +66,8 @@ impl CommandExecutable for Commands {
             Self::Merge(c) => c.execute().await,
             Self::Speak(c) => c.execute().await,
             Self::Reply(c) => c.execute().await,
+            Self::All(c) => c.execute().await,
+            Self::Meta(c) => c.execute().await
         }
     }
 }

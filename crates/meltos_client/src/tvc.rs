@@ -176,7 +176,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             .await?)
     }
 
-    pub async fn push(&mut self, session_configs: SessionConfigs) -> error::Result {
+    pub async fn push(&self, session_configs: SessionConfigs) -> error::Result {
         let branch_name = session_configs.user_id.clone().into();
         let mut sender = PushSender {
             session_configs,

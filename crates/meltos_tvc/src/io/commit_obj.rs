@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use log::trace;
 
 use crate::branch::BranchName;
 use crate::error;
@@ -6,6 +7,7 @@ use crate::file_system::FileSystem;
 use crate::io::atomic::head::{CommitText, HeadIo};
 use crate::io::atomic::local_commits::LocalCommitsIo;
 use crate::io::atomic::object::ObjIo;
+use crate::io::atomic::trace::TraceIo;
 use crate::io::bundle::BundleObject;
 use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::local_commits::LocalCommitsObj;
@@ -20,6 +22,7 @@ where
     head: HeadIo<Fs>,
     object: ObjIo<Fs>,
     local_commits: LocalCommitsIo<Fs>,
+    trace: TraceIo<Fs>
 }
 
 impl<Fs> CommitObjIo<Fs>
@@ -32,6 +35,7 @@ where
             head: HeadIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
             local_commits: LocalCommitsIo::new(fs.clone()),
+            trace: TraceIo::new(fs)
         }
     }
 }
@@ -128,12 +132,9 @@ where
         to: &Option<CommitHash>,
     ) -> error::Result<HashSet<ObjHash>> {
         let mut obj_hashes = HashSet::new();
-        let result = self.scan_commit_obj(&mut obj_hashes, from, to).await;
-        if result.is_ok() {
-            Ok(obj_hashes)
-        } else {
-            Err(result.unwrap_err())
-        }
+        self.scan_commit_obj(&mut obj_hashes, from, to).await?;
+
+        Ok(obj_hashes)
     }
 
     #[async_recursion::async_recursion(?Send)]
@@ -144,6 +145,9 @@ where
         to: &Option<CommitHash>,
     ) -> error::Result {
         let commit_obj = self.read(&commit_hash).await?;
+
+        let trace_tree_obj_hash = self.trace.read(&commit_hash).await?;
+        obj_hashes.insert(trace_tree_obj_hash);
 
         self.scan_commit_tree(obj_hashes, &commit_obj, to).await?;
         obj_hashes.insert(commit_hash.0);
