@@ -16,14 +16,9 @@ pub async fn leave(
 ) -> HttpResult {
     if room.owner == user_id {
         let mut rooms = rooms.lock().await;
-        room.send_all_users(ChannelMessage {
-            from: user_id,
-            message: MessageData::ClosedRoom,
-        })
-            .await?;
         let room_id = room.id.clone();
         drop(room);
-        rooms.delete(&room_id);
+        rooms.delete(&room_id).await?;
         Ok(Response::default())
     } else {
         room.leave(user_id.clone()).await?;
@@ -112,6 +107,7 @@ mod tests {
             .await;
         assert!(std::fs::read(format!("resources/{}/.meltos/refs/heads/{}", opened.room_id, joined.user_id)).is_ok());
         let response = http_leave(&mut app, &opened.room_id, &joined.session_id).await;
+        assert_eq!(response.status(), StatusCode::OK);
         assert!(std::fs::read(format!("resources/{}/.meltos/refs/heads/{}", opened.room_id, joined.user_id)).is_err());
         Ok(())
     }

@@ -26,7 +26,7 @@ use crate::state::config::AppConfigs;
 ///
 /// - [`ExceedBundleSize`](crate::error::Error::ExceedBundleSize) : リクエスト時に送信されたバンドルのサイズが上限値を超えた場合
 ///
-#[tracing::instrument(ret)]
+#[tracing::instrument(skip(rooms), fields(configs, param), ret, level="INFO")]
 pub async fn open<Session, Discussion>(
     State(rooms): State<Rooms>,
     State(configs): State<AppConfigs>,

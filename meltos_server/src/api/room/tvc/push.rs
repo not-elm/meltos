@@ -7,8 +7,8 @@ use serde_json::json;
 use meltos::channel::{ChannelMessage, MessageData};
 use meltos_tvc::io::bundle::Bundle;
 
-use crate::api::room::response_error_exceed_bundle_size;
 use crate::api::HttpResult;
+use crate::api::room::response_error_exceed_bundle_size;
 use crate::middleware::room::SessionRoom;
 use crate::middleware::user::SessionUser;
 use crate::state::config::AppConfigs;
@@ -23,6 +23,7 @@ pub async fn push(
     Json(bundle): Json<Bundle>,
 ) -> HttpResult {
     let bundle_data_size = bundle.obj_data_size();
+
     if configs.limit_bundle_size < bundle_data_size {
         return Err(response_error_exceed_bundle_size(
             bundle_data_size,
@@ -44,7 +45,7 @@ pub async fn push(
         from: user_id,
         message: MessageData::Pushed(bundle),
     })
-    .await?;
+        .await?;
     Ok(Response::default())
 }
 
@@ -60,7 +61,7 @@ fn response_error_exceed_tvc_repository_size(
                 "limit_tvc_repository_size": limit_tvc_repository_size,
                 "actual_size" : actual_size
             })
-            .to_string(),
+                .to_string(),
         ))
         .unwrap()
 }
@@ -75,8 +76,8 @@ mod tests {
     use meltos::schema::room::Opened;
     use meltos::user::SessionId;
     use meltos_tvc::branch::BranchName;
-    use meltos_tvc::file_system::memory::MemoryFileSystem;
     use meltos_tvc::file_system::FileSystem;
+    use meltos_tvc::file_system::memory::MemoryFileSystem;
     use meltos_tvc::operation;
     use meltos_tvc::operation::commit::Commit;
     use meltos_tvc::operation::stage;
@@ -136,8 +137,9 @@ mod tests {
             session_id.clone(),
             branch.clone(),
         )
-        .await;
+            .await;
         assert_eq!(response.status(), StatusCode::OK);
+
 
         // push2
         fs.write_sync("workspace/src/hello3.txt", &dummy_buf(2));
@@ -148,7 +150,7 @@ mod tests {
             session_id.clone(),
             branch.clone(),
         )
-        .await;
+            .await;
         assert_eq!(response.status(), StatusCode::OK);
 
         // push3
@@ -160,7 +162,7 @@ mod tests {
             session_id.clone(),
             branch.clone(),
         )
-        .await;
+            .await;
         assert_eq!(response.status(), StatusCode::OK);
 
         // push3
@@ -192,6 +194,6 @@ mod tests {
 
     fn dummy_buf(v: u8) -> Vec<u8> {
         // GZipで圧縮された際になるべく1024bytesに近づくようにbuf作成
-        vec![v; 700_000]
+        vec![v; 600_000]
     }
 }

@@ -8,7 +8,7 @@ use axum::response::Response;
 use serde::Serialize;
 use tokio::sync::Mutex;
 
-use meltos::channel::{ChannelMessage, ChannelMessageSendable};
+use meltos::channel::{ChannelMessage, ChannelMessageSendable, MessageData};
 use meltos::discussion::DiscussionBundle;
 use meltos::room::RoomId;
 use meltos::schema::room::RoomBundle;
@@ -30,8 +30,9 @@ use crate::room::executor::discussion::DiscussionCommandExecutor;
 pub mod channel;
 mod executor;
 
-#[derive(Default, Clone, Debug, Deref)]
+#[derive(Default, Clone, Deref)]
 pub struct Rooms(ArcMutex<RoomMap>);
+
 
 impl Rooms {
     pub async fn insert_room(&self, room: Room, life_time: Duration) {
@@ -39,7 +40,9 @@ impl Rooms {
         let room_id = room.id.clone();
         tokio::spawn(async move {
             tokio::time::sleep(life_time).await;
-            rooms.lock().await.delete(&room_id);
+            if let Err(e) = rooms.lock().await.delete(&room_id).await {
+                tracing::error!("{e:?}");
+            }
         });
 
         let mut rooms = self.0.lock().await;
@@ -52,10 +55,17 @@ pub struct RoomMap(HashMap<RoomId, Room>);
 
 impl RoomMap {
     #[inline(always)]
-    pub fn delete(&mut self, room_id: &RoomId) {
+    pub async fn delete(&mut self, room_id: &RoomId) -> HttpResult<()> {
         if let Some(room) = self.0.remove(room_id) {
+            let result = room.send_all_users(ChannelMessage {
+                from: room.owner.clone(),
+                message: MessageData::ClosedRoom,
+            })
+                .await;
             room.delete_resource_dir();
+            result?;
         }
+        Ok(())
     }
 
     #[inline(always)]
@@ -105,15 +115,14 @@ impl Room {
     }
 
     #[inline(always)]
-    pub async fn error_if_reached_capacity(&self) -> error::Result{
+    pub async fn error_if_reached_capacity(&self) -> error::Result {
         let current_user_count = self.session.user_count().await?;
-        if self.capacity <= current_user_count{
+        if self.capacity <= current_user_count {
             Err(error::Error::ReachedCapacity(self.capacity))
-        }else{
+        } else {
             Ok(())
         }
     }
-
 
     pub async fn room_bundle(&self) -> error::Result<RoomBundle> {
         let discussion = self
@@ -181,13 +190,11 @@ impl Room {
         self.tvc.write_head(&BranchName(user_id.0)).await.map_err(crate::error::Error::Tvc)
     }
 
-
-    pub async fn leave(&self, user_id: UserId) -> error::Result{
+    pub async fn leave(&self, user_id: UserId) -> error::Result {
         self.session.unregister(user_id.clone()).await?;
         self.tvc.leave(user_id).await?;
         Ok(())
     }
-
 
     pub async fn global_discussion<'a, F, O, S>(&'a self, user_id: UserId, f: F) -> error::Result<S>
         where

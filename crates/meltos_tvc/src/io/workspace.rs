@@ -3,9 +3,9 @@ use crate::error;
 use crate::file_system::{FilePath, FileSystem};
 use crate::io::atomic::head::HeadIo;
 use crate::io::trace_tree::TraceTreeIo;
+use crate::object::{AsMeta, Obj, ObjHash};
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
-use crate::object::{AsMeta, Obj, ObjHash};
 
 pub struct ChangeFileMeta {
     pub path: FilePath,
@@ -20,8 +20,8 @@ pub enum ChangeFile {
 
 #[derive(Debug, Clone)]
 pub struct WorkspaceIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     fs: Fs,
     head: HeadIo<Fs>,
@@ -29,8 +29,8 @@ where
 }
 
 impl<Fs> WorkspaceIo<Fs>
-where
-    Fs: FileSystem + Clone,
+    where
+        Fs: FileSystem + Clone,
 {
     #[inline(always)]
     pub fn new(fs: Fs) -> WorkspaceIo<Fs> {
@@ -43,19 +43,19 @@ where
 }
 
 impl<Fs> WorkspaceIo<Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
-    pub async fn try_read(&self, file_path: &FilePath) -> error::Result<FileObj> {
+    pub async fn try_read(&self, file_path: &str) -> error::Result<FileObj> {
         match self.read(file_path).await? {
             Some(file_obj) => Ok(file_obj),
             None => Err(crate::error::Error::NotfoundWorkspaceFile(
-                file_path.clone(),
+                FilePath(file_path.to_string()),
             )),
         }
     }
 
-    pub async fn read(&self, file_path: &FilePath) -> error::Result<Option<FileObj>> {
+    pub async fn read(&self, file_path: &str) -> error::Result<Option<FileObj>> {
         let Some(buf) = self.fs.read_file(&self.as_path(file_path)).await? else {
             return Ok(None);
         };
@@ -63,7 +63,7 @@ where
         Ok(Some(FileObj(buf)))
     }
 
-    pub async fn unpack(&self, file_path: &FilePath, obj: &Obj) -> error::Result<()> {
+    pub async fn unpack(&self, file_path: &str, obj: &Obj) -> error::Result<()> {
         match obj {
             Obj::File(file) => {
                 self.fs.write_file(file_path, &file.0).await?;
@@ -77,7 +77,11 @@ where
         }
     }
 
-    pub async fn is_change(&self, branch: &BranchName, path: &FilePath) -> error::Result<bool> {
+    pub async fn is_change(&self, branch: &BranchName, path: &str) -> error::Result<bool> {
+        if self.is_ignore(path).await?{
+            return Ok(false);
+        }
+
         let head = self.head.try_read(branch).await?;
         let trace = self.trace.read(&head).await?;
         let file_obj = self.read(path).await?;
@@ -95,12 +99,44 @@ where
 
     pub async fn convert_to_objs(&self, path: &str) -> error::Result<ObjectIter<Fs>> {
         let files = self.files(path).await?;
+        let mut new_files = Vec::with_capacity(files.len());
+        for file in files{
+            if !self.is_ignore(&file).await?{
+                new_files.push(file);
+            }
+        }
 
         Ok(ObjectIter {
-            files,
+            files: new_files,
             index: 0,
             io: &self.fs,
         })
+    }
+
+    pub async fn write_ignores(&self, ignores: Vec<String>) -> error::Result {
+        let ignore = ignores.join("\n");
+        let path = self.as_path(&FilePath(".meltos_ignore".to_string()));
+        self.fs.write_file(&path, ignore.as_bytes()).await?;
+        Ok(())
+    }
+
+    pub async fn is_ignore(&self, path: &str) -> error::Result<bool> {
+        let Some(file_obj) = self.read(&FilePath(".meltos_ignore".to_string())).await? else {
+            return Ok(false);
+        };
+        let ignores = String::from_utf8(file_obj.0).unwrap();
+        let mut excludes = ignores.split("\n").filter_map(|pattern| {
+            if pattern.starts_with('!') {
+                Some(pattern.trim_start_matches('!'))
+            } else {
+                None
+            }
+        });
+        if excludes.any(|pattern| pattern == path) {
+            Ok(false)
+        } else {
+            Ok(ignores.split('\n').any(|pattern| path.starts_with(pattern)))
+        }
     }
 
     #[inline(always)]
@@ -175,8 +211,8 @@ where
 }
 
 pub struct ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     files: Vec<String>,
     index: usize,
@@ -184,8 +220,8 @@ where
 }
 
 impl<'a, Fs> ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     pub async fn next(&mut self) -> Option<std::io::Result<(FilePath, FileObj)>> {
         if self.index == self.files.len() {
@@ -207,8 +243,8 @@ where
 }
 
 impl<'a, Fs> ObjectIter<'a, Fs>
-where
-    Fs: FileSystem,
+    where
+        Fs: FileSystem,
 {
     async fn read_to_obj(&self) -> std::io::Result<(FilePath, FileObj)> {
         let path = self.files.get(self.index).unwrap();
@@ -222,12 +258,12 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::branch::BranchName;
-    use crate::file_system::memory::MemoryFileSystem;
     use crate::file_system::{FilePath, FileSystem};
+    use crate::file_system::memory::MemoryFileSystem;
     use crate::io::atomic::object::ObjIo;
     use crate::io::workspace::WorkspaceIo;
-    use crate::object::file::FileObj;
     use crate::object::{AsMeta, Obj, ObjHash};
+    use crate::object::file::FileObj;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::tests::init_owner_branch;
@@ -296,8 +332,8 @@ mod tests {
                 "workspace/hello.txt".to_string(),
                 "workspace/dist/index.js".to_string(),
             ]
-            .into_iter()
-            .collect::<HashSet<String>>()
+                .into_iter()
+                .collect::<HashSet<String>>()
         );
     }
 
@@ -396,5 +432,60 @@ mod tests {
             .await
             .unwrap();
         assert!(!is_change);
+    }
+
+    #[tokio::test]
+    async fn ignore_hello_txt() {
+        let fs = MemoryFileSystem::default();
+        init_owner_branch(fs.clone()).await;
+
+        let workspace = WorkspaceIo::new(fs.clone());
+        workspace.write_ignores(vec!["hello.txt".to_string()]).await.unwrap();
+        fs.write_sync("workspace/hello.txt", b"hello");
+
+        let ignored = workspace.is_ignore(&FilePath("hello.txt".to_string())).await.unwrap();
+        assert!(ignored);
+    }
+
+
+    #[tokio::test]
+    async fn ignore_dir() {
+        let fs = MemoryFileSystem::default();
+        init_owner_branch(fs.clone()).await;
+
+        let workspace = WorkspaceIo::new(fs.clone());
+        workspace.write_ignores(vec!["dir/".to_string()]).await.unwrap();
+        fs.write_sync("workspace/dir/hello1.txt", b"hello");
+        fs.write_sync("workspace/dir/hello2.txt", b"hello");
+        fs.write_sync("workspace/dir/hello3.txt", b"hello");
+
+        let ignored = workspace.is_ignore("dir/hello1.txt").await.unwrap();
+        assert!(ignored);
+        let ignored = workspace.is_ignore("dir/hello2.txt").await.unwrap();
+        assert!(ignored);
+        let ignored = workspace.is_ignore("dir/hello3.txt").await.unwrap();
+        assert!(ignored);
+    }
+
+    #[tokio::test]
+    async fn not_ignore_hello3() {
+        let fs = MemoryFileSystem::default();
+        init_owner_branch(fs.clone()).await;
+
+        let workspace = WorkspaceIo::new(fs.clone());
+        workspace.write_ignores(vec![
+            "dir/".to_string(),
+            "!dir/hello3.txt".to_string(),
+        ]).await.unwrap();
+        fs.write_sync("workspace/dir/hello1.txt", b"hello");
+        fs.write_sync("workspace/dir/hello2.txt", b"hello");
+        fs.write_sync("workspace/dir/hello3.txt", b"hello");
+
+        let ignored = workspace.is_ignore("dir/hello1.txt").await.unwrap();
+        assert!(ignored);
+        let ignored = workspace.is_ignore("dir/hello2.txt").await.unwrap();
+        assert!(ignored);
+        let ignored = workspace.is_ignore("dir/hello3.txt").await.unwrap();
+        assert!(!ignored);
     }
 }

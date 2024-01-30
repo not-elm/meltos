@@ -145,7 +145,7 @@ mod tests {
             .room_id;
         let response = http_join(&mut app, &room_id, None).await;
         let meta = response.deserialize::<Joined>().await;
-        assert_eq!(meta.bundle.branches.len(), 1);
+        assert_eq!(meta.bundle.branches.len(), 2);
     }
 
     #[tokio::test]

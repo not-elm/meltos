@@ -1,21 +1,22 @@
-use std::env;
 use std::fmt::Debug;
 use std::net::SocketAddr;
 
 use axum::extract::DefaultBodyLimit;
-use axum::routing::{delete, get, post};
 use axum::Router;
+use axum::routing::{delete, get, post};
 use tower_http::decompression::RequestDecompressionLayer;
+use tracing::Level;
+use tracing_subscriber::fmt::writer::MakeWriterExt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use meltos_backend::discussion::global::sqlite::SqliteDiscussionIo;
 use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
-use meltos_backend::session::sqlite::SqliteSessionIo;
+use meltos_backend::discussion::global::sqlite::SqliteDiscussionIo;
 use meltos_backend::session::{NewSessionIo, SessionIo};
+use meltos_backend::session::sqlite::SqliteSessionIo;
 
-use crate::state::config::AppConfigs;
 use crate::state::AppState;
+use crate::state::config::AppConfigs;
 
 mod api;
 mod channel;
@@ -24,16 +25,26 @@ mod middleware;
 mod room;
 mod state;
 
-pub fn tracing_init() {
+fn tracing_init() {
+    let info_writer = tracing_appender::rolling::minutely("./log/info", "info.log");
+    let error_writer = tracing_appender::rolling::minutely("./log/error", "error.log");
+
+    let info_layer = tracing_subscriber::fmt::Layer::default()
+        .with_ansi(false)
+        .with_writer(info_writer.with_max_level(Level::INFO));
+    let error_layer = tracing_subscriber::fmt::Layer::default()
+        .with_ansi(false)
+        .with_writer(error_writer.with_max_level(Level::WARN));
+
     tracing_subscriber::registry()
         .with(console_subscriber::spawn())
-        .with(tracing_subscriber::fmt::layer())
+        .with(info_layer)
+        .with(error_layer)
         .init();
 }
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    env::set_var("RUST_LOG", "ERROR");
     tracing_init();
     let listener = tokio::net::TcpListener::bind(SocketAddr::from(([0, 0, 0, 0], 3000))).await?;
 
@@ -42,9 +53,9 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 }
 
 fn app<Session, Discussion>() -> Router
-where
-    Session: SessionIo + NewSessionIo + Debug + 'static,
-    Discussion: DiscussionIo + NewDiscussIo + Debug + 'static,
+    where
+        Session: SessionIo + NewSessionIo + Debug + 'static,
+        Discussion: DiscussionIo + NewDiscussIo + Debug + 'static,
 {
     Router::new()
         .route("/room/open", post(api::room::open::<Session, Discussion>))

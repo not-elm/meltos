@@ -1,6 +1,4 @@
 use std::collections::HashSet;
-use log::trace;
-
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
@@ -190,6 +188,7 @@ mod tests {
     use crate::file_system::{FilePath, FileSystem};
     use crate::io::atomic::local_commits::LocalCommitsIo;
     use crate::io::atomic::object::ObjIo;
+    use crate::io::atomic::trace::TraceIo;
     use crate::io::commit_obj::CommitObjIo;
     use crate::io::trace_tree::TraceTreeIo;
     use crate::object::local_commits::LocalCommitsObj;
@@ -290,6 +289,9 @@ mod tests {
                 .await
                 .unwrap()
                 .committed_objs_tree,
+        );
+        expect.push(
+            TraceIo::new(fs.clone()).read(&commit_hash2).await.unwrap(),
         );
         for (_, obj) in trace_obj.iter() {
             expect.push(obj.clone());
