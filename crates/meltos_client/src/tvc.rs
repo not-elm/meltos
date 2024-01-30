@@ -105,19 +105,10 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
 
     pub async fn open_room(&mut self, lifetime_sec: Option<u64>, user_limits: Option<u64>) -> error::Result<SessionConfigs> {
         let branch = BranchName::owner();
-
         self.operations.init.execute(&branch).await?;
-        let mut sender = OpenSender {
-            lifetime_sec,
-            user_limits,
-        };
 
-        let session_configs = self
-            .operations
-            .push
-            .execute(branch, &mut sender)
-            .await?;
-        Ok(session_configs)
+        let http = HttpClient::open(BASE, lifetime_sec, user_limits).await?;
+        Ok(http.configs().clone())
     }
 
     pub async fn join_room(
@@ -125,13 +116,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
         room_id: String,
         user_id: Option<UserId>,
     ) -> error::Result<SessionConfigs> {
-        let (http, bundle) = HttpClient::join(BASE, RoomId(room_id), user_id).await?;
-        let branch = BranchName(http.configs().user_id.0.clone());
-
-        self.operations.save.execute(bundle).await?;
-        self.operations.checkout.execute(&branch).await?;
-        self.operations.unzip.execute(&branch).await?;
-
+        let http = HttpClient::join(BASE, RoomId(room_id), user_id).await?;
         Ok(http.configs().clone())
     }
 
@@ -292,26 +277,8 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
     }
 }
 
-struct OpenSender {
-    lifetime_sec: Option<u64>,
-    user_limits: Option<u64>,
-}
 
-#[async_trait(? Send)]
-impl Pushable<SessionConfigs> for OpenSender {
-    type Error = crate::error::Error;
 
-    async fn push(&mut self, bundle: Bundle) -> Result<SessionConfigs, Self::Error> {
-        let http = HttpClient::open(
-            BASE,
-            Some(bundle),
-            self.lifetime_sec,
-            self.user_limits,
-        )
-            .await?;
-        Ok(http.configs().clone())
-    }
-}
 
 struct PushSender {
     session_configs: SessionConfigs,

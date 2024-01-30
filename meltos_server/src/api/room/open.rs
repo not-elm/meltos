@@ -9,12 +9,10 @@ use meltos::room::RoomId;
 use meltos::schema::room::Open;
 use meltos::schema::room::Opened;
 use meltos::user::{SessionId, UserId};
-use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
 use meltos_backend::session::{NewSessionIo, SessionIo};
 use meltos_util::serde::SerializeJson;
 
 use crate::api::HttpResult;
-use crate::api::room::response_error_exceed_bundle_size;
 use crate::room::{Room, Rooms};
 use crate::state::config::AppConfigs;
 
@@ -26,40 +24,23 @@ use crate::state::config::AppConfigs;
 ///
 /// - [`ExceedBundleSize`](crate::error::Error::ExceedBundleSize) : リクエスト時に送信されたバンドルのサイズが上限値を超えた場合
 ///
-#[tracing::instrument(skip(rooms), fields(configs, param), ret, level="INFO")]
-pub async fn open<Session, Discussion>(
+#[tracing::instrument(skip(rooms), fields(configs, param), ret, level = "INFO")]
+pub async fn open<Session>(
     State(rooms): State<Rooms>,
     State(configs): State<AppConfigs>,
     Json(param): Json<Open>,
 ) -> HttpResult
     where
-        Discussion: DiscussionIo + NewDiscussIo + 'static,
         Session: SessionIo + NewSessionIo + Debug + 'static,
 {
-    let bundle_size = param
-        .bundle
-        .as_ref()
-        .map(|b| b.obj_data_size())
-        .unwrap_or_default();
-    if configs.limit_bundle_size < bundle_size {
-        return Err(response_error_exceed_bundle_size(
-            bundle_size,
-            configs.limit_bundle_size,
-        ));
-    }
-
     let capacity = param.get_capacity(configs.max_user_limits);
     let life_time = param.lifetime_duration(configs.room_limit_life_time_sec);
     // 現状Roomオーナーは`owner`固定
     let user_id = UserId::from("owner");
 
-    let room = Room::open::<Discussion, Session>(user_id.clone(), capacity)?;
+    let room = Room::open::<Session>(user_id.clone(), capacity)?;
     let (user_id, session_id) = room.session.register(Some(user_id)).await?;
     let room_id = room.id.clone();
-
-    if let Some(bundle) = param.bundle {
-        room.save_bundle(bundle).await?;
-    }
 
     rooms.insert_room(room, life_time).await;
 

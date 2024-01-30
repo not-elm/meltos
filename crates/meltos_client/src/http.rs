@@ -1,15 +1,15 @@
 use async_trait::async_trait;
 #[cfg(not(feature = "wasm"))]
-use reqwest::{header, Client, Response};
+use reqwest::{Client, header, Response};
 #[cfg(feature = "wasm")]
-use reqwest_wasm::{header, Client, Response};
+use reqwest_wasm::{Client, header, Response};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use meltos::room::RoomId;
 use meltos::schema::discussion::global::{Create, Created, Replied, Reply, Speak, Spoke};
-use meltos::schema::room::Opened;
 use meltos::schema::room::{Join, Joined, Open};
+use meltos::schema::room::Opened;
 use meltos::user::UserId;
 use meltos_tvc::io::bundle::Bundle;
 use meltos_tvc::operation::push::Pushable;
@@ -46,7 +46,7 @@ impl HttpClient {
         base_uri: &str,
         room_id: RoomId,
         user_id: Option<UserId>,
-    ) -> error::Result<(Self, Bundle)> {
+    ) -> error::Result<Self> {
         let client = Client::new();
         let response = client
             .post(format!("{base_uri}/room/{room_id}/join"))
@@ -57,25 +57,21 @@ impl HttpClient {
             .await?;
 
         let joined: Joined = response_to_json(response).await?;
-        Ok((
-            Self {
-                configs: SessionConfigs {
-                    session_id: joined.session_id.clone(),
-                    user_id: joined.user_id.clone(),
-                    room_id,
-                },
-                client,
-                base_uri: base_uri.to_string(),
+        Ok(Self {
+            configs: SessionConfigs {
+                session_id: joined.session_id.clone(),
+                user_id: joined.user_id.clone(),
+                room_id,
             },
-            joined.bundle,
-        ))
+            client,
+            base_uri: base_uri.to_string(),
+        })
     }
 
     pub async fn open(
         base_uri: &str,
-        bundle: Option<Bundle>,
         lifetime_secs: Option<u64>,
-        user_limits: Option<u64>
+        user_limits: Option<u64>,
     ) -> error::Result<Self> {
         let client = Client::new();
         let response = client
@@ -83,7 +79,6 @@ impl HttpClient {
             .json(&Open {
                 lifetime_secs,
                 user_limits,
-                bundle,
             })
             .send()
             .await?;
@@ -130,8 +125,8 @@ impl HttpClient {
     }
 
     async fn get<D>(&self) -> error::Result<D>
-    where
-        D: DeserializeOwned,
+        where
+            D: DeserializeOwned,
     {
         let response = self
             .client
@@ -152,9 +147,9 @@ impl HttpClient {
     }
 
     async fn post<S, D>(&self, path: &str, body: Option<&S>) -> error::Result<D>
-    where
-        S: Serialize,
-        D: DeserializeOwned,
+        where
+            S: Serialize,
+            D: DeserializeOwned,
     {
         let mut request = self
             .client
@@ -206,8 +201,8 @@ impl Pushable<()> for HttpClient {
 }
 
 async fn response_to_json<D>(response: Response) -> error::Result<D>
-where
-    D: DeserializeOwned,
+    where
+        D: DeserializeOwned,
 {
     Ok(response.error_for_status()?.json().await?)
 }

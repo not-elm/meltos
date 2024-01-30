@@ -14,9 +14,12 @@ pub async fn channel(
 ) -> Response {
     ws.on_upgrade(|socket| {
         async move {
-            let (tx, _) = socket.split();
+            let (tx, mut rx) = socket.split();
             let sender = WebsocketSender::new(user_id.clone(), tx);
             room.insert_channel(sender).await;
+            while let Some(Ok(message)) =  rx.next().await{
+                
+            }
         }
     })
 }

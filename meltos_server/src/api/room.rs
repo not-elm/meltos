@@ -2,19 +2,14 @@ use axum::response::Response;
 
 pub use channel::channel;
 pub use join::join;
-pub use leave::leave;
-pub use open::open;
-pub use sync::sync;
 
-pub mod discussion;
-pub mod tvc;
+pub use open::open;
 
 mod channel;
 
 mod join;
-mod leave;
 mod open;
-mod sync;
+mod request;
 
 
 #[inline(always)]

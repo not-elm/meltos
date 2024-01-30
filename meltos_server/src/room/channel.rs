@@ -3,7 +3,8 @@ use axum::extract::ws::{Message, WebSocket};
 use futures::stream::SplitSink;
 use futures::SinkExt;
 
-use meltos::channel::{ChannelMessage, ChannelMessageSendable};
+use meltos::channel::{ResponseMessage, ChannelMessageSendable};
+use meltos::channel::request::RequestMessage;
 use meltos::user::UserId;
 
 pub struct WebsocketSender {
@@ -30,7 +31,15 @@ impl ChannelMessageSendable for WebsocketSender {
         &self.user_id
     }
 
-    async fn send(&mut self, message: ChannelMessage) -> crate::error::Result {
+    async fn send_request(&mut self, message: RequestMessage) -> Result<(), Self::Error> {
+         self.tx
+            .send(Message::Text(serde_json::to_string(&message)?))
+            .await
+            .map_err(|e| crate::error::Error::FailedSendChannelMessage(e.to_string()))?;
+        Ok(())
+    }
+    
+    async fn send_response(&mut self, message: ResponseMessage) -> crate::error::Result {
         self.tx
             .send(Message::Text(serde_json::to_string(&message)?))
             .await

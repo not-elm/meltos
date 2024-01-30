@@ -12,6 +12,4 @@ pub struct Join {
 pub struct Joined {
     pub user_id: UserId,
     pub session_id: SessionId,
-    pub bundle: Bundle,
-    pub discussions: Vec<DiscussionBundle>,
 }

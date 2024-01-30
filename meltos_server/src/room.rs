@@ -1,34 +1,25 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
-use std::future::Future;
 use std::sync::Arc;
 use std::time::Duration;
 
 use axum::response::Response;
-use serde::Serialize;
 use tokio::sync::Mutex;
 
-use meltos::channel::{ChannelMessage, ChannelMessageSendable, MessageData};
-use meltos::discussion::DiscussionBundle;
+use meltos::channel::{ChannelMessageSendable, MessageData, ResponseMessage};
+use meltos::channel::request::RequestMessage;
 use meltos::room::RoomId;
-use meltos::schema::room::RoomBundle;
 use meltos::user::UserId;
-use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
-use meltos_backend::path::{create_resource_dir, room_resource_dir};
+use meltos_backend::path::room_resource_dir;
 use meltos_backend::session::{NewSessionIo, SessionIo};
 use meltos_backend::sync::arc_mutex::ArcMutex;
-use meltos_backend::tvc::TvcBackendIo;
-use meltos_tvc::branch::BranchName;
-use meltos_tvc::file_system::std_fs::StdFileSystem;
-use meltos_tvc::io::bundle::Bundle;
 use meltos_util::macros::Deref;
 
 use crate::api::HttpResult;
 use crate::error;
-use crate::room::executor::discussion::DiscussionCommandExecutor;
 
 pub mod channel;
-mod executor;
+
 
 #[derive(Default, Clone, Deref)]
 pub struct Rooms(ArcMutex<RoomMap>);
@@ -36,6 +27,8 @@ pub struct Rooms(ArcMutex<RoomMap>);
 
 impl Rooms {
     pub async fn insert_room(&self, room: Room, life_time: Duration) {
+        self.register_connect_timeout(room.id.clone());
+
         let rooms = self.0.clone();
         let room_id = room.id.clone();
         tokio::spawn(async move {
@@ -48,6 +41,20 @@ impl Rooms {
         let mut rooms = self.0.lock().await;
         rooms.0.insert(room.id.clone(), room);
     }
+
+
+    fn register_connect_timeout(&self, room_id: RoomId) {
+        let rooms = self.0.clone();
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_secs(30)).await;
+            let mut rooms = rooms.lock().await;
+            if rooms.room(&room_id).is_ok_and(|room| !room.is_connecting) {
+                if let Err(e) = rooms.delete(&room_id).await {
+                    tracing::error!("{e:?}");
+                }
+            }
+        });
+    }
 }
 
 #[derive(Default, Debug)]
@@ -57,7 +64,7 @@ impl RoomMap {
     #[inline(always)]
     pub async fn delete(&mut self, room_id: &RoomId) -> HttpResult<()> {
         if let Some(room) = self.0.remove(room_id) {
-            let result = room.send_all_users(ChannelMessage {
+            let result = room.send_all_users(ResponseMessage {
                 from: room.owner.clone(),
                 message: MessageData::ClosedRoom,
             })
@@ -74,7 +81,7 @@ impl RoomMap {
     }
 
     pub fn room_mut(&mut self, room_id: &RoomId) -> error::Result<&mut Room> {
-        self.0.get_mut(room_id).ok_or(error::Error::RoomNotExists)
+        self.0.get_mut(room_id).ok_or_else(|| error::Error::RoomNotExists(room_id.clone()))
     }
 }
 
@@ -82,35 +89,29 @@ impl RoomMap {
 pub struct Room {
     pub owner: UserId,
     pub id: RoomId,
-    pub tvc: TvcBackendIo<StdFileSystem>,
     pub session: Arc<dyn SessionIo>,
     capacity: u64,
-    discussion: Arc<dyn DiscussionIo>,
-    channels: Arc<Mutex<Vec<Box<dyn ChannelMessageSendable<Error=error::Error>>>>>,
+    channels: Arc<Mutex<HashMap<UserId, Box<dyn ChannelMessageSendable<Error=error::Error>>>>>,
+    is_connecting: bool,
 }
 
 impl Room {
-    pub fn open<Discussion, Session>(owner: UserId, capacity: u64) -> error::Result<Self>
+    pub fn open<Session>(owner: UserId, capacity: u64) -> error::Result<Self>
         where
-            Discussion: DiscussionIo + NewDiscussIo + 'static,
             Session: SessionIo + NewSessionIo + 'static,
     {
         let room_id = RoomId::default();
-        create_resource_dir(&room_id)?;
+
         Ok(Self {
             id: room_id.clone(),
             owner: owner.clone(),
             capacity,
-            discussion: Arc::new(
-                Discussion::new(room_id.clone())
-                    .map_err(|e| error::Error::FailedCreateDiscussionIo(e.to_string()))?,
-            ),
-            tvc: TvcBackendIo::new(room_id.clone(), StdFileSystem),
-            channels: Arc::new(Mutex::new(Vec::new())),
+            channels: Arc::new(Mutex::new(HashMap::new())),
             session: Arc::new(
                 Session::new(room_id)
                     .map_err(|e| error::Error::FailedCreateSessionIo(e.to_string()))?,
             ),
+            is_connecting: false,
         })
     }
 
@@ -124,17 +125,9 @@ impl Room {
         }
     }
 
-    pub async fn room_bundle(&self) -> error::Result<RoomBundle> {
-        let discussion = self
-            .discussion
-            .all_discussions()
-            .await?;
-        let tvc = self.tvc.bundle().await?;
-
-        Ok(RoomBundle {
-            tvc,
-            discussion,
-        })
+    #[inline(always)]
+    pub fn set_connecting(&mut self) {
+        self.is_connecting = true;
     }
 
     pub async fn insert_channel(
@@ -142,73 +135,62 @@ impl Room {
         channel: impl ChannelMessageSendable<Error=error::Error> + 'static,
     ) {
         let mut channels = self.channels.lock().await;
-        channels.push(Box::new(channel));
+        channels.insert(channel.user_id().clone(), Box::new(channel));
+    }
+
+    #[inline(always)]
+    pub async fn send_request(&self, message: RequestMessage) -> HttpResult<()> {
+        let mut channels = self.channels.lock().await;
+        let channel = channels.get_mut(&self.owner).ok_or_else(|| crate::error::Error::RoomOwnerDisconnected(self.id.clone()))?;
+        if let Err(_) = channel.send_request(message).await {
+            drop(channels);
+            self
+                .send_all_users(ResponseMessage {
+                    from: self.owner.clone(),
+                    message: MessageData::ClosedRoom,
+                })
+                .await?;
+        }
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub async fn send_to(&self, to: &UserId, message: ResponseMessage) -> HttpResult<()> {
+        let mut channels = self.channels.lock().await;
+        let channel = channels.get_mut(to).ok_or_else(|| crate::error::Error::UserNotExists(self.id.clone(), to.clone()))?;
+        if let Err(_) = channel.send_response(message).await {
+            channels.remove(to);
+        }
+        Ok(())
     }
 
     #[inline(always)]
     pub async fn send_all_users(
         &self,
-        message: ChannelMessage,
+        message: ResponseMessage,
     ) -> std::result::Result<(), Response> {
         let mut channels = self.channels.lock().await;
-        let mut next_channels = Vec::with_capacity(channels.len());
-        while let Some(mut sender) = channels.pop() {
-            if let Err(e) = sender.send(message.clone()).await {
+        let mut next_channels = HashMap::with_capacity(channels.len());
+        for (user_id, mut sender) in channels.into_iter() {
+            if let Err(e) = sender.send_response(message.clone()).await {
                 // 失敗した場合は切断されたと判断し、ログだけ出力してchannelsから消す
                 tracing::debug!("{e}");
             } else {
-                next_channels.push(sender);
+                next_channels.insert(user_id, sender);
             }
         }
         *channels = next_channels;
         Ok(())
     }
 
-    #[inline(always)]
-    pub async fn tvc_repository_size(&self) -> error::Result<usize> {
-        self.tvc.total_objs_size().await.map_err(crate::error::Error::Tvc)
-    }
-
-    #[inline(always)]
-    pub async fn save_bundle(&self, bundle: Bundle) -> error::Result {
-        self.tvc.save(bundle).await?;
-        Ok(())
-    }
-
-    pub async fn discussions(&self) -> HttpResult<Vec<DiscussionBundle>> {
-        let discussions = self.discussion.all_discussions().await?;
-        Ok(discussions)
-    }
-
-    #[inline(always)]
-    pub async fn create_bundle(&self) -> error::Result<Bundle> {
-        self.tvc.bundle().await.map_err(crate::error::Error::Tvc)
-    }
-
-    #[inline(always)]
-    pub async fn write_head(&self, user_id: UserId) -> error::Result {
-        self.tvc.write_head(&BranchName(user_id.0)).await.map_err(crate::error::Error::Tvc)
-    }
-
     pub async fn leave(&self, user_id: UserId) -> error::Result {
         self.session.unregister(user_id.clone()).await?;
-        self.tvc.leave(user_id).await?;
         Ok(())
-    }
-
-    pub async fn global_discussion<'a, F, O, S>(&'a self, user_id: UserId, f: F) -> error::Result<S>
-        where
-            F: FnOnce(DiscussionCommandExecutor<'a, dyn DiscussionIo>) -> O,
-            O: Future<Output=error::Result<S>>,
-            S: Serialize,
-    {
-        let command = f(self.as_global_discussion_executor(user_id)).await?;
-        Ok(command)
     }
 
     pub fn delete_resource_dir(self) {
         drop(self.session);
-        drop(self.discussion);
+
         let dir = room_resource_dir(&self.id);
         if dir.exists() {
             if let Err(e) = std::fs::remove_dir_all(dir) {
@@ -218,13 +200,6 @@ impl Room {
                 );
             }
         }
-    }
-
-    fn as_global_discussion_executor(
-        &self,
-        user_id: UserId,
-    ) -> DiscussionCommandExecutor<'_, dyn DiscussionIo> {
-        DiscussionCommandExecutor::new(user_id, self.discussion.as_ref())
     }
 }
 

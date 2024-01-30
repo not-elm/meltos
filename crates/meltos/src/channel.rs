@@ -1,6 +1,9 @@
+pub mod request;
+
 use async_trait::async_trait;
 use meltos_tvc::io::bundle::Bundle;
 use serde::{Deserialize, Serialize};
+use crate::channel::request::RequestMessage;
 
 use crate::schema::discussion::global::{Closed, Created, Replied, Spoke};
 use crate::schema::room::Left;
@@ -12,7 +15,9 @@ pub trait ChannelMessageSendable: Send + Sync {
 
     fn user_id(&self) -> &UserId;
 
-    async fn send(&mut self, message: ChannelMessage) -> std::result::Result<(), Self::Error>;
+    async fn send_request(&mut self, message: RequestMessage) -> std::result::Result<(), Self::Error>;
+
+    async fn send_response(&mut self, message: ResponseMessage) -> std::result::Result<(), Self::Error>;
 }
 
 #[async_trait]
@@ -20,11 +25,11 @@ pub trait ChannelMessageReadable {
     type Error: std::error::Error;
     fn user_id(&self) -> &UserId;
 
-    async fn read(&mut self) -> std::result::Result<ChannelMessage, Self::Error>;
+    async fn read(&mut self) -> std::result::Result<ResponseMessage, Self::Error>;
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct ChannelMessage {
+pub struct ResponseMessage {
     pub from: UserId,
     pub message: MessageData,
 }

@@ -1,6 +1,6 @@
 use axum::Json;
 
-use meltos::channel::{ChannelMessage, MessageData};
+use meltos::channel::{ResponseMessage, MessageData};
 use meltos::schema::room::{Join, Joined};
 
 use crate::api::{AsSuccessResponse, HttpResult};
@@ -30,16 +30,13 @@ pub async fn join(SessionRoom(room): SessionRoom, Json(join): Json<Join>) -> Htt
     room.error_if_reached_capacity().await?;
 
     let (user_id, session_id) = room.session.register(join.user_id).await?;
-    room.write_head(user_id.clone()).await?;
-    let bundle = room.create_bundle().await?;
-    let discussions = room.discussions().await?;
+
     let joined = Joined {
         user_id: user_id.clone(),
-        session_id,
-        bundle,
-        discussions,
+        session_id
     };
-    room.send_all_users(ChannelMessage {
+
+    room.send_all_users(ResponseMessage {
         message: MessageData::Joined {
             user_id: user_id.to_string(),
         },
@@ -132,23 +129,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn it_return_tvc_meta() {
-        let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
-        let fs = MemoryFileSystem::default();
-        let branch = BranchName::owner();
-        fs.write_sync("workspace/some_text.txt", b"text file");
-        Init::new(fs.clone()).execute(&branch).await.unwrap();
-        let bundle = BundleIo::new(fs.clone()).create().await.unwrap();
-        let open_request = open_room_request_with_options(Some(bundle), None, None);
-        let room_id = http_call_with_deserialize::<Opened>(&mut app, open_request)
-            .await
-            .room_id;
-        let response = http_join(&mut app, &room_id, None).await;
-        let meta = response.deserialize::<Joined>().await;
-        assert_eq!(meta.bundle.branches.len(), 2);
-    }
-
-    #[tokio::test]
     async fn it_return_user_id() {
         let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
         let fs = MemoryFileSystem::default();
@@ -182,18 +162,4 @@ mod tests {
         );
     }
 
-    /// roomユーザーが参加するとき、現在のownerのheadと同じ参照先を指定するHEADを作成する。
-    #[tokio::test]
-    async fn created_user_head() {
-        let mut app = mock_app();
-        let fs = MemoryFileSystem::default();
-
-        let opened = http_open_room(&mut app, fs.clone()).await;
-        let response = http_join(&mut app, &opened.room_id, Some(UserId::from("user1"))).await;
-        assert_eq!(response.status(), StatusCode::OK);
-
-        let owner_head = std::fs::read(format!("resources/{}/.meltos/refs/heads/owner", opened.room_id)).unwrap();
-        let user_head = std::fs::read(format!("resources/{}/.meltos/refs/heads/user1", opened.room_id)).unwrap();
-        assert_eq!(owner_head, user_head);
-    }
 }

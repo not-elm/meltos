@@ -54,11 +54,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
 fn app<Session, Discussion>() -> Router
     where
-        Session: SessionIo + NewSessionIo + Debug + 'static,
-        Discussion: DiscussionIo + NewDiscussIo + Debug + 'static,
+        Session: SessionIo + NewSessionIo + Debug + 'static
 {
     Router::new()
-        .route("/room/open", post(api::room::open::<Session, Discussion>))
+        .route("/room/open", post(api::room::open::<Session>))
         .layer(DefaultBodyLimit::max(bundle_request_body_size()))
         .route("/room/:room_id", get(api::room::sync))
         .route("/room/:room_id", delete(api::room::leave))
@@ -71,24 +70,8 @@ fn room_operations_router() -> Router<AppState> {
     Router::new()
         .route("/channel", get(api::room::channel))
         .route("/join", post(api::room::join))
-        .nest("/tvc", tvc_routes())
-        .nest("/discussion/global", global_discussion_route())
 }
 
-fn tvc_routes() -> Router<AppState> {
-    Router::new()
-        .route("/push", post(api::room::tvc::push))
-        .layer(DefaultBodyLimit::max(bundle_request_body_size()))
-        .route("/fetch", get(api::room::tvc::fetch))
-}
-
-fn global_discussion_route() -> Router<AppState> {
-    Router::new()
-        .route("/create", post(api::room::discussion::global::create))
-        .route("/speak", post(api::room::discussion::global::speak))
-        .route("/reply", post(api::room::discussion::global::reply))
-        .route("/close", delete(api::room::discussion::global::close))
-}
 
 #[inline(always)]
 fn bundle_request_body_size() -> usize {

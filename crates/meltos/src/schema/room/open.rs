@@ -19,22 +19,17 @@ pub struct Open {
     ///
     /// 指定されていない場合や上限値を超えた値が指定された場合は、サーバ側で設定された定員の上限値になります。
     pub user_limits: Option<u64>,
-
-    /// TVCのバンドル情報
-    pub bundle: Option<Bundle>,
 }
 
 impl Open {
     #[inline]
     pub const fn new(
         lifetime_secs: Option<u64>,
-        user_limits: Option<u64>,
-        bundle: Option<Bundle>,
+        user_limits: Option<u64>
     ) -> Self {
         Self {
             lifetime_secs,
-            user_limits,
-            bundle,
+            user_limits
         }
     }
 
@@ -79,7 +74,6 @@ mod tests {
     #[test]
     fn return_specified_lifetime_not_exceed_limits() {
         let open = Open {
-            bundle: None,
             user_limits: None,
             lifetime_secs: Some(59),
         };
@@ -91,7 +85,6 @@ mod tests {
     fn return_limit_lifetime_if_exceed_limits() {
         let open = Open {
             user_limits: None,
-            bundle: None,
             lifetime_secs: Some(61),
         };
         let lifetime = open.lifetime_duration(60);
@@ -102,7 +95,6 @@ mod tests {
     fn return_limit_lifetime_if_not_specified() {
         let open = Open {
             user_limits: None,
-            bundle: None,
             lifetime_secs: None,
         };
         let lifetime = open.lifetime_duration(60);
