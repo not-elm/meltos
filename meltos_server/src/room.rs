@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 use std::time::Duration;
@@ -7,9 +7,9 @@ use axum::response::Response;
 use tokio::sync::Mutex;
 
 use meltos::channel::{ChannelMessageSendable, MessageData, ResponseMessage};
-use meltos::channel::request::RequestMessage;
+use meltos::channel::request::UserRequest;
 use meltos::room::RoomId;
-use meltos::user::UserId;
+use meltos::user::{SessionId, UserId};
 use meltos_backend::path::room_resource_dir;
 use meltos_backend::session::{NewSessionIo, SessionIo};
 use meltos_backend::sync::arc_mutex::ArcMutex;
@@ -43,12 +43,22 @@ impl Rooms {
     }
 
 
+    pub async fn delete(&self, room_id: &RoomId) -> HttpResult<()> {
+        let mut map = self.lock().await;
+        map.delete(room_id).await?;
+        Ok(())
+    }
+
+
     fn register_connect_timeout(&self, room_id: RoomId) {
         let rooms = self.0.clone();
         tokio::spawn(async move {
             tokio::time::sleep(Duration::from_secs(30)).await;
             let mut rooms = rooms.lock().await;
-            if rooms.room(&room_id).is_ok_and(|room| !room.is_connecting) {
+            let Ok(room) = rooms.room(&room_id) else {
+                return;
+            };
+            if !room.is_connecting_owner().await {
                 if let Err(e) = rooms.delete(&room_id).await {
                     tracing::error!("{e:?}");
                 }
@@ -85,14 +95,16 @@ impl RoomMap {
     }
 }
 
+type ChannelMap = HashMap<UserId, Box<dyn ChannelMessageSendable<Error=error::Error>>>;
+
 #[derive(Clone)]
 pub struct Room {
     pub owner: UserId,
     pub id: RoomId,
     pub session: Arc<dyn SessionIo>,
+    wait_users: Arc<Mutex<HashSet<UserId>>>,
     capacity: u64,
-    channels: Arc<Mutex<HashMap<UserId, Box<dyn ChannelMessageSendable<Error=error::Error>>>>>,
-    is_connecting: bool,
+    channels: Arc<Mutex<ChannelMap>>,
 }
 
 impl Room {
@@ -111,8 +123,27 @@ impl Room {
                 Session::new(room_id)
                     .map_err(|e| error::Error::FailedCreateSessionIo(e.to_string()))?,
             ),
-            is_connecting: false,
+            wait_users: Arc::new(Mutex::new(HashSet::new())),
         })
+    }
+
+
+    pub async fn join(&self, user_id: Option<UserId>) -> error::Result<(UserId, SessionId)> {
+        let (user_id, session_id) = self.session.register(user_id).await?;
+        let wait_users = self.wait_users.clone();
+        let session = self.session.clone();
+        let user_id_cloned = user_id.clone();
+        tokio::task::spawn(async move {
+            tokio::time::sleep(Duration::from_secs(30)).await;
+            let mut users = wait_users.lock().await;
+            if !users.remove(&user_id_cloned) {
+                if let Err(e) = session.unregister(user_id_cloned).await {
+                    tracing::error!("{e}");
+                }
+            }
+        });
+
+        Ok((user_id, session_id))
     }
 
     #[inline(always)]
@@ -126,8 +157,14 @@ impl Room {
     }
 
     #[inline(always)]
-    pub fn set_connecting(&mut self) {
-        self.is_connecting = true;
+    pub async fn is_connecting_owner(&self) -> bool {
+        let owner_id = &self.owner;
+        self.wait_users.lock().await.remove(owner_id)
+    }
+
+    #[inline(always)]
+    pub async fn set_connecting(&self, user_id: UserId) {
+        self.wait_users.lock().await.insert(user_id);
     }
 
     pub async fn insert_channel(
@@ -139,10 +176,10 @@ impl Room {
     }
 
     #[inline(always)]
-    pub async fn send_request(&self, message: RequestMessage) -> HttpResult<()> {
+    pub async fn send_request(&self, request: UserRequest) -> HttpResult<()> {
         let mut channels = self.channels.lock().await;
         let channel = channels.get_mut(&self.owner).ok_or_else(|| crate::error::Error::RoomOwnerDisconnected(self.id.clone()))?;
-        if let Err(_) = channel.send_request(message).await {
+        if let Err(_) = channel.send_request(request).await {
             drop(channels);
             self
                 .send_all_users(ResponseMessage {
@@ -158,7 +195,7 @@ impl Room {
     pub async fn send_to(&self, to: &UserId, message: ResponseMessage) -> HttpResult<()> {
         let mut channels = self.channels.lock().await;
         let channel = channels.get_mut(to).ok_or_else(|| crate::error::Error::UserNotExists(self.id.clone(), to.clone()))?;
-        if let Err(_) = channel.send_response(message).await {
+        if (channel.send_response(message).await).is_err() {
             channels.remove(to);
         }
         Ok(())
@@ -170,8 +207,10 @@ impl Room {
         message: ResponseMessage,
     ) -> std::result::Result<(), Response> {
         let mut channels = self.channels.lock().await;
-        let mut next_channels = HashMap::with_capacity(channels.len());
-        for (user_id, mut sender) in channels.into_iter() {
+        let mut next_channels: ChannelMap = HashMap::with_capacity(channels.len());
+        let keys: Vec<UserId> = channels.keys().cloned().collect();
+        for user_id in keys {
+            let Some(mut sender) = next_channels.remove(&user_id) else { continue; };
             if let Err(e) = sender.send_response(message.clone()).await {
                 // 失敗した場合は切断されたと判断し、ログだけ出力してchannelsから消す
                 tracing::debug!("{e}");

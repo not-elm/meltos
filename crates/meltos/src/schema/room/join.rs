@@ -1,7 +1,6 @@
-use crate::discussion::DiscussionBundle;
-use crate::user::{SessionId, UserId};
-use meltos_tvc::io::bundle::Bundle;
 use serde::{Deserialize, Serialize};
+
+use crate::user::{SessionId, UserId};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub struct Join {

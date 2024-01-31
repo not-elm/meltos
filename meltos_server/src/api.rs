@@ -265,7 +265,6 @@ mod test_util {
     }
 
     pub fn open_room_request_with_options(
-        bundle: Option<Bundle>,
         lifetime_secs: Option<u64>,
         user_limits: Option<u64>,
     ) -> Request {

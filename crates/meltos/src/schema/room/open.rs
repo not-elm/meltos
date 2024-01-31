@@ -2,8 +2,6 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-use meltos_tvc::io::bundle::Bundle;
-
 use crate::room::RoomId;
 use crate::user::{SessionId, UserId};
 
@@ -25,11 +23,11 @@ impl Open {
     #[inline]
     pub const fn new(
         lifetime_secs: Option<u64>,
-        user_limits: Option<u64>
+        user_limits: Option<u64>,
     ) -> Self {
         Self {
             lifetime_secs,
-            user_limits
+            user_limits,
         }
     }
 

@@ -3,14 +3,13 @@ use std::net::SocketAddr;
 
 use axum::extract::DefaultBodyLimit;
 use axum::Router;
-use axum::routing::{delete, get, post};
+use axum::routing::{get, post};
 use tower_http::decompression::RequestDecompressionLayer;
 use tracing::Level;
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
 use meltos_backend::discussion::global::sqlite::SqliteDiscussionIo;
 use meltos_backend::session::{NewSessionIo, SessionIo};
 use meltos_backend::session::sqlite::SqliteSessionIo;
@@ -59,8 +58,6 @@ fn app<Session, Discussion>() -> Router
     Router::new()
         .route("/room/open", post(api::room::open::<Session>))
         .layer(DefaultBodyLimit::max(bundle_request_body_size()))
-        .route("/room/:room_id", get(api::room::sync))
-        .route("/room/:room_id", delete(api::room::leave))
         .nest("/room/:room_id", room_operations_router())
         .with_state(AppState::new())
         .layer(RequestDecompressionLayer::new())
@@ -70,6 +67,7 @@ fn room_operations_router() -> Router<AppState> {
     Router::new()
         .route("/channel", get(api::room::channel))
         .route("/join", post(api::room::join))
+        .route("/request", post(api::room::request))
 }
 
 

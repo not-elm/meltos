@@ -1,6 +1,6 @@
 use axum::Json;
 
-use meltos::channel::{ResponseMessage, MessageData};
+use meltos::channel::{MessageData, ResponseMessage};
 use meltos::schema::room::{Join, Joined};
 
 use crate::api::{AsSuccessResponse, HttpResult};
@@ -26,16 +26,18 @@ use crate::middleware::room::SessionRoom;
 ///
 /// - [`ReachedCapacity`](meltos::schema::error::ReachedCapacityBody) : ルームの定員に達した場合
 ///
-pub async fn join(SessionRoom(room): SessionRoom, Json(join): Json<Join>) -> HttpResult {
+pub async fn join(
+    SessionRoom(room): SessionRoom,
+    Json(join): Json<Join>,
+) -> HttpResult {
     room.error_if_reached_capacity().await?;
 
-    let (user_id, session_id) = room.session.register(join.user_id).await?;
+    let (user_id, session_id) = room.join(join.user_id).await?;
 
     let joined = Joined {
         user_id: user_id.clone(),
-        session_id
+        session_id,
     };
-
     room.send_all_users(ResponseMessage {
         message: MessageData::Joined {
             user_id: user_id.to_string(),
@@ -55,19 +57,13 @@ mod tests {
     use meltos::schema::error::{ErrorResponseBodyBase, ReachedCapacityBody};
     use meltos::schema::room::{Joined, Opened};
     use meltos::user::UserId;
-    use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
-    use meltos_backend::session::mock::MockSessionIo;
-    use meltos_tvc::branch::BranchName;
     use meltos_tvc::file_system::FileSystem;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
-    use meltos_tvc::io::bundle::BundleIo;
-    use meltos_tvc::operation::init::Init;
 
     use crate::api::test_util::{
         http_call_with_deserialize, http_join, http_open_room, mock_app,
         open_room_request_with_options, ResponseConvertable,
     };
-    use crate::app;
 
     #[tokio::test]
     async fn failed_if_requested_join_not_exists_room() {
@@ -81,7 +77,7 @@ mod tests {
             ErrorResponseBodyBase {
                 category: "session".to_string(),
                 error_type: "RoomNotExists".to_string(),
-                message: "room not exists".to_string(),
+                message: "room not exists; room_id: invalid_id".to_string(),
             }
         )
     }
@@ -106,7 +102,6 @@ mod tests {
             &mut app,
             open_room_request_with_options(
                 None,
-                None,
                 Some(1), // room capacity
             ),
         )
@@ -130,7 +125,7 @@ mod tests {
 
     #[tokio::test]
     async fn it_return_user_id() {
-        let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
+        let mut app = mock_app();
         let fs = MemoryFileSystem::default();
         fs.write_file("./some_text.txt", b"text file")
             .await
@@ -161,5 +156,4 @@ mod tests {
             }
         );
     }
-
 }

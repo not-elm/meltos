@@ -99,7 +99,7 @@ mod tests {
     #[tokio::test]
     async fn timeout() -> error::Result {
         let mut app = mock_app();
-        let response = http_call(&mut app, open_room_request_with_options(None, Some(1), None)).await;
+        let response = http_call(&mut app, open_room_request_with_options(Some(1), None)).await;
         tokio::time::sleep(Duration::from_secs(2)).await;
         let opened = response.deserialize::<Opened>().await;
         let response = app
@@ -118,78 +118,10 @@ mod tests {
     #[tokio::test]
     async fn user_limits_is_1() -> error::Result {
         let app = mock_app();
-        let response = app.oneshot(open_room_request_with_options(None, None, Some(1))).await.unwrap();
+        let response = app.oneshot(open_room_request_with_options(None, Some(1))).await.unwrap();
         let opened = response.deserialize::<Opened>().await;
         assert_eq!(opened.capacity, 1);
 
         Ok(())
-    }
-
-
-    /// サーバ側で設定された上限値を超えた場合、上限値がcapacityになる。
-    ///
-    /// テスト時の上限値は100
-    #[tokio::test]
-    async fn capacity_is_100_if_over() -> error::Result {
-        let app = mock_app();
-        let response = app.oneshot(open_room_request_with_options(None, None, Some(101))).await.unwrap();
-        let opened = response.deserialize::<Opened>().await;
-        assert_eq!(opened.capacity, 100);
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn capacity_is_1_if_specified_0() -> error::Result {
-        let app = mock_app();
-        let response = app.oneshot(open_room_request_with_options(None, None, Some(0))).await.unwrap();
-        let opened = response.deserialize::<Opened>().await;
-        assert_eq!(opened.capacity, 1);
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn success_if_bundle_less_than_100mb() {
-        let app = mock_app();
-        let request =
-            open_room_request_with_options(Some(create_bundle_less_than_1024bytes()), None, None);
-        let response = app.oneshot(request).await.unwrap();
-        assert_eq!(response.status(), StatusCode::OK);
-    }
-
-    #[tokio::test]
-    async fn failed_if_send_bundle_more_than_100mib() {
-        let mut app = mock_app();
-        let request =
-            open_room_request_with_options(Some(create_bundle_more_than_1025bytes()), None, None);
-        let response = http_call(&mut app, request).await;
-        assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
-        let error = response.deserialize::<ErrorResponseBodyBase>().await;
-        assert_eq!(error, ErrorResponseBodyBase {
-            category: "tvc".to_string(),
-            error_type: "ExceedBundleSize".to_string(),
-            message: "bundle size to exceed; actual_bundle_size: 1025, limit_bundle_size: 1024".to_string(),
-        });
-    }
-
-    fn create_bundle_less_than_1024bytes() -> Bundle {
-        create_dummy_bundle(vec![1; 1024])
-    }
-
-    fn create_bundle_more_than_1025bytes() -> Bundle {
-        create_dummy_bundle(vec![1; 1025])
-    }
-
-    fn create_dummy_bundle(mut buf: Vec<u8>) -> Bundle {
-        buf.shrink_to_fit();
-        Bundle {
-            traces: Vec::with_capacity(0),
-            objs: vec![BundleObject {
-                hash: ObjHash::new(b"dummy"),
-                compressed_buf: CompressedBuf(buf),
-            }],
-            branches: Vec::with_capacity(0),
-        }
     }
 }

@@ -4,7 +4,7 @@ use futures::stream::SplitSink;
 use futures::SinkExt;
 
 use meltos::channel::{ResponseMessage, ChannelMessageSendable};
-use meltos::channel::request::RequestMessage;
+use meltos::channel::request::{RequestMessage, UserRequest};
 use meltos::user::UserId;
 
 pub struct WebsocketSender {
@@ -31,9 +31,9 @@ impl ChannelMessageSendable for WebsocketSender {
         &self.user_id
     }
 
-    async fn send_request(&mut self, message: RequestMessage) -> Result<(), Self::Error> {
+    async fn send_request(&mut self, request: UserRequest) -> Result<(), Self::Error> {
          self.tx
-            .send(Message::Text(serde_json::to_string(&message)?))
+            .send(Message::Text(serde_json::to_string(&request)?))
             .await
             .map_err(|e| crate::error::Error::FailedSendChannelMessage(e.to_string()))?;
         Ok(())

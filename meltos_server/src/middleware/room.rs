@@ -23,7 +23,7 @@ impl PathParam {
     pub async fn new(parts: &mut Parts, state: &AppState) -> Result<Self, Response> {
         let param = PathParam::from_request_parts(parts, state)
             .await
-            .map_err(|_| crate::error::Error::RoomNotExists)?;
+            .unwrap();
         Ok(param)
     }
 }

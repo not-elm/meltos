@@ -12,7 +12,7 @@ pub type Result<T = ()> = std::result::Result<T, Error>;
 
 #[derive(Error, Debug, AsRefStr)]
 pub enum Error {
-    #[error("room not exists room_id: {0}")]
+    #[error("room not exists; room_id: {0}")]
     RoomNotExists(RoomId),
 
     #[error("room owner disconnected room_id: {0}")]
@@ -38,14 +38,18 @@ pub enum Error {
 
     #[error("failed create session : {0}")]
     FailedCreateSessionIo(String),
+
+    #[error(transparent)]
+    Background(#[from] meltos_backend::error::Error)
 }
 
 
 impl Error {
     fn status_code(&self) -> StatusCode {
         match self {
+            Error::Background(e) => e.status_code(),
             Error::ReachedCapacity(_) => StatusCode::TOO_MANY_REQUESTS,
-            Error::RoomNotExists => StatusCode::NOT_FOUND,
+            Error::RoomNotExists(_) => StatusCode::NOT_FOUND,
             Error::ExceedBundleSize { .. } => StatusCode::PAYLOAD_TOO_LARGE,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
@@ -53,7 +57,8 @@ impl Error {
 
     fn category(&self) -> &str {
         match self {
-            Error::RoomNotExists | Error::ReachedCapacity(_) => "session",
+            Error::Background(e) => e.category(),
+            Error::RoomNotExists(_) | Error::ReachedCapacity(_) => "session",
             _ => "unknown"
         }
     }
@@ -61,6 +66,7 @@ impl Error {
     #[inline(always)]
     fn error_type(&self) -> &str {
         match self {
+            Error::Background(e) => e.error_type(),
             _ => self.as_ref()
         }
     }
