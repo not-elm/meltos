@@ -162,7 +162,7 @@ mod tests {
 
     #[test]
     fn status_code_is_internal_server_error_tvc() {
-        assert_eq!(Error::Tvc(meltos_tvc::error::Error::InvalidWorkspaceObj).status_code(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(Error::Tvc(meltos_tvc::error::Error::InvalidWorkspaceObj("Tree".to_string())).status_code(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[test]

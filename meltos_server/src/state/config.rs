@@ -24,7 +24,7 @@ pub struct AppConfigs {
 impl Default for AppConfigs {
     fn default() -> Self {
         Config::builder()
-            .add_source(config::File::with_name(source()))
+            .add_source(config::File::with_name(&source()))
             .build()
             .unwrap()
             .try_deserialize()
@@ -32,11 +32,18 @@ impl Default for AppConfigs {
     }
 }
 
-fn source() -> &'static str {
+fn source() -> String {
     #[cfg(not(test))]
-    return "./meltos_server/Settings.toml";
+        let config_file_name = "Settings.toml";
     #[cfg(test)]
-    return "SettingsTest.toml";
+        let config_file_name = "SettingsTest.toml";
+
+    if std::fs::read_dir("meltos_server").is_ok() {
+        // meltos_project直下から実行されている場合
+        format!("./meltos_server/{config_file_name}")
+    } else {
+        config_file_name.to_string()
+    }
 }
 
 #[cfg(test)]
