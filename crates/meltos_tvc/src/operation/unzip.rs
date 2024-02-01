@@ -57,7 +57,7 @@ impl<Fs> UnZip<Fs>
             Ok(head)
         } else {
             let head = self.head.try_read(&BranchName::owner()).await?;
-            self.head.write(&branch_name, &head).await?;
+            self.head.write(branch_name, &head).await?;
             Ok(head)
         }
     }

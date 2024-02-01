@@ -125,7 +125,7 @@ impl<Fs> WorkspaceIo<Fs>
             return Ok(false);
         };
         let ignores = String::from_utf8(file_obj.0).unwrap();
-        let mut excludes = ignores.split("\n").filter_map(|pattern| {
+        let mut excludes = ignores.split('\n').filter_map(|pattern| {
             if pattern.starts_with('!') {
                 Some(pattern.trim_start_matches('!'))
             } else {
