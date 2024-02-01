@@ -18,6 +18,7 @@ use meltos_backend::session::sqlite::SqliteSessionIo;
 use crate::state::AppState;
 use crate::state::config::AppConfigs;
 
+mod api;
 mod channel;
 mod error;
 mod middleware;

@@ -26,7 +26,7 @@ pub enum Error {
     #[error("obj hash buffer is invalid")]
     ObjHashBufferIsInvalid,
 
-    #[error("obj type is invalid : hash={0}")]
+    #[error("obj type is invalid; hash: {0}")]
     InvalidObjBuffer(ObjHash),
 
     #[error("expect obj type is {0} bad was {1}")]
@@ -35,25 +35,25 @@ pub enum Error {
     #[error("commit obj buffer is invalid")]
     CommitObjBufferIsInValid,
 
-    #[error("not found object: hash={0}")]
+    #[error("not found object; hash: {0}")]
     NotfoundObj(ObjHash),
 
     #[error("not found stages")]
     NotfoundStages,
 
-    #[error("not found workspace file : path={0}")]
+    #[error("not found workspace file; path: {0}")]
     NotfoundWorkspaceFile(FilePath),
 
     #[error("changed file does not exists")]
     ChangedFileNotExits,
 
-    #[error("not found trace: commit hash={0}")]
+    #[error("not found trace; commit hash:{0}")]
     NotfoundTrace(CommitHash),
 
     #[error("not found local commits")]
     NotfoundLocalCommits,
 
-    #[error("not found head: branch={0}")]
+    #[error("not found head; branch: {0}")]
     NotfoundHead(BranchName),
 
     #[error(transparent)]
@@ -71,10 +71,10 @@ pub enum Error {
     #[error(transparent)]
     ParseInt(#[from] ParseIntError),
 
-    #[error("expect obj type is file or delete bad was.")]
-    InvalidWorkspaceObj,
+    #[error("expect obj type is file or delete bad was {0}")]
+    InvalidWorkspaceObj(String),
 
-    #[error("failed connect server : detail={0}")]
+    #[error("failed connect server; detail: {0}")]
     FailedConnectServer(String),
 }
 

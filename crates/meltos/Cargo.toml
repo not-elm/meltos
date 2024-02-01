@@ -12,5 +12,4 @@ meltos_tvc = { path = "../meltos_tvc" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 async-trait = { workspace = true }
-thiserror = { workspace = true }
 wasm-bindgen = { workspace = true }

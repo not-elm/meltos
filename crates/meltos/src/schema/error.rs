@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::discussion::id::DiscussionId;
@@ -57,7 +56,7 @@ pub struct ReachedCapacityBody {
     pub base: ErrorResponseBodyBase,
 
     /// ルームの定員
-    pub capacity: u64
+    pub capacity: u64,
 }
 
 

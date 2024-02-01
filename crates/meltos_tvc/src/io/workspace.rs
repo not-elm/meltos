@@ -73,7 +73,7 @@ impl<Fs> WorkspaceIo<Fs>
                 self.fs.delete(file_path).await?;
                 Ok(())
             }
-            _ => Err(crate::error::Error::InvalidWorkspaceObj),
+            _ => Err(crate::error::Error::InvalidWorkspaceObj(obj.to_string())),
         }
     }
 

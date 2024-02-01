@@ -183,17 +183,6 @@ struct Discussion {
     pub messages: Vec<MessageId>,
 }
 
-
-impl Discussion {
-
-    pub fn from_meta(meta: DiscussionMeta) -> Self {
-        Self {
-            meta,
-            messages: Vec::new(),
-        }
-    }
-}
-
 impl Discussion {
     pub fn new(title: String, creator: UserId) -> Self {
         Self {
