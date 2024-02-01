@@ -177,7 +177,7 @@ mod tests {
             ErrorResponseBodyBase {
                 category: "session".to_string(),
                 error_name: "UserIdConflict".to_string(),
-                message: "user id conflict; id: user1".to_string(),
+                message: "session id conflict; id: user1".to_string(),
             }
         );
     }

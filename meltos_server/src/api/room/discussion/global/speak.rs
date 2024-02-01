@@ -5,7 +5,7 @@ use meltos::schema::discussion::global::Speak;
 
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
-use crate::middleware::user::SessionUser;
+use crate::middleware::session::user::SessionUser;
 
 #[tracing::instrument]
 pub async fn speak(

@@ -6,7 +6,7 @@ use meltos::discussion::id::DiscussionId;
 
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
-use crate::middleware::user::SessionUser;
+use crate::middleware::session::user::SessionUser;
 
 #[derive(Deserialize, Debug)]
 pub struct Param {

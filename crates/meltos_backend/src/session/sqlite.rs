@@ -130,11 +130,11 @@ mod tests {
     async fn created_owner_id() {
         try_execute(|db| {
             async move {
-                let (user_id, session_id) = db.register(Some(UserId::from("user"))).await?;
-                assert_eq!(user_id, UserId::from("user"));
+                let (user_id, session_id) = db.register(Some(UserId::from("session"))).await?;
+                assert_eq!(user_id, UserId::from("session"));
 
                 let fetched_user_id = db.fetch(session_id).await?;
-                assert_eq!(fetched_user_id, UserId::from("user"));
+                assert_eq!(fetched_user_id, UserId::from("session"));
                 Ok(())
             }
         })
@@ -145,7 +145,7 @@ mod tests {
     async fn deleted_user_id_after_unregister() {
         try_execute(|db| {
             async move {
-                let (user_id, session_id) = db.register(Some(UserId::from("user"))).await?;
+                let (user_id, session_id) = db.register(Some(UserId::from("session"))).await?;
                 db.unregister(user_id).await?;
                 assert!(db.fetch(session_id).await.is_err());
                 Ok(())
@@ -177,7 +177,7 @@ mod tests {
                 db.register(Some(user_id.clone())).await?;
                 match db.register(Some(user_id.clone())).await {
                     Err(error::Error::UserIdConflict(id)) => assert_eq!(id, user_id),
-                    _ => panic!("expect occurs conflicts user id but it did not."),
+                    _ => panic!("expect occurs conflicts session id but it did not."),
                 }
                 Ok(())
             }

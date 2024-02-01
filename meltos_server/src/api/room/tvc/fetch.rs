@@ -1,7 +1,6 @@
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
-use crate::middleware::user::SessionUser;
-
+use crate::middleware::session::user::SessionUser;
 
 /// Room内のTvcリポジトリをバンドル化して取得します。
 ///
@@ -45,7 +44,7 @@ mod tests {
                 .body(Body::empty())
                 .unwrap(),
         )
-        .await;
+            .await;
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 

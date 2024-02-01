@@ -10,7 +10,7 @@ use meltos_tvc::io::bundle::Bundle;
 use crate::api::HttpResult;
 use crate::api::room::response_error_exceed_bundle_size;
 use crate::middleware::room::SessionRoom;
-use crate::middleware::user::SessionUser;
+use crate::middleware::session::user::SessionUser;
 use crate::state::config::AppConfigs;
 
 /// Room内のTvcリポジトリをバンドル化して取得します。

@@ -6,7 +6,7 @@ use meltos::schema::room::{Kick, Kicked, Left};
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::error;
 use crate::middleware::room::SessionRoom;
-use crate::middleware::user::session_owner::SessionOwner;
+use crate::middleware::session::owner::SessionOwner;
 
 /// RoomIdに対応するRoomに参加します。
 ///

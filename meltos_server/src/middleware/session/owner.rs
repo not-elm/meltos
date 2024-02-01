@@ -6,7 +6,7 @@ use axum::response::Response;
 use meltos::user::UserId;
 
 use crate::middleware::room::PathParam;
-use crate::middleware::user::extract_session_id_from_cookie;
+use crate::middleware::session::extract_session_id_from_cookie;
 use crate::state::AppState;
 
 #[derive(Eq, PartialEq, Clone, Hash, Debug)]

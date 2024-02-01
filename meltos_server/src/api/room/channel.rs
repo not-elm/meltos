@@ -3,7 +3,7 @@ use axum::response::Response;
 use futures::StreamExt;
 
 use crate::middleware::room::SessionRoom;
-use crate::middleware::user::SessionUser;
+use crate::middleware::session::user::SessionUser;
 use crate::room::channel::WebsocketSender;
 
 #[tracing::instrument]

@@ -17,7 +17,7 @@ pub enum Error {
     #[error("session id not exists")]
     SessionIdNotExists,
 
-    #[error("user id conflict; id: {0}")]
+    #[error("session id conflict; id: {0}")]
     UserIdConflict(UserId),
 
     #[error("The number of users in the room has reached its limit; limits: {0}")]

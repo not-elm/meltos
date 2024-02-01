@@ -209,7 +209,7 @@ mod tests {
         match discussion
             .reply(
                 DiscussionId("ID".to_string()),
-                UserId("user".to_string()),
+                UserId("session".to_string()),
                 MessageId("Null".to_string()),
                 MessageText::from("reply"),
             )
@@ -226,13 +226,13 @@ mod tests {
     async fn failed_reply_if_not_exists_message() {
         let discussion = MockGlobalDiscussionIo::default();
         let meta = discussion
-            .new_discussion("title".to_string(), UserId("user".to_string()))
+            .new_discussion("title".to_string(), UserId("session".to_string()))
             .await
             .unwrap();
         match discussion
             .reply(
                 meta.id,
-                UserId("user".to_string()),
+                UserId("session".to_string()),
                 MessageId("Null".to_string()),
                 MessageText::from("reply"),
             )

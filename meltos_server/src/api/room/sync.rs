@@ -1,6 +1,6 @@
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
-use crate::middleware::user::SessionUser;
+use crate::middleware::session::user::SessionUser;
 
 /// 現在のルームの状態を全て返します。
 ///
