@@ -16,6 +16,12 @@ pub enum Error {
     #[error("room not exists")]
     RoomNotExists,
 
+    #[error("permission denied")]
+    PermissionDenied,
+
+    #[error("owner cannot kick")]
+    OwnerCannotKick,
+
     #[error("reached capacity; capacity: {0}")]
     ReachedCapacity(u64),
 
@@ -60,6 +66,8 @@ pub enum Error {
 impl Error {
     fn status_code(&self) -> StatusCode {
         match self {
+            Error::OwnerCannotKick => StatusCode::BAD_REQUEST,
+            Error::PermissionDenied => StatusCode::FORBIDDEN,
             Error::FailedCreatedRoom => StatusCode::INTERNAL_SERVER_ERROR,
             Error::ReachedCapacity(_) => StatusCode::TOO_MANY_REQUESTS,
             Error::RoomNotExists => StatusCode::NOT_FOUND,
@@ -71,6 +79,8 @@ impl Error {
 
     fn category(&self) -> &str {
         match self {
+            Error::OwnerCannotKick => "kick",
+            Error::PermissionDenied => "permission",
             Error::FailedCreatedRoom | Error::RoomNotExists | Error::ReachedCapacity(_) => "session",
             Error::ExceedRepositorySize {..} | Error::ExceedBundleSize { .. } | Error::Tvc(_) => "tvc",
             Error::Backend(e) => e.category(),
@@ -79,9 +89,9 @@ impl Error {
     }
 
     #[inline(always)]
-    fn error_type(&self) -> &str {
+    fn error_name(&self) -> &str {
         match self {
-            Error::Backend(e) => e.error_type(),
+            Error::Backend(e) => e.error_name(),
             _ => self.as_ref()
         }
     }
@@ -89,7 +99,7 @@ impl Error {
     fn as_body_base(&self) -> ErrorResponseBodyBase {
         ErrorResponseBodyBase {
             category: self.category().to_string(),
-            error_type: self.error_type().to_string(),
+            error_name: self.error_name().to_string(),
             message: self.to_string(),
         }
     }
@@ -97,6 +107,7 @@ impl Error {
     fn into_body(self) -> String {
         let base = self.as_body_base();
         match self {
+
             Error::ExceedRepositorySize {limit_size, actual_size} => {
                 serde_json::to_string(&ExceedRepositorySizeBody{
                     base,
@@ -167,6 +178,6 @@ mod tests {
 
     #[test]
     fn error_type_is_session_id_not_exists() {
-        assert_eq!(Error::Backend(meltos_backend::error::Error::SessionIdNotExists).error_type(), "SessionIdNotExists");
+        assert_eq!(Error::Backend(meltos_backend::error::Error::SessionIdNotExists).error_name(), "SessionIdNotExists");
     }
 }

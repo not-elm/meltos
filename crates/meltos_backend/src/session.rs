@@ -28,12 +28,10 @@ pub trait SessionIo: Send + Sync {
     /// ユーザーを削除します。
     async fn unregister(&self, user_id: UserId) -> error::Result;
 
-
     /// セッションIDに対応するユーザーIDを取得します。
     ///
     /// - [`error::Error::SessionIdNotExists`] : 存在しない[`SessionId`]が指定された場合
     async fn fetch(&self, session_id: SessionId) -> error::Result<UserId>;
-
 
     /// ルーム内の現在のユーザー数を返します。
     ///

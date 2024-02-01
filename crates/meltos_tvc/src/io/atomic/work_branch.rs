@@ -31,7 +31,7 @@ where
     }
 
     #[inline]
-    pub async  fn read(&self) -> error::Result<Option<BranchName>> {
+    pub async fn read(&self) -> error::Result<Option<BranchName>> {
         let Some(buf) = self.0.read_file(".meltos/WORKING").await? else {
             return Ok(None);
         };

@@ -55,7 +55,7 @@ mod test_util {
     use meltos::room::RoomId;
     use meltos::schema::discussion::global::{Closed, Create, Created, Replied, Spoke};
     use meltos::schema::discussion::global::{Reply, Speak};
-    use meltos::schema::room::{Join, Open, RoomBundle};
+    use meltos::schema::room::{Join, Kick, Kicked, Open, RoomBundle};
     use meltos::schema::room::Opened;
     use meltos::user::{SessionId, UserId};
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
@@ -157,6 +157,7 @@ mod test_util {
 
     pub fn fetch_request(room_id: &RoomId, session_id: &SessionId) -> Request {
         Request::builder()
+            .method(http::method::Method::GET)
             .header(header::SET_COOKIE, format!("session_id={session_id}"))
             .uri(format!("/room/{room_id}/tvc/fetch"))
             .body(Body::empty())
@@ -338,6 +339,36 @@ mod test_util {
                 .unwrap(),
         )
             .await
+    }
+
+
+    pub async fn http_kick(
+        app: &mut Router,
+        room_id: &RoomId,
+        session_id: &SessionId,
+        users: Vec<UserId>,
+    ) -> Kicked {
+        http_call_with_deserialize(
+            app,
+            kick_request(room_id, session_id, users),
+        )
+            .await
+    }
+
+
+    pub fn kick_request(room_id: &RoomId, session_id: &SessionId, users: Vec<UserId>) -> Request {
+        Request::builder()
+            .uri(format!("/room/{room_id}/kick"))
+            .header("Content-Type", "application/json")
+            .header(header::SET_COOKIE, format!("session_id={session_id}"))
+            .method(http::method::Method::POST)
+            .body(Body::from(
+                serde_json::to_string(&Kick {
+                    users,
+                })
+                    .unwrap(),
+            ))
+            .unwrap()
     }
 
     pub async fn http_call(app: &mut Router, request: Request) -> Response {

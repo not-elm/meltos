@@ -9,8 +9,8 @@ use crate::object::commit::CommitHash;
 
 #[derive(Debug, Clone)]
 pub struct UnZip<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     workspace: WorkspaceIo<Fs>,
     trace_tree: TraceTreeIo<Fs>,
@@ -20,8 +20,8 @@ pub struct UnZip<Fs>
 }
 
 impl<Fs> UnZip<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> UnZip<Fs> {
         Self {
@@ -35,8 +35,8 @@ impl<Fs> UnZip<Fs>
 }
 
 impl<Fs> UnZip<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     /// Restore committed data into the workspace.
     pub async fn execute(&self, branch_name: &BranchName) -> error::Result {
@@ -67,8 +67,8 @@ impl<Fs> UnZip<Fs>
 mod tests {
     use crate::branch::BranchName;
     use crate::error;
-    use crate::file_system::FileSystem;
     use crate::file_system::memory::MemoryFileSystem;
+    use crate::file_system::FileSystem;
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::operation::unzip::UnZip;

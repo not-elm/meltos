@@ -6,7 +6,7 @@ use meltos_tvc::branch::BranchName;
 use meltos_tvc::file_system::std_fs::StdFileSystem;
 use meltos_tvc::io::atomic::head::HeadIo;
 
-use crate::commands::{CommandExecutable, load_branch_name};
+use crate::commands::{load_branch_name, CommandExecutable};
 
 #[derive(Debug, Args, Clone)]
 pub struct MergeArgs {
@@ -17,10 +17,14 @@ pub struct MergeArgs {
 impl CommandExecutable for MergeArgs {
     async fn execute(self) -> meltos_client::error::Result {
         let tvc = TvcClient::new(StdFileSystem);
-        let status =
-            tvc
-                .merge(load_branch_name()?,HeadIo::new(StdFileSystem).try_read(&BranchName(self.source_branch)).await?)
-                .await?;
+        let status = tvc
+            .merge(
+                load_branch_name()?,
+                HeadIo::new(StdFileSystem)
+                    .try_read(&BranchName(self.source_branch))
+                    .await?,
+            )
+            .await?;
         println!("merged status = {status:?}");
         Ok(())
     }

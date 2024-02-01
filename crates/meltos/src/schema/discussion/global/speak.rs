@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use wasm_bindgen::prelude::wasm_bindgen;
 use crate::discussion::id::DiscussionId;
 use crate::discussion::message::{Message, MessageText};
+use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::wasm_bindgen;
 
 /// ディスカッションへのメッセージ送信リクエストを表します。
 #[wasm_bindgen(getter_with_clone)]
@@ -13,8 +13,6 @@ pub struct Speak {
     /// メッセージ本文
     pub text: MessageText,
 }
-
-
 
 /// メッセージが新規に送信されたことを表します。
 #[wasm_bindgen(getter_with_clone)]

@@ -4,7 +4,7 @@ use clap::Args;
 use meltos_client::tvc::TvcClient;
 use meltos_tvc::file_system::std_fs::StdFileSystem;
 
-use crate::commands::{CommandExecutable, load_branch_name};
+use crate::commands::{load_branch_name, CommandExecutable};
 
 #[derive(Debug, Clone, Args)]
 pub struct CommitArgs {

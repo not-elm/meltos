@@ -16,6 +16,9 @@ mod tests {
     use crate::operation::init;
 
     pub(crate) async fn init_owner_branch(mock: MemoryFileSystem) -> CommitHash {
-        init::Init::new(mock).execute(&BranchName::owner()).await.unwrap()
+        init::Init::new(mock)
+            .execute(&BranchName::owner())
+            .await
+            .unwrap()
     }
 }

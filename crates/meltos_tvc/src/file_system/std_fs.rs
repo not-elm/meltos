@@ -11,7 +11,6 @@ use crate::file_system::{FileSystem, Stat, StatType};
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct StdFileSystem;
 
-
 #[cfg_attr(target_arch = "wasm32", async_trait(? Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl FileSystem for StdFileSystem {
@@ -126,8 +125,8 @@ mod tests {
     use meltos_util::path::AsUri;
 
     use crate::error;
-    use crate::file_system::{FileSystem, StatType};
     use crate::file_system::std_fs::StdFileSystem;
+    use crate::file_system::{FileSystem, StatType};
 
     fn tmp_dir() -> String {
         let path = directories::BaseDirs::new()
@@ -154,7 +153,10 @@ mod tests {
     async fn create_dir() {
         let fs = StdFileSystem;
         fs.create_dir(&as_path("dir2")).await.unwrap();
-        assert_eq!(fs.read_dir(&as_path("dir2")).await.unwrap().unwrap().len(), 0);
+        assert_eq!(
+            fs.read_dir(&as_path("dir2")).await.unwrap().unwrap().len(),
+            0
+        );
     }
 
     #[tokio::test]
@@ -196,12 +198,13 @@ mod tests {
         assert_eq!(stat.ty, StatType::Dir);
         assert_eq!(stat.size, 1);
 
-        fs.write_file(&as_path("dir6/hello.txt"), b"hello").await.unwrap();
+        fs.write_file(&as_path("dir6/hello.txt"), b"hello")
+            .await
+            .unwrap();
         let stat = fs.stat(&path).await.unwrap().unwrap();
         assert_eq!(stat.ty, StatType::Dir);
         assert_eq!(stat.size, 2);
     }
-
 
     #[tokio::test]
     async fn it_read_dir() -> error::Result {
@@ -213,10 +216,10 @@ mod tests {
 
         let mut entries = fs.try_read_dir(&path).await?;
         entries.sort();
-        assert_eq!(entries, vec![
-            as_path("dir7/child"),
-            as_path("dir7/hello.txt"),
-        ]);
+        assert_eq!(
+            entries,
+            vec![as_path("dir7/child"), as_path("dir7/hello.txt"),]
+        );
         Ok(())
     }
 }

@@ -1,6 +1,6 @@
+use crate::discussion::DiscussionMeta;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
-use crate::discussion::DiscussionMeta;
 
 /// ディスカッション作成のリクエストを表します。
 #[wasm_bindgen(getter_with_clone)]
@@ -19,7 +19,6 @@ impl Create {
         }
     }
 }
-
 
 /// ディスカッションが作成されたことを表します。
 #[wasm_bindgen(getter_with_clone)]

@@ -96,7 +96,7 @@ mod tests {
         assert_eq!(error, DiscussionNotExistsBody{
             base: ErrorResponseBodyBase{
                 category: "discussion".to_string(),
-                error_type: "DiscussionNotExists".to_string(),
+                error_name: "DiscussionNotExists".to_string(),
                 message: "discussion not exists; id: ID".to_string()
             },
             discussion_id: DiscussionId("ID".to_string())

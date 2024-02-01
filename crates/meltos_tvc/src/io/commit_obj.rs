@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
@@ -11,6 +10,7 @@ use crate::object::commit::{CommitHash, CommitObj};
 use crate::object::local_commits::LocalCommitsObj;
 use crate::object::tree::TreeObj;
 use crate::object::ObjHash;
+use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
 pub struct CommitObjIo<Fs>
@@ -20,7 +20,7 @@ where
     head: HeadIo<Fs>,
     object: ObjIo<Fs>,
     local_commits: LocalCommitsIo<Fs>,
-    trace: TraceIo<Fs>
+    trace: TraceIo<Fs>,
 }
 
 impl<Fs> CommitObjIo<Fs>
@@ -33,7 +33,7 @@ where
             head: HeadIo::new(fs.clone()),
             object: ObjIo::new(fs.clone()),
             local_commits: LocalCommitsIo::new(fs.clone()),
-            trace: TraceIo::new(fs)
+            trace: TraceIo::new(fs),
         }
     }
 }
@@ -290,9 +290,7 @@ mod tests {
                 .unwrap()
                 .committed_objs_tree,
         );
-        expect.push(
-            TraceIo::new(fs.clone()).read(&commit_hash2).await.unwrap(),
-        );
+        expect.push(TraceIo::new(fs.clone()).read(&commit_hash2).await.unwrap());
         for (_, obj) in trace_obj.iter() {
             expect.push(obj.clone());
         }

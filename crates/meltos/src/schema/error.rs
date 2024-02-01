@@ -14,12 +14,11 @@ pub struct ErrorResponseBodyBase {
     pub category: String,
 
     /// エラーの種別
-    pub error_type: String,
+    pub error_name: String,
 
     /// エラーのメッセージ
     pub message: String,
 }
-
 
 /// リクエスト時に送信したBundleサイズがサーバの上限値を超えた場合のレスポンスボディを表します。
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
@@ -34,7 +33,6 @@ pub struct ExceedBundleSizeBody {
     pub actual_bundle_size: usize,
 }
 
-
 /// RoomのTvcリポジトリのサイズが上限値を超えた場合
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
 pub struct ExceedRepositorySizeBody {
@@ -48,7 +46,6 @@ pub struct ExceedRepositorySizeBody {
     pub actual_size: usize,
 }
 
-
 /// ルームの定員に達したことを表します。
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
 pub struct ReachedCapacityBody {
@@ -58,7 +55,6 @@ pub struct ReachedCapacityBody {
     /// ルームの定員
     pub capacity: u64,
 }
-
 
 /// リクエスト時に送信した[`DiscussionId`](crate::discussion::id::DiscussionId)に対応するディスカッションが見つからない場合のレスポンスボディを表します。。
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
@@ -70,7 +66,6 @@ pub struct DiscussionNotExistsBody {
     pub discussion_id: DiscussionId,
 }
 
-
 /// リクエスト時に送信した[`MessageId`](crate::discussion::message::MessageId)に対応するメッセージが見つからない場合のレスポンスボディを表します。。
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
 pub struct MessageNotExistsBody {
@@ -80,7 +75,6 @@ pub struct MessageNotExistsBody {
     /// リクエスト時に送信された返信先のメッセージId
     pub message_id: MessageId,
 }
-
 
 /// サーバ内のTvc操作が失敗した場合に発生します。
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]

@@ -69,6 +69,7 @@ fn app<Session, Discussion>() -> Router
 
 fn room_operations_router() -> Router<AppState> {
     Router::new()
+        .route("/kick", post(api::room::kick))
         .route("/channel", get(api::room::channel))
         .route("/join", post(api::room::join))
         .nest("/tvc", tvc_routes())

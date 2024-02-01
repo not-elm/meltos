@@ -31,7 +31,7 @@ pub async fn leave(
     } else {
         room.leave(user_id.clone()).await?;
         let left = Left {
-            user_id: user_id.clone(),
+            users: vec![user_id.clone()],
         };
 
         room.send_all_users(ChannelMessage {

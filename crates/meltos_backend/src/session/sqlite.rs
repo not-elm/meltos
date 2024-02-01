@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use async_trait::async_trait;
-use rusqlite::{Connection, ffi, params};
+use rusqlite::{ffi, params, Connection};
 use tokio::sync::Mutex;
 
 use meltos::room::RoomId;
@@ -73,10 +73,14 @@ impl SessionIo for SqliteSessionIo {
             params![session_id.to_string(), user_id.to_string()],
         ) {
             Ok(_) => Ok((user_id, session_id)),
-            Err(rusqlite::Error::SqliteFailure(ffi::Error { code: _, extended_code: _s @ 2067 }, _)) => {
-                Err(error::Error::UserIdConflict(user_id))
-            }
-            Err(e) => Err(error::Error::Sqlite(e))
+            Err(rusqlite::Error::SqliteFailure(
+                ffi::Error {
+                    code: _,
+                    extended_code: _s @ 2067,
+                },
+                _,
+            )) => Err(error::Error::UserIdConflict(user_id)),
+            Err(e) => Err(error::Error::Sqlite(e)),
         }
     }
 
@@ -102,11 +106,9 @@ impl SessionIo for SqliteSessionIo {
 
     async fn user_count(&self) -> error::Result<u64> {
         let db = self.db.lock().await;
-        let user_count: usize = db.query_row(
-            "SELECT count(user_id) FROM session",
-            (),
-            |row| Ok(row.get(0).unwrap()),
-        )?;
+        let user_count: usize = db.query_row("SELECT count(user_id) FROM session", (), |row| {
+            Ok(row.get(0).unwrap())
+        })?;
         Ok(user_count as u64)
     }
 }
@@ -121,8 +123,8 @@ mod tests {
     use meltos::user::{SessionId, UserId};
 
     use crate::error;
-    use crate::session::{NewSessionIo, SessionIo};
     use crate::session::sqlite::{delete_database, SqliteSessionIo};
+    use crate::session::{NewSessionIo, SessionIo};
 
     #[tokio::test]
     async fn created_owner_id() {
@@ -136,7 +138,7 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
     #[tokio::test]
@@ -149,7 +151,7 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
     #[tokio::test]
@@ -164,9 +166,8 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
-
 
     #[tokio::test]
     async fn failed_if_conflict_user_ids() {
@@ -174,16 +175,14 @@ mod tests {
             async move {
                 let user_id = UserId::from("user1");
                 db.register(Some(user_id.clone())).await?;
-                match db
-                    .register(Some(user_id.clone()))
-                    .await {
+                match db.register(Some(user_id.clone())).await {
                     Err(error::Error::UserIdConflict(id)) => assert_eq!(id, user_id),
-                    _ => panic!("expect occurs conflicts user id but it did not.")
+                    _ => panic!("expect occurs conflicts user id but it did not."),
                 }
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
     #[tokio::test]
@@ -198,9 +197,8 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
-
 
     #[tokio::test]
     async fn create_guest_ids_not_specified_user_id() {
@@ -218,7 +216,7 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
     #[tokio::test]
@@ -243,9 +241,8 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
-
 
     #[tokio::test]
     async fn it_return_user_count() {
@@ -269,7 +266,7 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
     #[tokio::test]
@@ -290,10 +287,10 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
-    async fn try_execute<F: Future<Output=crate::error::Result>>(
+    async fn try_execute<F: Future<Output = crate::error::Result>>(
         f: impl FnOnce(SqliteSessionIo) -> F,
     ) {
         let room_id = RoomId::new();

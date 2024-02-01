@@ -9,8 +9,8 @@ use crate::object::commit::CommitHash;
 
 #[derive(Debug, Clone)]
 pub struct Save<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     trace: TraceIo<Fs>,
     object: ObjIo<Fs>,
@@ -18,8 +18,8 @@ pub struct Save<Fs>
 }
 
 impl<Fs> Save<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     pub fn new(fs: Fs) -> Save<Fs> {
         Self {
@@ -48,12 +48,11 @@ impl<Fs> Save<Fs>
 
     async fn write_branches(&self, branches: &[BundleBranch]) -> error::Result {
         for branch in branches {
-            self
-                .write_head(
-                    &branch.branch_name,
-                    &branch.commits[branch.commits.len() - 1],
-                )
-                .await?;
+            self.write_head(
+                &branch.branch_name,
+                &branch.commits[branch.commits.len() - 1],
+            )
+            .await?;
         }
         Ok(())
     }
@@ -66,7 +65,9 @@ impl<Fs> Save<Fs>
 
     async fn write_traces(&self, traces: Vec<BundleTrace>) -> error::Result {
         for trace in traces {
-            self.trace.write(&trace.commit_hash, &trace.obj_hash).await?;
+            self.trace
+                .write(&trace.commit_hash, &trace.obj_hash)
+                .await?;
         }
         Ok(())
     }
@@ -76,8 +77,8 @@ impl<Fs> Save<Fs>
 mod tests {
     use crate::branch::BranchName;
     use crate::encode::Encodable;
-    use crate::file_system::FileSystem;
     use crate::file_system::memory::MemoryFileSystem;
+    use crate::file_system::FileSystem;
     use crate::io::bundle::{Bundle, BundleBranch};
     use crate::object::commit::CommitHash;
     use crate::object::ObjHash;

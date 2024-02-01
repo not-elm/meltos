@@ -26,5 +26,3 @@ impl BranchName {
         WorkingIo::new(fs).try_read().await
     }
 }
-
-

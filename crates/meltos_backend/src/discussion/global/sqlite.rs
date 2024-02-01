@@ -2,11 +2,11 @@ use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard};
 
 use async_trait::async_trait;
-use rusqlite::{Connection, params, Transaction};
+use rusqlite::{params, Connection, Transaction};
 
-use meltos::discussion::{DiscussionBundle, DiscussionMeta, MessageBundle};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
+use meltos::discussion::{DiscussionBundle, DiscussionMeta, MessageBundle};
 use meltos::room::RoomId;
 use meltos::user::UserId;
 
@@ -381,10 +381,10 @@ mod tests {
     use meltos::room::RoomId;
     use meltos::user::UserId;
 
-    use crate::discussion::{DiscussionIo, NewDiscussIo};
     use crate::discussion::global::sqlite::{
         read_all_messages, read_message_ids_in, read_reply_message_ids_in, SqliteDiscussionIo,
     };
+    use crate::discussion::{DiscussionIo, NewDiscussIo};
     use crate::error;
     use crate::path::delete_resource_dir;
 
@@ -416,7 +416,7 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
     #[tokio::test]
@@ -439,15 +439,14 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
     #[tokio::test]
     async fn failed_speak_if_not_exists_discussion() {
         try_execute(|db| {
             async move {
-                db
-                    .new_discussion("title".to_string(), UserId::from("session"))
+                db.new_discussion("title".to_string(), UserId::from("session"))
                     .await?;
 
                 match db
@@ -458,13 +457,15 @@ mod tests {
                     )
                     .await
                 {
-                    Err(error::Error::DiscussionNotExists(id)) => assert_eq!(DiscussionId("ID".to_string()), id),
-                    _ => panic!("expected DiscussionNotExists but was.")
+                    Err(error::Error::DiscussionNotExists(id)) => {
+                        assert_eq!(DiscussionId("ID".to_string()), id)
+                    }
+                    _ => panic!("expected DiscussionNotExists but was."),
                 }
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
     #[tokio::test]
@@ -495,16 +496,14 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
-
 
     #[tokio::test]
     async fn failed_spoke_if_not_exists_discussion() {
         try_execute(|db| {
             async move {
-                db
-                    .new_discussion("title".to_string(), UserId::from("session"))
+                db.new_discussion("title".to_string(), UserId::from("session"))
                     .await?;
 
                 match db
@@ -516,15 +515,16 @@ mod tests {
                     )
                     .await
                 {
-                    Err(error::Error::DiscussionNotExists(id)) => assert_eq!(DiscussionId("ID".to_string()), id),
-                    _ => panic!("expected DiscussionNotExists but was.")
+                    Err(error::Error::DiscussionNotExists(id)) => {
+                        assert_eq!(DiscussionId("ID".to_string()), id)
+                    }
+                    _ => panic!("expected DiscussionNotExists but was."),
                 }
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
-
 
     #[tokio::test]
     async fn failed_spoke_if_not_exists_source_message() {
@@ -543,13 +543,15 @@ mod tests {
                     )
                     .await
                 {
-                    Err(error::Error::MessageNotExists(id)) => assert_eq!(MessageId("Null".to_string()), id),
-                    _ => panic!("expected DiscussionNotExists but was.")
+                    Err(error::Error::MessageNotExists(id)) => {
+                        assert_eq!(MessageId("Null".to_string()), id)
+                    }
+                    _ => panic!("expected DiscussionNotExists but was."),
                 }
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
     #[tokio::test]
@@ -579,7 +581,7 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
     #[tokio::test]
@@ -618,7 +620,7 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
     #[tokio::test]
@@ -670,7 +672,7 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
     #[tokio::test]
@@ -692,14 +694,14 @@ mod tests {
                     message2.id.clone(),
                     MessageText::from("reply1"),
                 )
-                    .await?;
+                .await?;
                 db.reply(
                     meta.id.clone(),
                     UserId::from("user2"),
                     message2.id.clone(),
                     MessageText::from("reply2"),
                 )
-                    .await?;
+                .await?;
                 db.close_discussion(&meta.id).await?;
                 assert!(db.all_discussions().await?.is_empty());
                 let mut con = db.lock();
@@ -714,7 +716,7 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
     #[tokio::test]
@@ -736,14 +738,14 @@ mod tests {
                     message2.id.clone(),
                     MessageText::from("reply1"),
                 )
-                    .await?;
+                .await?;
                 db.reply(
                     meta.id.clone(),
                     UserId::from("user2"),
                     message2.id.clone(),
                     MessageText::from("reply2"),
                 )
-                    .await?;
+                .await?;
 
                 let meta2 = db
                     .new_discussion("title2".to_string(), UserId::from("owner"))
@@ -790,10 +792,10 @@ mod tests {
                 Ok(())
             }
         })
-            .await;
+        .await;
     }
 
-    async fn try_execute<F: Future<Output=error::Result>>(
+    async fn try_execute<F: Future<Output = error::Result>>(
         f: impl FnOnce(SqliteDiscussionIo) -> F + 'static + Send,
     ) {
         let room_id = RoomId::new();

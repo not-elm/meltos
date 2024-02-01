@@ -30,7 +30,6 @@ impl Reply {
     }
 }
 
-
 /// 返信メッセージが送信されたことを表します。
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]

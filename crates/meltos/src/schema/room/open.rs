@@ -45,14 +45,15 @@ impl Open {
             .unwrap_or(Duration::from_secs(limit_room_life_time_sec))
     }
 
-
     #[inline(always)]
     pub fn get_capacity(&self, max_user_limits: u64) -> u64 {
-        let capacity = self.user_limits.map(|limits| limits.min(max_user_limits)).unwrap_or(max_user_limits);
+        let capacity = self
+            .user_limits
+            .map(|limits| limits.min(max_user_limits))
+            .unwrap_or(max_user_limits);
         capacity.max(1)
     }
 }
-
 
 /// POST: `room/open`の正常レスポンスデータ
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -1,4 +1,3 @@
-
 #[inline(always)]
 pub fn since_epoch_secs() -> u64 {
     #[cfg(target_arch = "wasm32")]

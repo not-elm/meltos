@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 use clap::Parser;
 
+use crate::commands::all::AllArgs;
 use meltos_client::config::SessionConfigs;
 use meltos_tvc::branch::BranchName;
-use crate::commands::all::AllArgs;
 
 use crate::commands::commit::CommitArgs;
 use crate::commands::fetch::FetchArgs;
@@ -17,18 +17,18 @@ use crate::commands::reply::ReplyArgs;
 use crate::commands::speak::SpeakArgs;
 use crate::commands::stage::StageArgs;
 
+mod all;
 mod commit;
 mod fetch;
 mod join;
 mod leave;
 mod merge;
+mod meta;
 mod open;
 mod push;
 mod reply;
 mod speak;
 mod stage;
-mod all;
-mod meta;
 
 #[async_trait(?Send)]
 pub trait CommandExecutable {
@@ -49,7 +49,7 @@ pub enum Commands {
     Speak(SpeakArgs),
     Reply(ReplyArgs),
     All(AllArgs),
-    Meta(MetaArgs)
+    Meta(MetaArgs),
 }
 
 #[async_trait(?Send)]
@@ -67,7 +67,7 @@ impl CommandExecutable for Commands {
             Self::Speak(c) => c.execute().await,
             Self::Reply(c) => c.execute().await,
             Self::All(c) => c.execute().await,
-            Self::Meta(c) => c.execute().await
+            Self::Meta(c) => c.execute().await,
         }
     }
 }

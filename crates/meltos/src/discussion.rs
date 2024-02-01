@@ -43,4 +43,3 @@ pub struct MessageBundle {
     pub message: Message,
     pub replies: Vec<Message>,
 }
-

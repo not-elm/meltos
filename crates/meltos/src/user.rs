@@ -5,7 +5,6 @@ use meltos_tvc::branch::BranchName;
 use meltos_util::impl_string_new_type;
 use meltos_util::macros::{Display, Sha1};
 
-
 /// ルームユーザーのID
 #[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]
@@ -31,13 +30,12 @@ impl UserId {
     }
 }
 
-impl From<UserId> for BranchName{
+impl From<UserId> for BranchName {
     #[inline(always)]
     fn from(value: UserId) -> Self {
         BranchName(value.0)
     }
 }
-
 
 /// [`UserId`]に紐づくRoomのセッションID
 #[wasm_bindgen(getter_with_clone)]

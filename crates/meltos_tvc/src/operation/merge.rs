@@ -292,11 +292,7 @@ mod tests {
         let status = merge.execute_from_branch(b1, b2).await.unwrap();
         assert!(matches!(status, MergedStatus::Merged));
 
-        assert!(fs
-            .read_file("workspace/hello.txt")
-            .await
-            .unwrap()
-            .is_some());
+        assert!(fs.read_file("workspace/hello.txt").await.unwrap().is_some());
         assert!(fs.read_file("workspace/test.txt").await.unwrap().is_some());
     }
 

@@ -3,9 +3,9 @@ use crate::error;
 use crate::file_system::{FilePath, FileSystem};
 use crate::io::atomic::head::HeadIo;
 use crate::io::trace_tree::TraceTreeIo;
-use crate::object::{AsMeta, Obj, ObjHash};
 use crate::object::file::FileObj;
 use crate::object::tree::TreeObj;
+use crate::object::{AsMeta, Obj, ObjHash};
 
 pub struct ChangeFileMeta {
     pub path: FilePath,
@@ -20,8 +20,8 @@ pub enum ChangeFile {
 
 #[derive(Debug, Clone)]
 pub struct WorkspaceIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     fs: Fs,
     head: HeadIo<Fs>,
@@ -29,8 +29,8 @@ pub struct WorkspaceIo<Fs>
 }
 
 impl<Fs> WorkspaceIo<Fs>
-    where
-        Fs: FileSystem + Clone,
+where
+    Fs: FileSystem + Clone,
 {
     #[inline(always)]
     pub fn new(fs: Fs) -> WorkspaceIo<Fs> {
@@ -43,15 +43,17 @@ impl<Fs> WorkspaceIo<Fs>
 }
 
 impl<Fs> WorkspaceIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     pub async fn try_read(&self, file_path: &str) -> error::Result<FileObj> {
         match self.read(file_path).await? {
             Some(file_obj) => Ok(file_obj),
-            None => Err(crate::error::Error::NotfoundWorkspaceFile(
-                FilePath(file_path.to_string()),
-            )),
+            None => {
+                Err(crate::error::Error::NotfoundWorkspaceFile(FilePath(
+                    file_path.to_string(),
+                )))
+            }
         }
     }
 
@@ -78,7 +80,7 @@ impl<Fs> WorkspaceIo<Fs>
     }
 
     pub async fn is_change(&self, branch: &BranchName, path: &str) -> error::Result<bool> {
-        if self.is_ignore(path).await?{
+        if self.is_ignore(path).await? {
             return Ok(false);
         }
 
@@ -100,8 +102,8 @@ impl<Fs> WorkspaceIo<Fs>
     pub async fn convert_to_objs(&self, path: &str) -> error::Result<ObjectIter<Fs>> {
         let files = self.files(path).await?;
         let mut new_files = Vec::with_capacity(files.len());
-        for file in files{
-            if !self.is_ignore(&file).await?{
+        for file in files {
+            if !self.is_ignore(&file).await? {
                 new_files.push(file);
             }
         }
@@ -211,8 +213,8 @@ impl<Fs> WorkspaceIo<Fs>
 }
 
 pub struct ObjectIter<'a, Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     files: Vec<String>,
     index: usize,
@@ -220,8 +222,8 @@ pub struct ObjectIter<'a, Fs>
 }
 
 impl<'a, Fs> ObjectIter<'a, Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     pub async fn next(&mut self) -> Option<std::io::Result<(FilePath, FileObj)>> {
         if self.index == self.files.len() {
@@ -243,8 +245,8 @@ impl<'a, Fs> ObjectIter<'a, Fs>
 }
 
 impl<'a, Fs> ObjectIter<'a, Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     async fn read_to_obj(&self) -> std::io::Result<(FilePath, FileObj)> {
         let path = self.files.get(self.index).unwrap();
@@ -258,12 +260,12 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::branch::BranchName;
-    use crate::file_system::{FilePath, FileSystem};
     use crate::file_system::memory::MemoryFileSystem;
+    use crate::file_system::{FilePath, FileSystem};
     use crate::io::atomic::object::ObjIo;
     use crate::io::workspace::WorkspaceIo;
-    use crate::object::{AsMeta, Obj, ObjHash};
     use crate::object::file::FileObj;
+    use crate::object::{AsMeta, Obj, ObjHash};
     use crate::operation::commit::Commit;
     use crate::operation::stage::Stage;
     use crate::tests::init_owner_branch;
@@ -332,8 +334,8 @@ mod tests {
                 "workspace/hello.txt".to_string(),
                 "workspace/dist/index.js".to_string(),
             ]
-                .into_iter()
-                .collect::<HashSet<String>>()
+            .into_iter()
+            .collect::<HashSet<String>>()
         );
     }
 
@@ -440,13 +442,18 @@ mod tests {
         init_owner_branch(fs.clone()).await;
 
         let workspace = WorkspaceIo::new(fs.clone());
-        workspace.write_ignores(vec!["hello.txt".to_string()]).await.unwrap();
+        workspace
+            .write_ignores(vec!["hello.txt".to_string()])
+            .await
+            .unwrap();
         fs.write_sync("workspace/hello.txt", b"hello");
 
-        let ignored = workspace.is_ignore(&FilePath("hello.txt".to_string())).await.unwrap();
+        let ignored = workspace
+            .is_ignore(&FilePath("hello.txt".to_string()))
+            .await
+            .unwrap();
         assert!(ignored);
     }
-
 
     #[tokio::test]
     async fn ignore_dir() {
@@ -454,7 +461,10 @@ mod tests {
         init_owner_branch(fs.clone()).await;
 
         let workspace = WorkspaceIo::new(fs.clone());
-        workspace.write_ignores(vec!["dir/".to_string()]).await.unwrap();
+        workspace
+            .write_ignores(vec!["dir/".to_string()])
+            .await
+            .unwrap();
         fs.write_sync("workspace/dir/hello1.txt", b"hello");
         fs.write_sync("workspace/dir/hello2.txt", b"hello");
         fs.write_sync("workspace/dir/hello3.txt", b"hello");
@@ -473,10 +483,10 @@ mod tests {
         init_owner_branch(fs.clone()).await;
 
         let workspace = WorkspaceIo::new(fs.clone());
-        workspace.write_ignores(vec![
-            "dir/".to_string(),
-            "!dir/hello3.txt".to_string(),
-        ]).await.unwrap();
+        workspace
+            .write_ignores(vec!["dir/".to_string(), "!dir/hello3.txt".to_string()])
+            .await
+            .unwrap();
         fs.write_sync("workspace/dir/hello1.txt", b"hello");
         fs.write_sync("workspace/dir/hello2.txt", b"hello");
         fs.write_sync("workspace/dir/hello3.txt", b"hello");

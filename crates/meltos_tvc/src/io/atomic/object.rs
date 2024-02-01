@@ -49,9 +49,11 @@ where
     }
 
     pub async fn try_read_obj(&self, object_hash: &ObjHash) -> error::Result<Obj> {
-        self.read_obj(object_hash).await.and_then(|obj| match obj {
-            Some(obj) => Ok(obj),
-            None => Err(error::Error::NotfoundObj(object_hash.clone())),
+        self.read_obj(object_hash).await.and_then(|obj| {
+            match obj {
+                Some(obj) => Ok(obj),
+                None => Err(error::Error::NotfoundObj(object_hash.clone())),
+            }
         })
     }
 

@@ -13,15 +13,15 @@ use crate::object::ObjHash;
 
 #[derive(Debug, Clone)]
 pub struct HeadIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     fs: Fs,
 }
 
 impl<Fs> HeadIo<Fs>
-    where
-        Fs: FileSystem,
+where
+    Fs: FileSystem,
 {
     pub const fn new(fs: Fs) -> HeadIo<Fs> {
         Self {
@@ -35,28 +35,35 @@ impl<Fs> HeadIo<Fs>
         branch_name: &BranchName,
         commit_hash: &CommitHash,
     ) -> error::Result {
-        self.fs.write_file(
-            &format!(".meltos/refs/remotes/{branch_name}"),
-            &commit_hash.encode()?,
-        ).await?;
+        self.fs
+            .write_file(
+                &format!(".meltos/refs/remotes/{branch_name}"),
+                &commit_hash.encode()?,
+            )
+            .await?;
         Ok(())
     }
 
     #[inline]
-    pub async fn write(&self, branch_name: &BranchName, commit_hash: &CommitHash) -> error::Result<()> {
-        self.fs.write_file(
-            &format!(".meltos/refs/heads/{branch_name}"),
-            &commit_hash.encode()?,
-        ).await?;
+    pub async fn write(
+        &self,
+        branch_name: &BranchName,
+        commit_hash: &CommitHash,
+    ) -> error::Result<()> {
+        self.fs
+            .write_file(
+                &format!(".meltos/refs/heads/{branch_name}"),
+                &commit_hash.encode()?,
+            )
+            .await?;
         Ok(())
     }
-
 
     #[inline]
     pub async fn delete(&self, branch_name: &BranchName) -> error::Result<()> {
-        self.fs.delete(
-            &format!(".meltos/refs/heads/{branch_name}")
-        ).await?;
+        self.fs
+            .delete(&format!(".meltos/refs/heads/{branch_name}"))
+            .await?;
         Ok(())
     }
 
@@ -89,9 +96,9 @@ impl<Fs> HeadIo<Fs>
         let mut branches = Vec::with_capacity(files.len());
         for path in files {
             let Some(file_name) = Path::new(&path).file_name().and_then(|name| name.to_str())
-                else {
-                    continue;
-                };
+            else {
+                continue;
+            };
             let branch_name = BranchName::from(file_name);
             let commit_hash = self.try_read(&branch_name).await?;
             branches.push((branch_name, commit_hash))
@@ -99,7 +106,11 @@ impl<Fs> HeadIo<Fs>
         Ok(branches)
     }
 
-    async fn _read(&self, dir: &str, branch_name: &BranchName) -> error::Result<Option<CommitHash>> {
+    async fn _read(
+        &self,
+        dir: &str,
+        branch_name: &BranchName,
+    ) -> error::Result<Option<CommitHash>> {
         let Some(buf) = self.fs.read_file(&format!("{dir}{branch_name}")).await? else {
             return Ok(None);
         };

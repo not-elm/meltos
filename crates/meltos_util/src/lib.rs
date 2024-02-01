@@ -2,11 +2,11 @@ pub mod compression;
 pub mod error;
 pub mod serde;
 
+pub mod data_size;
 pub mod fs;
 pub mod hash;
-pub mod wasm;
 pub mod path;
-pub mod data_size;
+pub mod wasm;
 
 pub mod macros {
     pub use meltos_macros::*;

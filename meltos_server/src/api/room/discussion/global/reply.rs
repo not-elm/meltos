@@ -116,7 +116,7 @@ mod tests {
         assert_eq!(error, DiscussionNotExistsBody {
             base: ErrorResponseBodyBase {
                 category: "discussion".to_string(),
-                error_type: "DiscussionNotExists".to_string(),
+                error_name: "DiscussionNotExists".to_string(),
                 message: "discussion not exists; id: id".to_string(),
             },
             discussion_id: DiscussionId("id".to_string()),
@@ -165,7 +165,7 @@ mod tests {
         assert_eq!(error, MessageNotExistsBody {
             base: ErrorResponseBodyBase {
                 category: "discussion".to_string(),
-                error_type: "MessageNotExists".to_string(),
+                error_name: "MessageNotExists".to_string(),
                 message: "message not exists; id: Null".to_string(),
             },
             message_id: MessageId("Null".to_string())

@@ -43,7 +43,6 @@ impl MockSessionIo {
     }
 }
 
-
 impl Default for MockSessionIo {
     #[inline(always)]
     fn default() -> Self {
@@ -63,7 +62,6 @@ impl NewSessionIo for MockSessionIo {
 
 #[async_trait]
 impl SessionIo for MockSessionIo {
-
     async fn register(&self, user_id: Option<UserId>) -> crate::error::Result<(UserId, SessionId)> {
         let create_count = self.create_count.fetch_add(1, Ordering::Relaxed);
 
@@ -104,13 +102,11 @@ impl SessionIo for MockSessionIo {
             .ok_or(error::Error::SessionIdNotExists)
     }
 
-
     #[inline(always)]
     async fn user_count(&self) -> error::Result<u64> {
         Ok(self.map.lock().await.len() as u64)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -127,7 +123,7 @@ mod tests {
         session.register(Some(user_id.clone())).await.unwrap();
         match session.register(Some(user_id.clone())).await.unwrap_err() {
             Error::UserIdConflict(id) => assert_eq!(id, user_id),
-            _ => panic!("expected conflicts user_ids but did not")
+            _ => panic!("expected conflicts user_ids but did not"),
         }
     }
 

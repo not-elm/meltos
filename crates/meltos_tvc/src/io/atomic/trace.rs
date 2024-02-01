@@ -21,7 +21,9 @@ where
 {
     #[inline(always)]
     pub const fn new(fs: Fs) -> TraceIo<Fs> {
-        Self { fs }
+        Self {
+            fs,
+        }
     }
 
     pub async fn write_all(&self, traces: &[BundleTrace]) -> error::Result {

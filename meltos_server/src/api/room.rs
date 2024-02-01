@@ -5,6 +5,7 @@ pub use join::join;
 pub use leave::leave;
 pub use open::open;
 pub use sync::sync;
+pub use kick::kick;
 
 pub mod discussion;
 pub mod tvc;
@@ -15,6 +16,7 @@ mod join;
 mod leave;
 mod open;
 mod sync;
+mod kick;
 
 
 #[inline(always)]

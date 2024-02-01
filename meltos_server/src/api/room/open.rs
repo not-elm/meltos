@@ -206,7 +206,7 @@ mod tests {
         let error = response.deserialize::<ErrorResponseBodyBase>().await;
         assert_eq!(error, ErrorResponseBodyBase {
             category: "tvc".to_string(),
-            error_type: "ExceedBundleSize".to_string(),
+            error_name: "ExceedBundleSize".to_string(),
             message: "bundle size to exceed; actual_bundle_size: 1025, limit_bundle_size: 1024".to_string(),
         });
     }

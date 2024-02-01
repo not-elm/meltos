@@ -39,32 +39,31 @@ pub enum Error {
     DatabaseAlreadyRemoved(RoomId),
 }
 
-
 impl Error {
     pub fn status_code(&self) -> StatusCode {
         match self {
             Error::SessionIdNotExists => StatusCode::UNAUTHORIZED,
-            Error::ReachedNumberOfUsersLimits(_) |
-            Error::DiscussionNotExists(_) |
-            Error::UserIdConflict(_) |
-            Error::MessageNotExists(_)
-            => StatusCode::BAD_REQUEST,
-            _ => StatusCode::INTERNAL_SERVER_ERROR
+            Error::ReachedNumberOfUsersLimits(_)
+            | Error::DiscussionNotExists(_)
+            | Error::UserIdConflict(_)
+            | Error::MessageNotExists(_) => StatusCode::BAD_REQUEST,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
     #[inline(always)]
     pub fn category(&self) -> &str {
         match self {
-            Error::UserIdConflict(_) | Error::SessionIdNotExists | Error::ReachedNumberOfUsersLimits(_) => "session",
+            Error::UserIdConflict(_)
+            | Error::SessionIdNotExists
+            | Error::ReachedNumberOfUsersLimits(_) => "session",
             Error::DatabaseAlreadyRemoved(_) | Error::Io(_) | Error::Sqlite(_) => "io",
-            Error::DiscussionNotExists(_) | Error::MessageNotExists(_) => "discussion"
+            Error::DiscussionNotExists(_) | Error::MessageNotExists(_) => "discussion",
         }
     }
 
-
     #[inline(always)]
-    pub fn error_type(&self) -> &str {
+    pub fn error_name(&self) -> &str {
         self.as_ref()
     }
 
@@ -75,15 +74,17 @@ impl Error {
                 serde_json::to_string(&DiscussionNotExistsBody {
                     base,
                     discussion_id,
-                }).unwrap()
+                })
+                .unwrap()
             }
             Error::MessageNotExists(message_id) => {
                 serde_json::to_string(&MessageNotExistsBody {
                     base,
                     message_id,
-                }).unwrap()
+                })
+                .unwrap()
             }
-            _ => serde_json::to_string(&base).unwrap()
+            _ => serde_json::to_string(&base).unwrap(),
         }
     }
 
@@ -91,12 +92,11 @@ impl Error {
     fn body_base(&self) -> ErrorResponseBodyBase {
         ErrorResponseBodyBase {
             category: self.category().to_string(),
-            error_type: self.error_type().to_string(),
+            error_name: self.error_name().to_string(),
             message: self.to_string(),
         }
     }
 }
-
 
 impl From<Error> for Response {
     fn from(e: Error) -> Self {
@@ -107,7 +107,6 @@ impl From<Error> for Response {
             .unwrap()
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -120,21 +119,35 @@ mod tests {
 
     #[test]
     fn it_return_unauthorized_code_if_session_id_not_exists() {
-        assert_eq!(error::Error::SessionIdNotExists.status_code(), StatusCode::UNAUTHORIZED);
+        assert_eq!(
+            error::Error::SessionIdNotExists.status_code(),
+            StatusCode::UNAUTHORIZED
+        );
     }
 
     #[test]
     fn it_return_bad_request_code_if_user_id_conflicts() {
-        assert_eq!(error::Error::UserIdConflict(UserId::from("guest1")).status_code(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            error::Error::UserIdConflict(UserId::from("guest1")).status_code(),
+            StatusCode::BAD_REQUEST
+        );
     }
 
     #[test]
     fn it_return_bad_request_code_if_discussion_id_not_exists() {
-        assert_eq!(error::Error::DiscussionNotExists(DiscussionId("discussion_id".to_string())).status_code(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            error::Error::DiscussionNotExists(DiscussionId("discussion_id".to_string()))
+                .status_code(),
+            StatusCode::BAD_REQUEST
+        );
     }
 
     #[test]
     fn error_type_is_discussion_not_exists() {
-        assert_eq!(error::Error::DiscussionNotExists(DiscussionId("discussion_id".to_string())).error_type(), "DiscussionNotExists");
+        assert_eq!(
+            error::Error::DiscussionNotExists(DiscussionId("discussion_id".to_string()))
+                .error_name(),
+            "DiscussionNotExists"
+        );
     }
 }

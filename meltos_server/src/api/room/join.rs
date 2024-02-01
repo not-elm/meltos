@@ -83,7 +83,7 @@ mod tests {
             error,
             ErrorResponseBodyBase {
                 category: "session".to_string(),
-                error_type: "RoomNotExists".to_string(),
+                error_name: "RoomNotExists".to_string(),
                 message: "room not exists".to_string(),
             }
         )
@@ -123,7 +123,7 @@ mod tests {
             ReachedCapacityBody {
                 base: ErrorResponseBodyBase {
                     category: "session".to_string(),
-                    error_type: "ReachedCapacity".to_string(),
+                    error_name: "ReachedCapacity".to_string(),
                     message: "reached capacity; capacity: 1".to_string(),
                 },
                 capacity: 1,
@@ -176,7 +176,7 @@ mod tests {
             error,
             ErrorResponseBodyBase {
                 category: "session".to_string(),
-                error_type: "UserIdConflict".to_string(),
+                error_name: "UserIdConflict".to_string(),
                 message: "user id conflict; id: user1".to_string(),
             }
         );

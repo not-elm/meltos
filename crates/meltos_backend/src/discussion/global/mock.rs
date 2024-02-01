@@ -1,6 +1,6 @@
-use meltos::discussion::{DiscussionBundle, DiscussionMeta, MessageBundle};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
+use meltos::discussion::{DiscussionBundle, DiscussionMeta, MessageBundle};
 use meltos::room::RoomId;
 use meltos::user::UserId;
 use meltos_util::macros::Deref;
@@ -104,7 +104,7 @@ impl DiscussionIo for MockGlobalDiscussionIo {
         if !self.discussions.lock().await.contains_key(&discussion_id) {
             return Err(error::Error::DiscussionNotExists(discussion_id));
         }
-        if !self.messages.lock().await.contains_key(&to){
+        if !self.messages.lock().await.contains_key(&to) {
             return Err(error::Error::MessageNotExists(to));
         }
 
@@ -114,10 +114,7 @@ impl DiscussionIo for MockGlobalDiscussionIo {
             discussion.insert(to.clone(), vec![]);
         }
 
-        discussion
-            .get_mut(&to)
-            .unwrap()
-            .push(reply.id.clone());
+        discussion.get_mut(&to).unwrap().push(reply.id.clone());
         Ok(reply)
     }
 
@@ -176,7 +173,6 @@ struct Messages(ArcHashMap<MessageId, Message>);
 #[derive(Debug, Default, Clone, Deref)]
 struct ReplyDiscussions(ArcHashMap<MessageId, Vec<MessageId>>);
 
-
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 struct Discussion {
     pub meta: DiscussionMeta,
@@ -202,8 +198,8 @@ mod tests {
     use meltos::discussion::message::{MessageId, MessageText};
     use meltos::user::UserId;
 
-    use crate::discussion::DiscussionIo;
     use crate::discussion::global::mock::MockGlobalDiscussionIo;
+    use crate::discussion::DiscussionIo;
     use crate::error;
 
     #[tokio::test]
@@ -217,11 +213,12 @@ mod tests {
                 MessageId("Null".to_string()),
                 MessageText::from("reply"),
             )
-            .await {
+            .await
+        {
             Err(error::Error::DiscussionNotExists(id)) => {
                 assert_eq!(id, DiscussionId("ID".to_string()))
             }
-            result => panic!("expected DiscussionNotExists bad was {result:?}")
+            result => panic!("expected DiscussionNotExists bad was {result:?}"),
         }
     }
 
@@ -229,10 +226,7 @@ mod tests {
     async fn failed_reply_if_not_exists_message() {
         let discussion = MockGlobalDiscussionIo::default();
         let meta = discussion
-            .new_discussion(
-                "title".to_string(),
-                UserId("user".to_string()),
-            )
+            .new_discussion("title".to_string(), UserId("user".to_string()))
             .await
             .unwrap();
         match discussion
@@ -242,11 +236,12 @@ mod tests {
                 MessageId("Null".to_string()),
                 MessageText::from("reply"),
             )
-            .await {
+            .await
+        {
             Err(error::Error::MessageNotExists(id)) => {
                 assert_eq!(id, MessageId("Null".to_string()))
             }
-            result => panic!("expected DiscussionNotExists bad was {result:?}")
+            result => panic!("expected DiscussionNotExists bad was {result:?}"),
         }
     }
 }

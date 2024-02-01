@@ -10,7 +10,6 @@ use meltos_util::impl_string_new_type;
 
 pub mod memory;
 
-
 pub mod std_fs;
 
 #[wasm_bindgen(getter_with_clone)]
@@ -93,7 +92,6 @@ pub trait FileSystem: Send + Sync {
     /// ディレクトリの場合、子孫も削除されます。
     async fn delete(&self, path: &str) -> std::io::Result<()>;
 
-
     /// 指定したパスがディレクトリの場合、子孫となるファイルパスを全て返します。
     /// ファイルの場合、そのファイルパスを返します。
     ///
@@ -112,7 +110,6 @@ pub trait FileSystem: Send + Sync {
         }
         Ok(files)
     }
-
 
     /// ファイルバッファを読み込みます。
     ///
@@ -135,19 +132,17 @@ pub trait FileSystem: Send + Sync {
     ///
     /// ファイルが存在しない場合`Error`が返されます。
     async fn try_read_dir(&self, path: &str) -> std::io::Result<Vec<String>> {
-        self.read_dir(path)
-            .await
-            .and_then(|buf| {
-                match buf {
-                    Some(files) => Ok(files),
-                    None => {
-                        Err(std::io::Error::new(
-                            ErrorKind::NotFound,
-                            format!("not found dir path = {path}"),
-                        ))
-                    }
+        self.read_dir(path).await.and_then(|buf| {
+            match buf {
+                Some(files) => Ok(files),
+                None => {
+                    Err(std::io::Error::new(
+                        ErrorKind::NotFound,
+                        format!("not found dir path = {path}"),
+                    ))
                 }
-            })
+            }
+        })
     }
 
     /// TVCのデータ構造が既に存在するかを検査します。
@@ -156,7 +151,6 @@ pub trait FileSystem: Send + Sync {
         Ok(!files.is_empty())
     }
 }
-
 
 #[cfg(target_arch = "wasm32")]
 #[async_trait(?Send)]
@@ -190,7 +184,6 @@ pub trait FileSystem {
     /// ディレクトリの場合、子孫も削除されます。
     async fn delete(&self, path: &str) -> std::io::Result<()>;
 
-
     /// 指定したパスがディレクトリの場合、子孫となるファイルパスを全て返します。
     /// ファイルの場合、そのファイルパスを返します。
     ///
@@ -209,7 +202,6 @@ pub trait FileSystem {
         }
         Ok(files)
     }
-
 
     /// ファイルバッファを読み込みます。
     ///
@@ -232,19 +224,17 @@ pub trait FileSystem {
     ///
     /// ファイルが存在しない場合`Error`が返されます。
     async fn try_read_dir(&self, path: &str) -> std::io::Result<Vec<String>> {
-        self.read_dir(path)
-            .await
-            .and_then(|buf| {
-                match buf {
-                    Some(files) => Ok(files),
-                    None => {
-                        Err(std::io::Error::new(
-                            ErrorKind::NotFound,
-                            format!("not found dir path = {path}"),
-                        ))
-                    }
+        self.read_dir(path).await.and_then(|buf| {
+            match buf {
+                Some(files) => Ok(files),
+                None => {
+                    Err(std::io::Error::new(
+                        ErrorKind::NotFound,
+                        format!("not found dir path = {path}"),
+                    ))
                 }
-            })
+            }
+        })
     }
 
     /// TVCのデータ構造が既に存在するかを検査します。
@@ -253,7 +243,6 @@ pub trait FileSystem {
         Ok(!files.is_empty())
     }
 }
-
 
 #[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]
@@ -278,5 +267,3 @@ impl AsRef<String> for FilePath {
         &self.0
     }
 }
-
-

@@ -20,7 +20,11 @@ impl FileDiff {
         }
     }
 
-    pub async fn from_obj_hashes<Fs>(fs: Fs, lhs: &ObjHash, rhs: &ObjHash) -> error::Result<Option<Self>>
+    pub async fn from_obj_hashes<Fs>(
+        fs: Fs,
+        lhs: &ObjHash,
+        rhs: &ObjHash,
+    ) -> error::Result<Option<Self>>
     where
         Fs: FileSystem,
     {

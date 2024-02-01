@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf, StripPrefixError};
 use async_trait::async_trait;
 
 use meltos::room::RoomId;
-use meltos_tvc::file_system::{FileSystem, Stat};
 use meltos_tvc::file_system::std_fs::StdFileSystem;
+use meltos_tvc::file_system::{FileSystem, Stat};
 use meltos_util::path::AsUri;
 
 use crate::path::room_resource_dir;
@@ -41,13 +41,13 @@ impl<Fs> BackendFileSystem<Fs> {
         }
     }
 
-
     #[inline(always)]
     fn as_path(&self, path: &str) -> String {
         let p = Path::new(path);
 
         let new_uri = if p.has_root() {
-            self.resource_dir_uri_with_root.join(p.strip_prefix("/").unwrap())
+            self.resource_dir_uri_with_root
+                .join(p.strip_prefix("/").unwrap())
         } else {
             self.resource_dir_uri.join(p)
         };
@@ -55,7 +55,6 @@ impl<Fs> BackendFileSystem<Fs> {
         new_uri.as_uri()
     }
 }
-
 
 #[async_trait]
 impl<Fs: FileSystem> FileSystem for BackendFileSystem<Fs> {
@@ -97,8 +96,8 @@ impl<Fs: FileSystem> FileSystem for BackendFileSystem<Fs> {
 #[cfg(test)]
 mod tests {
     use meltos::room::RoomId;
-    use meltos_tvc::file_system::FileSystem;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
+    use meltos_tvc::file_system::FileSystem;
 
     use crate::tvc::file_system::BackendFileSystem;
 

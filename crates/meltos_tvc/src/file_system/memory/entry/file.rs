@@ -9,7 +9,6 @@ use crate::time::since_epoch_secs;
 #[derive(Debug, Clone)]
 pub struct MemoryFile(Arc<RwLock<MemoryFileInner>>);
 
-
 impl MemoryFile {
     #[inline(always)]
     pub fn new(buf: Vec<u8>) -> Self {
@@ -21,18 +20,15 @@ impl MemoryFile {
         self.0.read().unwrap().stat()
     }
 
-
     #[inline(always)]
     pub fn buf(&self) -> Vec<u8> {
         self.0.read().unwrap().buf.clone()
     }
 
-
     #[inline(always)]
     pub fn write(&self, buf: Vec<u8>) {
         self.0.write().unwrap().buf = buf;
     }
-
 
     #[inline(always)]
     pub fn set_update_time(&self, update_time: u64) {

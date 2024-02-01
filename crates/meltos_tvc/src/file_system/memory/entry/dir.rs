@@ -6,10 +6,10 @@ use std::sync::{Arc, RwLock};
 
 use meltos_util::path::AsUri;
 
-use crate::file_system::{Stat, StatType};
-use crate::file_system::memory::{as_schemes, entry_name, parent_path};
 use crate::file_system::memory::entry::file::MemoryFile;
 use crate::file_system::memory::entry::MemoryEntry;
+use crate::file_system::memory::{as_schemes, entry_name, parent_path};
+use crate::file_system::{Stat, StatType};
 use crate::time::since_epoch_secs;
 
 #[repr(transparent)]
@@ -22,7 +22,6 @@ impl Debug for MemoryDir {
         f.write_fmt(format_args!("{entry:#?}"))
     }
 }
-
 
 impl MemoryDir {
     #[inline(always)]
@@ -185,7 +184,7 @@ impl MemoryDir {
 
         let name = &path[0];
         let entry = self.read_entry(name)?;
-        if path.len() == 1  {
+        if path.len() == 1 {
             return Some(entry);
         }
 
@@ -337,9 +336,6 @@ mod tests {
         root.write_file("dir/b.txt", b"hello");
         let mut files = root.read(".").unwrap().dir_ref().unwrap().all_files();
         files.sort();
-        assert_eq!(
-            files,
-            vec!["a.txt", "dir/b.txt"]
-        );
+        assert_eq!(files, vec!["a.txt", "dir/b.txt"]);
     }
 }
