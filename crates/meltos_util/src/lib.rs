@@ -6,6 +6,7 @@ pub mod fs;
 pub mod hash;
 pub mod wasm;
 pub mod path;
+pub mod data_size;
 
 pub mod macros {
     pub use meltos_macros::*;

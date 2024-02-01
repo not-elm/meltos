@@ -10,6 +10,9 @@ pub type Result<T = ()> = std::result::Result<T, Error>;
 
 #[derive(Error, Debug, AsRefStr)]
 pub enum Error {
+    #[error("server resources are exhausted")]
+    FailedCreatedRoom,
+
     #[error("room not exists")]
     RoomNotExists,
 
@@ -51,6 +54,7 @@ pub enum Error {
 impl Error {
     fn status_code(&self) -> StatusCode {
         match self {
+            Error::FailedCreatedRoom => StatusCode::INTERNAL_SERVER_ERROR,
             Error::ReachedCapacity(_) => StatusCode::TOO_MANY_REQUESTS,
             Error::RoomNotExists => StatusCode::NOT_FOUND,
             Error::Backend(e) => e.status_code(),
@@ -61,7 +65,7 @@ impl Error {
 
     fn category(&self) -> &str {
         match self {
-            Error::RoomNotExists | Error::ReachedCapacity(_) => "session",
+            Error::FailedCreatedRoom | Error::RoomNotExists | Error::ReachedCapacity(_) => "session",
             Error::ExceedBundleSize { .. } | Error::Tvc(_) => "tvc",
             Error::Backend(e) => e.category(),
             _ => "unknown"

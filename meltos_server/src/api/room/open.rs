@@ -15,6 +15,7 @@ use meltos_util::serde::SerializeJson;
 
 use crate::api::HttpResult;
 use crate::api::room::response_error_exceed_bundle_size;
+use crate::error;
 use crate::room::{Room, Rooms};
 use crate::state::config::AppConfigs;
 
@@ -26,7 +27,11 @@ use crate::state::config::AppConfigs;
 ///
 /// - [`ExceedBundleSize`](crate::error::Error::ExceedBundleSize) : リクエスト時に送信されたバンドルのサイズが上限値を超えた場合
 ///
-#[tracing::instrument(skip(rooms), fields(configs, param), ret, level="INFO")]
+/// ## StatusCode: 500(INTERNAL_SERVER_ERROR)
+///
+/// - [`FailedCreatedRoom`](crate::error::Error::FailedCreatedRoom)  : サーバに十分な空き領域がない場合
+///
+#[tracing::instrument(skip(rooms), fields(configs, param), ret, level = "INFO")]
 pub async fn open<Session, Discussion>(
     State(rooms): State<Rooms>,
     State(configs): State<AppConfigs>,
@@ -36,6 +41,8 @@ pub async fn open<Session, Discussion>(
         Discussion: DiscussionIo + NewDiscussIo + 'static,
         Session: SessionIo + NewSessionIo + Debug + 'static,
 {
+    error_if_cannot_create_room()?;
+
     let bundle_size = param
         .bundle
         .as_ref()
@@ -64,6 +71,18 @@ pub async fn open<Session, Discussion>(
     rooms.insert_room(room, life_time).await;
 
     Ok(response_success_create_room(room_id, user_id, session_id, capacity))
+}
+
+
+/// ストレージの空き容量が5GIB以上ならばルームをたてられる
+fn error_if_cannot_create_room() -> error::Result {
+    let disk = sys_info::disk_info().unwrap();
+    let free_gib = disk.free / 1024 / 1024;
+    if 5 <= free_gib {
+        Ok(())
+    } else {
+        Err(error::Error::FailedCreatedRoom)
+    }
 }
 
 fn response_success_create_room(

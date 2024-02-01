@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 http-body-util = "0.1.0"
-
+sys-info = "0.9.1"
 log = "0.4.20"
 meltos_util = { path = "../crates/meltos_util" }
 meltos = { path = "../crates/meltos" }
