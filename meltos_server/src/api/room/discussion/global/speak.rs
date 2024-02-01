@@ -21,7 +21,7 @@ pub async fn speak(
         from: user_id,
         message: MessageData::DiscussionSpoke(spoke.clone()),
     })
-        .await?;
+        .await;
 
     Ok(spoke.as_success_response())
 }

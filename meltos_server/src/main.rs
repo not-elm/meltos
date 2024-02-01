@@ -14,12 +14,10 @@ use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
 use meltos_backend::discussion::global::sqlite::SqliteDiscussionIo;
 use meltos_backend::session::{NewSessionIo, SessionIo};
 use meltos_backend::session::sqlite::SqliteSessionIo;
-use meltos_util::data_size::{byte_to_gib, byte_to_kib, byte_to_mib};
 
 use crate::state::AppState;
 use crate::state::config::AppConfigs;
 
-mod api;
 mod channel;
 mod error;
 mod middleware;

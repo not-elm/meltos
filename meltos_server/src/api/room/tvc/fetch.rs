@@ -2,6 +2,18 @@ use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
 use crate::middleware::user::SessionUser;
 
+
+/// Room内のTvcリポジトリをバンドル化して取得します。
+///
+/// StatusCode: 200(OK)
+///
+/// - [`Bundle`](meltos_tvc::io::bundle::Bundle)
+///
+///
+/// StatusCode: 500(INTERNAL_SERVER_ERROR)
+///
+/// - [`FailedTvcBody`](meltos::schema::error::FailedTvcBody): Tvc操作が失敗した場合
+///
 #[tracing::instrument]
 pub async fn fetch(SessionRoom(room): SessionRoom, SessionUser(_): SessionUser) -> HttpResult {
     let bundle = room.create_bundle().await?;

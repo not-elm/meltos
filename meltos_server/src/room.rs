@@ -40,9 +40,7 @@ impl Rooms {
         let room_id = room.id.clone();
         tokio::spawn(async move {
             tokio::time::sleep(life_time).await;
-            if let Err(e) = rooms.lock().await.delete(&room_id).await {
-                tracing::error!("{e:?}");
-            }
+            rooms.lock().await.delete(&room_id).await;
         });
 
         let mut rooms = self.0.lock().await;
@@ -55,17 +53,15 @@ pub struct RoomMap(HashMap<RoomId, Room>);
 
 impl RoomMap {
     #[inline(always)]
-    pub async fn delete(&mut self, room_id: &RoomId) -> HttpResult<()> {
+    pub async fn delete(&mut self, room_id: &RoomId) {
         if let Some(room) = self.0.remove(room_id) {
-            let result = room.send_all_users(ChannelMessage {
+            room.send_all_users(ChannelMessage {
                 from: room.owner.clone(),
                 message: MessageData::ClosedRoom,
             })
                 .await;
             room.delete_resource_dir();
-            result?;
         }
-        Ok(())
     }
 
     #[inline(always)]
@@ -149,7 +145,7 @@ impl Room {
     pub async fn send_all_users(
         &self,
         message: ChannelMessage,
-    ) -> std::result::Result<(), Response> {
+    ) {
         let mut channels = self.channels.lock().await;
         let mut next_channels = Vec::with_capacity(channels.len());
         while let Some(mut sender) = channels.pop() {
@@ -161,7 +157,6 @@ impl Room {
             }
         }
         *channels = next_channels;
-        Ok(())
     }
 
     #[inline(always)]

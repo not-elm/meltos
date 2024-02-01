@@ -21,7 +21,7 @@ pub async fn create(
         from: user_id,
         message: MessageData::DiscussionCreated(created.clone()),
     })
-    .await?;
+    .await;
 
     Ok(created.as_success_response())
 }

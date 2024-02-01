@@ -4,7 +4,7 @@ use axum::response::Response;
 use strum::AsRefStr;
 use thiserror::Error;
 
-use meltos::schema::error::{ErrorResponseBodyBase, ExceedBundleSizeBody, ReachedCapacityBody};
+use meltos::schema::error::{ErrorResponseBodyBase, ExceedBundleSizeBody, ExceedRepositorySizeBody, ReachedCapacityBody};
 
 pub type Result<T = ()> = std::result::Result<T, Error>;
 
@@ -37,6 +37,12 @@ pub enum Error {
         limit_bundle_size: usize,
     },
 
+    #[error("tvc repository size to exceed; actual_size: {actual_size}, limit_size: {limit_size}")]
+    ExceedRepositorySize {
+        actual_size: usize,
+        limit_size: usize,
+    },
+
     #[error(transparent)]
     Axum(#[from] axum::Error),
 
@@ -58,7 +64,7 @@ impl Error {
             Error::ReachedCapacity(_) => StatusCode::TOO_MANY_REQUESTS,
             Error::RoomNotExists => StatusCode::NOT_FOUND,
             Error::Backend(e) => e.status_code(),
-            Error::ExceedBundleSize { .. } => StatusCode::PAYLOAD_TOO_LARGE,
+            Error::ExceedRepositorySize {..} | Error::ExceedBundleSize { .. } => StatusCode::PAYLOAD_TOO_LARGE,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
@@ -66,7 +72,7 @@ impl Error {
     fn category(&self) -> &str {
         match self {
             Error::FailedCreatedRoom | Error::RoomNotExists | Error::ReachedCapacity(_) => "session",
-            Error::ExceedBundleSize { .. } | Error::Tvc(_) => "tvc",
+            Error::ExceedRepositorySize {..} | Error::ExceedBundleSize { .. } | Error::Tvc(_) => "tvc",
             Error::Backend(e) => e.category(),
             _ => "unknown"
         }
@@ -91,6 +97,13 @@ impl Error {
     fn into_body(self) -> String {
         let base = self.as_body_base();
         match self {
+            Error::ExceedRepositorySize {limit_size, actual_size} => {
+                serde_json::to_string(&ExceedRepositorySizeBody{
+                    base,
+                    limit_tvc_repository_size: limit_size,
+                    actual_size
+                }).unwrap()
+            }
             Error::ExceedBundleSize { limit_bundle_size, actual_bundle_size } => {
                 serde_json::to_string(&ExceedBundleSizeBody {
                     base,

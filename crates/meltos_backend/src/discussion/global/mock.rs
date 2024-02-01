@@ -1,4 +1,4 @@
-use meltos::discussion::{Discussion, DiscussionBundle, DiscussionMeta, MessageBundle};
+use meltos::discussion::{DiscussionBundle, DiscussionMeta, MessageBundle};
 use meltos::discussion::id::DiscussionId;
 use meltos::discussion::message::{Message, MessageId, MessageText};
 use meltos::room::RoomId;
@@ -176,6 +176,36 @@ struct Messages(ArcHashMap<MessageId, Message>);
 #[derive(Debug, Default, Clone, Deref)]
 struct ReplyDiscussions(ArcHashMap<MessageId, Vec<MessageId>>);
 
+
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+struct Discussion {
+    pub meta: DiscussionMeta,
+    pub messages: Vec<MessageId>,
+}
+
+
+impl Discussion {
+
+    pub fn from_meta(meta: DiscussionMeta) -> Self {
+        Self {
+            meta,
+            messages: Vec::new(),
+        }
+    }
+}
+
+impl Discussion {
+    pub fn new(title: String, creator: UserId) -> Self {
+        Self {
+            meta: DiscussionMeta {
+                title,
+                creator,
+                id: DiscussionId::new(),
+            },
+            messages: Vec::new(),
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

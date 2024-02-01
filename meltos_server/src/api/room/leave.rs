@@ -9,6 +9,14 @@ use crate::middleware::room::SessionRoom;
 use crate::middleware::user::SessionUser;
 use crate::room::Rooms;
 
+
+/// Roomから退出します。
+///
+/// - ルームクライアントからのリクエストの場合、ユーザー全員に[`Left`](meltos::schema::room::Left)が送信されます。
+/// - ルームオーナーからのリクエストの場合、ルームは閉じられユーザー全員に[`ClosedRoom`]が送信されます。
+///
+/// ## StatusCode:
+///
 pub async fn leave(
     State(rooms): State<Rooms>,
     SessionRoom(room): SessionRoom,
@@ -18,7 +26,7 @@ pub async fn leave(
         let mut rooms = rooms.lock().await;
         let room_id = room.id.clone();
         drop(room);
-        rooms.delete(&room_id).await?;
+        rooms.delete(&room_id).await;
         Ok(Response::default())
     } else {
         room.leave(user_id.clone()).await?;
@@ -30,7 +38,7 @@ pub async fn leave(
             from: user_id,
             message: MessageData::Left(left.clone()),
         })
-            .await?;
+            .await;
         Ok(left.as_success_response())
     }
 }

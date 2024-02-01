@@ -21,7 +21,7 @@ pub async fn reply(
         from: user_id,
         message: MessageData::DiscussionReplied(replied.clone()),
     })
-        .await?;
+        .await;
 
     Ok(replied.as_success_response())
 }

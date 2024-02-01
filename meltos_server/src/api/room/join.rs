@@ -45,7 +45,7 @@ pub async fn join(SessionRoom(room): SessionRoom, Json(join): Json<Join>) -> Htt
         },
         from: user_id,
     })
-        .await?;
+        .await;
 
     Ok(joined.as_success_response())
 }

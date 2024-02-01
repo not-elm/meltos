@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::discussion::id::DiscussionId;
@@ -35,6 +36,19 @@ pub struct ExceedBundleSizeBody {
 }
 
 
+/// RoomのTvcリポジトリのサイズが上限値を超えた場合
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
+pub struct ExceedRepositorySizeBody {
+    #[serde(flatten)]
+    pub base: ErrorResponseBodyBase,
+
+    /// サーバ側で設定されたバンドルサイズの上限値
+    pub limit_tvc_repository_size: usize,
+
+    /// リクエスト時に送信されたバンドルのサイズ
+    pub actual_size: usize,
+}
+
 
 /// ルームの定員に達したことを表します。
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
@@ -67,3 +81,8 @@ pub struct MessageNotExistsBody {
     /// リクエスト時に送信された返信先のメッセージId
     pub message_id: MessageId,
 }
+
+
+/// サーバ内のTvc操作が失敗した場合に発生します。
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
+pub struct FailedTvcBody(ErrorResponseBodyBase);

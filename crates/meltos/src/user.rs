@@ -5,9 +5,11 @@ use meltos_tvc::branch::BranchName;
 use meltos_util::impl_string_new_type;
 use meltos_util::macros::{Display, Sha1};
 
+
+/// ルームユーザーのID
 #[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]
-#[derive(Eq, PartialEq, Debug, Serialize, Deserialize, Clone, Hash, Sha1)]
+#[derive(Eq, PartialEq, Debug, Serialize, Deserialize, Clone, Hash)]
 pub struct UserId(pub String);
 impl_string_new_type!(UserId);
 
@@ -36,6 +38,8 @@ impl From<UserId> for BranchName{
     }
 }
 
+
+/// [`UserId`]に紐づくRoomのセッションID
 #[wasm_bindgen(getter_with_clone)]
 #[repr(transparent)]
 #[derive(Eq, PartialEq, Debug, Serialize, Deserialize, Clone, Hash, Display, Sha1)]

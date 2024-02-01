@@ -13,6 +13,19 @@ pub struct Param {
     discussion_id: DiscussionId,
 }
 
+
+/// ディスカッションを削除します。
+///
+/// # Errors
+///
+/// ## StatusCode: 200(OK)
+///
+/// - [`Closed`](meltos::schema::discussion::global::Closed)
+///
+/// ## StatusCode: 500(INTERNAL_SERVER_ERROR)
+///
+/// -
+///
 #[tracing::instrument]
 pub async fn close(
     SessionRoom(room): SessionRoom,
@@ -27,7 +40,7 @@ pub async fn close(
         from: user_id,
         message: MessageData::DiscussionClosed(closed.clone()),
     })
-        .await?;
+        .await;
 
     Ok(closed.as_success_response())
 }

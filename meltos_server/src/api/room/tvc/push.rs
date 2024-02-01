@@ -13,8 +13,23 @@ use crate::middleware::room::SessionRoom;
 use crate::middleware::user::SessionUser;
 use crate::state::config::AppConfigs;
 
+/// Room内のTvcリポジトリをバンドル化して取得します。
 ///
-/// * save pushed data related to commits.
+/// # Errors
+///
+/// ## StatusCode: 200(OK)
+///
+/// - empty
+///
+/// ## StatusCode: 413(PAYLOAD_TOO_LARGE)
+///
+/// - [`ExceedBundleSizeBody`](meltos::schema::error::ExceedBundleSizeBody) : リクエスト時に送信されたバンドルのサイズが上限値を超えた場合
+/// - [`ExceedRepositorySizeBody`](meltos::schema::error::ExceedRepositorySizeBody) : RoomのTvcリポジトリのサイズが上限値を超えた場合
+///
+/// ## StatusCode: 500(INTERNAL_SERVER_ERROR)
+///
+/// - [`FailedTvcBody`](meltos::schema::error::FailedTvcBody): Tvc操作が失敗した場合
+///
 #[tracing::instrument]
 pub async fn push(
     State(configs): State<AppConfigs>,
@@ -45,7 +60,7 @@ pub async fn push(
         from: user_id,
         message: MessageData::Pushed(bundle),
     })
-        .await?;
+        .await;
     Ok(Response::default())
 }
 

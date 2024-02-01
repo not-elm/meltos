@@ -23,7 +23,7 @@ use crate::state::config::AppConfigs;
 ///
 /// # Errors
 ///
-/// ## StatusCode: 400(BAD_REQUEST)
+/// ## StatusCode: 413(PAYLOAD_TOO_LARGE)
 ///
 /// - [`ExceedBundleSize`](crate::error::Error::ExceedBundleSize) : リクエスト時に送信されたバンドルのサイズが上限値を超えた場合
 ///
