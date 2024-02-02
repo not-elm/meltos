@@ -17,6 +17,7 @@ use meltos_util::macros::Deref;
 
 use crate::api::HttpResult;
 use crate::error;
+use crate::room::channel::{Channels, WebsocketSender};
 
 pub mod channel;
 
@@ -36,6 +37,7 @@ impl Rooms {
             if let Err(e) = rooms.lock().await.delete(&room_id).await {
                 tracing::error!("{e:?}");
             }
+            tracing::info!("TIMEOUT LIFE CYCLE: Room {room_id} was deleted");
         });
 
         let mut rooms = self.0.lock().await;
@@ -59,6 +61,8 @@ impl Rooms {
                 return;
             };
             if !room.is_connecting_owner().await {
+                drop(room);
+                tracing::debug!("room owner timeout connected channel room_id: {room_id}");
                 if let Err(e) = rooms.delete(&room_id).await {
                     tracing::error!("{e:?}");
                 }
@@ -80,6 +84,7 @@ impl RoomMap {
             })
                 .await;
             room.delete_resource_dir();
+
             result?;
         }
         Ok(())
@@ -95,7 +100,8 @@ impl RoomMap {
     }
 }
 
-type ChannelMap = HashMap<UserId, Box<dyn ChannelMessageSendable<Error=error::Error>>>;
+
+
 
 #[derive(Clone)]
 pub struct Room {
@@ -104,7 +110,7 @@ pub struct Room {
     pub session: Arc<dyn SessionIo>,
     wait_users: Arc<Mutex<HashSet<UserId>>>,
     capacity: u64,
-    channels: Arc<Mutex<ChannelMap>>,
+    channels: Channels,
 }
 
 impl Room {
@@ -118,7 +124,7 @@ impl Room {
             id: room_id.clone(),
             owner: owner.clone(),
             capacity,
-            channels: Arc::new(Mutex::new(HashMap::new())),
+            channels: Channels::default(),
             session: Arc::new(
                 Session::new(room_id)
                     .map_err(|e| error::Error::FailedCreateSessionIo(e.to_string()))?,
@@ -169,17 +175,21 @@ impl Room {
 
     pub async fn insert_channel(
         &self,
-        channel: impl ChannelMessageSendable<Error=error::Error> + 'static,
+        channel: WebsocketSender,
     ) {
-        let mut channels = self.channels.lock().await;
-        channels.insert(channel.user_id().clone(), Box::new(channel));
+        self.channels.insert_channel(channel).await
     }
 
     #[inline(always)]
     pub async fn send_request(&self, request: UserRequest) -> HttpResult<()> {
-        let mut channels = self.channels.lock().await;
-        let channel = channels.get_mut(&self.owner).ok_or_else(|| crate::error::Error::RoomOwnerDisconnected(self.id.clone()))?;
-        if let Err(_) = channel.send_request(request).await {
+        let mut channels = self.channels.0.lock().await;
+        tracing::debug!("{:?}", channels.keys());
+
+        let channel = channels.get_mut(&self.owner).ok_or_else(|| {
+            tracing::error!("NOT FOUND!");
+            crate::error::Error::RoomOwnerDisconnected(self.id.clone())
+        })?;
+        if channel.send_request(request).await.is_err() {
             drop(channels);
             self
                 .send_all_users(ResponseMessage {
@@ -191,34 +201,25 @@ impl Room {
         Ok(())
     }
 
-    #[inline(always)]
-    pub async fn send_to(&self, to: &UserId, message: ResponseMessage) -> HttpResult<()> {
-        let mut channels = self.channels.lock().await;
-        let channel = channels.get_mut(to).ok_or_else(|| crate::error::Error::UserNotExists(self.id.clone(), to.clone()))?;
-        if (channel.send_response(message).await).is_err() {
-            channels.remove(to);
-        }
-        Ok(())
-    }
 
     #[inline(always)]
     pub async fn send_all_users(
         &self,
         message: ResponseMessage,
     ) -> std::result::Result<(), Response> {
-        let mut channels = self.channels.lock().await;
-        let mut next_channels: ChannelMap = HashMap::with_capacity(channels.len());
-        let keys: Vec<UserId> = channels.keys().cloned().collect();
-        for user_id in keys {
-            let Some(mut sender) = next_channels.remove(&user_id) else { continue; };
-            if let Err(e) = sender.send_response(message.clone()).await {
-                // 失敗した場合は切断されたと判断し、ログだけ出力してchannelsから消す
-                tracing::debug!("{e}");
-            } else {
-                next_channels.insert(user_id, sender);
-            }
-        }
-        *channels = next_channels;
+        // let mut channels = self.channels.lock().await;
+        // let mut next_channels: ChannelMap = HashMap::with_capacity(channels.len());
+        // let keys: Vec<UserId> = channels.keys().cloned().collect();
+        // for user_id in keys {
+        //     let Some(mut sender) = next_channels.remove(&user_id) else { continue; };
+        //     if let Err(e) = sender.send_response(message.clone()).await {
+        //         // 失敗した場合は切断されたと判断し、ログだけ出力してchannelsから消す
+        //         tracing::debug!("{e}");
+        //     } else {
+        //         next_channels.insert(user_id, sender);
+        //     }
+        // }
+        // *channels = next_channels;
         Ok(())
     }
 
@@ -228,15 +229,18 @@ impl Room {
     }
 
     pub fn delete_resource_dir(self) {
+        let dir = room_resource_dir(&self.id);
+        let room_id = self.id;
         drop(self.session);
 
-        let dir = room_resource_dir(&self.id);
         if dir.exists() {
             if let Err(e) = std::fs::remove_dir_all(dir) {
                 log::error!(
                     "failed delete room resource dir \nroom_id : {} \nmessage: {e}",
-                    self.id
+                    room_id
                 );
+            } else {
+                tracing::debug!("removed database; room_id: {room_id}");
             }
         }
     }

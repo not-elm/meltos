@@ -1,3 +1,4 @@
+use std::env;
 use std::fmt::Debug;
 use std::net::SocketAddr;
 
@@ -25,26 +26,32 @@ mod room;
 mod state;
 
 fn tracing_init() {
-    let info_writer = tracing_appender::rolling::minutely("./log/info", "info.log");
-    let error_writer = tracing_appender::rolling::minutely("./log/error", "error.log");
-
-    let info_layer = tracing_subscriber::fmt::Layer::default()
-        .with_ansi(false)
-        .with_writer(info_writer.with_max_level(Level::INFO));
-    let error_layer = tracing_subscriber::fmt::Layer::default()
-        .with_ansi(false)
-        .with_writer(error_writer.with_max_level(Level::WARN));
-
-    tracing_subscriber::registry()
-        .with(console_subscriber::spawn())
-        .with(info_layer)
-        .with(error_layer)
-        .init();
+    // let info_writer = tracing_appender::rolling::minutely("./log/info", "info.log");
+    // let error_writer = tracing_appender::rolling::minutely("./log/error", "error.log");
+    //
+    // let info_layer = tracing_subscriber::fmt::Layer::default()
+    //     .with_ansi(false)
+    //     .with_writer(info_writer.with_max_level(Level::INFO));
+    // let error_layer = tracing_subscriber::fmt::Layer::default()
+    //     .with_ansi(false)
+    //     .with_writer(error_writer.with_max_level(Level::WARN));
+    // let console_layer = tracing_subscriber::fmt::Layer::default()
+    //     .with_ansi(false)
+    //     .with_writer(console_subscriber::ConsoleLayer::new());
+    //
+    // tracing_subscriber::registry()
+    //     .with(console_layer)
+    //     .with(info_layer)
+    //     .with(error_layer)
+    //     .init();
+    console_subscriber::init();
 }
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    env::set_var("RUST_LOG", "DEBUG");
     tracing_init();
+
     let listener = tokio::net::TcpListener::bind(SocketAddr::from(([0, 0, 0, 0], 3000))).await?;
 
     axum::serve(listener, app::<SqliteSessionIo, SqliteDiscussionIo>()).await?;

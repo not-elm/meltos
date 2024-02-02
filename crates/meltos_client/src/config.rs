@@ -1,16 +1,9 @@
-use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use meltos::room::RoomId;
 use meltos::schema::room::Opened;
 use meltos::user::{SessionId, UserId};
-
-use crate::error;
-
-#[cfg(feature = "wasm")]
-mod node;
-pub mod tmp_file;
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -42,9 +35,3 @@ impl From<Opened> for SessionConfigs {
     }
 }
 
-#[async_trait]
-pub trait SessionConfigsIo {
-    async fn save(&self, session_configs: SessionConfigs) -> error::Result;
-
-    async fn load(&self) -> error::Result<SessionConfigs>;
-}

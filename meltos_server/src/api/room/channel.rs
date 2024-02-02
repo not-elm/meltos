@@ -1,14 +1,7 @@
-use std::convert::Infallible;
-use std::time::Duration;
 use axum::extract::{State, WebSocketUpgrade};
 use axum::extract::ws::Message;
-use axum::response::{Response, Sse};
-use axum::response::sse::Event;
-use futures::{Stream, stream, StreamExt};
-use tokio::io::BufStream;
-use tokio_stream::wrappers::BroadcastStream;
-use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
-use tokio_tungstenite::tungstenite::handshake::headers;
+use axum::response::Response;
+use futures::StreamExt;
 
 use crate::middleware::room::SessionRoom;
 use crate::middleware::user::SessionUser;
@@ -29,18 +22,18 @@ pub async fn channel(
             let (tx, mut rx) = socket.split();
             let sender = WebsocketSender::new(user_id.clone(), tx);
             room.insert_channel(sender).await;
-            while let Some(Ok(message)) = rx.next().await {
-                if matches!(message, Message::Close(_)) {
-                    break;
-                }
-            }
-            if room.owner == user_id {
-                if let Err(e) = rooms.delete(&room.id).await {
-                    tracing::error!("{e:?}");
-                }
-            } else if let Err(e) = room.leave(user_id).await {
-                tracing::error!("{e}");
-            }
+            // while let Some(Ok(message)) = rx.next().await {
+            //     if matches!(message, Message::Close(_)) {
+            //         break;
+            //     }
+            // }
+            // if room.owner == user_id {
+            //     if let Err(e) = rooms.delete(&room.id).await {
+            //         tracing::error!("{e:?}");
+            //     }
+            // } else if let Err(e) = room.leave(user_id).await {
+            //     tracing::error!("{e}");
+            // }
         }
     })
 }

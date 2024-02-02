@@ -10,7 +10,7 @@ pub struct UserRequest {
     pub from: UserId,
 
     /// リクエスト本文
-    pub message: RequestMessage,
+    pub data: RequestMessage,
 }
 
 
@@ -19,7 +19,7 @@ pub struct UserRequest {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RequestMessage {
     /// リクエストの種別
-    pub request_type: String,
+    pub name: String,
 
     /// リクエストのデータ
     /// Json形式で表され、リクエストにより構造が異なる

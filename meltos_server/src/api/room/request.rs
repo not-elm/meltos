@@ -16,7 +16,7 @@ pub async fn request(
     room
         .send_request(UserRequest {
             from: user_id,
-            message,
+            data: message,
         })
         .await?;
     Ok(Response::default())

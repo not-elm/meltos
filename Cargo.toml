@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/*",
+    "plugins/*",
     "meltos_cli",
     "meltos_server",
 ]

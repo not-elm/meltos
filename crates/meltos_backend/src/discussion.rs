@@ -14,8 +14,7 @@ pub trait NewDiscussIo: Sized {
 
 #[async_trait::async_trait]
 pub trait DiscussionIo: Send + Sync {
-    async fn new_discussion(&self, title: String, creator: UserId)
-                            -> error::Result<DiscussionMeta>;
+    async fn new_discussion(&self, title: String, creator: UserId) -> error::Result<DiscussionMeta>;
 
     async fn speak(
         &self,

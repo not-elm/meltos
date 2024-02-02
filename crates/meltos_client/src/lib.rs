@@ -5,6 +5,5 @@ pub mod http;
 pub mod tvc;
 
 pub mod discussion;
+mod channel;
 
-#[cfg(feature = "wasm")]
-mod wasm;

@@ -18,7 +18,7 @@ pub trait ChannelMessageSendable: Send + Sync {
 
     async fn send_request(&mut self, message: UserRequest) -> std::result::Result<(), Self::Error>;
 
-    async fn send_response(&mut self, message: ResponseMessage) -> std::result::Result<(), Self::Error>;
+    async fn send_response(&mut self, message: &ResponseMessage) -> std::result::Result<(), Self::Error>;
 }
 
 #[async_trait]

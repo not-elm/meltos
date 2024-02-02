@@ -19,6 +19,8 @@ pub struct SqliteDiscussionIo {
     db: Mutex<Connection>,
 }
 
+
+
 impl SqliteDiscussionIo {
     fn lock(&self) -> MutexGuard<Connection> {
         self.db.lock().unwrap()
@@ -87,6 +89,7 @@ impl DiscussionIo for SqliteDiscussionIo {
         title: String,
         creator: UserId,
     ) -> error::Result<DiscussionMeta> {
+
         let db = self.lock();
         let meta = DiscussionMeta::new(DiscussionId::new(), title, creator);
         db.execute(
