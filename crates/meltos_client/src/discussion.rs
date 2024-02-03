@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 
-use meltos::discussion::id::DiscussionId;
-use meltos::discussion::message::Message;
-use meltos::discussion::DiscussionMeta;
-use meltos::schema::discussion::global::{Replied, Reply, Speak, Spoke};
+use meltos_core::discussion::id::DiscussionId;
+use meltos_core::discussion::message::Message;
+use meltos_core::discussion::DiscussionMeta;
+use meltos_core::schema::discussion::global::{Replied, Reply, Speak, Spoke};
 
 use crate::config::SessionConfigs;
 use crate::error;

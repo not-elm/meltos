@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use clap::Args;
 
-use meltos::user::UserId;
+use meltos_core::user::UserId;
 use meltos_client::tvc::TvcClient;
 use meltos_tvc::file_system::std_fs::StdFileSystem;
 

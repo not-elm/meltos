@@ -1,8 +1,8 @@
-use meltos::discussion::id::DiscussionId;
-use meltos::discussion::message::{Message, MessageId, MessageText};
-use meltos::discussion::{DiscussionBundle, DiscussionMeta};
-use meltos::room::RoomId;
-use meltos::user::UserId;
+use meltos_core::discussion::id::DiscussionId;
+use meltos_core::discussion::message::{Message, MessageId, MessageText};
+use meltos_core::discussion::{DiscussionBundle, DiscussionMeta};
+use meltos_core::room::RoomId;
+use meltos_core::user::UserId;
 
 use crate::error;
 

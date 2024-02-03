@@ -1,4 +1,4 @@
-use meltos::room::RoomId;
+use meltos_core::room::RoomId;
 use std::path::{Path, PathBuf};
 
 pub fn create_resource_dir(room_id: &RoomId) -> std::io::Result<()> {

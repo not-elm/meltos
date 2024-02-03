@@ -57,7 +57,7 @@ where
     }
 
     async fn check_branch_not_initialized(&self) -> error::Result {
-        if self.fs.all_files_in(".meltos").await?.is_empty() {
+        if self.fs.all_files_in(".meltos_core").await?.is_empty() {
             Ok(())
         } else {
             Err(error::Error::RepositoryAlreadyInitialized)
@@ -121,7 +121,7 @@ mod tests {
 
         let head_commit_hash = read_head_commit_hash(fs.clone()).await;
         let trace_tree_hash = fs
-            .read_file(&format!(".meltos/traces/{head_commit_hash}"))
+            .read_file(&format!(".meltos_core/traces/{head_commit_hash}"))
             .await
             .unwrap();
         assert_eq!(

@@ -147,7 +147,7 @@ pub trait FileSystem: Send + Sync {
 
     /// TVCのデータ構造が既に存在するかを検査します。
     async fn project_already_initialized(&self) -> std::io::Result<bool> {
-        let files = self.all_files_in("./.meltos").await?;
+        let files = self.all_files_in("./.meltos_core").await?;
         Ok(!files.is_empty())
     }
 }
@@ -239,7 +239,7 @@ pub trait FileSystem {
 
     /// TVCのデータ構造が既に存在するかを検査します。
     async fn project_already_initialized(&self) -> std::io::Result<bool> {
-        let files = self.all_files_in("./.meltos").await?;
+        let files = self.all_files_in("./.meltos_core").await?;
         Ok(!files.is_empty())
     }
 }

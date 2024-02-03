@@ -1,8 +1,8 @@
-use meltos::discussion::id::DiscussionId;
-use meltos::discussion::message::{Message, MessageId, MessageText};
-use meltos::discussion::{DiscussionBundle, DiscussionMeta, MessageBundle};
-use meltos::room::RoomId;
-use meltos::user::UserId;
+use meltos_core::discussion::id::DiscussionId;
+use meltos_core::discussion::message::{Message, MessageId, MessageText};
+use meltos_core::discussion::{DiscussionBundle, DiscussionMeta, MessageBundle};
+use meltos_core::room::RoomId;
+use meltos_core::user::UserId;
 use meltos_util::macros::Deref;
 
 use crate::discussion::{DiscussionIo, NewDiscussIo};
@@ -194,9 +194,9 @@ impl Discussion {
 
 #[cfg(test)]
 mod tests {
-    use meltos::discussion::id::DiscussionId;
-    use meltos::discussion::message::{MessageId, MessageText};
-    use meltos::user::UserId;
+    use meltos_core::discussion::id::DiscussionId;
+    use meltos_core::discussion::message::{MessageId, MessageText};
+    use meltos_core::user::UserId;
 
     use crate::discussion::global::mock::MockGlobalDiscussionIo;
     use crate::discussion::DiscussionIo;

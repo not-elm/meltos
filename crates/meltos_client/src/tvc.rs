@@ -2,8 +2,8 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use meltos::room::RoomId;
-use meltos::user::UserId;
+use meltos_core::room::RoomId;
+use meltos_core::user::UserId;
 use meltos_tvc::branch::BranchName;
 use meltos_tvc::file_system::{FilePath, FileSystem};
 use meltos_tvc::io::atomic::head::HeadIo;
@@ -48,7 +48,7 @@ pub struct BranchCommitMeta {
     pub commits: Vec<CommitMeta>,
 }
 
-pub const BASE: &str = "http://158.101.90.235:3000";
+pub const BASE: &str = "http://localhost:3000";
 
 #[derive(Clone)]
 pub struct TvcClient<Fs: FileSystem + Clone> {

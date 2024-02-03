@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 use clap::Args;
 
-use meltos::discussion::id::DiscussionId;
-use meltos::discussion::message::{MessageId, MessageText};
-use meltos::schema::discussion::global::Reply;
+use meltos_core::discussion::id::DiscussionId;
+use meltos_core::discussion::message::{MessageId, MessageText};
+use meltos_core::schema::discussion::global::Reply;
 use meltos_client::discussion::DiscussionClient;
 
 use crate::commands::{load_configs, CommandExecutable};

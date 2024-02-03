@@ -4,11 +4,11 @@ use axum::response::Response;
 use strum::AsRefStr;
 use thiserror::Error;
 
-use meltos::discussion::id::DiscussionId;
-use meltos::discussion::message::MessageId;
-use meltos::room::RoomId;
-use meltos::schema::error::{DiscussionNotExistsBody, ErrorResponseBodyBase, MessageNotExistsBody};
-use meltos::user::UserId;
+use meltos_core::discussion::id::DiscussionId;
+use meltos_core::discussion::message::MessageId;
+use meltos_core::room::RoomId;
+use meltos_core::schema::error::{DiscussionNotExistsBody, ErrorResponseBodyBase, MessageNotExistsBody};
+use meltos_core::user::UserId;
 
 pub type Result<T = ()> = std::result::Result<T, Error>;
 
@@ -112,8 +112,8 @@ impl From<Error> for Response {
 mod tests {
     use axum::http::StatusCode;
 
-    use meltos::discussion::id::DiscussionId;
-    use meltos::user::UserId;
+    use meltos_core::discussion::id::DiscussionId;
+    use meltos_core::user::UserId;
 
     use crate::error;
 

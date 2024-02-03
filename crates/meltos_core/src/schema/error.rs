@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use crate::discussion::id::DiscussionId;
 use crate::discussion::message::MessageId;
 
-/// meltos serverに対するリクエストが失敗した場合のエラーレスポンスボディを表します。
+/// meltos_core serverに対するリクエストが失敗した場合のエラーレスポンスボディを表します。
 ///
 /// この構造体は全てのエラーの共通のフィールドを表しており、エラーの種別によってはさらに追加のフィールドが設定されている場合があります。
 #[wasm_bindgen(getter_with_clone)]

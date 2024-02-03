@@ -2,9 +2,9 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use meltos::room::RoomId;
-use meltos::schema::room::Opened;
-use meltos::user::{SessionId, UserId};
+use meltos_core::room::RoomId;
+use meltos_core::schema::room::Opened;
+use meltos_core::user::{SessionId, UserId};
 
 use crate::error;
 

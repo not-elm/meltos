@@ -1,5 +1,5 @@
-use meltos::room::RoomId;
-use meltos::user::UserId;
+use meltos_core::room::RoomId;
+use meltos_core::user::UserId;
 use meltos_tvc::branch::BranchName;
 use meltos_tvc::file_system::FileSystem;
 use meltos_tvc::io::atomic::head::HeadIo;

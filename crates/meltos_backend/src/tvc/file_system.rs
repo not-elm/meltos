@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf, StripPrefixError};
 
 use async_trait::async_trait;
 
-use meltos::room::RoomId;
+use meltos_core::room::RoomId;
 use meltos_tvc::file_system::std_fs::StdFileSystem;
 use meltos_tvc::file_system::{FileSystem, Stat};
 use meltos_util::path::AsUri;
@@ -95,7 +95,7 @@ impl<Fs: FileSystem> FileSystem for BackendFileSystem<Fs> {
 
 #[cfg(test)]
 mod tests {
-    use meltos::room::RoomId;
+    use meltos_core::room::RoomId;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
     use meltos_tvc::file_system::FileSystem;
 

@@ -5,8 +5,8 @@ use async_trait::async_trait;
 use rusqlite::{ffi, params, Connection};
 use tokio::sync::Mutex;
 
-use meltos::room::RoomId;
-use meltos::user::{SessionId, UserId};
+use meltos_core::room::RoomId;
+use meltos_core::user::{SessionId, UserId};
 use meltos_util::fs::delete_dir;
 
 use crate::error;
@@ -119,8 +119,8 @@ mod tests {
 
     use futures::FutureExt;
 
-    use meltos::room::RoomId;
-    use meltos::user::{SessionId, UserId};
+    use meltos_core::room::RoomId;
+    use meltos_core::user::{SessionId, UserId};
 
     use crate::error;
     use crate::session::sqlite::{delete_database, SqliteSessionIo};

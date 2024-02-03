@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 serde_json = { workspace = true }
 async-trait = { workspace = true }
-meltos = { path = "../crates/meltos" }
+meltos_core = { path = "../crates/meltos_core" }
 meltos_tvc = { path = "../crates/meltos_tvc" }
 meltos_client = { path = "../crates/meltos_client" }
 tokio = { version = "1.35.1", features = ["full"] }

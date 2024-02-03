@@ -4,11 +4,11 @@ use std::sync::{Mutex, MutexGuard};
 use async_trait::async_trait;
 use rusqlite::{params, Connection, Transaction};
 
-use meltos::discussion::id::DiscussionId;
-use meltos::discussion::message::{Message, MessageId, MessageText};
-use meltos::discussion::{DiscussionBundle, DiscussionMeta, MessageBundle};
-use meltos::room::RoomId;
-use meltos::user::UserId;
+use meltos_core::discussion::id::DiscussionId;
+use meltos_core::discussion::message::{Message, MessageId, MessageText};
+use meltos_core::discussion::{DiscussionBundle, DiscussionMeta, MessageBundle};
+use meltos_core::room::RoomId;
+use meltos_core::user::UserId;
 
 use crate::discussion::{DiscussionIo, NewDiscussIo};
 use crate::error;
@@ -375,11 +375,11 @@ mod tests {
 
     use futures::FutureExt;
 
-    use meltos::discussion::id::DiscussionId;
-    use meltos::discussion::message::{MessageId, MessageText};
-    use meltos::discussion::MessageBundle;
-    use meltos::room::RoomId;
-    use meltos::user::UserId;
+    use meltos_core::discussion::id::DiscussionId;
+    use meltos_core::discussion::message::{MessageId, MessageText};
+    use meltos_core::discussion::MessageBundle;
+    use meltos_core::room::RoomId;
+    use meltos_core::user::UserId;
 
     use crate::discussion::global::sqlite::{
         read_all_messages, read_message_ids_in, read_reply_message_ids_in, SqliteDiscussionIo,

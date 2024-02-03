@@ -6,11 +6,11 @@ use reqwest_wasm::{header, Client, Response};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use meltos::room::RoomId;
-use meltos::schema::discussion::global::{Create, Created, Replied, Reply, Speak, Spoke};
-use meltos::schema::room::Opened;
-use meltos::schema::room::{Join, Joined, Open};
-use meltos::user::UserId;
+use meltos_core::room::RoomId;
+use meltos_core::schema::discussion::global::{Create, Created, Replied, Reply, Speak, Spoke};
+use meltos_core::schema::room::Opened;
+use meltos_core::schema::room::{Join, Joined, Open};
+use meltos_core::user::UserId;
 use meltos_tvc::io::bundle::Bundle;
 use meltos_tvc::operation::push::Pushable;
 

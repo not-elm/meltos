@@ -3,8 +3,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use async_trait::async_trait;
 
-use meltos::room::RoomId;
-use meltos::user::{SessionId, UserId};
+use meltos_core::room::RoomId;
+use meltos_core::user::{SessionId, UserId};
 
 use crate::error;
 use crate::session::{NewSessionIo, SessionIo};
@@ -110,7 +110,7 @@ impl SessionIo for MockSessionIo {
 
 #[cfg(test)]
 mod tests {
-    use meltos::user::UserId;
+    use meltos_core::user::UserId;
 
     use crate::error::Error;
     use crate::session::mock::MockSessionIo;

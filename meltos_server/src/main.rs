@@ -26,21 +26,22 @@ mod room;
 mod state;
 
 fn tracing_init() {
-    let info_writer = tracing_appender::rolling::minutely("./log/info", "info.log");
-    let error_writer = tracing_appender::rolling::minutely("./log/error", "error.log");
-
-    let info_layer = tracing_subscriber::fmt::Layer::default()
-        .with_ansi(false)
-        .with_writer(info_writer.with_max_level(Level::INFO));
-    let error_layer = tracing_subscriber::fmt::Layer::default()
-        .with_ansi(false)
-        .with_writer(error_writer.with_max_level(Level::WARN));
-
-    tracing_subscriber::registry()
-        .with(console_subscriber::spawn())
-        .with(info_layer)
-        .with(error_layer)
-        .init();
+    // let info_writer = tracing_appender::rolling::minutely("./log/info", "info.log");
+    // let error_writer = tracing_appender::rolling::minutely("./log/error", "error.log");
+    //
+    // let info_layer = tracing_subscriber::fmt::Layer::default()
+    //     .with_ansi(false)
+    //     .with_writer(info_writer.with_max_level(Level::INFO));
+    // let error_layer = tracing_subscriber::fmt::Layer::default()
+    //     .with_ansi(false)
+    //     .with_writer(error_writer.with_max_level(Level::WARN));
+    //
+    // tracing_subscriber::registry()
+    //     .with(console_subscriber::spawn())
+    //     .with(info_layer)
+    //     .with(error_layer)
+    //     .init();
+    console_subscriber::init()
 }
 
 #[tokio::main]
