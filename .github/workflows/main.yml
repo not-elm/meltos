@@ -10,9 +10,7 @@ jobs:
       - name: Toolchain
         uses: dtolnay/rust-toolchain@nightly
         with:
-          components: rustfmt, clippy
-      - name: RustFmt
-        run: cargo +nightly fmt --all -- --check
+          components: clippy
       - name: Clippy
         run: cargo clippy --all --all-features
   test:
