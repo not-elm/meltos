@@ -1,7 +1,7 @@
 use axum::Json;
 
-use meltos::channel::{ChannelMessage, MessageData};
-use meltos::schema::discussion::global::Create;
+use meltos_core::channel::{ChannelMessage, MessageData};
+use meltos_core::schema::discussion::global::Create;
 
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
@@ -32,8 +32,8 @@ mod tests {
     use http_body_util::BodyExt;
     use tower::ServiceExt;
 
-    use meltos::schema::discussion::global::Created;
-    use meltos::schema::room::Opened;
+    use meltos_core::schema::discussion::global::Created;
+    use meltos_core::schema::room::Opened;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
 
     use crate::api::test_util::{create_discussion_request, http_open_room, mock_app};

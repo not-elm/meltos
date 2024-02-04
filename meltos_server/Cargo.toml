@@ -8,7 +8,7 @@ http-body-util = "0.1.0"
 sys-info = "0.9.1"
 log = "0.4.20"
 meltos_util = { path = "../crates/meltos_util" }
-meltos = { path = "../crates/meltos" }
+meltos_core = { path = "../crates/meltos_core" }
 meltos_backend = { path = "../crates/meltos_backend" }
 meltos_tvc = { path = "../crates/meltos_tvc" }
 axum-extra = { version = "0.9.0", features = ["cookie", "typed-routing"] }

@@ -14,10 +14,10 @@ pub async fn sync(SessionRoom(room): SessionRoom, SessionUser(_): SessionUser) -
 mod tests {
     use axum::http::StatusCode;
 
-    use meltos::discussion::{DiscussionBundle, MessageBundle};
-    use meltos::discussion::message::MessageText;
-    use meltos::schema::discussion::global::{Created, Speak, Spoke};
-    use meltos::schema::room::Opened;
+    use meltos_core::discussion::{DiscussionBundle, MessageBundle};
+    use meltos_core::discussion::message::MessageText;
+    use meltos_core::schema::discussion::global::{Created, Speak, Spoke};
+    use meltos_core::schema::room::Opened;
     use meltos_tvc::branch::BranchName;
     use meltos_tvc::file_system::FilePath;
     use meltos_tvc::file_system::memory::MemoryFileSystem;

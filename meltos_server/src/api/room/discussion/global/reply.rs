@@ -1,7 +1,7 @@
 use axum::Json;
 
-use meltos::channel::{ChannelMessage, MessageData};
-use meltos::schema::discussion::global::Reply;
+use meltos_core::channel::{ChannelMessage, MessageData};
+use meltos_core::schema::discussion::global::Reply;
 
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
@@ -30,12 +30,12 @@ pub async fn reply(
 mod tests {
     use axum::http::StatusCode;
 
-    use meltos::discussion::id::DiscussionId;
-    use meltos::discussion::message::{Message, MessageId, MessageText};
-    use meltos::schema::discussion::global::{Created, Reply, Speak};
-    use meltos::schema::error::{DiscussionNotExistsBody, ErrorResponseBodyBase, MessageNotExistsBody};
-    use meltos::schema::room::Opened;
-    use meltos::user::UserId;
+    use meltos_core::discussion::id::DiscussionId;
+    use meltos_core::discussion::message::{Message, MessageId, MessageText};
+    use meltos_core::schema::discussion::global::{Created, Reply, Speak};
+    use meltos_core::schema::error::{DiscussionNotExistsBody, ErrorResponseBodyBase, MessageNotExistsBody};
+    use meltos_core::schema::room::Opened;
+    use meltos_core::user::UserId;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
 
     use crate::api::test_util::{http_call, http_create_discussion, http_open_room, http_reply, http_speak, mock_app, reply_request, ResponseConvertable};

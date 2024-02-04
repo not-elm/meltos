@@ -5,10 +5,10 @@ use axum::extract::State;
 use axum::Json;
 use axum::response::Response;
 
-use meltos::room::RoomId;
-use meltos::schema::room::Open;
-use meltos::schema::room::Opened;
-use meltos::user::{SessionId, UserId};
+use meltos_core::room::RoomId;
+use meltos_core::schema::room::Open;
+use meltos_core::schema::room::Opened;
+use meltos_core::user::{SessionId, UserId};
 use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
 use meltos_backend::session::{NewSessionIo, SessionIo};
 use meltos_util::serde::SerializeJson;
@@ -111,8 +111,8 @@ mod tests {
     use axum::http::StatusCode;
     use tower::ServiceExt;
 
-    use meltos::schema::error::ErrorResponseBodyBase;
-    use meltos::schema::room::Opened;
+    use meltos_core::schema::error::ErrorResponseBodyBase;
+    use meltos_core::schema::room::Opened;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
     use meltos_tvc::io::bundle::{Bundle, BundleObject};
     use meltos_tvc::object::{CompressedBuf, ObjHash};

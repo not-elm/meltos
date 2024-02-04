@@ -11,7 +11,7 @@ use crate::middleware::session::user::SessionUser;
 ///
 /// StatusCode: 500(INTERNAL_SERVER_ERROR)
 ///
-/// - [`FailedTvcBody`](meltos::schema::error::FailedTvcBody): Tvc操作が失敗した場合
+/// - [`FailedTvcBody`](meltos_core::schema::error::FailedTvcBody): Tvc操作が失敗した場合
 ///
 #[tracing::instrument]
 pub async fn fetch(SessionRoom(room): SessionRoom, SessionUser(_): SessionUser) -> HttpResult {
@@ -25,7 +25,7 @@ mod tests {
     use axum::extract::Request;
     use axum::http::StatusCode;
 
-    use meltos::schema::room::Opened;
+    use meltos_core::schema::room::Opened;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
 
     use crate::api::test_util::{http_call, http_fetch, http_open_room, mock_app};

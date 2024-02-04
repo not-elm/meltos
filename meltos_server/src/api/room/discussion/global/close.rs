@@ -1,8 +1,8 @@
 use axum::extract::Query;
 use serde::Deserialize;
 
-use meltos::channel::{ChannelMessage, MessageData};
-use meltos::discussion::id::DiscussionId;
+use meltos_core::channel::{ChannelMessage, MessageData};
+use meltos_core::discussion::id::DiscussionId;
 
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
@@ -20,7 +20,7 @@ pub struct Param {
 ///
 /// ## StatusCode: 200(OK)
 ///
-/// - [`Closed`](meltos::schema::discussion::global::Closed)
+/// - [`Closed`](meltos_core::schema::discussion::global::Closed)
 ///
 /// ## StatusCode: 500(INTERNAL_SERVER_ERROR)
 ///
@@ -53,9 +53,9 @@ mod tests {
     use axum::http::{header, StatusCode};
     use tower::ServiceExt;
 
-    use meltos::discussion::id::DiscussionId;
-    use meltos::schema::error::{DiscussionNotExistsBody, ErrorResponseBodyBase};
-    use meltos::schema::room::Opened;
+    use meltos_core::discussion::id::DiscussionId;
+    use meltos_core::schema::error::{DiscussionNotExistsBody, ErrorResponseBodyBase};
+    use meltos_core::schema::room::Opened;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
 
     use crate::api::test_util::{http_create_discussion, http_discussion_close, http_open_room, mock_app, ResponseConvertable};

@@ -1,7 +1,7 @@
 use axum::Json;
 
-use meltos::channel::{ChannelMessage, MessageData};
-use meltos::schema::room::{Join, Joined};
+use meltos_core::channel::{ChannelMessage, MessageData};
+use meltos_core::schema::room::{Join, Joined};
 
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
@@ -12,19 +12,19 @@ use crate::middleware::room::SessionRoom;
 /// # Errors
 /// ## StatusCode: 400(BAD_REQUEST)
 ///
-/// - [`UserIdConflict`](meltos::schema::error::ErrorResponseBodyBase) : 既に同名のユーザーIDが存在していた場合
+/// - [`UserIdConflict`](meltos_core::schema::error::ErrorResponseBodyBase) : 既に同名のユーザーIDが存在していた場合
 ///
 /// ## StatusCode: 401(UNAUTHORIZED)
 ///
-/// - [`UserUnauthorized`](meltos::schema::error::ErrorResponseBodyBase) : 無効なセッションIDが指定された場合
+/// - [`UserUnauthorized`](meltos_core::schema::error::ErrorResponseBodyBase) : 無効なセッションIDが指定された場合
 ///
 /// ## StatusCode: 404(NOT_FOUND)
 ///
-/// - [`RoomNotFound`](meltos::schema::error::ErrorResponseBodyBase) : Roomが存在しない場合
+/// - [`RoomNotFound`](meltos_core::schema::error::ErrorResponseBodyBase) : Roomが存在しない場合
 ///
 /// ## StatusCode: 429(TOO_MANY_REQUESTS)
 ///
-/// - [`ReachedCapacity`](meltos::schema::error::ReachedCapacityBody) : ルームの定員に達した場合
+/// - [`ReachedCapacity`](meltos_core::schema::error::ReachedCapacityBody) : ルームの定員に達した場合
 ///
 pub async fn join(SessionRoom(room): SessionRoom, Json(join): Json<Join>) -> HttpResult {
     room.error_if_reached_capacity().await?;
@@ -54,10 +54,10 @@ pub async fn join(SessionRoom(room): SessionRoom, Json(join): Json<Join>) -> Htt
 mod tests {
     use axum::http::StatusCode;
 
-    use meltos::room::RoomId;
-    use meltos::schema::error::{ErrorResponseBodyBase, ReachedCapacityBody};
-    use meltos::schema::room::{Joined, Opened};
-    use meltos::user::UserId;
+    use meltos_core::room::RoomId;
+    use meltos_core::schema::error::{ErrorResponseBodyBase, ReachedCapacityBody};
+    use meltos_core::schema::room::{Joined, Opened};
+    use meltos_core::user::UserId;
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::branch::BranchName;

@@ -1,7 +1,7 @@
 use axum::Json;
 
-use meltos::channel::{ChannelMessage, MessageData};
-use meltos::schema::room::{Kick, Kicked, Left};
+use meltos_core::channel::{ChannelMessage, MessageData};
+use meltos_core::schema::room::{Kick, Kicked, Left};
 
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::error;
@@ -15,7 +15,7 @@ use crate::middleware::session::owner::SessionOwner;
 ///
 /// ## StatusCode: 200(OK)
 ///
-/// - [`Kicked`](meltos::schema::room::Kicked) : 正常にユーザーがキックされた場合
+/// - [`Kicked`](meltos_core::schema::room::Kicked) : 正常にユーザーがキックされた場合
 ///
 /// ## StatusCode: 400(BAD_REQUEST)
 ///
@@ -23,7 +23,7 @@ use crate::middleware::session::owner::SessionOwner;
 ///
 /// ## StatusCode: 401(UNAUTHORIZED)
 ///
-/// - [`UserUnauthorized`](meltos::schema::error::ErrorResponseBodyBase) : 無効なセッションIDが指定された場合
+/// - [`UserUnauthorized`](meltos_core::schema::error::ErrorResponseBodyBase) : 無効なセッションIDが指定された場合
 ///
 /// ## StatusCode: 403(FORBIDDEN)
 ///
@@ -58,8 +58,8 @@ pub async fn kick(
 mod tests {
     use tokio_tungstenite::tungstenite::http::StatusCode;
 
-    use meltos::schema::room::{Joined, Kicked, Opened};
-    use meltos::user::UserId;
+    use meltos_core::schema::room::{Joined, Kicked, Opened};
+    use meltos_core::user::UserId;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
 
     use crate::api::test_util::{fetch_request, http_call, http_join, http_kick, http_open_room, kick_request, mock_app, ResponseConvertable};

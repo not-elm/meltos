@@ -1,7 +1,7 @@
 use axum::Json;
 
-use meltos::channel::{ChannelMessage, MessageData};
-use meltos::schema::discussion::global::Speak;
+use meltos_core::channel::{ChannelMessage, MessageData};
+use meltos_core::schema::discussion::global::Speak;
 
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
@@ -29,11 +29,11 @@ pub async fn speak(
 #[cfg(test)]
 mod tests {
     use axum::http::StatusCode;
-    use meltos::discussion::id::DiscussionId;
-    use meltos::discussion::message::MessageText;
-    use meltos::schema::discussion::global::Speak;
-    use meltos::schema::error::{DiscussionNotExistsBody, ErrorResponseBodyBase};
-    use meltos::schema::room::Opened;
+    use meltos_core::discussion::id::DiscussionId;
+    use meltos_core::discussion::message::MessageText;
+    use meltos_core::schema::discussion::global::Speak;
+    use meltos_core::schema::error::{DiscussionNotExistsBody, ErrorResponseBodyBase};
+    use meltos_core::schema::room::Opened;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
 
     use crate::api::test_util::{http_call, http_create_discussion, http_open_room, http_speak, mock_app, ResponseConvertable, speak_request};

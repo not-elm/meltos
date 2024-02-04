@@ -51,13 +51,13 @@ mod test_util {
     use serde::de::DeserializeOwned;
     use tower::{Service, ServiceExt};
 
-    use meltos::discussion::id::DiscussionId;
-    use meltos::room::RoomId;
-    use meltos::schema::discussion::global::{Closed, Create, Created, Replied, Spoke};
-    use meltos::schema::discussion::global::{Reply, Speak};
-    use meltos::schema::room::{Join, Kick, Kicked, Open, RoomBundle};
-    use meltos::schema::room::Opened;
-    use meltos::user::{SessionId, UserId};
+    use meltos_core::discussion::id::DiscussionId;
+    use meltos_core::room::RoomId;
+    use meltos_core::schema::discussion::global::{Closed, Create, Created, Replied, Spoke};
+    use meltos_core::schema::discussion::global::{Reply, Speak};
+    use meltos_core::schema::room::{Join, Kick, Kicked, Open, RoomBundle};
+    use meltos_core::schema::room::Opened;
+    use meltos_core::user::{SessionId, UserId};
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::branch::BranchName;

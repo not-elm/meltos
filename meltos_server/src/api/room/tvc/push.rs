@@ -4,7 +4,7 @@ use axum::http::{Response, StatusCode};
 use axum::Json;
 use serde_json::json;
 
-use meltos::channel::{ChannelMessage, MessageData};
+use meltos_core::channel::{ChannelMessage, MessageData};
 use meltos_tvc::io::bundle::Bundle;
 
 use crate::api::HttpResult;
@@ -23,12 +23,12 @@ use crate::state::config::AppConfigs;
 ///
 /// ## StatusCode: 413(PAYLOAD_TOO_LARGE)
 ///
-/// - [`ExceedBundleSizeBody`](meltos::schema::error::ExceedBundleSizeBody) : リクエスト時に送信されたバンドルのサイズが上限値を超えた場合
-/// - [`ExceedRepositorySizeBody`](meltos::schema::error::ExceedRepositorySizeBody) : RoomのTvcリポジトリのサイズが上限値を超えた場合
+/// - [`ExceedBundleSizeBody`](meltos_core::schema::error::ExceedBundleSizeBody) : リクエスト時に送信されたバンドルのサイズが上限値を超えた場合
+/// - [`ExceedRepositorySizeBody`](meltos_core::schema::error::ExceedRepositorySizeBody) : RoomのTvcリポジトリのサイズが上限値を超えた場合
 ///
 /// ## StatusCode: 500(INTERNAL_SERVER_ERROR)
 ///
-/// - [`FailedTvcBody`](meltos::schema::error::FailedTvcBody): Tvc操作が失敗した場合
+/// - [`FailedTvcBody`](meltos_core::schema::error::FailedTvcBody): Tvc操作が失敗した場合
 ///
 #[tracing::instrument]
 pub async fn push(
@@ -87,9 +87,9 @@ mod tests {
     use axum::response::Response;
     use axum::Router;
 
-    use meltos::room::RoomId;
-    use meltos::schema::room::Opened;
-    use meltos::user::SessionId;
+    use meltos_core::room::RoomId;
+    use meltos_core::schema::room::Opened;
+    use meltos_core::user::SessionId;
     use meltos_tvc::branch::BranchName;
     use meltos_tvc::file_system::FileSystem;
     use meltos_tvc::file_system::memory::MemoryFileSystem;

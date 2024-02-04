@@ -5,7 +5,7 @@ use axum::response::Response;
 use axum_extra::extract::cookie::Cookie;
 use serde_json::json;
 
-use meltos::user::SessionId;
+use meltos_core::user::SessionId;
 
 pub mod owner;
 pub mod user;

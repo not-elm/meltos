@@ -1,8 +1,8 @@
 use axum::extract::State;
 use axum::http::Response;
 
-use meltos::channel::{ChannelMessage, MessageData};
-use meltos::schema::room::Left;
+use meltos_core::channel::{ChannelMessage, MessageData};
+use meltos_core::schema::room::Left;
 
 use crate::api::{AsSuccessResponse, HttpResult};
 use crate::middleware::room::SessionRoom;
@@ -11,7 +11,7 @@ use crate::room::Rooms;
 
 /// Roomから退出します。
 ///
-/// - ルームクライアントからのリクエストの場合、ユーザー全員に[`Left`](meltos::schema::room::Left)が送信されます。
+/// - ルームクライアントからのリクエストの場合、ユーザー全員に[`Left`](meltos_core::schema::room::Left)が送信されます。
 /// - ルームオーナーからのリクエストの場合、ルームは閉じられユーザー全員に[`ClosedRoom`]が送信されます。
 ///
 /// ## StatusCode:
@@ -50,9 +50,9 @@ mod tests {
     use axum::http::{header, StatusCode};
     use axum::response::Response;
 
-    use meltos::room::RoomId;
-    use meltos::schema::room::{Joined, Opened};
-    use meltos::user::{SessionId, UserId};
+    use meltos_core::room::RoomId;
+    use meltos_core::schema::room::{Joined, Opened};
+    use meltos_core::user::{SessionId, UserId};
     use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
     use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
@@ -64,7 +64,7 @@ mod tests {
 
     #[tokio::test]
     async fn delete_room_if_owner_left() -> error::Result {
-        let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
+        let mut app = mock_app();
         let fs = MemoryFileSystem::default();
         let response = http_call(&mut app, open_room_request(fs.clone()).await).await;
         let opened = response.deserialize::<Opened>().await;

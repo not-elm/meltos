@@ -3,8 +3,8 @@ use axum::extract::ws::{Message, WebSocket};
 use futures::stream::SplitSink;
 use futures::SinkExt;
 
-use meltos::channel::{ChannelMessage, ChannelMessageSendable};
-use meltos::user::UserId;
+use meltos_core::channel::{ChannelMessage, ChannelMessageSendable};
+use meltos_core::user::UserId;
 
 pub struct WebsocketSender {
     pub user_id: UserId,

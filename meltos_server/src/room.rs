@@ -8,11 +8,11 @@ use axum::response::Response;
 use serde::Serialize;
 use tokio::sync::Mutex;
 
-use meltos::channel::{ChannelMessage, ChannelMessageSendable, MessageData};
-use meltos::discussion::DiscussionBundle;
-use meltos::room::RoomId;
-use meltos::schema::room::RoomBundle;
-use meltos::user::UserId;
+use meltos_core::channel::{ChannelMessage, ChannelMessageSendable, MessageData};
+use meltos_core::discussion::DiscussionBundle;
+use meltos_core::room::RoomId;
+use meltos_core::schema::room::RoomBundle;
+use meltos_core::user::UserId;
 use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
 use meltos_backend::path::{create_resource_dir, room_resource_dir};
 use meltos_backend::session::{NewSessionIo, SessionIo};

@@ -2,6 +2,7 @@
 members = [
     "crates/*",
     "meltos_cli",
+    "meltos_server"
 ]
 
 resolver = "2"

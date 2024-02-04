@@ -5,7 +5,7 @@ use axum::response::Response;
 use axum_extra::routing::TypedPath;
 use serde::{Deserialize, Serialize};
 
-use meltos::room::RoomId;
+use meltos_core::room::RoomId;
 
 use crate::room::Room;
 use crate::state::AppState;

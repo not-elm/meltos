@@ -1,7 +1,7 @@
-use meltos::discussion::id::DiscussionId;
-use meltos::schema::discussion::global::{Closed, Created, Replied, Spoke};
-use meltos::schema::discussion::global::{Reply, Speak};
-use meltos::user::UserId;
+use meltos_core::discussion::id::DiscussionId;
+use meltos_core::schema::discussion::global::{Closed, Created, Replied, Spoke};
+use meltos_core::schema::discussion::global::{Reply, Speak};
+use meltos_core::user::UserId;
 use meltos_backend::discussion::DiscussionIo;
 
 use crate::error;
