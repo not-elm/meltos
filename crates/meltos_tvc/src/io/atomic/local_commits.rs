@@ -58,7 +58,7 @@ where
 
     #[inline(always)]
     fn file_path(&self, branch_name: &BranchName) -> String {
-        format!(".meltos_core/branches/{branch_name}/LOCAL")
+        format!(".meltos/branches/{branch_name}/LOCAL")
     }
 }
 

@@ -5,7 +5,7 @@ pub type JsResult<T = ()> = std::result::Result<T, JsValue>;
 
 pub type Result<T = ()> = std::result::Result<T, Error>;
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug)]
 pub enum Error {
     #[cfg(feature = "wasm")]
     #[error(transparent)]
@@ -24,22 +24,6 @@ pub enum Error {
     #[error(transparent)]
     Io(#[from] std::io::Error),
 }
-
-
-#[derive(Error, Debug, PartialEq)]
-pub enum CustomError {
-    #[error("failed module a")]
-    FailedModuleA,
-
-    #[error("failed module b")]
-    FailedModuleB,
-}
-
-
-impl From<Response> {
-
-}
-
 
 impl From<crate::error::Error> for JsValue {
     #[inline(always)]

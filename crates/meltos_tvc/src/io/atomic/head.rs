@@ -37,7 +37,7 @@ where
     ) -> error::Result {
         self.fs
             .write_file(
-                &format!(".meltos_core/refs/remotes/{branch_name}"),
+                &format!(".meltos/refs/remotes/{branch_name}"),
                 &commit_hash.encode()?,
             )
             .await?;
@@ -52,7 +52,7 @@ where
     ) -> error::Result<()> {
         self.fs
             .write_file(
-                &format!(".meltos_core/refs/heads/{branch_name}"),
+                &format!(".meltos/refs/heads/{branch_name}"),
                 &commit_hash.encode()?,
             )
             .await?;
@@ -62,7 +62,7 @@ where
     #[inline]
     pub async fn delete(&self, branch_name: &BranchName) -> error::Result<()> {
         self.fs
-            .delete(&format!(".meltos_core/refs/heads/{branch_name}"))
+            .delete(&format!(".meltos/refs/heads/{branch_name}"))
             .await?;
         Ok(())
     }
@@ -76,7 +76,7 @@ where
 
     #[inline]
     pub async fn read_remote(&self, branch_name: &BranchName) -> error::Result<Option<CommitHash>> {
-        self._read(".meltos_core/refs/remotes/", branch_name).await
+        self._read(".meltos/refs/remotes/", branch_name).await
     }
 
     #[inline]
@@ -88,11 +88,11 @@ where
 
     #[inline]
     pub async fn read(&self, branch_name: &BranchName) -> error::Result<Option<CommitHash>> {
-        self._read(".meltos_core/refs/heads/", branch_name).await
+        self._read(".meltos/refs/heads/", branch_name).await
     }
 
     pub async fn read_all(&self) -> error::Result<Vec<(BranchName, CommitHash)>> {
-        let files = self.fs.all_files_in(".meltos_core/refs/heads/").await?;
+        let files = self.fs.all_files_in(".meltos/refs/heads/").await?;
         let mut branches = Vec::with_capacity(files.len());
         for path in files {
             let Some(file_name) = Path::new(&path).file_name().and_then(|name| name.to_str())

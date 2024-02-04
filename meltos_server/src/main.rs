@@ -5,10 +5,6 @@ use axum::extract::DefaultBodyLimit;
 use axum::Router;
 use axum::routing::{delete, get, post};
 use tower_http::decompression::RequestDecompressionLayer;
-use tracing::Level;
-use tracing_subscriber::fmt::writer::MakeWriterExt;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
 
 use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
 use meltos_backend::discussion::global::sqlite::SqliteDiscussionIo;

@@ -154,7 +154,7 @@ where
 
     #[inline]
     async fn read_all_branch_head_path(&self) -> error::Result<Vec<String>> {
-        Ok(self.fs.all_files_in(".meltos_core/refs/heads").await?)
+        Ok(self.fs.all_files_in(".meltos/refs/heads").await?)
     }
 }
 
@@ -242,7 +242,7 @@ mod tests {
             .await
             .unwrap();
         let bundle = BundleIo::new(fs.clone()).create().await.unwrap();
-        let objs_count = fs.all_files_in(".meltos_core/objects").await.unwrap().len();
+        let objs_count = fs.all_files_in(".meltos/objects").await.unwrap().len();
 
         assert_eq!(objs_count, bundle.objs.len());
     }

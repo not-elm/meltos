@@ -16,7 +16,7 @@ impl CommandExecutable for LeaveArgs {
         let configs = load_configs()?;
         let tvc = TvcClient::new(StdFileSystem);
         tvc.leave(configs).await?;
-        StdFileSystem.delete(".meltos_core").await?;
+        StdFileSystem.delete(".meltos").await?;
         println!("left room");
         Ok(())
     }
