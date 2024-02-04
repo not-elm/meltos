@@ -125,7 +125,8 @@ where
     async fn scan_deleted_files(
         &self,
         trace_tree: &TreeObj,
-        workspace_path: &str,
+        // TODO: 現在はワークスペース内の全ファイルを元に削除されているかをチェックしているが、指定のディレクトリ内のファイルのみからチェックするように修正予定
+        _workspace_path: &str,
     ) -> error::Result<Vec<(FilePath, ObjHash)>> {
         let work_space_files = self.workspace.files(".").await?;
         Ok(trace_tree
