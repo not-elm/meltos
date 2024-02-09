@@ -43,7 +43,7 @@ fn tracing_init() {
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     tracing_init();
-    let listener = tokio::net::TcpListener::bind(SocketAddr::from(([0, 0, 0, 0], 3000))).await?;
+    let listener = tokio::net::TcpListener::bind(SocketAddr::from(([0, 0, 0, 0], 80))).await?;
 
     axum::serve(listener, app::<SqliteSessionIo, SqliteDiscussionIo>()).await?;
     Ok(())
