@@ -48,7 +48,7 @@ pub struct BranchCommitMeta {
     pub commits: Vec<CommitMeta>,
 }
 
-pub const BASE: &str = "https://151.145.73.36:443";
+pub const BASE: &str = "http://room.meltos.net";
 
 #[derive(Clone)]
 pub struct TvcClient<Fs: FileSystem + Clone> {
