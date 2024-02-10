@@ -1,18 +1,16 @@
 use async_trait::async_trait;
-#[cfg(not(feature = "wasm"))]
-use reqwest::{header, Client, Response};
-#[cfg(feature = "wasm")]
-use reqwest_wasm::{header, Client, Response};
+use reqwest::{Client, header, Response};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use meltos_core::room::RoomId;
 use meltos_core::schema::discussion::global::{Create, Created, Replied, Reply, Speak, Spoke};
-use meltos_core::schema::room::Opened;
 use meltos_core::schema::room::{Join, Joined, Open};
+use meltos_core::schema::room::Opened;
 use meltos_core::user::UserId;
 use meltos_tvc::io::bundle::Bundle;
 use meltos_tvc::operation::push::Pushable;
+use meltos_util::console_log;
 
 use crate::config::SessionConfigs;
 use crate::error;
@@ -75,20 +73,22 @@ impl HttpClient {
         base_uri: &str,
         bundle: Option<Bundle>,
         lifetime_secs: Option<u64>,
-        user_limits: Option<u64>
+        user_limits: Option<u64>,
     ) -> error::Result<Self> {
         let client = Client::new();
         let response = client
-            .post(format!("{base_uri}/room/open"))
+            .post("https://room.meltos.net/room/open")
+            .header("Access-Control-Allow-Origin", "*")
             .json(&Open {
                 lifetime_secs,
                 user_limits,
                 bundle,
             })
             .send()
-            .await?;
+            .await;
+        console_log!("response; {:?}", response.as_ref().map_err(|e|e.status()));
 
-        let opened: Opened = response.error_for_status()?.json().await?;
+        let opened: Opened = response?.error_for_status()?.json().await?;
         Ok(Self {
             configs: SessionConfigs::from(opened),
             client,
@@ -130,8 +130,8 @@ impl HttpClient {
     }
 
     async fn get<D>(&self) -> error::Result<D>
-    where
-        D: DeserializeOwned,
+        where
+            D: DeserializeOwned,
     {
         let response = self
             .client
@@ -152,9 +152,9 @@ impl HttpClient {
     }
 
     async fn post<S, D>(&self, path: &str, body: Option<&S>) -> error::Result<D>
-    where
-        S: Serialize,
-        D: DeserializeOwned,
+        where
+            S: Serialize,
+            D: DeserializeOwned,
     {
         let mut request = self
             .client
@@ -206,8 +206,8 @@ impl Pushable<()> for HttpClient {
 }
 
 async fn response_to_json<D>(response: Response) -> error::Result<D>
-where
-    D: DeserializeOwned,
+    where
+        D: DeserializeOwned,
 {
     Ok(response.error_for_status()?.json().await?)
 }

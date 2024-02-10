@@ -7,11 +7,11 @@ pub type Result<T = ()> = std::result::Result<T, Error>;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[cfg(feature = "wasm")]
-    #[error(transparent)]
-    Http(#[from] reqwest_wasm::Error),
-
-    #[cfg(not(feature = "wasm"))]
+    // #[cfg(feature = "wasm")]
+    // #[error("failed http error; {0}")]
+    // Http(#[from] reqwest_wasm::Error),
+    //
+    // #[cfg(not(feature = "wasm"))]
     #[error(transparent)]
     Http(#[from] reqwest::Error),
 

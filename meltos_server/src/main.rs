@@ -3,9 +3,12 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use axum::extract::DefaultBodyLimit;
+use axum::http::header::CONTENT_TYPE;
+use axum::http::Method;
 use axum::Router;
 use axum::routing::{delete, get, post};
 use axum_server::tls_rustls::RustlsConfig;
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::decompression::RequestDecompressionLayer;
 
 use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
@@ -69,6 +72,11 @@ fn app<Session, Discussion>() -> Router
         Session: SessionIo + NewSessionIo + Debug + 'static,
         Discussion: DiscussionIo + NewDiscussIo + Debug + 'static,
 {
+    let cors = CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST, Method::DELETE])
+        .allow_origin(Any)
+        .allow_headers([CONTENT_TYPE]);
+
     Router::new()
         .route("/room/open", post(api::room::open::<Session, Discussion>))
         .layer(DefaultBodyLimit::max(bundle_request_body_size()))
@@ -77,6 +85,7 @@ fn app<Session, Discussion>() -> Router
         .nest("/room/:room_id", room_operations_router())
         .with_state(AppState::new())
         .layer(RequestDecompressionLayer::new())
+        .layer(cors)
 }
 
 fn room_operations_router() -> Router<AppState> {
