@@ -1,9 +1,11 @@
 use std::fmt::Debug;
 use std::net::SocketAddr;
+use std::path::PathBuf;
 
 use axum::extract::DefaultBodyLimit;
 use axum::Router;
 use axum::routing::{delete, get, post};
+use axum_server::tls_rustls::RustlsConfig;
 use tower_http::decompression::RequestDecompressionLayer;
 
 use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
@@ -43,10 +45,22 @@ fn tracing_init() {
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     tracing_init();
+    let config_dir = PathBuf::from("/etc")
+        .join("letsencrypt")
+        .join("archive")
+        .join("room.meltos.net");
 
-    let listener = tokio::net::TcpListener::bind(SocketAddr::from(([0, 0, 0, 0], 80))).await?;
+    let config = RustlsConfig::from_pem_file(
+        config_dir.join("cert1.pem"),
+        config_dir.join("privkey1.pem"),
+    )
+        .await?;
 
-    axum::serve(listener, app::<SqliteSessionIo, SqliteDiscussionIo>()).await?;
+    let addr = SocketAddr::from(([0, 0, 0, 0], 443));
+    axum_server::bind_rustls(addr, config)
+        .serve(app::<SqliteSessionIo, SqliteDiscussionIo>().into_make_service())
+        .await?;
+
     Ok(())
 }
 

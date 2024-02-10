@@ -21,6 +21,7 @@ tower = { version = "0.4.13" }
 tower-http = { version = "0.5.0", features = ["limit", "decompression-br"] }
 tracing = { version = "0.1.40" }
 axum = { version = "0.7.4", features = [] }
+axum-server = { version = "0.6.0", features = ["tls-rustls"] }
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = { version = "1.0.113" }
 futures = { version = "0.3.30" }
