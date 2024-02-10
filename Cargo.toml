@@ -1,3 +1,10 @@
+[package]
+name = "meltos"
+readme = "README.md"
+repository = "https://github.com/not-elm/meltos"
+keywords = []
+license = "MIT OR Apache-2.0"
+
 [workspace]
 members = [
     "crates/*",
@@ -8,6 +15,8 @@ members = [
 resolver = "2"
 
 
+[dependencies]
+meltos_client = { path = "crates/meltos_client" }
 
 [workspace.dependencies]
 auto-delegate = "0.0.9"
