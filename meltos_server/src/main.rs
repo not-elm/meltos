@@ -3,12 +3,10 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use axum::extract::DefaultBodyLimit;
-use axum::http::header::CONTENT_TYPE;
-use axum::http::Method;
-use axum::Router;
+use axum::{Router, serve};
 use axum::routing::{delete, get, post};
 use axum_server::tls_rustls::RustlsConfig;
-use tower_http::cors::{Any, CorsLayer};
+use tokio::net::TcpListener;
 use tower_http::decompression::RequestDecompressionLayer;
 
 use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
@@ -48,20 +46,10 @@ fn tracing_init() {
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     tracing_init();
-    let config_dir = PathBuf::from("/etc")
-        .join("letsencrypt")
-        .join("archive")
-        .join("room.meltos.net");
-
-    let config = RustlsConfig::from_pem_file(
-        config_dir.join("cert1.pem"),
-        config_dir.join("privkey1.pem"),
-    )
-        .await?;
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 443));
-    axum_server::bind_rustls(addr, config)
-        .serve(app::<SqliteSessionIo, SqliteDiscussionIo>().into_make_service())
+    let listener = TcpListener::bind(addr).await?;
+    axum::serve(listener, app::<SqliteSessionIo, SqliteDiscussionIo>())
         .await?;
 
     Ok(())
@@ -72,11 +60,6 @@ fn app<Session, Discussion>() -> Router
         Session: SessionIo + NewSessionIo + Debug + 'static,
         Discussion: DiscussionIo + NewDiscussIo + Debug + 'static,
 {
-    let cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST, Method::DELETE])
-        .allow_origin(Any)
-        .allow_headers([CONTENT_TYPE]);
-
     Router::new()
         .route("/room/open", post(api::room::open::<Session, Discussion>))
         .layer(DefaultBodyLimit::max(bundle_request_body_size()))
@@ -85,7 +68,6 @@ fn app<Session, Discussion>() -> Router
         .nest("/room/:room_id", room_operations_router())
         .with_state(AppState::new())
         .layer(RequestDecompressionLayer::new())
-        .layer(cors)
 }
 
 fn room_operations_router() -> Router<AppState> {

@@ -1,5 +1,8 @@
 use async_trait::async_trait;
+#[cfg(not(feature = "wasm"))]
 use reqwest::{Client, header, Response};
+#[cfg(feature = "wasm")]
+use reqwest_wasm::{Client, header, Response};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -14,6 +17,9 @@ use meltos_util::console_log;
 
 use crate::config::SessionConfigs;
 use crate::error;
+
+#[cfg(feature = "wasm")]
+mod wasm;
 
 #[derive(Debug, Clone)]
 pub struct HttpClient {
@@ -75,6 +81,7 @@ impl HttpClient {
         lifetime_secs: Option<u64>,
         user_limits: Option<u64>,
     ) -> error::Result<Self> {
+
         let client = Client::new();
         let response = client
             .post("https://room.meltos.net/room/open")
