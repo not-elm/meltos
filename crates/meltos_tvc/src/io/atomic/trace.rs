@@ -99,11 +99,11 @@ mod tests {
         let trace = TraceIo::new(fs.clone());
         let commit = Commit::new(fs.clone());
 
-        fs.write_file("workspace/hello.txt", b"hello").await?;
+        fs.write_file("hello.txt", b"hello").await?;
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash1 = commit.execute(&branch, "text").await.unwrap();
 
-        fs.delete("workspace/hello.txt").await?;
+        fs.delete("hello.txt").await?;
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash2 = commit.execute(&branch, "text").await.unwrap();
 

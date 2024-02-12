@@ -165,7 +165,7 @@ mod tests {
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
         let staging = StagingIo::new(fs.clone());
-        fs.write_file("workspace/hello", b"hello").await.unwrap();
+        fs.write_file("hello", b"hello").await.unwrap();
         stage.execute(&branch, ".").await.unwrap();
         commit.execute(&branch, "test").await.unwrap();
         let staging_tree = staging.read().await.unwrap().unwrap();
@@ -180,7 +180,7 @@ mod tests {
         let null_commit_hash = init_owner_branch(fs.clone()).await;
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
-        fs.write_file("workspace/hello", b"hello").await.unwrap();
+        fs.write_file("hello", b"hello").await.unwrap();
         stage.execute(&branch, ".").await.unwrap();
         commit.execute(&branch, "test").await.unwrap();
 
@@ -190,7 +190,7 @@ mod tests {
 
         let mut tree = TreeObj::default();
         tree.insert(
-            FilePath::from_path("workspace/hello"),
+            FilePath::from_path("hello"),
             ObjHash::new(b"FILE\0hello"),
         );
         assert_eq!(
@@ -211,7 +211,7 @@ mod tests {
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
         let local_commits = LocalCommitsIo::new(fs.clone());
-        fs.write_file("workspace/hello", b"hello").await.unwrap();
+        fs.write_file("hello", b"hello").await.unwrap();
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash = commit.execute(&branch, "test").await.unwrap();
         let local = local_commits.read(&branch).await.unwrap().unwrap();
@@ -226,10 +226,10 @@ mod tests {
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
         let local_commits = LocalCommitsIo::new(fs.clone());
-        fs.write_file("workspace/hello", b"hello").await.unwrap();
+        fs.write_file("hello", b"hello").await.unwrap();
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash1 = commit.execute(&branch, "1").await.unwrap();
-        fs.write_file("workspace/hello2", b"hello2").await.unwrap();
+        fs.write_file("hello2", b"hello2").await.unwrap();
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash2 = commit.execute(&branch, "2").await.unwrap();
 

@@ -84,13 +84,13 @@ mod tests {
         let commit = Commit::new(fs.clone());
         let unzip = UnZip::new(fs.clone());
 
-        fs.write_file("workspace/hello", b"hello").await?;
+        fs.write_file("hello", b"hello").await?;
         stage.execute(&branch, "hello").await?;
         commit.execute(&branch, "commit text").await?;
-        fs.delete("workspace/hello").await?;
+        fs.delete("hello").await?;
 
         unzip.execute(&branch).await?;
-        assert_eq!(fs.try_read_file("workspace/hello").await?, b"hello");
+        assert_eq!(fs.try_read_file("hello").await?, b"hello");
         Ok(())
     }
 }

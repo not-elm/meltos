@@ -11,6 +11,7 @@ use meltos_util::impl_string_new_type;
 pub mod memory;
 
 pub mod std_fs;
+mod clip;
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Eq, PartialEq, Debug, Copy, Clone, Hash)]

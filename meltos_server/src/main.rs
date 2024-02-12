@@ -1,11 +1,9 @@
 use std::fmt::Debug;
 use std::net::SocketAddr;
-use std::path::PathBuf;
 
 use axum::extract::DefaultBodyLimit;
-use axum::{Router, serve};
+use axum::Router;
 use axum::routing::{delete, get, post};
-use axum_server::tls_rustls::RustlsConfig;
 use tokio::net::TcpListener;
 use tower_http::decompression::RequestDecompressionLayer;
 

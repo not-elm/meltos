@@ -136,7 +136,7 @@ mod tests {
         let mut app = app::<MockSessionIo, MockGlobalDiscussionIo>();
         let fs = MemoryFileSystem::default();
         let branch = BranchName::owner();
-        fs.write_sync("workspace/some_text.txt", b"text file");
+        fs.write_sync("some_text.txt", b"text file");
         Init::new(fs.clone()).execute(&branch).await.unwrap();
         let bundle = BundleIo::new(fs.clone()).create().await.unwrap();
         let open_request = open_room_request_with_options(Some(bundle), None, None);

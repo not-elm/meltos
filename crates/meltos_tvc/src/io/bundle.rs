@@ -211,7 +211,7 @@ mod tests {
         let branch = BranchName::from("branch2");
 
         working.write(&BranchName::from("branch2")).await.unwrap();
-        fs.write_file("workspace/hello.txt", b"hello")
+        fs.write_file("hello.txt", b"hello")
             .await
             .unwrap();
         stage.execute(&branch, ".").await.unwrap();
@@ -233,7 +233,7 @@ mod tests {
         let fs = MemoryFileSystem::default();
         init_owner_branch(fs.clone()).await;
         let branch = BranchName::owner();
-        fs.write_file("workspace/hello.txt", b"hello")
+        fs.write_file("hello.txt", b"hello")
             .await
             .unwrap();
         Stage::new(fs.clone()).execute(&branch, ".").await.unwrap();

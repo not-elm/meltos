@@ -18,9 +18,7 @@ impl CommandExecutable for MetaArgs {
         let commit = CommitObjIo::new(StdFileSystem);
 
         let tree = commit.read_commit_tree(&ObjHash(self.commit)).await?;
-        for (path, hash) in tree.0.clone() {
-            println!("{path} : {hash}");
-        }
+
         let obj = ObjIo::new(StdFileSystem);
         for hash in tree.values() {
             let buf = obj.try_read_obj(hash).await;

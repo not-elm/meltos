@@ -48,7 +48,7 @@ where
     pub async fn execute(&self, branch_name: &BranchName) -> error::Result<CommitHash> {
         self.check_branch_not_initialized().await?;
         self.working.write(branch_name).await?;
-        self.fs.create_dir("workspace").await?;
+
         if self.stage.execute(branch_name, ".").await.is_ok() {
             self.commit.execute(branch_name, "INIT").await
         } else {
@@ -133,7 +133,7 @@ mod tests {
     #[tokio::test]
     async fn staged_workspace_files() {
         let fs = MemoryFileSystem::default();
-        fs.write_sync("workspace/src/test.rs", b"test");
+        fs.write_sync("src/test.rs", b"test");
         let branch = BranchName::owner();
         let init = Init::new(fs.clone());
         init.execute(&branch).await.unwrap();

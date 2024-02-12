@@ -144,7 +144,7 @@ mod tests {
     async fn write_object_file() -> error::Result {
         let buf = b"hello world!";
         let fs = MemoryFileSystem::default();
-        fs.write_sync("workspace/test/hello.txt", buf);
+        fs.write_sync("test/hello.txt", buf);
 
         let io = ObjIo::new(fs.clone());
         let workspace = WorkspaceIo::new(fs.clone());

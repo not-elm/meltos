@@ -215,13 +215,13 @@ mod tests {
         let commit = Commit::new(fs.clone());
         let commit_obj = CommitObjIo::new(fs.clone());
 
-        fs.write_file("workspace/hello.txt", b"hello")
+        fs.write_file("hello.txt", b"hello")
             .await
             .unwrap();
         stage.execute(&branch, ".").await.unwrap();
         commit.execute(&branch, "commit text").await.unwrap();
 
-        fs.write_file("workspace/hello.txt", b"hello2")
+        fs.write_file("hello.txt", b"hello2")
             .await
             .unwrap();
         stage.execute(&branch, ".").await.unwrap();
@@ -242,16 +242,16 @@ mod tests {
         let obj = ObjIo::new(fs.clone());
         let commit_obj = CommitObjIo::new(fs.clone());
 
-        fs.write_file("workspace/hello/hello", b"hello")
+        fs.write_file("hello/hello", b"hello")
             .await
             .unwrap();
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash1 = commit.execute(&branch, "commit text").await.unwrap();
 
-        fs.write_file("workspace/src/sample", b"sample")
+        fs.write_file("src/sample", b"sample")
             .await
             .unwrap();
-        fs.write_file("workspace/t", b"t").await.unwrap();
+        fs.write_file("t", b"t").await.unwrap();
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash2 = commit.execute(&branch, "commit text").await.unwrap();
 
@@ -314,7 +314,7 @@ mod tests {
         let local_commit = LocalCommitsIo::new(fs.clone());
         init_owner_branch(fs.clone()).await;
 
-        fs.write_sync("workspace/hello.txt", b"hello");
+        fs.write_sync("hello.txt", b"hello");
         stage.execute(&branch, ".").await.unwrap();
         commit.execute(&branch, "").await.unwrap();
         // pushされたと仮定してローカルコミットを削除
@@ -323,7 +323,7 @@ mod tests {
             .await
             .unwrap();
 
-        fs.write_sync("workspace/hello2.txt", b"hello2");
+        fs.write_sync("hello2.txt", b"hello2");
         stage.execute(&branch, ".").await.unwrap();
         let commit_hash = commit.execute(&branch, "").await.unwrap();
 
@@ -337,10 +337,10 @@ mod tests {
             .await
             .unwrap();
         let hello_hash = traces
-            .get(&FilePath::from_path("workspace/hello.txt"))
+            .get(&FilePath::from_path("hello.txt"))
             .unwrap();
         let hello2_hash = traces
-            .get(&FilePath::from_path("workspace/hello2.txt"))
+            .get(&FilePath::from_path("hello2.txt"))
             .unwrap();
 
         assert!(!objs.iter().any(|o| &o.hash == hello_hash));

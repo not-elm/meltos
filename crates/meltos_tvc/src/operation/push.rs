@@ -156,7 +156,7 @@ mod tests {
         let commit = Commit::new(fs.clone());
         let push = Push::new(fs.clone());
 
-        fs.write_file("workspace/hello.txt", b"hello")
+        fs.write_file("hello.txt", b"hello")
             .await
             .unwrap();
         stage.execute(&branch, ".").await.unwrap();
@@ -176,7 +176,7 @@ mod tests {
         let stage = Stage::new(fs.clone());
         let commit = Commit::new(fs.clone());
         let push = Push::new(fs.clone());
-        fs.write_file("workspace/hello", b"hello").await.unwrap();
+        fs.write_file("hello", b"hello").await.unwrap();
         stage.execute(&branch, ".").await.unwrap();
         commit.execute(&branch, "commit text").await.unwrap();
         push.execute(branch.clone(), &mut MockRemoteClient::default())
@@ -198,7 +198,7 @@ mod tests {
         let commit = Commit::new(fs.clone());
         let push = Push::new(fs.clone());
 
-        fs.write_file("workspace/hello.txt", b"hello")
+        fs.write_file("hello.txt", b"hello")
             .await
             .unwrap();
         stage.execute(&branch, ".").await.unwrap();

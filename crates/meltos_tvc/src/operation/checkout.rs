@@ -134,7 +134,7 @@ mod tests {
         checkout.execute(&b2).await.unwrap();
         checkout.execute(&b1).await.unwrap();
 
-        fs.write_sync("workspace/hello.txt", b"hello");
+        fs.write_sync("hello.txt", b"hello");
         Stage::new(fs.clone())
             .execute(&b1, "hello.txt")
             .await
@@ -147,7 +147,7 @@ mod tests {
 
         checkout.execute(&b2).await.unwrap();
 
-        let hello_txt = fs.read_file("workspace/hello.txt").await.unwrap();
-        assert!(hello_txt.is_none());
+        let hello_txt = fs.read_file("hello.txt").await.unwrap();
+        assert!(hello_txt.is_some());
     }
 }

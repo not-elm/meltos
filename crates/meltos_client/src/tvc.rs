@@ -271,7 +271,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             return Ok(None);
         };
         let trace_tree = self.trace.read(&head).await?;
-        Ok(trace_tree.get(&FilePath::from(format!("workspace/{file_path}"))).cloned())
+        Ok(trace_tree.get(&FilePath::from(format!("{file_path}"))).cloned())
     }
 
 

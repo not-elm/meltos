@@ -50,7 +50,7 @@ mod tests {
         let stage = Stage::new(fs.clone());
         let un_stage = UnStage::new(fs.clone());
         let staging = StagingIo::new(fs.clone());
-        let file_path = "workspace/hello.txt";
+        let file_path = "hello.txt";
 
         init.execute(&branch).await.unwrap();
         fs.write_sync(file_path, b"hello");
@@ -82,21 +82,21 @@ mod tests {
         let staging = StagingIo::new(fs.clone());
         init.execute(&branch).await.unwrap();
 
-        fs.write_sync("workspace/hello1.txt", b"hello");
-        fs.write_sync("workspace/hello2.txt", b"hello");
-        fs.write_sync("workspace/hello3.txt", b"hello");
+        fs.write_sync("hello1.txt", b"hello");
+        fs.write_sync("hello2.txt", b"hello");
+        fs.write_sync("hello3.txt", b"hello");
         stage.execute(&branch, ".").await.unwrap();
 
         let current_stagings = staging.read().await.unwrap().unwrap();
-        assert!(current_stagings.contains_key(&FilePath::from_path("workspace/hello1.txt")));
-        assert!(current_stagings.contains_key(&FilePath::from_path("workspace/hello2.txt")));
-        assert!(current_stagings.contains_key(&FilePath::from_path("workspace/hello3.txt")));
+        assert!(current_stagings.contains_key(&FilePath::from_path("hello1.txt")));
+        assert!(current_stagings.contains_key(&FilePath::from_path("hello2.txt")));
+        assert!(current_stagings.contains_key(&FilePath::from_path("hello3.txt")));
 
         un_stage.execute_all().await.unwrap();
         let current_stagings = staging.read().await.unwrap().unwrap();
-        assert!(!current_stagings.contains_key(&FilePath::from_path("workspace/hello1.txt")));
-        assert!(!current_stagings.contains_key(&FilePath::from_path("workspace/hello2.txt")));
-        assert!(!current_stagings.contains_key(&FilePath::from_path("workspace/hello3.txt")));
+        assert!(!current_stagings.contains_key(&FilePath::from_path("hello1.txt")));
+        assert!(!current_stagings.contains_key(&FilePath::from_path("hello2.txt")));
+        assert!(!current_stagings.contains_key(&FilePath::from_path("hello3.txt")));
         assert_eq!(current_stagings, TreeObj::default());
     }
 }

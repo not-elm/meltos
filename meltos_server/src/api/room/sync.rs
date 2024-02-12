@@ -94,7 +94,7 @@ mod tests {
             ..
         } = http_call(&mut app, open_request).await.deserialize().await;
 
-        fs.write_sync("workspace/hello.txt", b"hello world!");
+        fs.write_sync("hello.txt", b"hello world!");
         stage.execute(&branch, ".").await.unwrap();
         commit.execute(&branch, "commit text").await.unwrap();
         let response = push
@@ -113,10 +113,10 @@ mod tests {
         assert_eq!(room_bundle.tvc.traces.len(), 2);
         room_bundle.tvc.traces.sort();
         let hello_txt_hash = traces
-            .read(&room_bundle.tvc.traces[0].commit_hash)
+            .read(&room_bundle.tvc.traces[1].commit_hash)
             .await
             .unwrap()
-            .get(&FilePath::from_path("workspace/hello.txt"))
+            .get(&FilePath::from_path("hello.txt"))
             .unwrap()
             .clone();
 
