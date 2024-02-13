@@ -1,16 +1,13 @@
-use axum::extract::{State, WebSocketUpgrade};
-use axum::extract::ws::Message;
+use axum::extract::WebSocketUpgrade;
 use axum::response::Response;
 use futures::StreamExt;
 
 use crate::middleware::room::SessionRoom;
 use crate::middleware::user::SessionUser;
 use crate::room::channel::WebsocketSender;
-use crate::room::Rooms;
 
-#[tracing::instrument(skip(rooms))]
+#[tracing::instrument]
 pub async fn channel(
-    State(rooms): State<Rooms>,
     ws: WebSocketUpgrade,
     SessionRoom(room): SessionRoom,
     SessionUser(user_id): SessionUser,
@@ -22,18 +19,6 @@ pub async fn channel(
             let (tx, mut rx) = socket.split();
             let sender = WebsocketSender::new(user_id.clone(), tx);
             room.insert_channel(sender).await;
-            // while let Some(Ok(message)) = rx.next().await {
-            //     if matches!(message, Message::Close(_)) {
-            //         break;
-            //     }
-            // }
-            // if room.owner == user_id {
-            //     if let Err(e) = rooms.delete(&room.id).await {
-            //         tracing::error!("{e:?}");
-            //     }
-            // } else if let Err(e) = room.leave(user_id).await {
-            //     tracing::error!("{e}");
-            // }
         }
     })
 }

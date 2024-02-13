@@ -3,6 +3,11 @@ use serde::{Deserialize, Serialize};
 use crate::user::UserId;
 
 
+
+
+
+
+
 /// ルームユーザーからオーナーに向けて送信される任意のリクエスト
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserRequest {

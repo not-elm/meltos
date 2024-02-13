@@ -33,7 +33,7 @@ impl Channels {
         tracing::debug!("{:?}", channels.keys());
 
         let channel = channels.get_mut(&owner).ok_or_else(|| {
-            crate::error::Error::RoomOwnerDisconnected(room_id)
+            error::Error::RoomOwnerDisconnected(room_id)
         })?;
 
         if channel.send_request(request).await.is_err() {

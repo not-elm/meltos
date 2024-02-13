@@ -101,8 +101,6 @@ impl RoomMap {
 }
 
 
-
-
 #[derive(Clone)]
 pub struct Room {
     pub owner: UserId,
@@ -186,7 +184,6 @@ impl Room {
         tracing::debug!("{:?}", channels.keys());
 
         let channel = channels.get_mut(&self.owner).ok_or_else(|| {
-            tracing::error!("NOT FOUND!");
             crate::error::Error::RoomOwnerDisconnected(self.id.clone())
         })?;
         if channel.send_request(request).await.is_err() {
