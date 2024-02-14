@@ -132,6 +132,6 @@ impl Encodable for CommitText {
 
 impl Decodable for CommitText {
     fn decode(buf: &[u8]) -> error::Result<Self> {
-        Ok(Self(String::from_utf8(buf.to_vec()).unwrap()))
+        Ok(Self(String::from_utf8_lossy(buf).into_owned()))
     }
 }
