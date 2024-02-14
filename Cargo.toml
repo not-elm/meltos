@@ -11,9 +11,7 @@ members = [
     "meltos_cli",
     "meltos_server"
 ]
-
 resolver = "2"
-
 
 [dependencies]
 meltos_client = { path = "crates/meltos_client" }

@@ -1,10 +1,14 @@
+use std::env;
 use std::fmt::Debug;
 use std::net::SocketAddr;
 
 use axum::extract::DefaultBodyLimit;
+use axum::http::header::CONTENT_TYPE;
+use axum::http::Method;
 use axum::Router;
 use axum::routing::{delete, get, post};
-use tokio::net::TcpListener;
+use axum_server::tls_rustls::RustlsConfig;
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::decompression::RequestDecompressionLayer;
 
 use meltos_backend::discussion::{DiscussionIo, NewDiscussIo};
@@ -43,11 +47,17 @@ fn tracing_init() {
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+
     tracing_init();
+    let config = RustlsConfig::from_pem_file(
+        env::var("MELTOS_CERT").unwrap(),
+        env::var("MELTOS_KEY").unwrap(),
+    )
+        .await?;
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 443));
-    let listener = TcpListener::bind(addr).await?;
-    axum::serve(listener, app::<SqliteSessionIo, SqliteDiscussionIo>())
+    axum_server::bind_rustls(addr, config)
+        .serve(app::<SqliteSessionIo, SqliteDiscussionIo>().into_make_service())
         .await?;
 
     Ok(())
@@ -58,6 +68,11 @@ fn app<Session, Discussion>() -> Router
         Session: SessionIo + NewSessionIo + Debug + 'static,
         Discussion: DiscussionIo + NewDiscussIo + Debug + 'static,
 {
+    let cors = CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST, Method::DELETE])
+        .allow_origin(Any)
+        .allow_headers([CONTENT_TYPE]);
+
     Router::new()
         .route("/room/open", post(api::room::open::<Session, Discussion>))
         .layer(DefaultBodyLimit::max(bundle_request_body_size()))
@@ -66,6 +81,7 @@ fn app<Session, Discussion>() -> Router
         .nest("/room/:room_id", room_operations_router())
         .with_state(AppState::new())
         .layer(RequestDecompressionLayer::new())
+        .layer(cors)
 }
 
 fn room_operations_router() -> Router<AppState> {
@@ -94,7 +110,7 @@ fn global_discussion_route() -> Router<AppState> {
 
 #[inline(always)]
 fn bundle_request_body_size() -> usize {
-    // Bundleの最大サイズは100MIBに設定したいですが、json形式でデータが送られてくる関係上
+    // Bundleの最大サイズは100MIBに設定したいですが、json形式でデータが送られて くる関係上
     // リクエストボディのデータサイズが大きくなることを考慮して4倍までは許容するように
     // 今後修正する可能性あり
     AppConfigs::default().limit_tvc_repository_size * 4
