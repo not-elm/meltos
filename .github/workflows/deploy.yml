@@ -8,12 +8,14 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_DIR: ${{ secrets.SERVER_DEPLOY_DIR }}
     steps:
       - name: Checkout
         uses: actions/checkout@master
       - name: deploy
         run:  |
-          cd ${{ secrets.SERVER_DEPLOY_DIR }}
+          cd ${DEPLOY_DIR}
           sudo git pull
           cargo build --release --jobs 1
           sudo systemctl restart meltos.service
