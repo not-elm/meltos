@@ -53,14 +53,12 @@ mod tests {
     use meltos_core::room::RoomId;
     use meltos_core::schema::room::{Joined, Opened};
     use meltos_core::user::{SessionId, UserId};
-    use meltos_backend::discussion::global::mock::MockGlobalDiscussionIo;
-    use meltos_backend::session::mock::MockSessionIo;
     use meltos_tvc::file_system::memory::MemoryFileSystem;
 
-    use crate::{app, error};
     use crate::api::test_util::{
         fetch_request, http_call, http_join, mock_app, open_room_request, ResponseConvertable,
     };
+    use crate::error;
 
     #[tokio::test]
     async fn delete_room_if_owner_left() -> error::Result {

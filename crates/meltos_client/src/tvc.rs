@@ -197,7 +197,7 @@ impl<Fs: FileSystem + Clone> TvcClient<Fs> {
             return Ok(None);
         };
 
-        Ok(Some(String::from_utf8(file_obj.0).unwrap()))
+        Ok(Some(String::from_utf8_lossy(&file_obj.0).into_owned()))
     }
 
     pub async fn all_branch_commit_metas(&self) -> error::Result<Vec<BranchCommitMeta>> {

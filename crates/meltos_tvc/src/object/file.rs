@@ -34,8 +34,8 @@ impl Decodable for FileObj {
 
 #[cfg(test)]
 mod tests {
-    use crate::object::file::FileObj;
     use crate::object::{Decodable, Encodable};
+    use crate::object::file::FileObj;
 
     #[test]
     fn append_header_if_serialized() {

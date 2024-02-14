@@ -10,7 +10,6 @@ use meltos_core::schema::room::Opened;
 use meltos_core::user::UserId;
 use meltos_tvc::io::bundle::Bundle;
 use meltos_tvc::operation::push::Pushable;
-use meltos_util::console_log;
 
 use crate::config::SessionConfigs;
 use crate::error;
@@ -77,8 +76,7 @@ impl HttpClient {
     ) -> error::Result<Self> {
         let client = Client::new();
         let response = client
-            .post("https://room.meltos.net/room/open")
-            .header("Access-Control-Allow-Origin", "*")
+            .post(format!("{base_uri}/room/open"))
             .json(&Open {
                 lifetime_secs,
                 user_limits,
@@ -86,7 +84,6 @@ impl HttpClient {
             })
             .send()
             .await;
-        console_log!("response; {:?}", response.as_ref().map_err(|e|e.status()));
 
         let opened: Opened = response?.error_for_status()?.json().await?;
         Ok(Self {

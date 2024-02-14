@@ -1,3 +1,4 @@
+use meltos_util::console_log;
 use crate::branch::BranchName;
 use crate::error;
 use crate::file_system::FileSystem;
@@ -106,6 +107,7 @@ where
         };
 
         trace_tree.replace_by(staging_tree);
+        console_log!("{trace_tree:#?}");
         self.trace_tree.write(&trace_tree, commit_hash).await?;
 
         Ok(())

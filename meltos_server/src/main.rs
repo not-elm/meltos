@@ -1,6 +1,6 @@
+use std::env;
 use std::fmt::Debug;
 use std::net::SocketAddr;
-use std::path::PathBuf;
 
 use axum::extract::DefaultBodyLimit;
 use axum::http::header::CONTENT_TYPE;
@@ -47,15 +47,11 @@ fn tracing_init() {
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    tracing_init();
-    let config_dir = PathBuf::from("/etc")
-        .join("letsencrypt")
-        .join("archive")
-        .join("room.meltos.net");
 
+    tracing_init();
     let config = RustlsConfig::from_pem_file(
-        config_dir.join("cert1.pem"),
-        config_dir.join("privkey1.pem"),
+        env::var("MELTOS_CERT").unwrap(),
+        env::var("MELTOS_KEY").unwrap(),
     )
         .await?;
 
@@ -114,7 +110,7 @@ fn global_discussion_route() -> Router<AppState> {
 
 #[inline(always)]
 fn bundle_request_body_size() -> usize {
-    // Bundleの最大サイズは100MIBに設定したいですが、json形式でデータが送られてくる関係上
+    // Bundleの最大サイズは100MIBに設定したいですが、json形式でデータが送られて くる関係上
     // リクエストボディのデータサイズが大きくなることを考慮して4倍までは許容するように
     // 今後修正する可能性あり
     AppConfigs::default().limit_tvc_repository_size * 4

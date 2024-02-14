@@ -2,21 +2,21 @@ use std::fmt::{Display, Formatter};
 use std::io;
 
 use auto_delegate::delegate;
-use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use meltos_util::compression::gz::Gz;
 use meltos_util::compression::CompressionBuf;
+use meltos_util::compression::gz::Gz;
 use meltos_util::macros::{Deref, Display};
 
+use crate::{error, impl_serialize_and_deserialize};
 use crate::encode::{Decodable, Encodable};
 use crate::object::commit::CommitObj;
 use crate::object::delete::DeleteObj;
 use crate::object::file::FileObj;
 use crate::object::local_commits::LocalCommitsObj;
 use crate::object::tree::TreeObj;
-use crate::{error, impl_serialize_and_deserialize};
 
 pub mod commit;
 pub mod delete;
@@ -72,6 +72,7 @@ pub enum Obj {
 impl Obj {
     pub fn expand(buf: &CompressedBuf) -> error::Result<Self> {
         let buf = Gz.unzip(&buf.0)?;
+
         if buf.starts_with(FileObj::HEADER) {
             Ok(Obj::File(FileObj::decode(&buf)?))
         } else if buf.starts_with(DeleteObj::HEADER) {
