@@ -11,11 +11,15 @@ jobs:
     env:
       DEPLOY_DIR: ${{ secrets.SERVER_DEPLOY_DIR }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@master
       - name: deploy
-        run:  |
-          cd ${DEPLOY_DIR}
-          sudo git pull
-          cargo build --release --jobs 1
-          sudo systemctl restart meltos.service
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${DEPLOY_DIR}
+            sudo git pull
+            cargo build --release --jobs 1
+            sudo systemctl restart meltos.service
